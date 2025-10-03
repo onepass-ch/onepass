@@ -55,5 +55,7 @@ This split-app model ensures minimal server management and smooth offline functi
 
 *(Core sensor for MVP: **Map/GPS**; Camera is secondary for validation.)*
 
+## Links
+-**Figma** : /*figma link */
 ---
 
