@@ -4,7 +4,5 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun MyEventsScreen() {
-    // TODO: Implement my events UI
+  // TODO: Implement my events UI
 }
-
-

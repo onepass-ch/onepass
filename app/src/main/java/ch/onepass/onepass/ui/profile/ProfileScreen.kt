@@ -4,7 +4,5 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun ProfileScreen() {
-    // TODO: Implement profile UI
+  // TODO: Implement profile UI
 }
-
-

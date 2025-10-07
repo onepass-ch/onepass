@@ -4,7 +4,5 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun MapScreen() {
-    // TODO: Implement map UI
+  // TODO: Implement map UI
 }
-
-

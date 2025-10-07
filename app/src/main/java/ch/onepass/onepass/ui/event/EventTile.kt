@@ -4,7 +4,5 @@ import androidx.compose.runtime.Composable
 
 @Composable
 fun EventTile() {
-    // TODO: Implement event tile UI
+  // TODO: Implement event tile UI
 }
-
-
