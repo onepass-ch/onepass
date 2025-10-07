@@ -1,4 +1,4 @@
-package com.android.sample
+package ch.onepass.onepass
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -12,19 +12,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.compose.ui.tooling.preview.Preview
-import com.android.sample.resources.C
-import com.android.sample.ui.theme.SampleAppTheme
+import ch.onepass.onepass.resources.C
+import ch.onepass.onepass.ui.theme.OnePassTheme
 
-class MainActivity : ComponentActivity() {
+class SecondActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContent {
-      SampleAppTheme {
+      OnePassTheme {
         // A surface container using the 'background' color from the theme
         Surface(
-            modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
+            modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.second_screen_container },
             color = MaterialTheme.colorScheme.background) {
-              Greeting("Android")
+              GreetingRobo("Robolectric")
             }
       }
     }
@@ -32,12 +32,12 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-  Text(text = "Hello $name!", modifier = modifier.semantics { testTag = C.Tag.greeting })
+fun GreetingRobo(name: String, modifier: Modifier = Modifier) {
+  Text(text = "Hello $name!", modifier = modifier.semantics { testTag = C.Tag.greeting_robo })
 }
 
 @Preview(showBackground = true)
 @Composable
-fun GreetingPreview() {
-  SampleAppTheme { Greeting("Android") }
+fun GreetingPreview2() {
+  OnePassTheme { GreetingRobo("Robolectric") }
 }

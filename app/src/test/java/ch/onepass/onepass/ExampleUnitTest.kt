@@ -1,4 +1,4 @@
-package com.android.sample
+package ch.onepass.onepass
 
 import org.junit.Assert.*
 import org.junit.Test

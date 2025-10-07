@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.android.sample"
+    namespace = "ch.onepass.onepass"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.android.sample"
+        applicationId = "ch.onepass.onepass"
         minSdk = 28
         targetSdk = 34
         versionCode = 1

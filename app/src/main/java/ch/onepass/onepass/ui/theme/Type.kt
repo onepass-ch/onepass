@@ -1,4 +1,4 @@
-package com.android.sample.ui.theme
+package ch.onepass.onepass.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
