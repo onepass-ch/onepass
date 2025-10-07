@@ -1,4 +1,3 @@
 package ch.onepass.onepass.model.event
 
-class EventRepositoryFirebase() : EventRepository {
-}
+class EventRepositoryFirebase() : EventRepository {}

@@ -1,4 +1,3 @@
 package ch.onepass.onepass.model.auth
 
-class AuthRepositoryFirebase() : AuthRepository {
-}
+class AuthRepositoryFirebase() : AuthRepository {}

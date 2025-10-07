@@ -1,4 +1,3 @@
 package ch.onepass.onepass.model.map
 
-class MapsRepositoryGoogle {
-}
+class MapsRepositoryGoogle {}

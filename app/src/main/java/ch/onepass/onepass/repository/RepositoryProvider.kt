@@ -1,4 +1,3 @@
 package ch.onepass.onepass.repository
 
-class RepositoryProvider {
-}
+class RepositoryProvider {}

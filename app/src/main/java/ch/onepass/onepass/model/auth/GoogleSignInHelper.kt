@@ -1,4 +1,3 @@
 package ch.onepass.onepass.model.auth
 
-class GoogleSignInHelper {
-}
+class GoogleSignInHelper {}
