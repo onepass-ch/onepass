@@ -38,6 +38,7 @@ val MarcFontFamily = FontFamily(
  */
 @Composable
 fun EventCard(
+    eventPrice: UInt,
     eventTitle: String,
     eventDate: String,
     eventLocation: String,
@@ -67,7 +68,7 @@ fun EventCard(
             Image(
                 modifier = Modifier
                     .fillMaxSize(),
-                painter = painterResource(id = R.drawable.ic_launcher_background),
+                painter = painterResource(id = R.drawable.image_fallback),
                 contentDescription = "image description",
                 contentScale = ContentScale.Crop
             )
@@ -148,7 +149,7 @@ fun EventCard(
                 Spacer(modifier = Modifier.width(8.dp))
 
                 Text(
-                    text = "CHF35",
+                    text = if (eventPrice == 0u) "FREE" else "CHF$eventPrice",
                     fontFamily = MarcFontFamily,
                     fontWeight = FontWeight.Bold,
                     fontSize = 24.sp,
@@ -166,6 +167,7 @@ fun EventCard(
 fun EventCardPreview() {
     MaterialTheme {
         EventCard(
+            eventPrice = 0u,
             eventTitle = "LAUSANNE PARTY",
             eventDate = "Dec 22, 2024 • 7:00 PM",
             eventLocation = "Lausanne, flon",

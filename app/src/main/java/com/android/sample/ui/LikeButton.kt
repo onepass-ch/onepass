@@ -1,0 +1,101 @@
+package com.android.sample.ui
+
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+
+/**
+ * Like button component with heart icon that toggles between liked and unliked states
+ * 
+ * @param isLiked Current liked state
+ * @param onLikeToggle Callback when the button is clicked
+ * @param modifier Optional modifier for customization
+ */
+@Composable
+fun LikeButton(
+    isLiked: Boolean,
+    onLikeToggle: (Boolean) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // Animation for scale effect when clicked
+    val scale by animateFloatAsState(
+        targetValue = if (isLiked) 1.2f else 1f,
+        animationSpec = tween(durationMillis = 200),
+        label = "likeButtonScale"
+    )
+
+    Box(
+        modifier = modifier
+            .size(48.dp)
+            .clip(RoundedCornerShape(12.dp))
+            .background(
+                color = Color.Black.copy(alpha = 0.8f),
+                shape = RoundedCornerShape(12.dp)
+            )
+            .clickable(
+                interactionSource = remember { MutableInteractionSource() },
+                indication = null
+            ) {
+                onLikeToggle(!isLiked)
+            },
+        contentAlignment = Alignment.Center
+    ) {
+        Icon(
+            imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+            contentDescription = if (isLiked) "Unlike" else "Like",
+            tint = if (isLiked) Color(0xFFE91E63) else Color.White,
+            modifier = Modifier
+                .size(24.dp)
+                .scale(scale)
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Composable
+fun LikeButtonPreview() {
+    var isLiked by remember { mutableStateOf(false) }
+    
+    MaterialTheme {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // Unliked state
+            LikeButton(
+                isLiked = false,
+                onLikeToggle = {}
+            )
+            
+            // Liked state
+            LikeButton(
+                isLiked = true,
+                onLikeToggle = {}
+            )
+            
+            // Interactive
+            LikeButton(
+                isLiked = isLiked,
+                onLikeToggle = { isLiked = it }
+            )
+        }
+    }
+}
+
