@@ -18,5 +18,3 @@ class ProfileScreenComposeTest {
     composeTestRule.setContent { ProfileScreen() }
   }
 }
-
-

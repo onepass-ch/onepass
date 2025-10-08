@@ -18,5 +18,3 @@ class MyEventsScreenComposeTest {
     composeTestRule.setContent { MyEventsScreen() }
   }
 }
-
-

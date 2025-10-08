@@ -18,5 +18,3 @@ class MapScreenComposeTest {
     composeTestRule.setContent { MapScreen() }
   }
 }
-
-

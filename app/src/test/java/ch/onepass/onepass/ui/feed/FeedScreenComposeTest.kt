@@ -18,5 +18,3 @@ class FeedScreenComposeTest {
     composeTestRule.setContent { FeedScreen() }
   }
 }
-
-

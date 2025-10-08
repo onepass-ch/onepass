@@ -18,5 +18,3 @@ class EventTileComposeTest {
     composeTestRule.setContent { EventTile() }
   }
 }
-
-
