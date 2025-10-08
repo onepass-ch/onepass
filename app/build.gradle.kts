@@ -39,7 +39,7 @@ android {
     }
 
     testCoverage {
-        jacocoVersion = "0.8.8"
+        jacocoVersion = "0.8.11"
     }
 
     buildFeatures {
@@ -151,6 +151,11 @@ dependencies {
 }
 
 tasks.withType<Test> {
+    // Exclude Compose UI JVM tests from release unit tests (require debug-only test manifest)
+    if (name.contains("Release")) {
+        exclude("**/*ComposeTest.class")
+    }
+
     // Configure Jacoco for each tests
     configure<JacocoTaskExtension> {
         isIncludeNoLocationClasses = true
