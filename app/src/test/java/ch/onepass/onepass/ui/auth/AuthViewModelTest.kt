@@ -1,13 +1,13 @@
-package ch.onepass.onepass.model.user
+package ch.onepass.onepass.ui.auth
 
 import org.junit.Assert.assertNotNull
 import org.junit.Test
 
-class UserTest {
+class AuthViewModelTest {
   // THIS IS A VIRTUAL TEST FOR AN EMPTY CLASS. REMOVE DURING DEVELOPMENT.
   @Test
-  fun instantiateUser() {
-    val user = User()
-    assertNotNull(user)
+  fun instantiateAuthViewModel() {
+    val vm = AuthViewModel()
+    assertNotNull(vm)
   }
 }
