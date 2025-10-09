@@ -46,7 +46,7 @@ fun LikeButton(
             .size(48.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(
-                color = Color.Black.copy(alpha = 0.8f),
+                color = Color.Black.copy(alpha = 0.7f),
                 shape = RoundedCornerShape(12.dp)
             )
             .clickable(
@@ -68,7 +68,7 @@ fun LikeButton(
     }
 }
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
+@Preview(showBackground = true, backgroundColor = 0x262626)
 @Composable
 fun LikeButtonPreview() {
     var isLiked by remember { mutableStateOf(false) }

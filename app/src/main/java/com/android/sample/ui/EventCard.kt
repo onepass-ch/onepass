@@ -6,6 +6,10 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,6 +50,8 @@ fun EventCard(
     modifier: Modifier = Modifier,
     onCardClick: () -> Unit = {}
 ) {
+    var isLiked by remember { mutableStateOf(false) }
+    
     Column(
         modifier = modifier
             .shadow(elevation = 4.dp, spotColor = Color(0x1A000000), ambientColor = Color(0x1A000000))
@@ -71,6 +77,15 @@ fun EventCard(
                 painter = painterResource(id = R.drawable.image_fallback),
                 contentDescription = "image description",
                 contentScale = ContentScale.Crop
+            )
+            
+            // Like button in top-right corner
+            LikeButton(
+                isLiked = isLiked,
+                onLikeToggle = { isLiked = it },
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(12.dp)
             )
         }
         Column(
