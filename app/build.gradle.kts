@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.android.sample"
+    namespace = "ch.onepass.onepass"
     compileSdk = 34
 
     defaultConfig {
-        applicationId = "com.android.sample"
+        applicationId = "ch.onepass.onepass"
         minSdk = 28
         targetSdk = 34
         versionCode = 1
@@ -39,7 +39,7 @@ android {
     }
 
     testCoverage {
-        jacocoVersion = "0.8.8"
+        jacocoVersion = "0.8.11"
     }
 
     buildFeatures {
@@ -93,9 +93,9 @@ android {
 
 sonar {
     properties {
-        property("sonar.projectKey", "gf_android-sample")
-        property("sonar.projectName", "Android-Sample")
-        property("sonar.organization", "gabrielfleischer")
+        property("sonar.projectKey", "onepass-ch_onepass")
+        property("sonar.projectName", "onepass")
+        property("sonar.organization", "onepass-ch")
         property("sonar.host.url", "https://sonarcloud.io")
         // Comma-separated paths to the various directories containing the *.xml JUnit report files. Each path may be absolute or relative to the project base directory.
         property("sonar.junit.reportPaths", "${project.layout.buildDirectory.get()}/test-results/testDebugunitTest/")
@@ -151,6 +151,11 @@ dependencies {
 }
 
 tasks.withType<Test> {
+    // Exclude Compose UI JVM tests from release unit tests (require debug-only test manifest)
+    if (name.contains("Release")) {
+        exclude("**/*ComposeTest.class")
+    }
+
     // Configure Jacoco for each tests
     configure<JacocoTaskExtension> {
         isIncludeNoLocationClasses = true
