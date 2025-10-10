@@ -16,15 +16,15 @@ import com.google.firebase.auth.auth
 import kotlinx.coroutines.tasks.await
 
 class AuthRepositoryFirebase(
-  private val auth: FirebaseAuth = Firebase.auth,
-  private val helper: GoogleSignInHelper = DefaultGoogleSignInHelper(),
-  private val userRepository: UserRepository = UserRepositoryFirebase()
+    private val auth: FirebaseAuth = Firebase.auth,
+    private val helper: GoogleSignInHelper = DefaultGoogleSignInHelper(),
+    private val userRepository: UserRepository = UserRepositoryFirebase()
 ) : AuthRepository {
 
   override var currentUser: User? = null
 
   fun getGoogleSignInOption(serverClientId: String) =
-    GetSignInWithGoogleOption.Builder(serverClientId = serverClientId).build()
+      GetSignInWithGoogleOption.Builder(serverClientId = serverClientId).build()
 
   override suspend fun signInWithGoogle(credential: Credential): Result<FirebaseUser> {
     return try {
@@ -33,23 +33,20 @@ class AuthRepositoryFirebase(
         val firebaseCred = helper.toFirebaseCredential(idToken)
 
         val user =
-          auth.signInWithCredential(firebaseCred).await().user
-            ?: return Result.failure(
-              IllegalStateException("Login failed : Could not retrieve user information")
-            )
+            auth.signInWithCredential(firebaseCred).await().user
+                ?: return Result.failure(
+                    IllegalStateException("Login failed : Could not retrieve user information"))
 
         currentUser = userRepository.getOrCreateUser(user)
 
         return Result.success(user)
       } else {
         return Result.failure(
-          IllegalStateException("Login failed: Credential is not of type Google ID")
-        )
+            IllegalStateException("Login failed: Credential is not of type Google ID"))
       }
     } catch (e: Exception) {
       Result.failure(
-        IllegalStateException("Login failed: ${e.localizedMessage ?: "Unexpected error."}")
-      )
+          IllegalStateException("Login failed: ${e.localizedMessage ?: "Unexpected error."}"))
     }
   }
 
@@ -60,8 +57,7 @@ class AuthRepositoryFirebase(
       Result.success(Unit)
     } catch (e: Exception) {
       Result.failure(
-        IllegalStateException("Logout failed: ${e.localizedMessage ?: "Unexpected error."}")
-      )
+          IllegalStateException("Logout failed: ${e.localizedMessage ?: "Unexpected error."}"))
     }
   }
 }

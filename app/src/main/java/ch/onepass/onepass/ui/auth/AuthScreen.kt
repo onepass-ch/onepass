@@ -20,7 +20,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,7 +37,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
@@ -110,55 +108,44 @@ fun Logo() {
 
   var isTicketLogo by remember { mutableStateOf(false) }
 
-  val ticketAlpha by animateFloatAsState(
-    targetValue = if (isTicketLogo) 1f else 0f,
-    animationSpec = tween(durationMillis = 300),
-    label = "ticketAlpha"
-  )
-  val comboAlpha by animateFloatAsState(
-    targetValue = if (isTicketLogo) 0f else 1f,
-    animationSpec = tween(durationMillis = 300),
-    label = "comboAlpha"
-  )
+  val ticketAlpha by
+      animateFloatAsState(
+          targetValue = if (isTicketLogo) 1f else 0f,
+          animationSpec = tween(durationMillis = 300),
+          label = "ticketAlpha")
+  val comboAlpha by
+      animateFloatAsState(
+          targetValue = if (isTicketLogo) 0f else 1f,
+          animationSpec = tween(durationMillis = 300),
+          label = "comboAlpha")
 
   Box(
-    modifier = Modifier
-      .height(maxLogoHeight)
-      .fillMaxWidth()
-      .clickable { isTicketLogo = !isTicketLogo }
-      .testTag(SignInScreenTestTags.APP_LOGO),
-    contentAlignment = Alignment.Center
-  ) {
-    Column(
-      horizontalAlignment = Alignment.CenterHorizontally,
-      modifier = Modifier
-        .align(Alignment.Center)
-        .alpha(comboAlpha)
-    ) {
-      Image(
-        painter = painterResource(id = R.drawable.logo_qr_map),
-        contentDescription = "App Logo",
-        modifier = Modifier.size(logoImageSize)
-      )
-      Spacer(modifier = Modifier.height(logoSpacer))
-      Image(
-        painter = painterResource(id = R.drawable.logo_text),
-        contentDescription = "App Logo Text",
-        modifier = Modifier.size(logoTextSize)
-      )
-    }
+      modifier =
+          Modifier.height(maxLogoHeight)
+              .fillMaxWidth()
+              .clickable { isTicketLogo = !isTicketLogo }
+              .testTag(SignInScreenTestTags.APP_LOGO),
+      contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier.align(Alignment.Center).alpha(comboAlpha)) {
+              Image(
+                  painter = painterResource(id = R.drawable.logo_qr_map),
+                  contentDescription = "App Logo",
+                  modifier = Modifier.size(logoImageSize))
+              Spacer(modifier = Modifier.height(logoSpacer))
+              Image(
+                  painter = painterResource(id = R.drawable.logo_text),
+                  contentDescription = "App Logo Text",
+                  modifier = Modifier.size(logoTextSize))
+            }
 
-    Image(
-      painter = painterResource(id = R.drawable.logo_ticket),
-      contentDescription = "Ticket Logo",
-      modifier = Modifier
-        .align(Alignment.Center)
-        .size(300.dp)
-        .alpha(ticketAlpha)
-    )
-  }
+        Image(
+            painter = painterResource(id = R.drawable.logo_ticket),
+            contentDescription = "Ticket Logo",
+            modifier = Modifier.align(Alignment.Center).size(300.dp).alpha(ticketAlpha))
+      }
 }
-
 
 @Composable
 fun GoogleSignInButton(onSignInClick: () -> Unit) {

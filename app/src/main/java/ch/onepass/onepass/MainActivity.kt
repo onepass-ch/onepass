@@ -29,11 +29,10 @@ class MainActivity : ComponentActivity() {
       OnePassTheme {
         // A surface container using the 'background' color from the theme
         Surface(
-          modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
-          color = MaterialTheme.colorScheme.background
-        ) {
-          OnePassApp()
-        }
+            modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
+            color = MaterialTheme.colorScheme.background) {
+              OnePassApp()
+            }
       }
     }
   }
@@ -41,14 +40,13 @@ class MainActivity : ComponentActivity() {
 
 sealed class Screen(val route: String) {
   object Auth : Screen("auth")
+
   object Greet : Screen("greet")
 }
 
 @Composable
 fun GreetingScreen(name: String, modifier: Modifier = Modifier) {
-  Column {
-    Text(text = "Hello $name!", modifier = modifier.semantics { testTag = C.Tag.greeting })
-  }
+  Column { Text(text = "Hello $name!", modifier = modifier.semantics { testTag = C.Tag.greeting }) }
 }
 
 /**
@@ -60,23 +58,21 @@ fun GreetingScreen(name: String, modifier: Modifier = Modifier) {
  */
 @Composable
 fun OnePassApp(
-  context: Context = LocalContext.current,
-  credentialManager: CredentialManager = CredentialManager.create(context)
+    context: Context = LocalContext.current,
+    credentialManager: CredentialManager = CredentialManager.create(context)
 ) {
   val navController = rememberNavController()
 
   NavHost(navController = navController, startDestination = Screen.Auth.route) {
     composable(Screen.Auth.route) {
       AuthScreen(
-        credentialManager = credentialManager,
-        onSignedIn = {
-          navController.navigate(Screen.Greet.route) {
-            popUpTo(Screen.Auth.route) { inclusive = true }
-          }
-        })
+          credentialManager = credentialManager,
+          onSignedIn = {
+            navController.navigate(Screen.Greet.route) {
+              popUpTo(Screen.Auth.route) { inclusive = true }
+            }
+          })
     }
-    composable(Screen.Greet.route) {
-      GreetingScreen("Guest")
-    }
+    composable(Screen.Greet.route) { GreetingScreen("Guest") }
   }
 }

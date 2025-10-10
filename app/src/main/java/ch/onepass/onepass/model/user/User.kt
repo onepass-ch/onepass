@@ -14,8 +14,10 @@ data class User(
     // System fields from Google account
     @get:Exclude val uid: String = "", // uid from google account
     val email: String = "", // default by google account email
-    @ServerTimestamp val createdAt: Date? = null, // timestamp of the first time when the user log in
-    @ServerTimestamp val lastLoginAt: Date? = null, // timestamp, null when the user is never logged in
+    @ServerTimestamp
+    val createdAt: Date? = null, // timestamp of the first time when the user log in
+    @ServerTimestamp
+    val lastLoginAt: Date? = null, // timestamp, null when the user is never logged in
     val status: Status = Status.ACTIVE, // e.g. "active", "banned", "deleted"
 
     // User custom fields

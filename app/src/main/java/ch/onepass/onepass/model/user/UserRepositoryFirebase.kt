@@ -7,9 +7,8 @@ import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
 
-class UserRepositoryFirebase(
-  private val db: FirebaseFirestore = Firebase.firestore
-) : UserRepository {
+class UserRepositoryFirebase(private val db: FirebaseFirestore = Firebase.firestore) :
+    UserRepository {
   private val collection = db.collection("user")
 
   override suspend fun getUser(userId: String): User? {
@@ -25,10 +24,7 @@ class UserRepositoryFirebase(
       docRef.update("lastLoginAt", FieldValue.serverTimestamp()).await()
     } else {
       // User does not exist, create it
-      val newUser = User(
-        email = user.email!!,
-        displayName = user.displayName!!
-      )
+      val newUser = User(email = user.email!!, displayName = user.displayName!!)
       docRef.set(newUser).await()
     }
 
