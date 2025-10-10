@@ -137,6 +137,13 @@ dependencies {
   implementation(libs.firebase.firestore.ktx)
   implementation(libs.firebase.database.ktx)
 
+  // ------------- Google Services and Maps --------------
+  implementation(libs.play.services.auth)
+
+  // Credential Manager (for Google Sign-In)
+  implementation(libs.credentials)
+  implementation(libs.credentials.play.services.auth)
+  implementation(libs.googleid)
 
   // ------------- Jetpack Compose ------------------
   val composeBom = platform(libs.compose.bom)
