@@ -4,6 +4,7 @@ import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -28,10 +29,11 @@ class MainActivity : ComponentActivity() {
       OnePassTheme {
         // A surface container using the 'background' color from the theme
         Surface(
-            modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
-            color = MaterialTheme.colorScheme.background) {
-              OnePassApp()
-            }
+          modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
+          color = MaterialTheme.colorScheme.background
+        ) {
+          OnePassApp()
+        }
       }
     }
   }
@@ -39,18 +41,14 @@ class MainActivity : ComponentActivity() {
 
 sealed class Screen(val route: String) {
   object Auth : Screen("auth")
-
-  object Main : Screen("main")
+  object Greet : Screen("greet")
 }
 
 @Composable
-fun Greeting(name: String, modifier: Modifier = Modifier) {
-  Text(text = "Hello $name!", modifier = modifier.semantics { testTag = C.Tag.greeting })
-}
-
-@Composable
-fun MainScreen() {
-  Greeting("OnePass User")
+fun GreetingScreen(name: String, modifier: Modifier = Modifier) {
+  Column {
+    Text(text = "Hello $name!", modifier = modifier.semantics { testTag = C.Tag.greeting })
+  }
 }
 
 /**
@@ -62,21 +60,23 @@ fun MainScreen() {
  */
 @Composable
 fun OnePassApp(
-    context: Context = LocalContext.current,
-    credentialManager: CredentialManager = CredentialManager.create(context)
+  context: Context = LocalContext.current,
+  credentialManager: CredentialManager = CredentialManager.create(context)
 ) {
   val navController = rememberNavController()
 
   NavHost(navController = navController, startDestination = Screen.Auth.route) {
     composable(Screen.Auth.route) {
       AuthScreen(
-          credentialManager = credentialManager,
-          onSignedIn = {
-            navController.navigate(Screen.Main.route) {
-              popUpTo(Screen.Auth.route) { inclusive = true }
-            }
-          })
+        credentialManager = credentialManager,
+        onSignedIn = {
+          navController.navigate(Screen.Greet.route) {
+            popUpTo(Screen.Auth.route) { inclusive = true }
+          }
+        })
     }
-    composable(Screen.Main.route) { MainScreen() }
+    composable(Screen.Greet.route) {
+      GreetingScreen("Guest")
+    }
   }
 }
