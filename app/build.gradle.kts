@@ -3,6 +3,8 @@ plugins {
   alias(libs.plugins.jetbrainsKotlinAndroid)
   alias(libs.plugins.ktfmt)
   alias(libs.plugins.sonar)
+  alias(libs.plugins.compose)
+  alias(libs.plugins.gms)
   id("jacoco")
 }
 
@@ -40,14 +42,6 @@ android {
 
   testCoverage {
     jacocoVersion = "0.8.11"
-  }
-
-  buildFeatures {
-    compose = true
-  }
-
-  composeOptions {
-    kotlinCompilerExtensionVersion = "1.4.2"
   }
 
   compileOptions {
@@ -145,6 +139,11 @@ dependencies {
   implementation(libs.credentials.play.services.auth)
   implementation(libs.googleid)
 
+  // Navigation
+  implementation(libs.androidx.navigation.compose)
+  implementation(libs.androidx.navigation.fragment.ktx)
+  implementation(libs.androidx.navigation.ui.ktx)
+
   // ------------- Jetpack Compose ------------------
   val composeBom = platform(libs.compose.bom)
   implementation(composeBom)
@@ -164,6 +163,8 @@ dependencies {
   // UI Tests
   globalTestImplementation(libs.compose.test.junit)
   debugImplementation(libs.compose.test.manifest)
+  // Navigation
+  implementation(libs.androidx.navigation.compose)
 
   // --------- Kaspresso test framework ----------
   globalTestImplementation(libs.kaspresso)

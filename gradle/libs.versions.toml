@@ -1,6 +1,6 @@
 [versions]
 agp = "8.3.0"
-kotlin = "1.8.10"
+kotlin = "2.0.0"
 coreKtx = "1.12.0"
 ktfmt = "0.17.0"
 junit = "4.13.2"
@@ -27,8 +27,11 @@ playServicesMaps = "19.0.0"
 mapsCompose = "4.3.3"
 mapsComposeUtils = "4.3.0"
 
-#Firebase
+# Firebase
 firebaseBom = "33.5.1"
+
+# Testing UI
+navigationCompose = "2.7.7"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -65,9 +68,14 @@ firebase-auth-ktx = { module = "com.google.firebase:firebase-auth-ktx" }
 firebase-firestore-ktx = { module = "com.google.firebase:firebase-firestore-ktx" }
 firebase-database-ktx = { module = "com.google.firebase:firebase-database-ktx" }
 
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
+androidx-navigation-fragment-ktx = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigationCompose" }
+androidx-navigation-ui-ktx = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navigationCompose" }
+
 [plugins]
 androidApplication = { id = "com.android.application", version.ref = "agp" }
 jetbrainsKotlinAndroid = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 ktfmt = { id = "com.ncorti.ktfmt.gradle", version.ref = "ktfmt" }
 sonar = { id = "org.sonarqube", version.ref = "sonar" }
 gms = { id = "com.google.gms.google-services", version.ref = "gms" }
+compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
