@@ -3,10 +3,12 @@
 package ch.onepass.onepass.model.auth
 
 import androidx.credentials.Credential
+import ch.onepass.onepass.model.user.User
 import com.google.firebase.auth.FirebaseUser
 
 /** Handles authentication operations such as signing in with Google and signing out. */
 interface AuthRepository {
+  val currentUser: User?
 
   /**
    * Signs in the user using a Google account through the Credential Manager API.
