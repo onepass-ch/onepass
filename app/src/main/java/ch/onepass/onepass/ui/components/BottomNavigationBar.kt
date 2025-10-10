@@ -2,8 +2,6 @@ package ch.onepass.onepass.ui.components
 
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.height
-
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -18,51 +16,33 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.android.sample.R
+import ch.onepass.onepass.ui.components.NavigationDestinations.Screen
+import ch.onepass.onepass.ui.components.NavigationDestinations.tabs
 
 /**
- * Represents a bottom navigation tab.
- */
-sealed class Tab(
-    val name: String,
-    @DrawableRes val iconRes: Int,
-    val destination: Screen
-) {
-    object Events : Tab(
-        name = "Events",
-        iconRes = R.drawable.ic_fire,
-        destination = Screen.Events
-    )
-    object Tickets : Tab(
-        name = "Tickets",
-        iconRes = R.drawable.ic_tickets,
-        destination = Screen.Tickets
-    )
-    object Map : Tab(
-        name = "Map",
-        iconRes = R.drawable.ic_map,
-        destination = Screen.Map
-    )
-    object Profile : Tab(
-        name = "Profile",
-        iconRes = R.drawable.ic_profile,
-        destination = Screen.Profile
-    )
-}
-
-private val tabs = listOf(
-    Tab.Events,
-    Tab.Tickets,
-    Tab.Map,
-    Tab.Profile
-)
-
-/**
- * Bottom navigation (Material 3).
+ * A composable implementation of the bottom navigation bar (Material 3).
  *
- * @param currentRoute The current route (e.g., navigationActions.currentRoute()).
- * @param onNavigate   Callback to navigate to a destination screen.
- * @param modifier     Optional modifier for the bar.
+ * This component displays the app’s main navigation tabs at the bottom of the screen,
+ * allowing users to switch between top-level destinations such as *Events*, *Tickets*, *Map*, and *Profile*.
+ *
+ * The design follows the app’s visual identity and Material 3 guidelines.
+ *
+ * @param currentRoute The current navigation route, usually obtained from [NavigationActions.currentRoute].
+ * @param onNavigate A callback invoked when the user selects a tab. This should navigate to the associated [Screen].
+ * @param modifier Optional [Modifier] to customize layout or styling.
+ *
+ * ### Behavior
+ * - Highlights the active tab based on [currentRoute].
+ * - Uses distinct colors for selected and unselected states.
+ * - Restores state when reselecting a top-level destination.
+ *
+ * ### Example
+ * ```
+ * BottomNavigationMenu(
+ *     currentRoute = navActions.currentRoute(),
+ *     onNavigate = { navActions.navigateTo(it) }
+ * )
+ * ```
  */
 @Composable
 fun BottomNavigationMenu(
@@ -103,17 +83,22 @@ fun BottomNavigationMenu(
     }
 }
 
-
-@Preview(name = "BottomNav", showBackground = true, widthDp = 412, heightDp = 85)//figma container size
+/**
+ * A design-time preview of the [BottomNavigationMenu] component.
+ *
+ * This preview simulates a device width of 412dp and a height of 85dp,
+ * displaying the navigation bar with the "Tickets" tab selected.
+ */
+@Preview(name = "BottomNav", showBackground = true, widthDp = 412, heightDp = 85)
 @Composable
 private fun BottomNavigationBarPreview() {
     MaterialTheme {
         BottomNavigationMenu(
             currentRoute = Screen.Tickets.route,
-            onNavigate = { /* no-op */ },
+            onNavigate = { /* no-op for preview */ },
             modifier = Modifier
-                .width(412.dp)      // force la largeur pour la preview Figma
-                .height(85.dp)      // force la hauteur pour la preview Figma
+                .width(412.dp)
+                .height(85.dp)
         )
     }
 }

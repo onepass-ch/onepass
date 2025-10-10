@@ -1,35 +1,45 @@
 package ch.onepass.onepass.ui.components
 
 import androidx.navigation.NavHostController
+import ch.onepass.onepass.ui.components.NavigationDestinations.Screen
 
 /**
- * Represents a screen (destination) in the app with a unique route.
- */
-sealed class Screen(
-    val route: String,
-    val name: String,
-    val isTopLevelDestination: Boolean = false
-) {
-    object Events : Screen("events", "Events", true)
-    object Tickets : Screen("tickets", "Tickets", true)
-    object Map : Screen("map", "Map", true)
-    object Profile : Screen("profile", "Profile", true)
-}
-
-/**
- * Handles navigation between different screens in the app.
+ * Provides centralized navigation logic for the application.
+ *
+ * This class wraps around the [NavHostController] to handle all navigation
+ * between the app’s different [Screen] destinations in a consistent and predictable way.
+ *
+ * It is designed to:
+ * - Prevent duplicate navigations to the same top-level destination.
+ * - Manage back stack behavior and state restoration.
+ * - Offer reusable, extendable navigation methods for ViewModels or UI components.
+ *
+ * Subclass this class if you need to extend or customize navigation behavior.
+ *
+ * Example usage:
+ * ```
+ * val navActions = NavigationActions(navController)
+ * navActions.navigateTo(NavigationDestinations.Screen.Profile)
+ * ```
  */
 open class NavigationActions(
     private val navController: NavHostController,
 ) {
 
     /**
-     * Navigates to the given [screen].
+     * Navigates to the specified [screen].
      *
-     * @param screen The screen to navigate to.
+     * If the screen is a top-level destination and the user is already there,
+     * this method will return early to avoid unnecessary recompositions.
+     *
+     * When navigating to a top-level destination, this method also:
+     * - Launches the destination in single-top mode (avoids duplicate destinations).
+     * - Pops up to the root of the navigation graph while preserving state.
+     * - Restores any previously saved state for that destination.
+     *
+     * @param screen The [Screen] to navigate to.
      */
     open fun navigateTo(screen: Screen) {
-        // Do nothing if we're already on this top-level screen
         if (screen.isTopLevelDestination && currentRoute() == screen.route) return
 
         navController.navigate(screen.route) {
@@ -44,16 +54,16 @@ open class NavigationActions(
     }
 
     /**
-     * Navigates back to the previous screen.
+     * Navigates back to the previous screen in the back stack.
      *
-     * @return True if navigation was successful, false otherwise.
+     * @return `true` if the navigation action was successful, `false` if there is no screen to go back to.
      */
     open fun goBack(): Boolean = navController.popBackStack()
 
     /**
-     * Returns the current route.
+     * Returns the current navigation route.
      *
-     * @return The current route as a string.
+     * @return The current route as a [String], or an empty string if none is found.
      */
     open fun currentRoute(): String = navController.currentDestination?.route ?: ""
 }
