@@ -1,7 +1,7 @@
 package ch.onepass.onepass.ui.map
 
-import ch.onepass.onepass.R
 import androidx.lifecycle.ViewModel
+import ch.onepass.onepass.R
 import com.mapbox.common.MapboxOptions
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions

@@ -17,8 +17,6 @@ jobs:
     name: CI
     # Execute the CI on the course's runners
     runs-on: ubuntu-latest
-    env:
-      LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
 
     steps:
       # First step : Checkout the repository on the runner
@@ -70,6 +68,17 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
+
+      # Load local.properties from the secrets
+      - name: Decode secrets
+        env:
+          LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
+        run: |
+          if [ -n "$LOCAL_PROPERTIES" ]; then
+          echo "$LOCAL_PROPERTIES" | base64 --decode > ./local.properties
+          else
+          echo "::warning::LOCAL_PROPERTIES secret is not set. local.properties will not be created. Should be present after B3"
+          fi
 
       - name: Grant execute permission for gradlew
         run: |

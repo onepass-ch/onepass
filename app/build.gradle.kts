@@ -20,9 +20,7 @@
         }
 
         // Get Mapbox token: first check env (CI), then local.properties
-        val mapboxToken: String = System.getenv("MAPBOX_ACCESS_TOKEN")
-            ?: localProperties.getProperty("MAPBOX_ACCESS_TOKEN")
-            ?: throw GradleException("Mapbox access token not found. Set MAPBOX_ACCESS_TOKEN in environment or local.properties")
+        val mapboxToken: String = localProperties.getProperty("MAPBOX_ACCESS_TOKEN") ?: ""
 
 
         defaultConfig {
@@ -36,6 +34,7 @@
             vectorDrawables {
                 useSupportLibrary = true
             }
+            manifestPlaceholders["MAPBOX_ACCESS_TOKEN"] = mapboxToken
             resValue("string", "mapbox_access_token", mapboxToken)
         }
 
