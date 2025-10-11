@@ -1,3 +1,12 @@
 package ch.onepass.onepass.model.map
 
-class Location {}
+import com.google.firebase.firestore.GeoPoint
+
+/**
+ * Location data class for geographic coordinates and address
+ */
+data class Location(
+    val coordinates: GeoPoint? = null,
+    val name: String = "",
+    val region: String? = null
+)
