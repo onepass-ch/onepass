@@ -5,9 +5,7 @@ import com.google.firebase.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Locale
 
-/**
- * Event data model for Cloud Firestore.
- */
+/** Event data model for Cloud Firestore. */
 data class Event(
     val eventId: String = "",
     val title: String = "",
@@ -40,38 +38,38 @@ data class Event(
     val updatedAt: Timestamp? = null,
     val deletedAt: Timestamp? = null
 ) {
-    val displayLocation: String
-        get() = location?.name ?: "Unknown Location"
+  val displayLocation: String
+    get() = location?.name ?: "Unknown Location"
 
-    val displayDateTime: String
-        get() {
-            val startTimeDate = startTime?.toDate() ?: return "Date not set"
-            val dateFormatter = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
-            val timeFormatter = SimpleDateFormat("h:mm a", Locale.getDefault())
-            return "${dateFormatter.format(startTimeDate)} • ${timeFormatter.format(startTimeDate)}"
-        }
+  val displayDateTime: String
+    get() {
+      val startTimeDate = startTime?.toDate() ?: return "Date not set"
+      val dateFormatter = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
+      val timeFormatter = SimpleDateFormat("h:mm a", Locale.getDefault())
+      return "${dateFormatter.format(startTimeDate)} • ${timeFormatter.format(startTimeDate)}"
+    }
 
-    val lowestPrice: UInt
-        get() = pricingTiers.minOfOrNull { it.price.toUInt() } ?: 0u
+  val lowestPrice: UInt
+    get() = pricingTiers.minOfOrNull { it.price.toUInt() } ?: 0u
 
-    val imageUrl: String
-        get() = images.firstOrNull() ?: ""
+  val imageUrl: String
+    get() = images.firstOrNull() ?: ""
 
-    val isSoldOut: Boolean
-        get() = ticketsRemaining <= 0
+  val isSoldOut: Boolean
+    get() = ticketsRemaining <= 0
 
-    val isPublished: Boolean
-        get() = status == EventStatus.PUBLISHED
+  val isPublished: Boolean
+    get() = status == EventStatus.PUBLISHED
 
-    val canResell: Boolean
-        get() = status == EventStatus.PUBLISHED && ticketsIssued > ticketsRedeemed
+  val canResell: Boolean
+    get() = status == EventStatus.PUBLISHED && ticketsIssued > ticketsRedeemed
 }
 
 enum class EventStatus {
-    DRAFT,
-    PUBLISHED,
-    CLOSED,
-    CANCELLED
+  DRAFT,
+  PUBLISHED,
+  CLOSED,
+  CANCELLED
 }
 
 data class PricingTier(
