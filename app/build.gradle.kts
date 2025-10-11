@@ -34,8 +34,7 @@
             vectorDrawables {
                 useSupportLibrary = true
             }
-            manifestPlaceholders["MAPBOX_ACCESS_TOKEN"] = mapboxToken
-            resValue("string", "mapbox_access_token", mapboxToken)
+            buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxToken}\"")
         }
 
         buildTypes {
@@ -59,6 +58,7 @@
 
         buildFeatures {
             compose = true
+            buildConfig = true
         }
 
         composeOptions {

@@ -1,8 +1,6 @@
 package ch.onepass.onepass.ui.map
 
 import androidx.lifecycle.ViewModel
-import ch.onepass.onepass.R
-import com.mapbox.common.MapboxOptions
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
@@ -32,9 +30,6 @@ open class MapViewModel : ViewModel() {
   open fun onMapReady(mapView: MapView, hasLocationPermission: Boolean) {
     if (internalMapView == mapView) return
     internalMapView = mapView
-
-    val mapboxToken = mapView.context.getString(R.string.mapbox_access_token)
-    MapboxOptions.accessToken = mapboxToken
 
     mapView.getMapboxMap().loadStyleUri("mapbox://styles/walid-as/cmghzwo3h001501s358d677ye") {
       configurePlugins(mapView)

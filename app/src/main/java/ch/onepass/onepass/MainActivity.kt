@@ -18,6 +18,7 @@ import ch.onepass.onepass.resources.C
 import ch.onepass.onepass.ui.map.MapScreen
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import com.mapbox.common.MapboxOptions
 import kotlin.getValue
 
 class MainActivity : ComponentActivity() {
@@ -32,6 +33,8 @@ class MainActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+
+    MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
 
     val permission = Manifest.permission.ACCESS_FINE_LOCATION
     val isLocationPermissionGranted =

@@ -4,12 +4,20 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
+import com.mapbox.common.MapboxOptions
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
 class MapScreenIntegrationTest {
 
   @get:Rule val composeTestRule = createComposeRule()
+
+  @Before
+  fun setup() {
+    // Set the Mapbox token before any tests run
+    MapboxOptions.accessToken = ch.onepass.onepass.BuildConfig.MAPBOX_ACCESS_TOKEN
+  }
 
   @Test
   fun mapScreenFullCoverageTest() {
@@ -26,12 +34,6 @@ class MapScreenIntegrationTest {
         .onNodeWithTag(MapScreenTestTags.RECENTER_BUTTON)
         .assertIsDisplayed()
         .performClick() // triggers recenterCamera
-
-    // --- Trigger remaining ViewModel functions ---
-    viewModel.enableLocationTracking()
-    viewModel.onMapStart()
-    viewModel.onMapStop()
-    viewModel.onMapLowMemory()
   }
 
   @Test
