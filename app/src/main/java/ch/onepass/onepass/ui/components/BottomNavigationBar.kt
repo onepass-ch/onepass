@@ -1,4 +1,5 @@
 package ch.onepass.onepass.ui.components
+
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.width
@@ -38,6 +39,7 @@ import ch.onepass.onepass.ui.components.NavigationDestinations.tabs
  * - Restores state when reselecting a top-level destination.
  *
  * ### Example
+ *
  * ```
  * BottomNavigationMenu(
  *     currentRoute = navActions.currentRoute(),

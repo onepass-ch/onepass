@@ -3,7 +3,6 @@ package ch.onepass.onepass.ui.components
 import androidx.annotation.DrawableRes
 import ch.onepass.onepass.R
 
-
 /**
  * Centralizes all navigation destinations and bottom navigation tabs used in the app.
  *
