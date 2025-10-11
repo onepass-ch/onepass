@@ -2,6 +2,7 @@ package ch.onepass.onepass.ui.event
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -56,12 +57,13 @@ fun EventCard(
       modifier =
           modifier
               .testTag(C.Tag.event_card)
+              .clickable(onClick = onCardClick)
               .shadow(
                   elevation = 4.dp, spotColor = Color(0x1A000000), ambientColor = Color(0x1A000000))
               .shadow(
                   elevation = 6.dp, spotColor = Color(0x1A000000), ambientColor = Color(0x1A000000))
-              .width(392.dp)
-              .height(417.93866.dp)
+              .fillMaxWidth(0.9f)
+              .aspectRatio(392f / 417.93866f) // based on figma design
               .background(color = Color(0xFF262626), shape = RoundedCornerShape(size = 10.dp))
               .padding(start = 1.dp, end = 1.dp),
       verticalArrangement = Arrangement.spacedBy(1.dp, Alignment.Top),
