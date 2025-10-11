@@ -168,16 +168,13 @@ fun EventCard(
   }
 }
 
-//@Preview
-//@Composable
-//fun PreviewEventCard() {
-//    EventCard(
-//        eventDate = "December",
-//        eventPrice = 0u,
-//        eventTitle = "Lausanne Free Party",
-//        eventLocation = "Lausanne, flon",
-//        eventOrganizer = "Best Organizer"
-//    )
-//}
-
-
+@Preview
+@Composable
+fun PreviewEventCard() {
+  EventCard(
+      eventDate = "December",
+      eventPrice = 0u,
+      eventTitle = "Lausanne Free Party",
+      eventLocation = "Lausanne, flon",
+      eventOrganizer = "Best Organizer")
+}
