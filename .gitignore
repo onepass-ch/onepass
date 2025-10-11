@@ -16,3 +16,5 @@ app/release
 *.log
 
 app/google-services.json
+
+app/src/main/res/values/developer-config.xml

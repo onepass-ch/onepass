@@ -148,6 +148,10 @@ dependencies {
 
     // ----------       Robolectric     ------------
     testImplementation(libs.robolectric)
+
+    // ----------       MapBox         ------------
+    implementation("com.mapbox.maps:android-ndk27:11.15.2")
+    implementation("com.mapbox.extension:maps-compose-ndk27:11.15.2")
 }
 
 tasks.withType<Test> {
