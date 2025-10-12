@@ -21,7 +21,7 @@
 
         /// Get Mapbox token from local.properties
         val mapboxToken: String? = localProperties.getProperty("MAPBOX_ACCESS_TOKEN")
-        
+
         if (mapboxToken.isNullOrBlank()) {
             logger.warn(
                 "⚠️ Mapbox access token not found in local.properties. " +
@@ -169,6 +169,9 @@
 
         // ----------       Robolectric     ------------
         testImplementation(libs.robolectric)
+
+        // ---------- ZXing for QR code generation ------------
+        implementation("com.google.zxing:core:3.5.1")
 
         // ----------       MapBox         ------------
         implementation("com.mapbox.maps:android-ndk27:11.15.2")
