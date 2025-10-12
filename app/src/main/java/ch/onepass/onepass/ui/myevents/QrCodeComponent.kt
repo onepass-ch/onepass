@@ -5,8 +5,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,26 +38,24 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 
 @Composable
-fun QrCodeComponent(modifier: Modifier = Modifier) {
-  var showQrDialog by remember { mutableStateOf(false) }
+fun QrCodeComponent(
+    qrData: String,
+    modifier: Modifier = Modifier
+) {
+    var showQrDialog by remember { mutableStateOf(false) }
 
-  // Generate a random QR code string
-  val randomQrData = remember { "QR-${(1000..9999).random()}" }
-
-  // Generate QR Bitmap
-  val qrBitmap: Bitmap =
-      remember(randomQrData) {
+    // Generate QR Bitmap from provided data
+    val qrBitmap: Bitmap = remember(qrData) {
         val size = 200
-        val bits = QRCodeWriter().encode(randomQrData, BarcodeFormat.QR_CODE, size, size)
+        val bits = QRCodeWriter().encode(qrData, BarcodeFormat.QR_CODE, size, size)
         createBitmap(size, size).also { bitmap ->
-          for (x in 0 until size) {
-            for (y in 0 until size) {
-              bitmap[x, y] =
-                  if (bits[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+            for (x in 0 until size) {
+                for (y in 0 until size) {
+                    bitmap[x, y] = if (bits[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+                }
             }
-          }
         }
-      }
+    }
 
   if (showQrDialog) {
     Dialog(onDismissRequest = { showQrDialog = false }) {
@@ -106,5 +107,7 @@ fun QrCodeComponent(modifier: Modifier = Modifier) {
 @Preview(showBackground = true)
 @Composable
 fun QrCodePreview() {
-  OnePassTheme { QrCodeComponent() }
+    OnePassTheme {
+        QrCodeComponent(qrData = "QR-1234", modifier = Modifier.fillMaxWidth().height(100.dp))
+    }
 }

@@ -46,7 +46,7 @@ fun TicketComponent(
   var showDetails by remember { mutableStateOf(false) }
 
   if (showDetails) {
-    androidx.compose.ui.window.Dialog(onDismissRequest = { showDetails = false }) {
+    Dialog(onDismissRequest = { showDetails = false }) {
       Card(
           shape = RoundedCornerShape(16.dp),
           colors =

@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.myevents
 
+import androidx.annotation.ColorRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -29,10 +31,24 @@ import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.MarcFontFamily
 import ch.onepass.onepass.ui.theme.OnePassTheme
 
+data class Ticket(
+    val title: String,
+    val status: TicketStatus,
+    val dateTime: String,
+    val location: String,
+)
+
+enum class TicketStatus(@ColorRes val colorRes: Int) {
+  CURRENTLY(R.color.status_currently),
+  UPCOMING(R.color.status_upcoming),
+  EXPIRED(R.color.status_expired)
+}
+
 @Composable
-fun MyEventsScreen() {
+fun MyEventsScreen(userQrData: String, currentTickets: List<Ticket>, expiredTickets: List<Ticket>) {
   var selectedTab by remember { mutableIntStateOf(0) }
   val tabs = listOf("Current", "Expired")
+  val tickets = if (selectedTab == 0) currentTickets else expiredTickets
 
   Surface(modifier = Modifier.fillMaxSize(), color = colorResource(id = R.color.background)) {
     Column(modifier = Modifier.fillMaxSize().background(colorResource(id = R.color.background))) {
@@ -63,23 +79,25 @@ fun MyEventsScreen() {
                             else colorResource(id = R.color.tab_unselected).copy(alpha = 0.6f))
                   },
                   selected = selectedTab == index,
-                  onClick = { selectedTab = index })
+                  onClick = { selectedTab = index },
+              )
             }
           }
+      QrCodeComponent(
+          modifier = Modifier.fillMaxWidth().height(150.dp).padding(16.dp), qrData = userQrData)
 
       LazyColumn(
           modifier = Modifier.fillMaxWidth().weight(1f),
           contentPadding = PaddingValues(16.dp),
           verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            item { QrCodeComponent(modifier = Modifier.fillMaxWidth().height(82.dp)) }
-
-            items(2) { index ->
-              val status = if (index == 0) TicketStatus.CURRENTLY else TicketStatus.UPCOMING
-              TicketComponent(
-                  title = if (index == 0) "Lausanne Party" else "Morges Party",
-                  status = status,
-                  dateTime = "Dec 15, 2024 • 9:00 PM",
-                  location = if (index == 0) "Lausanne, Flon" else "Morges")
+            tickets.forEach { ticket ->
+              item {
+                TicketComponent(
+                    title = ticket.title,
+                    status = ticket.status,
+                    dateTime = ticket.dateTime,
+                    location = ticket.location)
+              }
             }
           }
     }
@@ -89,5 +107,18 @@ fun MyEventsScreen() {
 @Preview(showBackground = true)
 @Composable
 fun MyEventsScreenPreview() {
-  OnePassTheme { MyEventsScreen() }
+  OnePassTheme {
+    val currentTickets =
+        listOf(
+            Ticket(
+                "Lausanne Party",
+                TicketStatus.CURRENTLY,
+                "Dec 15, 2024 • 9:00 PM",
+                "Lausanne, Flon"))
+
+    val expiredTickets =
+        listOf(Ticket("Morges Party", TicketStatus.EXPIRED, "Nov 10, 2024 • 8:00 PM", "Morges"))
+
+    MyEventsScreen("USER-QR-DATA", currentTickets = currentTickets, expiredTickets = expiredTickets)
+  }
 }
