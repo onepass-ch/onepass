@@ -45,7 +45,7 @@ object NavigationDestinations {
    * @property destination The corresponding [Screen] this tab navigates to.
    */
   sealed class Tab(val name: String, @DrawableRes val iconRes: Int, val destination: Screen) {
-    object Events : Tab("Events", R.drawable.ic_fire, Screen.Events)
+    object Events : Tab("Events", R.drawable.ic_events, Screen.Events)
 
     object Tickets : Tab("Tickets", R.drawable.ic_tickets, Screen.Tickets)
 
