@@ -19,9 +19,15 @@
             localProperties.load(FileInputStream(localPropertiesFile))
         }
 
-        // Get Mapbox token: first check env (CI), then local.properties
-        val mapboxToken: String = localProperties.getProperty("MAPBOX_ACCESS_TOKEN") ?: ""
-
+        /// Get Mapbox token from local.properties
+        val mapboxToken: String? = localProperties.getProperty("MAPBOX_ACCESS_TOKEN")
+        
+        if (mapboxToken.isNullOrBlank()) {
+            logger.warn(
+                "⚠️ Mapbox access token not found in local.properties. " +
+                        "Maps may not function correctly until MAPBOX_ACCESS_TOKEN is set."
+            )
+        }
 
         defaultConfig {
             applicationId = "ch.onepass.onepass"

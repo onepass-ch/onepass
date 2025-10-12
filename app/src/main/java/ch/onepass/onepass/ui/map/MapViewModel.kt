@@ -17,28 +17,36 @@ import com.mapbox.maps.plugin.locationcomponent.location
 
 open class MapViewModel : ViewModel() {
 
+  companion object {
+    // Default camera configuration
+    private const val DEFAULT_LATITUDE = 46.5197
+    private const val DEFAULT_LONGITUDE = 6.6323
+    private const val DEFAULT_ZOOM = 13.0
+  }
+
   private var internalMapView: MapView? = null
   private var lastKnownPoint: Point? = null
   private var indicatorListener: OnIndicatorPositionChangedListener? = null
 
+  private val defaultCenterPoint = Point.fromLngLat(DEFAULT_LONGITUDE, DEFAULT_LATITUDE)
   val initialCameraOptions: CameraOptions =
       CameraOptions.Builder()
-          .center(Point.fromLngLat(6.6323, 46.5197)) // Lausanne
-          .zoom(13.0)
+          .center(defaultCenterPoint) // Lausanne
+          .zoom(DEFAULT_ZOOM)
           .build()
 
   open fun onMapReady(mapView: MapView, hasLocationPermission: Boolean) {
     if (internalMapView == mapView) return
     internalMapView = mapView
 
-    mapView.getMapboxMap().loadStyleUri("mapbox://styles/walid-as/cmghzwo3h001501s358d677ye") {
+    mapView.mapboxMap.loadStyleUri("mapbox://styles/walid-as/cmghzwo3h001501s358d677ye") {
       configurePlugins(mapView)
 
       if (hasLocationPermission) {
         enableLocationTracking(mapView)
       }
 
-      mapView.getMapboxMap().setCamera(initialCameraOptions)
+      mapView.mapboxMap.setCamera(initialCameraOptions)
     }
   }
 
@@ -63,7 +71,7 @@ open class MapViewModel : ViewModel() {
 
   open fun recenterCamera() {
     val mapView = internalMapView ?: return
-    val mapboxMap = mapView.getMapboxMap()
+    val mapboxMap = mapView.mapboxMap
     val point = lastKnownPoint ?: return
 
     mapboxMap.easeTo(
