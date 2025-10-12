@@ -14,22 +14,13 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
-import ch.onepass.onepass.ui.theme.PurplePrimary
 
 private val DarkColorScheme =
-    darkColorScheme(
-        primary = PurplePrimary,
-        background = BackgroundDark,
-        onSurface = GrayStroke
-
-    )
+    darkColorScheme(primary = PurplePrimary, background = BackgroundDark, onSurface = GrayStroke)
 
 private val LightColorScheme =
     lightColorScheme(
-        primary = PurplePrimary,
-        background = White,
-        onSurface = Black
-
+        primary = PurplePrimary, background = White, onSurface = Black
 
         /* Other default colors to override
         background = Color(0xFFFFFBFE),

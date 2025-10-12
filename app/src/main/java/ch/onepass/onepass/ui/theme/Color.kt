@@ -15,5 +15,3 @@ val BackgroundDark = Color(0xFF111118)
 val GrayStroke = Color(0xFF9CA3AF)
 val White = Color(0xFFFFFFFF)
 val Black = Color(0xFF000000)
-
-
