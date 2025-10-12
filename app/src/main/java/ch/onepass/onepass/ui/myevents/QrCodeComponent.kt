@@ -5,8 +5,6 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -25,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -38,24 +37,23 @@ import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 
 @Composable
-fun QrCodeComponent(
-    qrData: String,
-    modifier: Modifier = Modifier
-) {
-    var showQrDialog by remember { mutableStateOf(false) }
+fun QrCodeComponent(qrData: String, modifier: Modifier = Modifier) {
+  var showQrDialog by remember { mutableStateOf(false) }
 
-    // Generate QR Bitmap from provided data
-    val qrBitmap: Bitmap = remember(qrData) {
+  // Generate QR Bitmap from provided data
+  val qrBitmap: Bitmap =
+      remember(qrData) {
         val size = 200
         val bits = QRCodeWriter().encode(qrData, BarcodeFormat.QR_CODE, size, size)
         createBitmap(size, size).also { bitmap ->
-            for (x in 0 until size) {
-                for (y in 0 until size) {
-                    bitmap[x, y] = if (bits[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE
-                }
+          for (x in 0 until size) {
+            for (y in 0 until size) {
+              bitmap[x, y] =
+                  if (bits[x, y]) android.graphics.Color.BLACK else android.graphics.Color.WHITE
             }
+          }
         }
-    }
+      }
 
   if (showQrDialog) {
     Dialog(onDismissRequest = { showQrDialog = false }) {
@@ -70,15 +68,19 @@ fun QrCodeComponent(
                 contentAlignment = Alignment.Center) {
                   Image(
                       bitmap = qrBitmap.asImageBitmap(),
-                      contentDescription = "Random QR Code",
-                      modifier = Modifier.fillMaxSize())
+                      contentDescription = "QR Code Dialog",
+                      modifier = Modifier.testTag(MyEventsTestTags.QR_CODE_DIALOG))
                 }
           }
     }
   }
 
   Card(
-      modifier = modifier.fillMaxWidth().clickable { showQrDialog = true },
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .clickable { showQrDialog = true }
+              .testTag(MyEventsTestTags.QR_CODE_ICON),
       shape = RoundedCornerShape(12.dp),
       colors = CardDefaults.cardColors(containerColor = colorResource(id = R.color.background))) {
         Box(
@@ -94,12 +96,13 @@ fun QrCodeComponent(
                                     colorResource(id = R.color.qr_purple).copy(alpha = 0.2f),
                                     colorResource(id = R.color.qr_lilac).copy(alpha = 0.2f),
                                     colorResource(id = R.color.qr_orange).copy(alpha = 0.2f),
-                                    colorResource(id = R.color.qr_yellow).copy(alpha = 0.2f)))),
+                                    colorResource(id = R.color.qr_yellow).copy(alpha = 0.2f))),
+                    ),
             contentAlignment = Alignment.Center) {
               Image(
                   painter = painterResource(id = R.drawable.qr_code_icon),
                   contentDescription = "QR Code Icon",
-                  modifier = Modifier.size(40.dp))
+                  modifier = Modifier.size(40.dp).testTag(MyEventsTestTags.QR_CODE_ICON))
             }
       }
 }
@@ -107,7 +110,7 @@ fun QrCodeComponent(
 @Preview(showBackground = true)
 @Composable
 fun QrCodePreview() {
-    OnePassTheme {
-        QrCodeComponent(qrData = "QR-1234", modifier = Modifier.fillMaxWidth().height(100.dp))
-    }
+  OnePassTheme {
+    QrCodeComponent(qrData = "QR-1234", modifier = Modifier.fillMaxWidth().height(100.dp))
+  }
 }

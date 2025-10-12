@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,12 +59,14 @@ fun TicketComponent(
                 verticalArrangement = Arrangement.spacedBy(12.dp)) {
                   Text(
                       text = title,
+                      modifier = Modifier.testTag(MyEventsTestTags.TICKET_DIALOG_TITLE),
                       style =
                           MaterialTheme.typography.bodyLarge.copy(
                               fontFamily = MarcFontFamily, fontWeight = FontWeight.Bold),
                       color = colorResource(id = R.color.on_background))
 
                   Row(
+                      modifier = Modifier.testTag(MyEventsTestTags.TICKET_DIALOG_STATUS),
                       verticalAlignment = Alignment.CenterVertically,
                       horizontalArrangement = Arrangement.Start) {
                         Box(
@@ -80,11 +83,13 @@ fun TicketComponent(
 
                   Text(
                       text = dateTime,
+                      modifier = Modifier.testTag(MyEventsTestTags.TICKET_DIALOG_DATE),
                       style = MaterialTheme.typography.bodyMedium,
                       color = colorResource(id = R.color.on_background).copy(alpha = 0.7f))
 
                   Text(
                       text = location,
+                      modifier = Modifier.testTag(MyEventsTestTags.TICKET_DIALOG_LOCATION),
                       style = MaterialTheme.typography.bodyMedium,
                       color = colorResource(id = R.color.on_background).copy(alpha = 0.7f))
                 }
@@ -93,7 +98,11 @@ fun TicketComponent(
   }
 
   Card(
-      modifier = modifier.fillMaxWidth().clickable { showDetails = true },
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .clickable { showDetails = true }
+              .testTag(MyEventsTestTags.TICKET_CARD),
       shape = RoundedCornerShape(12.dp),
       colors =
           CardDefaults.cardColors(containerColor = colorResource(id = R.color.surface_container))) {
@@ -107,11 +116,13 @@ fun TicketComponent(
                           fontFamily = MarcFontFamily, fontWeight = FontWeight.Bold),
                   color = colorResource(id = R.color.on_background),
                   maxLines = 1,
-                  overflow = TextOverflow.Ellipsis)
+                  overflow = TextOverflow.Ellipsis,
+                  modifier = Modifier.testTag(MyEventsTestTags.TICKET_TITLE))
 
               Row(
                   verticalAlignment = Alignment.CenterVertically,
-                  horizontalArrangement = Arrangement.Start) {
+                  horizontalArrangement = Arrangement.Start,
+                  modifier = Modifier.testTag(MyEventsTestTags.TICKET_STATUS)) {
                     Box(
                         modifier =
                             Modifier.size(8.dp)
@@ -127,11 +138,14 @@ fun TicketComponent(
               Text(
                   text = dateTime,
                   style = MaterialTheme.typography.bodyMedium,
-                  color = colorResource(id = R.color.on_background).copy(alpha = 0.7f))
+                  color = colorResource(id = R.color.on_background).copy(alpha = 0.7f),
+                  modifier = Modifier.testTag(MyEventsTestTags.TICKET_DATE))
+
               Text(
                   text = location,
                   style = MaterialTheme.typography.bodyMedium,
-                  color = colorResource(id = R.color.on_background).copy(alpha = 0.7f))
+                  color = colorResource(id = R.color.on_background).copy(alpha = 0.7f),
+                  modifier = Modifier.testTag(MyEventsTestTags.TICKET_LOCATION))
             }
       }
 }

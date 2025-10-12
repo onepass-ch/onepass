@@ -59,6 +59,7 @@ fun MyEventsScreen(userQrData: String, currentTickets: List<Ticket>, expiredTick
           color = colorResource(id = R.color.on_background))
 
       TabRow(
+          modifier = Modifier.testTag(MyEventsTestTags.TABS_ROW),
           selectedTabIndex = selectedTab,
           containerColor = colorResource(id = R.color.surface),
           contentColor = colorResource(id = R.color.on_surface),
@@ -69,6 +70,13 @@ fun MyEventsScreen(userQrData: String, currentTickets: List<Ticket>, expiredTick
                 color = colorResource(id = R.color.tab_indicator))
           }) {
             tabs.forEachIndexed { index, title ->
+              val tabTestTag =
+                  when (title) {
+                    "Current" -> MyEventsTestTags.TAB_CURRENT
+                    "Expired" -> MyEventsTestTags.TAB_EXPIRED
+                    else -> null
+                  }
+
               Tab(
                   text = {
                     Text(
@@ -80,7 +88,7 @@ fun MyEventsScreen(userQrData: String, currentTickets: List<Ticket>, expiredTick
                   },
                   selected = selectedTab == index,
                   onClick = { selectedTab = index },
-              )
+                  modifier = if (tabTestTag != null) Modifier.testTag(tabTestTag) else Modifier)
             }
           }
       QrCodeComponent(
