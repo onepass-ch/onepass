@@ -26,6 +26,15 @@ jobs:
           submodules: recursive
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of Sonar analysis (if we use Sonar Later)
 
+      # Node.js setup for Firebase CLI
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      # Install Firebase CLI
+      - name: Install Firebase CLI
+        run: npm install -g firebase-tools
 
       # Kernel-based Virtual Machine (KVM) is an open source virtualization technology built into Linux. Enabling it allows the Android emulator to run faster.
       - name: Enable KVM group perms
@@ -40,12 +49,57 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
+      # Decode and save google-services.json from GitHub secrets
+      - name: Decode google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: |
+          echo "$GOOGLE_SERVICES_JSON" | base64 --decode > app/google-services.json
+          ls -la app/google-services.json
+
       # Caching is a very useful part of a CI, as a workflow is executed in a clean environment every time,
       # this means that one would need to re-download and re-process gradle files for every run. Which is very time consuming.
       #
       # To avoid that, we cache the the gradle folder to reuse it later.
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v3
+
+      # Create firebase.json if it doesn't exist
+      - name: Create Firebase config
+        run: |
+          if [ ! -f firebase.json ]; then
+            cat > firebase.json << 'EOF'
+          {
+            "emulators": {
+              "auth": {
+                "port": 9099
+              },
+              "firestore": {
+                "port": 8080
+              },
+              "ui": {
+                "enabled": false
+              }
+            }
+          }
+          EOF
+          fi
+
+      # Start Firebase Emulators in background
+      - name: Start Firebase Emulators
+        run: |
+          firebase emulators:start --only auth,firestore --project demo-project &
+          # Wait for emulators to be ready by polling their status endpoints
+          timeout=60
+          while ! (curl -sf http://localhost:9099/ && curl -sf http://localhost:8080/); do
+            if [ $timeout -le 0 ]; then
+              echo "Firebase emulators failed to start within 60s"
+              exit 1
+            fi
+            sleep 5
+            timeout=$((timeout - 5))
+          done
+          echo "Firebase emulators are running"
 
       # Cache the Emulator, if the cache does not hit, create the emulator
       - name: AVD cache
@@ -102,10 +156,37 @@ jobs:
           disable-animations: true
           script: ./gradlew connectedCheck --parallel --build-cache
 
+      # Stop Firebase Emulators
+      - name: Stop Firebase Emulators
+        if: always()
+        run: |
+          firebase emulators:kill || true
+          echo "Firebase emulators stopped"
+
       # This step generates the coverage report which will be uploaded to sonar
       - name: Generate Coverage Report
         run: |
           ./gradlew jacocoTestReport
+
+      # Upload test results (even on failure)
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: |
+            app/build/reports/tests/
+            app/build/test-results/
+          retention-days: 7
+
+      # Upload coverage reports
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-reports
+          path: app/build/reports/jacoco/
+          retention-days: 7
 
       # Upload the various reports to sonar
 #      - name: Upload report to SonarCloud
