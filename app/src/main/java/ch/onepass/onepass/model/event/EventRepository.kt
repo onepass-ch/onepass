@@ -1,5 +1,6 @@
 package ch.onepass.onepass.model.event
 
+import ch.onepass.onepass.model.map.Location
 import kotlinx.coroutines.flow.Flow
 
 /** Repository interface for event operations. */
@@ -12,7 +13,7 @@ interface EventRepository {
 
   fun getEventsByOrganization(orgId: String): Flow<List<Event>>
 
-  fun getEventsByLocation(lat: Double, lng: Double, radius: Double): Flow<List<Event>>
+  fun getEventsByLocation(center: Location, radiusKm: Double): Flow<List<Event>>
 
   fun getEventsByTag(tag: String): Flow<List<Event>>
 
