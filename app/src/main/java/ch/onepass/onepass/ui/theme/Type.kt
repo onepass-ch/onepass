@@ -29,7 +29,7 @@ val Typography =
                 letterSpacing = 0.sp),
         bodyLarge =
             TextStyle(
-                fontFamily = FontFamily.Default,
+                fontFamily = MarcFontFamily,
                 fontWeight = FontWeight.Normal,
                 fontSize = 16.sp,
                 lineHeight = 24.sp,
