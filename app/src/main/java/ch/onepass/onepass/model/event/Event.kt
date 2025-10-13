@@ -38,6 +38,9 @@ data class Event(
     val updatedAt: Timestamp? = null,
     val deletedAt: Timestamp? = null
 ) {
+  val titleLower: String
+    get() = title.lowercase()
+
   val displayLocation: String
     get() = location?.name ?: "Unknown Location"
 
