@@ -11,6 +11,22 @@ android {
     namespace = "ch.onepass.onepass"
     compileSdk = 34
 
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localProperties.load(FileInputStream(localPropertiesFile))
+    }
+
+    // Get Mapbox token from local.properties
+    val mapboxToken: String? = localProperties.getProperty("MAPBOX_ACCESS_TOKEN")
+
+    if (mapboxToken.isNullOrBlank()) {
+        logger.warn(
+            "⚠️ Mapbox access token not found in local.properties. " +
+                    "Maps may not function correctly until MAPBOX_ACCESS_TOKEN is set."
+        )
+    }
+
     defaultConfig {
         applicationId = "ch.onepass.onepass"
         minSdk = 28
@@ -22,6 +38,7 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxToken}\"")
     }
 
     buildTypes {
@@ -45,6 +62,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
@@ -67,13 +85,6 @@ android {
             merges += "META-INF/LICENSE-notice.md"
             excludes += "META-INF/DEPENDENCIES"
         }
-    }
-
-    testOptions {
-        unitTests {
-            isIncludeAndroidResources = true
-            isReturnDefaultValues = true
-        }
         packagingOptions {
             jniLibs {
                 useLegacyPackaging = true
@@ -81,13 +92,18 @@ android {
         }
     }
 
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
+    }
+
     // Robolectric needs to be run only in debug. But its tests are placed in the shared source set (test)
-    // The next lines transfers the src/test/* from shared to the testDebug one
-    //
-    // This prevent errors from occurring during unit tests
+    // The next lines transfer the src/test/* from shared to the testDebug one
+    // This prevents errors from occurring during unit tests
     sourceSets.getByName("testDebug") {
         val test = sourceSets.getByName("test")
-
         java.setSrcDirs(test.java.srcDirs)
         res.setSrcDirs(test.res.srcDirs)
         resources.setSrcDirs(test.resources.srcDirs)
@@ -106,12 +122,18 @@ sonar {
         property("sonar.projectName", "onepass")
         property("sonar.organization", "onepass-ch")
         property("sonar.host.url", "https://sonarcloud.io")
-        // Comma-separated paths to the various directories containing the *.xml JUnit report files. Each path may be absolute or relative to the project base directory.
-        property("sonar.junit.reportPaths", "${project.layout.buildDirectory.get()}/test-results/testDebugUnitTest/")
-        // Paths to xml files with Android Lint issues. If the main flavor is changed, this file will have to be changed too.
-        property("sonar.androidLint.reportPaths", "${project.layout.buildDirectory.get()}/reports/lint-results-debug.xml")
-        // Paths to JaCoCo XML coverage report files.
-        property("sonar.coverage.jacoco.xmlReportPaths", "${project.layout.buildDirectory.get()}/reports/jacoco/jacocoTestReport/jacocoTestReport.xml")
+        property(
+            "sonar.junit.reportPaths",
+            "${project.layout.buildDirectory.get()}/test-results/testDebugUnitTest/"
+        )
+        property(
+            "sonar.androidLint.reportPaths",
+            "${project.layout.buildDirectory.get()}/reports/lint-results-debug.xml"
+        )
+        property(
+            "sonar.coverage.jacoco.xmlReportPaths",
+            "${project.layout.buildDirectory.get()}/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
+        )
     }
 }
 
@@ -144,16 +166,11 @@ dependencies {
 
     implementation(libs.compose.ui)
     implementation(libs.compose.ui.graphics)
-    // Material Design 3
     implementation(libs.compose.material3)
-    // Integration with activities
     implementation(libs.compose.activity)
-    // Integration with ViewModels
     implementation(libs.compose.viewmodel)
-    // Android Studio Preview support
     implementation(libs.compose.preview)
     debugImplementation(libs.compose.tooling)
-    // UI Tests
     globalTestImplementation(libs.compose.test.junit)
     debugImplementation(libs.compose.test.manifest)
 
@@ -173,15 +190,20 @@ dependencies {
     // --------- Coroutines Test Support ---------
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
+    // ---------- ZXing for QR code generation ------------
+    implementation("com.google.zxing:core:3.5.1")
+
+    // ----------       MapBox         ------------
+    implementation("com.mapbox.maps:android-ndk27:11.15.2")
+    implementation("com.mapbox.extension:maps-compose-ndk27:11.15.2")
 }
 
 tasks.withType<Test> {
-    // Exclude Compose UI JVM tests from release unit tests (require debug-only test manifest)
     if (name.contains("Release")) {
         exclude("**/*ComposeTest.class")
     }
 
-    // Configure Jacoco for each tests
     configure<JacocoTaskExtension> {
         isIncludeNoLocationClasses = true
         excludes = listOf("jdk.internal.*")
@@ -218,7 +240,6 @@ tasks.register("jacocoTestReport", JacocoReport::class) {
     })
 }
 
-// Exclude protobuf-lite to resolve a dependency version conflict introduced by Firebase libraries.
 configurations.forEach { configuration ->
     configuration.exclude("com.google.protobuf", "protobuf-lite")
 }
