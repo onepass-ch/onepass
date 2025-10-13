@@ -1,78 +1,81 @@
 package ch.onepass.onepass
 
-import android.content.Context
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.Column
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
-import androidx.credentials.CredentialManager
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
+import androidx.core.app.ActivityCompat
 import ch.onepass.onepass.resources.C
-import ch.onepass.onepass.ui.auth.AuthScreen
+import ch.onepass.onepass.ui.map.MapScreen
+import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import com.mapbox.common.MapboxOptions
+import kotlin.getValue
 
 class MainActivity : ComponentActivity() {
+  private val mapViewModel: MapViewModel by viewModels()
+
+  private val requestPermissionLauncher =
+      registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+          mapViewModel.enableLocationTracking()
+        }
+      }
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+
+    MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
+
+    val permission = Manifest.permission.ACCESS_FINE_LOCATION
+    val isLocationPermissionGranted =
+        ActivityCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+
+    if (!isLocationPermissionGranted) {
+      requestPermissionLauncher.launch(permission)
+    }
+
     setContent {
       OnePassTheme {
         // A surface container using the 'background' color from the theme
         Surface(
             modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
-            color = MaterialTheme.colorScheme.background) {
-              OnePassApp()
-            }
+            color = MaterialTheme.colorScheme.background,
+        ) {
+          MapScreen(isLocationPermissionGranted = isLocationPermissionGranted)
+        }
       }
     }
   }
-}
 
-sealed class Screen(val route: String) {
-  object Auth : Screen("auth")
+  // --- MapView Lifecycle Delegation ---
 
-  object Greet : Screen("greet")
-}
+  override fun onStart() {
+    super.onStart()
+    mapViewModel.onMapStart()
+  }
 
-@Composable
-fun GreetingScreen(name: String, modifier: Modifier = Modifier) {
-  Column { Text(text = "Hello $name!", modifier = modifier.semantics { testTag = C.Tag.greeting }) }
-}
+  override fun onStop() {
+    super.onStop()
+    mapViewModel.onMapStop()
+  }
 
-/**
- * `OnePassApp` is the main composable function that sets up the whole app UI. It initializes the
- * navigation controller and defines the navigation graph.
- *
- * @param context The context of the application, used for accessing resources and services.
- * @param credentialManager The CredentialManager instance for handling authentication credentials.
- */
-@Composable
-fun OnePassApp(
-    context: Context = LocalContext.current,
-    credentialManager: CredentialManager = CredentialManager.create(context)
-) {
-  val navController = rememberNavController()
+  override fun onLowMemory() {
+    super.onLowMemory()
+    mapViewModel.onMapLowMemory()
+  }
 
-  NavHost(navController = navController, startDestination = Screen.Auth.route) {
-    composable(Screen.Auth.route) {
-      AuthScreen(
-          credentialManager = credentialManager,
-          onSignedIn = {
-            navController.navigate(Screen.Greet.route) {
-              popUpTo(Screen.Auth.route) { inclusive = true }
-            }
-          })
-    }
-    composable(Screen.Greet.route) { GreetingScreen("Guest") }
+  override fun onDestroy() {
+    super.onDestroy()
+    // Map destruction is handled by ViewModel's onCleared()
   }
 }

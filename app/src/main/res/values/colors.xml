@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Material 3 Color Scheme -->
     <color name="purple_200">#FFBB86FC</color>
     <color name="purple_500">#FF6200EE</color>
     <color name="purple_700">#FF3700B3</color>
@@ -7,4 +8,36 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- QR Code Component Gradient Colors -->
+    <color name="qr_red">#EF4444</color>
+    <color name="qr_pink">#C04875</color>
+    <color name="qr_purple">#7A4DBF</color>
+    <color name="qr_lilac">#8F60A0</color>
+    <color name="qr_orange">#C18A59</color>
+    <color name="qr_yellow">#FBBC05</color>
+
+    <!-- QR Code Component Shadow Color -->
+    <color name="shadow_qr_code">#5E387A</color>
+
+    <!-- Surface Colors -->
+    <color name="surface_container">#1E1E1E</color>
+    <color name="surface_container_low">#242424</color>
+
+    <!-- Status Colors -->
+    <color name="status_currently">#4CAF50</color>
+    <color name="status_upcoming">#2196F3</color>
+    <color name="status_expired">#F44336</color>
+
+    <!-- Tab Colors -->
+    <color name="tab_selected">#BB86FC</color>
+    <color name="tab_unselected">#FFFFFF</color>
+    <color name="tab_indicator">#BB86FC</color>
+
+    <!-- Background and Text Colors -->
+    <color name="background">#121212</color>
+    <color name="on_background">#FFFFFF</color>
+    <color name="surface">#1E1E1E</color>
+    <color name="on_surface">#FFFFFF</color>
+    <color name="primary">#BB86FC</color>
 </resources>
