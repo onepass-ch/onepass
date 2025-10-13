@@ -21,7 +21,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
 import ch.onepass.onepass.resources.C
 import ch.onepass.onepass.ui.theme.CardBackground
@@ -58,7 +57,8 @@ fun EventCard(
                   spotColor = CardShadow,
                   ambientColor = CardShadow)
               .fillMaxWidth()
-              .padding(start = EventCardDimens.eventCardPadding, end = EventCardDimens.eventCardPadding)
+              .padding(
+                  start = EventCardDimens.eventCardPadding, end = EventCardDimens.eventCardPadding)
               .widthIn(max = EventCardDimens.maxWidth)
               .aspectRatio(392f / 417.93866f) // based on figma design
               .background(
