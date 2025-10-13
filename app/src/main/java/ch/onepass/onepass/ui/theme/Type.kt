@@ -9,7 +9,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import ch.onepass.onepass.R
 
-// Marc Font Family
 val MarcFontFamily =
     FontFamily(
         Font(R.font.marc_light, FontWeight.Light),
@@ -19,34 +18,40 @@ val MarcFontFamily =
         Font(R.font.marc_bold, FontWeight.Bold),
         Font(R.font.marc_bold_italic, FontWeight.Bold, FontStyle.Italic))
 
-// Set of Material typography styles to start with
 val Typography =
     Typography(
-        // Event card title style
-        headlineMedium =
+        titleLarge =
             TextStyle(
                 fontFamily = MarcFontFamily,
                 fontWeight = FontWeight.Bold,
                 fontSize = 24.sp,
-                lineHeight = 27.6.sp),
-        // Event card organizer style
+                lineHeight = 24.sp,
+                letterSpacing = 0.sp),
         bodyLarge =
             TextStyle(
                 fontFamily = MarcFontFamily,
                 fontWeight = FontWeight.Normal,
                 fontSize = 16.sp,
-                lineHeight = 20.8.sp),
-        // Event card date and location style
+                lineHeight = 24.sp,
+                letterSpacing = 0.5.sp),
         bodyMedium =
             TextStyle(
                 fontFamily = FontFamily.Default,
-                fontWeight = FontWeight.Medium,
-                fontSize = 16.sp,
-                lineHeight = 20.8.sp),
-        // Event card price style
-        headlineSmall =
+                fontWeight = FontWeight.Normal,
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+                letterSpacing = 0.25.sp),
+        labelSmall =
             TextStyle(
-                fontFamily = MarcFontFamily,
-                fontWeight = FontWeight.Bold,
-                fontSize = 24.sp,
-                lineHeight = 28.sp))
+                fontFamily = FontFamily.Default,
+                fontWeight = FontWeight.Normal,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+                letterSpacing = 0.5.sp),
+        labelMedium =
+            TextStyle(
+                fontFamily = FontFamily.Default,
+                fontWeight = FontWeight.Normal,
+                fontSize = 14.sp,
+                lineHeight = 20.sp,
+                letterSpacing = 0.1.sp))
