@@ -36,10 +36,12 @@ class AuthRepositoryFirebase(
         val firebaseCred = helper.toFirebaseCredential(idToken)
 
         // Sign in with Firebase
-        val user =
-            auth.signInWithCredential(firebaseCred).await().user
-                ?: return Result.failure(
-                    IllegalStateException("Login failed : Could not retrieve user information"))
+        val authResult = auth.signInWithCredential(firebaseCred).await()
+        val user = authResult.user
+        if (user == null) {
+          return Result.failure(
+              IllegalStateException("Firebase authentication returned a null user."))
+        }
 
         // Get user or create user if not exists
         val userRepo = UserRepositoryFirebase()
