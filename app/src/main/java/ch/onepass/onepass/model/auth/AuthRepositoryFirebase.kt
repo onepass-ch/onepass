@@ -3,6 +3,7 @@ package ch.onepass.onepass.model.auth
 import androidx.credentials.Credential
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
+import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.Companion.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
 import com.google.firebase.Firebase
@@ -42,6 +43,10 @@ class AuthRepositoryFirebase(
             auth.signInWithCredential(firebaseCred).await().user
                 ?: return Result.failure(
                     IllegalStateException("Login failed : Could not retrieve user information"))
+
+        // Get user or create user if not exists
+        val userRepo = UserRepositoryFirebase()
+        userRepo.getOrCreateUser()
 
         return Result.success(user)
       } else {
