@@ -1,7 +1,6 @@
 package ch.onepass.onepass.model.auth
 
 import androidx.credentials.Credential
-import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
@@ -18,8 +17,6 @@ import kotlinx.coroutines.tasks.await
  * Retrieves a Google ID token via Credential Manager and authenticates the user with Firebase. Also
  * handles sign-out and credential state clearing.
  *
- * @param context Used to launch the Credential Manager UI and load string resources.
- * @param credentialManager The [CredentialManager] used to retrieve credentials.
  * @param auth The [FirebaseAuth] instance for Firebase authentication.
  * @param helper A [GoogleSignInHelper] to extract Google ID token credentials and convert them to
  *   Firebase credentials.
