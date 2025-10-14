@@ -3,6 +3,8 @@ package ch.onepass.onepass
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -15,9 +17,12 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.core.app.ActivityCompat
 import ch.onepass.onepass.resources.C
+import ch.onepass.onepass.ui.MapEventsTestScript
 import ch.onepass.onepass.ui.map.MapScreen
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import com.google.firebase.Firebase
+import com.google.firebase.firestore.firestore
 import com.mapbox.common.MapboxOptions
 import kotlin.getValue
 
@@ -33,6 +38,18 @@ class MainActivity : ComponentActivity() {
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+    // TEMPORARY - REMOVE AFTER TESTING!
+    if (BuildConfig.DEBUG) {
+      Handler(Looper.getMainLooper())
+          .postDelayed(
+              {
+                android.util.Log.d("MainActivity", "🕒 2 seconds passed, adding test events...")
+                MapEventsTestScript.populateTestEvents()
+              },
+              2000)
+    }
+
+    Firebase.firestore.useEmulator("10.0.2.2", 8080)
 
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
 
