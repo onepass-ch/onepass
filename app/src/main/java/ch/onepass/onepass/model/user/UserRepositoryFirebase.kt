@@ -17,7 +17,7 @@ class UserRepositoryFirebase(
     val uid = firebaseUser.uid
 
     val snapshot = userCollection.document(uid).get().await()
-    return snapshot.toObject(User::class.java)
+    return snapshot.toObject(User::class.java)?.copy(uid = uid)
   }
 
   // get the user in Firestore, if the user doesn't exist, create one
@@ -38,7 +38,7 @@ class UserRepositoryFirebase(
       return newUser
     } else {
       updateLastLogin(uid)
-      return docRef.get().await().toObject(User::class.java)
+      return docRef.get().await().toObject(User::class.java)?.copy(uid = uid)
     }
   }
 
