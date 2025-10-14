@@ -30,6 +30,8 @@ open class AuthViewModel(
 
   open fun signIn(context: Context, credentialManager: CredentialManager) {
     viewModelScope.launch {
+      if (_uiState.value.isLoading) return@launch
+
       try {
         _uiState.value = _uiState.value.copy(isLoading = true)
 
