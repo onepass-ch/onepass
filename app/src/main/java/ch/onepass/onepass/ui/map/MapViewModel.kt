@@ -1,6 +1,11 @@
 package ch.onepass.onepass.ui.map
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import ch.onepass.onepass.model.event.Event
+import ch.onepass.onepass.model.event.EventRepository
+import ch.onepass.onepass.model.event.EventStatus
+import ch.onepass.onepass.repository.RepositoryProvider
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
@@ -14,20 +19,31 @@ import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
 import com.mapbox.maps.plugin.locationcomponent.createDefault2DPuck
 import com.mapbox.maps.plugin.locationcomponent.location
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
-open class MapViewModel : ViewModel() {
+data class MapUIState(val events: List<Event> = emptyList(), val selectedEvent: Event? = null)
 
+class MapViewModel(
+    private val eventRepository: EventRepository = RepositoryProvider.repository,
+) : ViewModel() {
   companion object {
     // Default camera configuration
     private const val DEFAULT_LATITUDE = 46.5197
     private const val DEFAULT_LONGITUDE = 6.6323
-    private const val DEFAULT_ZOOM = 13.0
+    private const val DEFAULT_ZOOM = 7.0
   }
 
+  // --- UI state ---
+  private val _uiState = MutableStateFlow(MapUIState())
+  val uiState: StateFlow<MapUIState> = _uiState.asStateFlow()
+
+  // --- Mapbox references ---
   private var internalMapView: MapView? = null
   private var lastKnownPoint: Point? = null
   private var indicatorListener: OnIndicatorPositionChangedListener? = null
-
   private val defaultCenterPoint = Point.fromLngLat(DEFAULT_LONGITUDE, DEFAULT_LATITUDE)
   val initialCameraOptions: CameraOptions =
       CameraOptions.Builder()
@@ -35,6 +51,38 @@ open class MapViewModel : ViewModel() {
           .zoom(DEFAULT_ZOOM)
           .build()
 
+  init {
+    fetchPublishedEvents()
+  }
+
+  // --- Event handling ---
+  /** Fetches all published events and updates the UI state. */
+  private fun fetchPublishedEvents() {
+    viewModelScope.launch {
+      eventRepository.getEventsByStatus(EventStatus.PUBLISHED).collect { events ->
+        // Only keep events with valid coordinates
+        val validEvents = events.filter { it.location?.coordinates != null }
+        _uiState.value = _uiState.value.copy(events = validEvents)
+      }
+    }
+  }
+
+  /** Sets the selected event when a pin is clicked. */
+  fun selectEvent(event: Event) {
+    _uiState.value = _uiState.value.copy(selectedEvent = event)
+  }
+
+  /** Clears the selected event (e.g., when the card is dismissed). */
+  fun clearSelectedEvent() {
+    _uiState.value = _uiState.value.copy(selectedEvent = null)
+  }
+
+  /** Refresh events manually. */
+  fun refreshEvents() {
+    fetchPublishedEvents()
+  }
+
+  // --- Mapbox integration ---
   open fun onMapReady(mapView: MapView, hasLocationPermission: Boolean) {
     if (internalMapView == mapView) return
     internalMapView = mapView
@@ -90,6 +138,7 @@ open class MapViewModel : ViewModel() {
     compassPlugin?.updateSettings { enabled = true }
   }
 
+  // --- Map lifecycle delegation ---
   fun onMapStart() = internalMapView?.onStart()
 
   fun onMapStop() = internalMapView?.onStop()
