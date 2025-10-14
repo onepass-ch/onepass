@@ -184,12 +184,16 @@ android {
         implementation("com.mapbox.maps:android-ndk27:11.15.2")
         implementation("com.mapbox.extension:maps-compose-ndk27:11.15.2")
 
-        // Firebase auth
+        //  Auth
       implementation ("androidx.credentials:credentials:1.2.0")
       implementation ("androidx.credentials:credentials-play-services-auth:1.2.0")
-      implementation (platform("com.google.firebase:firebase-bom:33.3.0"))
-      implementation ("com.google.firebase:firebase-auth")
       implementation ("com.google.android.libraries.identity.googleid:googleid:1.1.0")
+
+      // ------------- Firebase ------------------
+      implementation(platform(libs.firebase.bom))
+      implementation(libs.firebase.auth.ktx)
+      implementation(libs.firebase.firestore.ktx)
+      implementation(libs.firebase.database.ktx)
     }
 
     tasks.withType<Test> {
