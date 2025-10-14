@@ -22,6 +22,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -54,6 +55,12 @@ fun AuthScreen(onSignedIn: () -> Unit = {}, authViewModel: AuthViewModel = AuthV
   val uiState by authViewModel.uiState.collectAsState()
   val isLoading = uiState.isLoading
 
+  LaunchedEffect(uiState.isSignedIn) {
+    if (uiState.isSignedIn) {
+      onSignedIn()
+    }
+  }
+
   // The main container for the screen
   Scaffold(
       modifier = Modifier.fillMaxSize(),
@@ -73,7 +80,6 @@ fun AuthScreen(onSignedIn: () -> Unit = {}, authViewModel: AuthViewModel = AuthV
             CircularProgressIndicator(modifier = Modifier.size(48.dp))
           } else {
             GoogleSignInButton(onSignInClick = { authViewModel.signIn(context, credentialManager) })
-            onSignedIn()
           }
         }
       })
