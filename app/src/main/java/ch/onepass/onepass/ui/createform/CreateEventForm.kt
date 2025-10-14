@@ -24,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -311,32 +312,49 @@ fun DatePickerField(
 @Composable
 fun CreateEventForm(
     modifier: Modifier = Modifier,
-    // viewModel: CreateEventFormViewModel = viewModel(),
+    viewModel: CreateEventFormViewModel = viewModel(),
     onNavigateBack: () -> Unit = {},
     onEventCreated: () -> Unit = {},
 ) {
-    // State variables for form inputs
-    var title by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
-    var startTime by remember { mutableStateOf("") }
-    var endTime by remember { mutableStateOf("") }
-    var date by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
-    var price by remember { mutableStateOf("") }
-    var capacity by remember { mutableStateOf("") }
+    // Collect state from ViewModel
+    val formState by viewModel.formState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
     val scrollState = rememberScrollState()
 
-     Column(
-        verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
-        horizontalAlignment = Alignment.Start,
-        modifier = modifier
-            .fillMaxWidth()
-            .fillMaxHeight()
-            .background(color = DefaultBackground)
-            .verticalScroll(scrollState)
-            .padding(start = 22.dp, end = 22.dp, bottom = 48.dp)
-    ) {
+    // Snackbar state for error messages
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    // Handle UI state changes
+    LaunchedEffect(uiState) {
+        when (val state = uiState) {
+            is CreateEventUiState.Success -> {
+                // Event created successfully, navigate away
+                onEventCreated()
+            }
+            is CreateEventUiState.Error -> {
+                // Show error message
+                snackbarHostState.showSnackbar(
+                    message = state.message,
+                    duration = SnackbarDuration.Long
+                )
+                viewModel.clearError()
+            }
+            else -> { /* Idle or Loading */ }
+        }
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            verticalArrangement = Arrangement.spacedBy(0.dp, Alignment.Top),
+            horizontalAlignment = Alignment.Start,
+            modifier = Modifier
+                .fillMaxWidth()
+                .fillMaxHeight()
+                .background(color = DefaultBackground)
+                .verticalScroll(scrollState)
+                .padding(start = 22.dp, end = 22.dp, bottom = 48.dp)
+        ) {
         // Title Header - Responsive
         Column(
             verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
@@ -370,8 +388,8 @@ fun CreateEventForm(
                 )
             )
             TextField(
-                value = title,
-                onValueChange = { title = it },
+                value = formState.title,
+                onValueChange = { viewModel.updateTitle(it) },
                 placeholder = {
                     Text(
                         "Amazing event",
@@ -420,8 +438,8 @@ fun CreateEventForm(
                     .border(1.dp, Color(0xFF404040), RoundedCornerShape(10.dp))
             ) {
                 TextField(
-                    value = description,
-                    onValueChange = { description = it },
+                    value = formState.description,
+                    onValueChange = { viewModel.updateDescription(it) },
                     placeholder = {
                         Text(
                             "This is amazing..",
@@ -490,8 +508,8 @@ fun CreateEventForm(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         TimePickerField(
-                            value = startTime,
-                            onValueChange = { startTime = it },
+                            value = formState.startTime,
+                            onValueChange = { viewModel.updateStartTime(it) },
                             modifier = Modifier
                                 .width(86.dp)
                                 .heightIn(min = 60.dp)
@@ -510,8 +528,8 @@ fun CreateEventForm(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         TimePickerField(
-                            value = endTime,
-                            onValueChange = { endTime = it },
+                            value = formState.endTime,
+                            onValueChange = { viewModel.updateEndTime(it) },
                             modifier = Modifier
                                 .width(86.dp)
                                 .heightIn(min = 60.dp)
@@ -522,8 +540,8 @@ fun CreateEventForm(
 
             // Date Picker
             DatePickerField(
-                value = date,
-                onValueChange = { date = it },
+                value = formState.date,
+                onValueChange = { viewModel.updateDate(it) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(min = 50.dp)
@@ -547,8 +565,8 @@ fun CreateEventForm(
                 modifier = Modifier.fillMaxWidth()
             )
             TextField(
-                value = location,
-                onValueChange = { location = it },
+                value = formState.location,
+                onValueChange = { viewModel.updateLocation(it) },
                 placeholder = {
                     Text(
                         "Type a location",
@@ -614,8 +632,8 @@ fun CreateEventForm(
                             .border(1.dp, Color(0xFF404040), RoundedCornerShape(10.dp))
                     ) {
                         TextField(
-                            value = price,
-                            onValueChange = { price = it },
+                            value = formState.price,
+                            onValueChange = { viewModel.updatePrice(it) },
                             placeholder = {
                                 Text(
                                     "ex: 12",
@@ -656,8 +674,8 @@ fun CreateEventForm(
                             .border(1.dp, Color(0xFF404040), RoundedCornerShape(10.dp))
                     ) {
                         TextField(
-                            value = capacity,
-                            onValueChange = { capacity = it },
+                            value = formState.capacity,
+                            onValueChange = { viewModel.updateCapacity(it) },
                             placeholder = {
                                 Text(
                                     "ex: 250",
@@ -688,7 +706,14 @@ fun CreateEventForm(
 
         // Create Ticket Button
         Button(
-            onClick = onEventCreated,
+            onClick = {
+                // TODO: Get organizerId and organizerName from AuthViewModel/User context
+                // For now using placeholder values
+                viewModel.createEvent(
+                    organizerId = "temp-organizer-id",
+                    organizerName = "Temporary Organizer"
+                )
+            },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(48.dp)
@@ -723,6 +748,29 @@ fun CreateEventForm(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+    }
+
+        // Loading overlay
+        if (uiState is CreateEventUiState.Loading) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black.copy(alpha = 0.5f)),
+                contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator(
+                    color = EventDateColor
+                )
+            }
+        }
+
+        // Snackbar for error messages
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(16.dp)
+        )
     }
 }
 
