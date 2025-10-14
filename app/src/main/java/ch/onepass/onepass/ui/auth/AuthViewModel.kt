@@ -17,17 +17,18 @@ data class AuthUiState(
     val errorMessage: String? = null
 )
 
-class AuthViewModel(private val authRepository: AuthRepositoryFirebase = AuthRepositoryFirebase()) :
-    ViewModel() {
+open class AuthViewModel(
+    private val authRepository: AuthRepositoryFirebase = AuthRepositoryFirebase()
+) : ViewModel() {
 
   private val _uiState = MutableStateFlow(AuthUiState())
-  val uiState = _uiState.asStateFlow()
+  open val uiState = _uiState.asStateFlow()
 
   fun getServerClientId(context: Context): String {
     return context.getString(R.string.default_web_client_id)
   }
 
-  fun signIn(context: Context, credentialManager: CredentialManager) {
+  open fun signIn(context: Context, credentialManager: CredentialManager) {
     viewModelScope.launch {
       try {
         _uiState.value = _uiState.value.copy(isLoading = true)
