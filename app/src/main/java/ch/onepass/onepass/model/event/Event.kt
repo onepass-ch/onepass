@@ -2,6 +2,7 @@ package ch.onepass.onepass.model.event
 
 import ch.onepass.onepass.model.map.Location
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.ServerTimestamp
 import java.text.SimpleDateFormat
 import java.util.Locale
 
@@ -57,9 +58,9 @@ data class Event(
     val tags: List<String> = emptyList(),
 
     // Metadata
-    val createdAt: Timestamp? = null,
-    val updatedAt: Timestamp? = null,
-    val deletedAt: Timestamp? = null
+    @ServerTimestamp val createdAt: Timestamp? = null,
+    @ServerTimestamp val updatedAt: Timestamp? = null,
+    @ServerTimestamp val deletedAt: Timestamp? = null
 ) {
   /** Returns the event title in lowercase for case-insensitive searching. */
   val titleLower: String

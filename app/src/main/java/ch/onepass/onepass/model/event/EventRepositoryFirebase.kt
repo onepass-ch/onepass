@@ -1,7 +1,6 @@
 package ch.onepass.onepass.model.event
 
 import ch.onepass.onepass.model.map.Location
-import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.Query
@@ -192,8 +191,7 @@ class EventRepositoryFirebase : EventRepository {
    */
   override suspend fun createEvent(event: Event): Result<String> = runCatching {
     val docRef = eventsCollection.document()
-    val eventWithMetadata =
-        event.copy(eventId = docRef.id, createdAt = Timestamp.now(), updatedAt = Timestamp.now())
+    val eventWithMetadata = event.copy(eventId = docRef.id, createdAt = null, updatedAt = null)
     docRef.set(eventWithMetadata).await()
     event.location?.coordinates?.let { geoFirestore.setLocation(docRef.id, it) }
     docRef.id
@@ -208,7 +206,7 @@ class EventRepositoryFirebase : EventRepository {
    * @return A [Result] indicating success or failure.
    */
   override suspend fun updateEvent(event: Event): Result<Unit> = runCatching {
-    val updated = event.copy(updatedAt = Timestamp.now())
+    val updated = event.copy(updatedAt = null)
     eventsCollection.document(event.eventId).set(updated).await()
     event.location?.coordinates?.let { geoFirestore.setLocation(event.eventId, it) }
   }
