@@ -1,116 +1,123 @@
-    import java.io.FileInputStream
-    import java.util.Properties
+import java.io.FileInputStream
+import java.util.Properties
 
-    plugins {
-        alias(libs.plugins.androidApplication)
-        alias(libs.plugins.jetbrainsKotlinAndroid)
-        alias(libs.plugins.ktfmt)
-        alias(libs.plugins.sonar)
-        id("jacoco")
+plugins {
+    alias(libs.plugins.androidApplication)
+    alias(libs.plugins.jetbrainsKotlinAndroid)
+    alias(libs.plugins.ktfmt)
+    alias(libs.plugins.sonar)
+    id("jacoco")
+    id("com.google.gms.google-services")
+}
+
+android {
+    namespace = "ch.onepass.onepass"
+    compileSdk = 34
+
+    val localProperties = Properties()
+    val localPropertiesFile = rootProject.file("local.properties")
+    if (localPropertiesFile.exists()) {
+        localProperties.load(FileInputStream(localPropertiesFile))
     }
 
-    android {
-        namespace = "ch.onepass.onepass"
-        compileSdk = 34
+    // Get Mapbox token from local.properties
+    val mapboxToken: String? = localProperties.getProperty("MAPBOX_ACCESS_TOKEN")
 
-        val localProperties = Properties()
-        val localPropertiesFile = rootProject.file("local.properties")
-        if (localPropertiesFile.exists()) {
-            localProperties.load(FileInputStream(localPropertiesFile))
+    if (mapboxToken.isNullOrBlank()) {
+        logger.warn(
+            "⚠️ Mapbox access token not found in local.properties. " +
+                    "Maps may not function correctly until MAPBOX_ACCESS_TOKEN is set."
+        )
+    }
+
+    defaultConfig {
+        applicationId = "ch.onepass.onepass"
+        minSdk = 28
+        targetSdk = 34
+        versionCode = 1
+        versionName = "1.0"
+
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        vectorDrawables {
+            useSupportLibrary = true
         }
+        buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxToken}\"")
+    }
 
-        /// Get Mapbox token from local.properties
-        val mapboxToken: String? = localProperties.getProperty("MAPBOX_ACCESS_TOKEN")
-
-        if (mapboxToken.isNullOrBlank()) {
-            logger.warn(
-                "⚠️ Mapbox access token not found in local.properties. " +
-                        "Maps may not function correctly until MAPBOX_ACCESS_TOKEN is set."
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
             )
         }
 
-        defaultConfig {
-            applicationId = "ch.onepass.onepass"
-            minSdk = 28
-            targetSdk = 34
-            versionCode = 1
-            versionName = "1.0"
-
-            testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-            vectorDrawables {
-                useSupportLibrary = true
-            }
-            buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxToken}\"")
-        }
-
-        buildTypes {
-            release {
-                isMinifyEnabled = false
-                proguardFiles(
-                    getDefaultProguardFile("proguard-android-optimize.txt"),
-                    "proguard-rules.pro"
-                )
-            }
-
-            debug {
-                enableUnitTestCoverage = true
-                enableAndroidTestCoverage = true
-            }
-        }
-
-        testCoverage {
-            jacocoVersion = "0.8.11"
-        }
-
-        buildFeatures {
-            compose = true
-            buildConfig = true
-        }
-
-        composeOptions {
-            kotlinCompilerExtensionVersion = "1.4.2"
-        }
-
-        compileOptions {
-            sourceCompatibility = JavaVersion.VERSION_1_8
-            targetCompatibility = JavaVersion.VERSION_1_8
-        }
-
-        kotlinOptions {
-            jvmTarget = "1.8"
-        }
-
-        packaging {
-            resources {
-                excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            }
-        }
-
-        testOptions {
-            unitTests {
-                isIncludeAndroidResources = true
-                isReturnDefaultValues = true
-            }
-        }
-
-        // Robolectric needs to be run only in debug. But its tests are placed in the shared source set (test)
-        // The next lines transfers the src/test/* from shared to the testDebug one
-        //
-        // This prevent errors from occurring during unit tests
-        sourceSets.getByName("testDebug") {
-            val test = sourceSets.getByName("test")
-
-            java.setSrcDirs(test.java.srcDirs)
-            res.setSrcDirs(test.res.srcDirs)
-            resources.setSrcDirs(test.resources.srcDirs)
-        }
-
-        sourceSets.getByName("test") {
-            java.setSrcDirs(emptyList<File>())
-            res.setSrcDirs(emptyList<File>())
-            resources.setSrcDirs(emptyList<File>())
+        debug {
+            enableUnitTestCoverage = true
+            enableAndroidTestCoverage = true
         }
     }
+
+    testCoverage {
+        jacocoVersion = "0.8.11"
+    }
+
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = "1.4.2"
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_1_8
+        targetCompatibility = JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
+    packaging {
+        resources {
+            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            merges += "META-INF/LICENSE.md"
+            merges += "META-INF/LICENSE-notice.md"
+            excludes += "META-INF/DEPENDENCIES"
+        }
+        packagingOptions {
+            jniLibs {
+                useLegacyPackaging = true
+            }
+        }
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
+            isReturnDefaultValues = true
+        }
+    }
+
+    // Robolectric needs to be run only in debug. But its tests are placed in the shared source set (test)
+    // The next lines transfer the src/test/* from shared to the testDebug one
+    // This prevents errors from occurring during unit tests
+    sourceSets.getByName("testDebug") {
+        val test = sourceSets.getByName("test")
+        java.setSrcDirs(test.java.srcDirs)
+        res.setSrcDirs(test.res.srcDirs)
+        resources.setSrcDirs(test.resources.srcDirs)
+    }
+
+    sourceSets.getByName("test") {
+        java.setSrcDirs(emptyList<File>())
+        res.setSrcDirs(emptyList<File>())
+        resources.setSrcDirs(emptyList<File>())
+    }
+}
 
     sonar {
         properties {
