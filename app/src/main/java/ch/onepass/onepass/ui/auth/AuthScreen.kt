@@ -22,6 +22,7 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -30,12 +31,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.credentials.CredentialManager
 import ch.onepass.onepass.R
 
 object SignInScreenTestTags {
@@ -45,11 +48,11 @@ object SignInScreenTestTags {
 
 @Composable
 @Preview
-fun AuthScreen(
-    onSignedIn: () -> Unit = {},
-) {
-  val isLoading = false
-  // Todo: isLoading = uiState.isLoading
+fun AuthScreen(onSignedIn: () -> Unit = {}, authViewModel: AuthViewModel = AuthViewModel()) {
+  val context = LocalContext.current
+  val credentialManager = remember { CredentialManager.create(context) }
+  val uiState by authViewModel.uiState.collectAsState()
+  val isLoading = uiState.isLoading
 
   // The main container for the screen
   Scaffold(
@@ -69,10 +72,7 @@ fun AuthScreen(
           if (isLoading) {
             CircularProgressIndicator(modifier = Modifier.size(48.dp))
           } else {
-            // Todo: Implement Google sign-in
-            // GoogleSignInButton(onSignInClick = { authViewModel.signIn(context, credentialManager)
-            // })
-            GoogleSignInButton(onSignInClick = {})
+            GoogleSignInButton(onSignInClick = { authViewModel.signIn(context, credentialManager) })
             onSignedIn()
           }
         }
