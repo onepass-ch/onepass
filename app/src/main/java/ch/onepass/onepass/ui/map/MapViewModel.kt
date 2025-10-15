@@ -38,7 +38,7 @@ data class MapUIState(val events: List<Event> = emptyList(), val selectedEvent: 
  * @param eventRepository Repository providing access to [Event] data.
  */
 class MapViewModel(
-  private val eventRepository: EventRepository = RepositoryProvider.eventRepository,
+    private val eventRepository: EventRepository = RepositoryProvider.eventRepository,
 ) : ViewModel() {
   companion object {
     // Default camera configuration
