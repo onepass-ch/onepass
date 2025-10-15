@@ -148,6 +148,12 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 }
 
 dependencies {
+  implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
+  implementation("com.google.firebase:firebase-auth-ktx")
+  implementation("com.google.firebase:firebase-firestore-ktx")
+  implementation("com.google.firebase:firebase-functions-ktx")
+  androidTestImplementation("androidx.test:core-ktx:1.5.0")
+  androidTestImplementation("androidx.test.ext:junit-ktx:1.1.5")
   implementation("androidx.datastore:datastore-preferences:1.1.1")
   implementation("com.google.firebase:firebase-functions-ktx:20.4.0")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
