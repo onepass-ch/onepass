@@ -27,46 +27,41 @@ fun BottomNavigationMenu(
     onNavigate: (Screen) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val itemColors = NavigationBarItemDefaults.colors(
-        selectedIconColor = PurplePrimary,
-        selectedTextColor = PurplePrimary,
-        indicatorColor = PurplePrimary.copy(alpha = 0.12f),
-        unselectedIconColor = GrayStroke,
-        unselectedTextColor = GrayStroke
-    )
+  val itemColors =
+      NavigationBarItemDefaults.colors(
+          selectedIconColor = PurplePrimary,
+          selectedTextColor = PurplePrimary,
+          indicatorColor = PurplePrimary.copy(alpha = 0.12f),
+          unselectedIconColor = GrayStroke,
+          unselectedTextColor = GrayStroke)
 
-    NavigationBar(
-        modifier = modifier.fillMaxWidth(),
-        containerColor = BackgroundDark,
-        tonalElevation = 0.dp,
-        windowInsets = NavigationBarDefaults.windowInsets
-    ) {
+  NavigationBar(
+      modifier = modifier.fillMaxWidth(),
+      containerColor = BackgroundDark,
+      tonalElevation = 0.dp,
+      windowInsets = NavigationBarDefaults.windowInsets) {
         tabs.forEach { tab ->
-            val selected = currentRoute == tab.destination.route
-            NavigationBarItem(
-                selected = selected,
-                onClick = { onNavigate(tab.destination) },
-                icon = {
-                    Icon(
-                        painter = painterResource(id = tab.iconRes),
-                        contentDescription = tab.name
-                    )
-                },
-                label = { Text(tab.name) },
-                alwaysShowLabel = true,
-                colors = itemColors
-            )
+          val selected = currentRoute == tab.destination.route
+          NavigationBarItem(
+              selected = selected,
+              onClick = { onNavigate(tab.destination) },
+              icon = {
+                Icon(painter = painterResource(id = tab.iconRes), contentDescription = tab.name)
+              },
+              label = { Text(tab.name) },
+              alwaysShowLabel = true,
+              colors = itemColors)
         }
-    }
+      }
 }
 
 @Preview(name = "BottomNav (Dark)", showBackground = true, widthDp = 412, heightDp = 85)
 @Composable
 private fun BottomNavigationBarPreviewDark() {
-    OnePassTheme(darkTheme = true) {
-        BottomNavigationMenu(
-            currentRoute = Screen.Tickets.route,
-            onNavigate = { },
-            modifier = Modifier.width(412.dp).height(85.dp))
-    }
+  OnePassTheme(darkTheme = true) {
+    BottomNavigationMenu(
+        currentRoute = Screen.Tickets.route,
+        onNavigate = {},
+        modifier = Modifier.width(412.dp).height(85.dp))
+  }
 }
