@@ -18,6 +18,7 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -45,7 +46,20 @@ enum class TicketStatus(@ColorRes val colorRes: Int) {
 }
 
 @Composable
-fun MyEventsScreen(userQrData: String, currentTickets: List<Ticket>, expiredTickets: List<Ticket>) {
+fun MyEventsScreen(viewModel: MyEventsViewModel, userQrData: String) {
+  val currentTickets by viewModel.currentTickets.collectAsState()
+  val expiredTickets by viewModel.expiredTickets.collectAsState()
+
+  MyEventsContent(
+      userQrData = userQrData, currentTickets = currentTickets, expiredTickets = expiredTickets)
+}
+
+@Composable
+fun MyEventsContent(
+    userQrData: String,
+    currentTickets: List<Ticket>,
+    expiredTickets: List<Ticket>
+) {
   var selectedTab by remember { mutableIntStateOf(0) }
   val tabs = listOf("Current", "Expired")
   val tickets = if (selectedTab == 0) currentTickets else expiredTickets
@@ -114,7 +128,7 @@ fun MyEventsScreen(userQrData: String, currentTickets: List<Ticket>, expiredTick
 
 @Preview(showBackground = true)
 @Composable
-fun MyEventsScreenPreview() {
+fun MyEventsContentPreview() {
   OnePassTheme {
     val currentTickets =
         listOf(
@@ -127,6 +141,7 @@ fun MyEventsScreenPreview() {
     val expiredTickets =
         listOf(Ticket("Morges Party", TicketStatus.EXPIRED, "Nov 10, 2024 • 8:00 PM", "Morges"))
 
-    MyEventsScreen("USER-QR-DATA", currentTickets = currentTickets, expiredTickets = expiredTickets)
+    MyEventsContent(
+        "USER-QR-DATA", currentTickets = currentTickets, expiredTickets = expiredTickets)
   }
 }
