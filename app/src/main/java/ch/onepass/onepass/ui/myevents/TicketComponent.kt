@@ -44,7 +44,7 @@ import ch.onepass.onepass.ui.theme.OnePassTheme
  * @param status Status of the ticket (e.g., CURRENTLY, UPCOMING, EXPIRED)
  * @param dateTime Date and time of the event
  * @param location Location of the event
- * @param modifier Modifier for stylingg
+ * @param modifier Modifier for styling
  */
 @Composable
 fun TicketComponent(
