@@ -26,7 +26,7 @@ object MapEventsTestScript {
 
     runBlocking {
       try {
-        val repository = RepositoryProvider.repository
+        val repository = RepositoryProvider.eventRepository
         Log.d(TAG, "📡 Repository initialized: ${repository::class.simpleName}")
 
         val testEvents = createTestEvents()
