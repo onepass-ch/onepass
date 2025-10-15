@@ -157,11 +157,7 @@ private fun EventListContent(
       verticalArrangement = Arrangement.spacedBy(24.dp)) {
         items(items = events, key = { it.eventId }) { event ->
           EventCard(
-              eventPrice = event.lowestPrice,
-              eventTitle = event.title,
-              eventDate = event.displayDateTime,
-              eventLocation = event.displayLocation,
-              eventOrganizer = event.organizerName,
+              event = event,
               modifier = Modifier.testTag(FeedScreenTestTags.getTestTagForEventItem(event.eventId)),
               onCardClick = { onEventClick(event.eventId) })
         }
