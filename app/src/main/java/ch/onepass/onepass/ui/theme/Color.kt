@@ -15,3 +15,8 @@ val BackgroundDark = Color(0xFF111118)
 val GrayStroke = Color(0xFF9CA3AF)
 val White = Color(0xFFFFFFFF)
 val Black = Color(0xFF000000)
+// Event Card specific colors
+val CardBackground = Color(0xFF262626)
+val CardShadow = Color(0x1A000000)
+val TextSecondary = Color(0xFF9CA3AF) // Gray-400
+val EventDateColor = Color(0xFF683F88) // Purple/Magenta

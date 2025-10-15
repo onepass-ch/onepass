@@ -26,13 +26,25 @@ jobs:
           submodules: recursive
           fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of Sonar analysis (if we use Sonar Later)
 
+      # Node.js setup for Firebase CLI
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
 
-      # Kernel-based Virtual Machine (KVM) is an open source virtualization technology built into Linux. Enabling it allows the Android emulator to run faster.
+      # Install Firebase CLI
+      - name: Install Firebase CLI
+        run: |
+          npm install -g firebase-tools
+          firebase --version
+
+      # Enable KVM for better emulator performance
       - name: Enable KVM group perms
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
+          ls -l /dev/kvm
 
       - name: Setup JDK
         uses: actions/setup-java@v4
@@ -40,14 +52,62 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      # Caching is a very useful part of a CI, as a workflow is executed in a clean environment every time,
-      # this means that one would need to re-download and re-process gradle files for every run. Which is very time consuming.
-      #
-      # To avoid that, we cache the the gradle folder to reuse it later.
+      # Decode and save google-services.json from GitHub secrets
+      - name: Decode google-services.json
+        env:
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES }}
+        run: |
+          echo "$GOOGLE_SERVICES_JSON" | base64 --decode > app/google-services.json
+          ls -la app/google-services.json
+
+      # Gradle cache
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v3
 
-      # Cache the Emulator, if the cache does not hit, create the emulator
+      # Create firebase.json if it doesn't exist
+      - name: Create Firebase config
+        run: |
+          if [ ! -f firebase.json ]; then
+            cat > firebase.json << 'EOF'
+          {
+            "emulators": {
+              "auth": {
+                "port": 9099
+              },
+              "firestore": {
+                "port": 8080
+              },
+              "ui": {
+                "enabled": false
+              }
+            }
+          }
+          EOF
+          fi
+          cat firebase.json
+
+      # Start Firebase Emulators in background with debugging
+      - name: Start Firebase Emulators
+        run: |
+          nohup firebase emulators:start --only auth,firestore --project demo-project > emulator.log 2>&1 &
+          EMULATOR_PID=$!
+          echo "Emulator PID: $EMULATOR_PID"
+          # Wait for emulators with increased timeout and logging
+          timeout=120
+          while ! (curl -s -f http://localhost:9099/ && curl -s -f http://localhost:8080/); do
+            if [ $timeout -le 0 ]; then
+              echo "Firebase emulators failed to start within 120s"
+              cat emulator.log
+              exit 1
+            fi
+            echo "Waiting for emulators... $timeout seconds remaining"
+            sleep 5
+            timeout=$((timeout - 5))
+          done
+          echo "Firebase emulators are running"
+          cat emulator.log
+
+      # Cache the Emulator
       - name: AVD cache
         uses: actions/cache@v4
         id: avd-cache
@@ -57,7 +117,7 @@ jobs:
             ~/.android/adb*
           key: avd-34
 
-      - name: create AVD and generate snapshot for caching
+      - name: Create AVD and generate snapshot for caching
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -67,7 +127,20 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
-          script: echo "Generated AVD snapshot for caching."
+          script: |
+            echo "Generating AVD snapshot..."
+            adb devices
+
+      # Load local.properties from the secrets
+      - name: Decode secrets
+        env:
+          LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
+        run: |
+          if [ -n "$LOCAL_PROPERTIES" ]; then
+          echo "$LOCAL_PROPERTIES" | base64 --decode > ./local.properties
+          else
+          echo "::warning::LOCAL_PROPERTIES secret is not set. local.properties will not be created. Should be present after B3"
+          fi
 
       - name: Grant execute permission for gradlew
         run: |
@@ -76,22 +149,20 @@ jobs:
       # Check formatting
       - name: KTFmt Check
         run: |
-          ./gradlew ktfmtCheck
+          ./gradlew ktfmtCheck --stacktrace
 
-      # This step runs gradle commands to build the application
+      # Assemble and lint
       - name: Assemble
         run: |
-          # To run the CI with debug information, add --info
-          ./gradlew assemble lint --parallel --build-cache
+          ./gradlew assemble lint --parallel --build-cache --stacktrace
 
       # Run Unit tests
       - name: Run tests
         run: |
-          # To run the CI with debug information, add --info
-          ./gradlew check --parallel --build-cache
+          ./gradlew check --parallel --build-cache --stacktrace
 
       # Run connected tests on the emulator
-      - name: run tests
+      - name: Run connected tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
@@ -100,14 +171,43 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: ./gradlew connectedCheck --parallel --build-cache
+          script: |
+            echo "Starting connected tests..."
+            ./gradlew connectedCheck --parallel --build-cache --stacktrace
 
-      # This step generates the coverage report which will be uploaded to sonar
+      # Stop Firebase Emulators
+      - name: Stop Firebase Emulators
+        if: always()
+        run: |
+          pkill -f "firebase emulators:start" || true
+          echo "Firebase emulators stopped"
+
+      # Generate Coverage Report
       - name: Generate Coverage Report
         run: |
-          ./gradlew jacocoTestReport
+          ./gradlew jacocoTestReport --stacktrace
 
-      # Upload the various reports to sonar
+      # Upload test results (even on failure)
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            app/build/reports/tests/
+            app/build/test-results/
+          retention-days: 7
+
+      # Upload coverage reports
+      - name: Upload coverage reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-reports
+          path: app/build/reports/jacoco/
+          retention-days: 7
+
+      # Upload the various reports to sonar (uncomment if needed)
 #      - name: Upload report to SonarCloud
 #        env:
 #          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
