@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.sonar)
   id("jacoco")
   id("com.google.gms.google-services")
+  id("org.jetbrains.kotlin.plugin.serialization") version "1.8.10"
 }
 
 android {
@@ -138,10 +139,23 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 }
 
 dependencies {
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+
+  implementation("androidx.datastore:datastore-preferences:1.1.1")
+  implementation("com.google.firebase:firebase-functions-ktx:20.4.0")
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+  implementation(libs.androidx.core.ktx)
+  implementation(libs.androidx.appcompat)
+  implementation(libs.material)
+  implementation(libs.androidx.lifecycle.runtime.ktx)
+  implementation(platform(libs.compose.bom))
+  testImplementation(libs.junit)
+  globalTestImplementation(libs.androidx.junit)
+  globalTestImplementation(libs.androidx.espresso.core)
 
     // ------------- Firebase ------------------
     implementation(platform(libs.firebase.bom))

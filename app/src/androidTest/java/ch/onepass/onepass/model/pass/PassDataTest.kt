@@ -9,6 +9,7 @@ import org.junit.Test
 class PassDataTest {
 
   private val rng = SecureRandom()
+  private val urlAlphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_-"
 
   /** Generates a random base64url-encoded signature (64 bytes). */
   private fun randomSigB64Url(): String {
@@ -16,26 +17,36 @@ class PassDataTest {
     return Base64.encodeToString(bytes, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
   }
 
+  /** Generates a random URL-safe token. */
+  private fun randomAlphaNum(n: Int): String {
+    val sb = StringBuilder(n)
+    repeat(n) {
+      val ch = urlAlphabet[rng.nextInt(urlAlphabet.length)]
+      sb.append(ch)
+    }
+    return sb.toString()
+  }
+
   /** Creates a minimal valid Pass ready for QR generation. */
   private fun createValidPass(
-      uid: String = "user-123",
-      kid: String = "kid-001",
-      issuedAt: Long = 1_700_000_000L,
-      version: Int = 1,
-      signature: String = randomSigB64Url(),
-      active: Boolean = true,
-      revokedAt: Long? = null,
-      lastScannedAt: Long? = null,
+    uid: String = "user-123",
+    kid: String = "kid-001",
+    issuedAt: Long = 1_700_000_000L,
+    version: Int = 1,
+    signature: String = randomSigB64Url(),
+    active: Boolean = true,
+    revokedAt: Long? = null,
+    lastScannedAt: Long? = null,
   ): Pass =
-      Pass(
-          uid = uid,
-          kid = kid,
-          issuedAt = issuedAt,
-          lastScannedAt = lastScannedAt,
-          active = active,
-          version = version,
-          revokedAt = revokedAt,
-          signature = signature)
+    Pass(
+      uid = uid,
+      kid = kid,
+      issuedAt = issuedAt,
+      lastScannedAt = lastScannedAt,
+      active = active,
+      version = version,
+      revokedAt = revokedAt,
+      signature = signature)
 
   // ---------------------------------------------------------------
   // Basic validation
@@ -103,6 +114,14 @@ class PassDataTest {
   }
 
   @Test
+  fun isIncomplete_trueForTooShortSignature() {
+    // isBase64UrlNoPad exige length >= 4
+    val tooShort = "A_-"
+    val pass = createValidPass(signature = tooShort)
+    assertTrue(pass.isIncomplete)
+  }
+
+  @Test
   fun isIncomplete_falseForDashUnderscoreAlphabet() {
     // Minimal but valid base64url that decodes without padding in Android Base64
     val okSig = "A_-0"
@@ -117,7 +136,7 @@ class PassDataTest {
   @Test
   fun payloadJson_expectedStructure() {
     val pass =
-        createValidPass(uid = "user-123", kid = "kid-001", issuedAt = 1700000000L, version = 1)
+      createValidPass(uid = "user-123", kid = "kid-001", issuedAt = 1700000000L, version = 1)
     val expected = """{"uid":"user-123","kid":"kid-001","iat":1700000000,"ver":1}"""
     assertEquals(expected, pass.payloadJson())
   }
@@ -131,8 +150,7 @@ class PassDataTest {
     val decoded = String(decodedBytes, Charsets.UTF_8)
     assertEquals(pass.payloadJson(), decoded)
 
-    // A new pass with same payload fields but different random signature must yield same
-    // payloadB64Url
+    // Same payload fields -> same payloadB64Url (signature shouldn't affect payload encoding)
     val pass2 = createValidPass(uid = "u", kid = "k", issuedAt = 1700000000L, version = 1)
     assertEquals(b64, pass2.payloadB64Url())
   }
@@ -142,6 +160,13 @@ class PassDataTest {
     val pass = createValidPass()
     val b64 = pass.payloadB64Url()
     assertFalse(b64.contains("="))
+  }
+
+  @Test
+  fun payloadB64Url_isUrlSafeAlphabetOnly() {
+    val pass = createValidPass()
+    val b64 = pass.payloadB64Url()
+    assertTrue(Regex("^[A-Za-z0-9_-]+$").matches(b64))
   }
 
   // ---------------------------------------------------------------
@@ -176,10 +201,175 @@ class PassDataTest {
     // Payload must decode to payloadJson and must not be padded
     assertFalse(payloadB64.contains("="))
     val decoded =
-        String(
-            Base64.decode(payloadB64, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING),
-            Charsets.UTF_8)
+      String(
+        Base64.decode(payloadB64, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING),
+        Charsets.UTF_8)
     assertEquals(pass.payloadJson(), decoded)
+  }
+
+  // ---------------------------------------------------------------
+  // parseFromQr() coverage
+  // ---------------------------------------------------------------
+
+  @Test
+  fun parseFromQr_roundTrip_valid() {
+    val original = createValidPass()
+    val parsed = Pass.parseFromQr(original.qrText).getOrThrow()
+    assertEquals(original.uid, parsed.uid)
+    assertEquals(original.kid, parsed.kid)
+    assertEquals(original.issuedAt, parsed.issuedAt)
+    assertEquals(original.version, parsed.version)
+    assertEquals(original.signature, parsed.signature)
+  }
+
+  @Test
+  fun parseFromQr_roundTrip_randomized() {
+    repeat(20) {
+      val original = createValidPass(
+        uid = randomAlphaNum(8),
+        kid = randomAlphaNum(6),
+        signature = randomSigB64Url()
+      )
+      val parsed = Pass.parseFromQr(original.qrText).getOrThrow()
+      assertEquals(original.uid, parsed.uid)
+      assertEquals(original.kid, parsed.kid)
+      assertEquals(original.issuedAt, parsed.issuedAt)
+      assertEquals(original.version, parsed.version)
+      assertEquals(original.signature, parsed.signature)
+      assertFalse(parsed.isIncomplete)
+    }
+  }
+
+  @Test
+  fun parseFromQr_defaultsForOmittedStateFields() {
+    val p = createValidPass()
+    val parsed = Pass.parseFromQr(p.qrText).getOrThrow()
+    // These fields are not carried in the QR payload => default values of data class
+    assertTrue(parsed.active)
+    assertNull(parsed.revokedAt)
+    assertNull(parsed.lastScannedAt)
+  }
+
+  @Test
+  fun parseFromQr_failsOnBadPrefix() {
+    val p = createValidPass()
+    val bad = p.qrText.replace("onepass:user:v1.", "badprefix:")
+    val ex = Pass.parseFromQr(bad).exceptionOrNull()
+    assertNotNull(ex)
+    assertTrue(ex!!.message?.contains("Bad prefix") == true)
+  }
+
+  @Test
+  fun parseFromQr_failsOnBadTokenFormat_noDot() {
+    val p = createValidPass()
+    val onlyPayload = "onepass:user:v1.${p.payloadB64Url()}" // missing ".<signature>"
+    val ex = Pass.parseFromQr(onlyPayload).exceptionOrNull()
+    assertNotNull(ex)
+    assertTrue(ex!!.message?.contains("Bad token format") == true)
+  }
+
+  @Test
+  fun parseFromQr_failsOnEmptySignature() {
+    val p = createValidPass()
+    val qr = "onepass:user:v1.${p.payloadB64Url()}."
+    val ex = Pass.parseFromQr(qr).exceptionOrNull()
+    assertNotNull(ex)
+    assertTrue(ex!!.message?.contains("Empty signature") == true)
+  }
+
+  @Test
+  fun parseFromQr_failsOnBadBase64Payload_typeCheck() {
+    val p = createValidPass()
+    val qr = "onepass:user:v1.@@@.${p.signature}" // invalid base64url
+    val ex = Pass.parseFromQr(qr).exceptionOrNull()
+    assertNotNull(ex)
+    // Base64.decode throws IllegalArgumentException, which is surfaced by runCatching
+    assertTrue(ex is IllegalArgumentException)
+  }
+
+  @Test
+  fun parseFromQr_failsOnMissingFields_uid() {
+    // Build a payload JSON without "uid"
+    val json = """{"kid":"k","iat":1700000000,"ver":1}"""
+    val payloadB64 =
+      Base64.encodeToString(
+        json.toByteArray(Charsets.UTF_8),
+        Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
+      )
+    val qr = "onepass:user:v1.$payloadB64.${randomSigB64Url()}"
+    val ex = Pass.parseFromQr(qr).exceptionOrNull()
+    assertNotNull(ex)
+    assertTrue(ex!!.message?.contains("uid missing") == true)
+  }
+
+  @Test
+  fun parseFromQr_failsOnMissingFields_kid() {
+    val json = """{"uid":"u","iat":1700000000,"ver":1}"""
+    val payloadB64 =
+      Base64.encodeToString(
+        json.toByteArray(Charsets.UTF_8),
+        Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
+      )
+    val qr = "onepass:user:v1.$payloadB64.${randomSigB64Url()}"
+    val ex = Pass.parseFromQr(qr).exceptionOrNull()
+    assertNotNull(ex)
+    assertTrue(ex!!.message?.contains("kid missing") == true)
+  }
+
+  @Test
+  fun parseFromQr_failsOnMissingFields_iat() {
+    val json = """{"uid":"u","kid":"k","ver":1}"""
+    val payloadB64 =
+      Base64.encodeToString(
+        json.toByteArray(Charsets.UTF_8),
+        Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
+      )
+    val qr = "onepass:user:v1.$payloadB64.${randomSigB64Url()}"
+    val ex = Pass.parseFromQr(qr).exceptionOrNull()
+    assertNotNull(ex)
+    assertTrue(ex!!.message?.contains("iat missing") == true)
+  }
+
+  @Test
+  fun parseFromQr_failsOnMissingFields_ver() {
+    val json = """{"uid":"u","kid":"k","iat":1700000000}"""
+    val payloadB64 =
+      Base64.encodeToString(
+        json.toByteArray(Charsets.UTF_8),
+        Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
+      )
+    val qr = "onepass:user:v1.$payloadB64.${randomSigB64Url()}"
+    val ex = Pass.parseFromQr(qr).exceptionOrNull()
+    assertNotNull(ex)
+    assertTrue(ex!!.message?.contains("ver missing") == true)
+  }
+
+  @Test
+  fun parseFromQr_parsedWithInvalidDomainValues_isIncomplete_verNonPositif() {
+    // ver <= 0 est parsé, mais devrait rendre l'objet incohérent
+    val json = """{"uid":"u","kid":"k","iat":1700000000,"ver":0}"""
+    val payloadB64 =
+      Base64.encodeToString(
+        json.toByteArray(Charsets.UTF_8),
+        Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
+      )
+    val qr = "onepass:user:v1.$payloadB64.${randomSigB64Url()}"
+    val parsed = Pass.parseFromQr(qr).getOrThrow()
+    assertTrue(parsed.isIncomplete)
+  }
+
+  @Test
+  fun parseFromQr_parsedWithInvalidDomainValues_isIncomplete_iatNonPositif() {
+    // iat <= 0 est parsé, mais devrait rendre l'objet incohérent
+    val json = """{"uid":"u","kid":"k","iat":0,"ver":1}"""
+    val payloadB64 =
+      Base64.encodeToString(
+        json.toByteArray(Charsets.UTF_8),
+        Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
+      )
+    val qr = "onepass:user:v1.$payloadB64.${randomSigB64Url()}"
+    val parsed = Pass.parseFromQr(qr).getOrThrow()
+    assertTrue(parsed.isIncomplete)
   }
 
   // ---------------------------------------------------------------
