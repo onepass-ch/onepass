@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.sonar)
   id("jacoco")
   id("com.google.gms.google-services")
+  id("org.jetbrains.kotlin.plugin.serialization") version "1.8.10"
 }
 
 android {
@@ -147,6 +148,9 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 }
 
 dependencies {
+  implementation("androidx.datastore:datastore-preferences:1.1.1")
+  implementation("com.google.firebase:firebase-functions-ktx:20.4.0")
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.appcompat)
   implementation(libs.material)
