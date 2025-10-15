@@ -11,8 +11,8 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Tests rendering of ProfileScreen() via the public composable.
- * Uses a fake ViewModel to inject deterministic state.
+ * Tests rendering of ProfileScreen() via the public composable. Uses a fake ViewModel to inject
+ * deterministic state.
  */
 class ProfileScreenComposeTest {
 
@@ -21,35 +21,32 @@ class ProfileScreenComposeTest {
   /** Simple fake ViewModel that overrides only the state. */
   private class FakeProfileViewModel(state: ProfileUiState) : ProfileViewModel() {
     private val fakeState = MutableStateFlow(state)
-    override val state: StateFlow<ProfileUiState> get() = fakeState
+    override val state: StateFlow<ProfileUiState>
+      get() = fakeState
   }
 
   @Test
   fun loading_showsTaggedProgress() {
     val fakeVm = FakeProfileViewModel(ProfileUiState(loading = true))
 
-    compose.setContent {
-      ProfileScreen(viewModel = fakeVm, onEffect = {})
-    }
+    compose.setContent { ProfileScreen(viewModel = fakeVm, onEffect = {}) }
 
     compose.onNodeWithTag(ProfileTestTags.LOADING).assertIsDisplayed()
   }
 
   @Test
   fun content_showsTaggedSections() {
-    val state = ProfileUiState(
-      displayName = "WILL SMITH",
-      email = "willsmith@email.com",
-      initials = "WS",
-      stats = ProfileStats(events = 12, upcoming = 3, saved = 7),
-      isOrganizer = false,
-      loading = false
-    )
+    val state =
+        ProfileUiState(
+            displayName = "WILL SMITH",
+            email = "willsmith@email.com",
+            initials = "WS",
+            stats = ProfileStats(events = 12, upcoming = 3, saved = 7),
+            isOrganizer = false,
+            loading = false)
     val fakeVm = FakeProfileViewModel(state)
 
-    compose.setContent {
-      ProfileScreen(viewModel = fakeVm, onEffect = {})
-    }
+    compose.setContent { ProfileScreen(viewModel = fakeVm, onEffect = {}) }
 
     // Main sections
     compose.onNodeWithTag(ProfileTestTags.SCREEN).assertIsDisplayed()
