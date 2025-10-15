@@ -26,6 +26,17 @@ import kotlinx.coroutines.launch
 
 data class MapUIState(val events: List<Event> = emptyList(), val selectedEvent: Event? = null)
 
+/**
+ * ViewModel for managing Mapbox map state and events.
+ *
+ * Responsibilities include:
+ * - Fetching and filtering published events with valid coordinates
+ * - Tracking the selected event when a map pin is clicked
+ * - Handling Mapbox MapView lifecycle and plugins
+ * - Enabling location tracking and recentering camera
+ *
+ * @param eventRepository Repository providing access to [Event] data.
+ */
 class MapViewModel(
     private val eventRepository: EventRepository = RepositoryProvider.repository,
 ) : ViewModel() {
@@ -56,7 +67,10 @@ class MapViewModel(
   }
 
   // --- Event handling ---
-  /** Fetches all published events and updates the UI state. */
+  /**
+   * Fetches all published events and updates [_uiState]. Filters out events with invalid or null
+   * coordinates.
+   */
   private fun fetchPublishedEvents() {
     viewModelScope.launch {
       eventRepository.getEventsByStatus(EventStatus.PUBLISHED).collect { events ->
@@ -71,7 +85,7 @@ class MapViewModel(
     }
   }
 
-  // Coordinate validation helper
+  /** Checks if given latitude and longitude are valid. */
   private fun isValidCoordinate(latitude: Double, longitude: Double): Boolean {
     return !latitude.isNaN() &&
         !longitude.isNaN() &&
@@ -80,7 +94,9 @@ class MapViewModel(
   }
 
   /**
-   * Sets the selected event when a pin is clicked, or clears it if the same event is clicked again.
+   * Selects an event when a pin is clicked. Clicking the same event twice clears the selection.
+   *
+   * @param event The [Event] to select.
    */
   fun selectEvent(event: Event) {
     val currentSelectedEvent = _uiState.value.selectedEvent
@@ -93,17 +109,20 @@ class MapViewModel(
     }
   }
 
-  /** Clears the selected event (e.g., when the card is dismissed). */
+  /** Clears the currently selected event. */
   fun clearSelectedEvent() {
     _uiState.value = _uiState.value.copy(selectedEvent = null)
   }
 
-  /** Refresh events manually. */
+  /** Refreshes events manually by fetching from repository. */
   fun refreshEvents() {
     fetchPublishedEvents()
   }
 
   // --- Mapbox integration ---
+  /**
+   * Initializes MapView, loads style, configures plugins, and optionally enables location tracking.
+   */
   open fun onMapReady(mapView: MapView, hasLocationPermission: Boolean) {
     if (internalMapView == mapView) return
     internalMapView = mapView
@@ -119,6 +138,7 @@ class MapViewModel(
     }
   }
 
+  /** Enables location tracking if permission is granted. */
   fun enableLocationTracking() {
     internalMapView?.let { enableLocationTracking(it) }
   }
@@ -138,6 +158,10 @@ class MapViewModel(
             .also { listener -> locationComponent.addOnIndicatorPositionChangedListener(listener) }
   }
 
+  /**
+   * Recenters the camera on the last known user location. Does nothing if no location is available
+   * or coordinates are invalid.
+   */
   open fun recenterCamera() {
     val mapView = internalMapView ?: return
     val mapboxMap = mapView.mapboxMap
@@ -154,6 +178,7 @@ class MapViewModel(
     )
   }
 
+  /** Configures gesture and compass plugins for the MapView. */
   private fun configurePlugins(mapView: MapView) {
     mapView.gestures?.updateSettings {
       rotateEnabled = true

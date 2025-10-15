@@ -31,7 +31,25 @@ import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import ch.onepass.onepass.ui.theme.TextSecondary
 
-/** Event card component that displays event information */
+/**
+ * A card component that displays information about an event.
+ *
+ * The card shows:
+ * - Event image with a fallback placeholder
+ * - Close button at the top-left corner
+ * - Like button at the top-right corner
+ * - Title and organizer
+ * - Event date
+ * - Event location and price
+ *
+ * The card layout and spacing are based on Figma designs.
+ *
+ * @param event The [Event] whose details are displayed.
+ * @param modifier Optional [Modifier] for styling, layout, or gesture handling. Defaults to
+ *   [Modifier].
+ * @param onCardClick Lambda called when the card is clicked.
+ * @param onDismiss Lambda called when the close button is clicked.
+ */
 @Composable
 fun EventCard(
     event: Event,

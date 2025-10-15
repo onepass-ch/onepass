@@ -16,6 +16,16 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 
+/**
+ * A customizable close button with a semi-transparent background.
+ *
+ * Displays a white "close" icon centered in a rounded square box. The button triggers [onDismiss]
+ * when clicked.
+ *
+ * @param onDismiss Lambda called when the button is clicked.
+ * @param modifier Optional [Modifier] for styling, layout, or gesture handling. Defaults to
+ *   [Modifier].
+ */
 @Composable
 fun CloseButton(onDismiss: () -> Unit, modifier: Modifier = Modifier) {
   Box(
