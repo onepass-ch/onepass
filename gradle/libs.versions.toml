@@ -1,4 +1,5 @@
 [versions]
+androidx-navigation = "2.7.7"
 agp = "8.3.0"
 kotlin = "1.8.10"
 coreKtx = "1.12.0"
@@ -21,7 +22,10 @@ coroutines-test = "1.7.3"
 okhttp = "4.12.0"
 geofirestore = "1.5.0"
 
+
+
 [libraries]
+androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidx-navigation" }
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
