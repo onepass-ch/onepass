@@ -147,11 +147,11 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 }
 
 dependencies {
+  implementation(libs.androidx.navigation.compose)
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.appcompat)
   implementation(libs.material)
   implementation(libs.androidx.lifecycle.runtime.ktx)
-  implementation(platform(libs.compose.bom))
   testImplementation(libs.junit)
   globalTestImplementation(libs.androidx.junit)
   globalTestImplementation(libs.androidx.espresso.core)
@@ -181,7 +181,7 @@ dependencies {
   globalTestImplementation(libs.kaspresso)
   globalTestImplementation(libs.kaspresso.compose)
 
-  // ----------       Robolectric     ------------
+  // ---------- Robolectric ------------
   testImplementation(libs.robolectric)
 
   // --------- Networking with OkHttp ---------
@@ -197,7 +197,7 @@ dependencies {
   // ---------- ZXing for QR code generation ------------
   implementation("com.google.zxing:core:3.5.1")
 
-  // ----------       MapBox         ------------
+  // ---------- MapBox ------------
   implementation("com.mapbox.maps:android-ndk27:11.15.2")
   implementation("com.mapbox.extension:maps-compose-ndk27:11.15.2")
 
