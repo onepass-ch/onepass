@@ -60,16 +60,37 @@ class MapViewModel(
   private fun fetchPublishedEvents() {
     viewModelScope.launch {
       eventRepository.getEventsByStatus(EventStatus.PUBLISHED).collect { events ->
-        // Only keep events with valid coordinates
-        val validEvents = events.filter { it.location?.coordinates != null }
+        // Filter events with valid coordinates
+        val validEvents =
+            events.filter { event ->
+              val coords = event.location?.coordinates
+              coords != null && isValidCoordinate(coords.latitude, coords.longitude)
+            }
         _uiState.value = _uiState.value.copy(events = validEvents)
       }
     }
   }
 
-  /** Sets the selected event when a pin is clicked. */
+  // Coordinate validation helper
+  private fun isValidCoordinate(latitude: Double, longitude: Double): Boolean {
+    return !latitude.isNaN() &&
+        !longitude.isNaN() &&
+        latitude in -90.0..90.0 &&
+        longitude in -180.0..180.0
+  }
+
+  /**
+   * Sets the selected event when a pin is clicked, or clears it if the same event is clicked again.
+   */
   fun selectEvent(event: Event) {
-    _uiState.value = _uiState.value.copy(selectedEvent = event)
+    val currentSelectedEvent = _uiState.value.selectedEvent
+    if (currentSelectedEvent?.eventId == event.eventId) {
+      // Same event clicked twice - toggle it off
+      clearSelectedEvent()
+    } else {
+      // Different event or no event selected - select this one
+      _uiState.value = _uiState.value.copy(selectedEvent = event)
+    }
   }
 
   /** Clears the selected event (e.g., when the card is dismissed). */
@@ -121,6 +142,11 @@ class MapViewModel(
     val mapView = internalMapView ?: return
     val mapboxMap = mapView.mapboxMap
     val point = lastKnownPoint ?: return
+
+    // Ensure point has valid coordinates
+    if (!isValidCoordinate(point.latitude(), point.longitude())) {
+      return
+    }
 
     mapboxMap.easeTo(
         CameraOptions.Builder().center(point).zoom(15.0).build(),

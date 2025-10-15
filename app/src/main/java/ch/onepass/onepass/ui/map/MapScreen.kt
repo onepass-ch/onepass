@@ -111,6 +111,8 @@ private fun setupAnnotations(mapView: MapView, events: List<Event>, viewModel: M
     pointAnnotationManager.create(pin)
   }
 
+  // Remove existing click listeners first
+  pointAnnotationManager.removeClickListener { true } // Remove all
   // --- Add click listener for pins ---
   pointAnnotationManager.addClickListener { annotation ->
     val eventIdJson = annotation.getData()
@@ -122,6 +124,9 @@ private fun setupAnnotations(mapView: MapView, events: List<Event>, viewModel: M
     true
   }
 
+  // Remove existing map click listeners first
+  mapView.gestures.removeOnMapClickListener { true } // Remove all
+  // --- Add map click listener for pins ---
   mapView.gestures.addOnMapClickListener {
     viewModel.clearSelectedEvent()
     true

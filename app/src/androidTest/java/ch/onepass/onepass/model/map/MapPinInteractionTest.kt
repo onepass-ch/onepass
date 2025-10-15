@@ -206,7 +206,7 @@ class MapPinInteractionTest : FirestoreTestBase() {
   }
 
   @Test
-  fun selectingSameEventTwiceKeepsCardOpen() = runTest {
+  fun selectingSameEventTwiceTogglesCardClosed() = runTest {
     // Arrange: Add an event
     val event =
         EventTestData.createTestEvent(
@@ -222,12 +222,11 @@ class MapPinInteractionTest : FirestoreTestBase() {
     val eventToSelect = mapViewModel.uiState.first { it.events.isNotEmpty() }.events.first()
 
     // Act: Select the same event twice
-    mapViewModel.selectEvent(eventToSelect)
-    mapViewModel.selectEvent(eventToSelect)
+    mapViewModel.selectEvent(eventToSelect) // First click - card opens
+    mapViewModel.selectEvent(eventToSelect) // Second click - card should close
 
-    // Assert: Event card should still be shown
+    // Assert: Event card should be CLOSED after second click
     val uiState = mapViewModel.uiState.first()
-    assertNotNull("Event should still be selected after second selection", uiState.selectedEvent)
-    assertEquals("Single Event", uiState.selectedEvent?.title)
+    assertNull("Event should be deselected after second click", uiState.selectedEvent)
   }
 }

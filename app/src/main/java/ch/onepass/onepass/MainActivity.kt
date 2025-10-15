@@ -12,10 +12,15 @@ import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
-import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import ch.onepass.onepass.resources.C
 import ch.onepass.onepass.ui.MapEventsTestScript
 import ch.onepass.onepass.ui.map.MapScreen
@@ -53,22 +58,28 @@ class MainActivity : ComponentActivity() {
 
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
 
-    val permission = Manifest.permission.ACCESS_FINE_LOCATION
-    val isLocationPermissionGranted =
-        ActivityCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
-
-    if (!isLocationPermissionGranted) {
-      requestPermissionLauncher.launch(permission)
-    }
-
     setContent {
       OnePassTheme {
+        // Track permission state once when the app starts
+        var hasPermission by rememberSaveable {
+          mutableStateOf(
+              ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
+                  PackageManager.PERMISSION_GRANTED)
+        }
+        // Ask for permission once on startup
+        LaunchedEffect(Unit) {
+          if (!hasPermission) {
+            requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+          } else {
+            mapViewModel.enableLocationTracking()
+          }
+        }
         // A surface container using the 'background' color from the theme
         Surface(
             modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
             color = MaterialTheme.colorScheme.background,
         ) {
-          MapScreen(isLocationPermissionGranted = isLocationPermissionGranted)
+          MapScreen(isLocationPermissionGranted = hasPermission)
         }
       }
     }
