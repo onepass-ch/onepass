@@ -22,17 +22,15 @@ open class PassFirestoreTestBase {
   protected lateinit var repository: PassRepository
   protected lateinit var firestore: FirebaseFirestore
 
-  // ✅ plus de lateinit : initialisation sûre au premier accès
   protected val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
 
   @OptIn(ExperimentalCoroutinesApi::class)
-  private val testDispatcher = UnconfinedTestDispatcher() // exécute immédiatement, pas de temps virtuel
+  private val testDispatcher = UnconfinedTestDispatcher()
 
   @Before
   open fun setUp() {
     val ctx = ApplicationProvider.getApplicationContext<Context>()
 
-    // 🔄 Réinitialise toute instance Firebase pour pouvoir appeler useEmulator() ensuite
     FirebaseApp.getApps(ctx).forEach { it.delete() }
     FirebaseApp.initializeApp(ctx)
 
@@ -40,26 +38,22 @@ open class PassFirestoreTestBase {
       "Firebase emulators not reachable. Run: firebase emulators:start --only firestore,auth,functions,ui"
     }
 
-    // Instances
     firestore = FirebaseFirestore.getInstance()
     val functions = FirebaseFunctions.getInstance()
 
-    // ➜ Configuration émulateurs (avant tout usage)
-    val host = FirebaseEmulator.HOST        // 10.0.2.2 sur AVD, 127.0.0.1 en JVM si codé ainsi
+    val host = FirebaseEmulator.HOST
     auth.useEmulator(host, 9099)
     firestore.useEmulator(host, 8080)
     firestore.firestoreSettings = FirebaseFirestoreSettings.Builder()
-      .setPersistenceEnabled(false) // déterministe pour les tests
+      .setPersistenceEnabled(false)
       .build()
     functions.useEmulator(host, 5001)
 
-    // Repo branché sur ces instances
     repository = PassRepositoryFirebase(
       db = firestore,
       functions = functions
     )
 
-    // 🔧 Nettoyage éventuel en TEMPS RÉEL (pas de runTest / temps virtuel)
     runBlocking(testDispatcher) {
       auth.currentUser?.let { user ->
         if (hasUserPass(user.uid)) {
@@ -77,8 +71,6 @@ open class PassFirestoreTestBase {
     }
     FirebaseEmulator.clearFirestoreEmulator()
   }
-
-  // --- Helpers suspend ---
 
   protected suspend fun hasUserPass(uid: String): Boolean {
     val doc = firestore.collection("user").document(uid).get().await()
