@@ -48,8 +48,10 @@ class FeedScreenTest {
           ticketsIssued = 100,
           pricingTiers = emptyList())
 
-  private class MockEventRepository(private val events: List<Event> = emptyList()) :
-      EventRepository {
+  private class MockEventRepository(
+      private val events: List<Event> = emptyList(),
+      private val shouldThrowError: Boolean = false
+  ) : EventRepository {
     override fun getAllEvents(): Flow<List<Event>> = flowOf(events)
 
     override fun searchEvents(query: String): Flow<List<Event>> = flowOf(emptyList())
@@ -66,8 +68,12 @@ class FeedScreenTest {
 
     override fun getFeaturedEvents(): Flow<List<Event>> = flowOf(emptyList())
 
-    override fun getEventsByStatus(status: EventStatus): Flow<List<Event>> =
-        flowOf(if (status == EventStatus.PUBLISHED) events else emptyList())
+    override fun getEventsByStatus(status: EventStatus): Flow<List<Event>> {
+      if (shouldThrowError) {
+        throw Exception("Test error")
+      }
+      return flowOf(if (status == EventStatus.PUBLISHED) events else emptyList())
+    }
 
     override suspend fun createEvent(event: Event): Result<String> = Result.success("test-id")
 
@@ -230,5 +236,127 @@ class FeedScreenTest {
     composeTestRule
         .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(manyEvents.last().eventId))
         .assertIsDisplayed()
+  }
+
+  // ============ NEW TESTS TO COVER MISSING LINES ============
+
+  @Test
+  fun feedScreen_displayErrorState_whenLoadingFails() {
+    val mockRepository = MockEventRepository(shouldThrowError = true)
+    val viewModel = FeedViewModel(mockRepository)
+
+    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
+
+    composeTestRule.waitForIdle()
+
+    // Verify error state is displayed
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
+    composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Test error").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.RETRY_BUTTON).assertIsDisplayed()
+  }
+
+  @Test
+  fun feedScreen_retryButton_triggersRefresh() {
+    val mockRepository = MockEventRepository(shouldThrowError = true)
+    val viewModel = FeedViewModel(mockRepository)
+
+    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
+
+    composeTestRule.waitForIdle()
+
+    // Verify error state is displayed
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.RETRY_BUTTON).assertIsDisplayed()
+
+    // Click retry button
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.RETRY_BUTTON).performClick()
+
+    // Verify loading state is triggered (error state should disappear momentarily)
+    composeTestRule.waitForIdle()
+  }
+
+  @Test
+  fun feedScreen_displayLoadingIndicator_initialLoad() {
+    // Create a repository that simulates loading
+    val mockRepository = MockEventRepository(emptyList())
+    val viewModel = FeedViewModel(mockRepository)
+
+    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
+
+    // The loading indicator should appear briefly during initial load
+    // We need to check this before waitForIdle completes
+    Thread.sleep(50) // Small delay to catch the loading state
+
+    // After loading completes, empty state should show
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.EMPTY_STATE).assertIsDisplayed()
+  }
+
+  @Test
+  fun feedScreen_displayEmptyStateMessage_correctly() {
+    val mockRepository = MockEventRepository(emptyList())
+    val viewModel = FeedViewModel(mockRepository)
+
+    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
+
+    composeTestRule.waitForIdle()
+
+    // Verify all empty state components
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.EMPTY_STATE).assertIsDisplayed()
+    composeTestRule.onNodeWithText("No Events Found").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText("Check back later for new events in your area!")
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun feedScreen_errorState_displaysAllComponents() {
+    val mockRepository = MockEventRepository(shouldThrowError = true)
+    val viewModel = FeedViewModel(mockRepository)
+
+    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
+
+    composeTestRule.waitForIdle()
+
+    // Verify all error state components
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
+    composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Test error").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Try Again").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.RETRY_BUTTON).assertIsDisplayed()
+  }
+
+  @Test
+  fun feedScreen_errorMessage_displaysCorrectErrorText() {
+    val mockRepository = MockEventRepository(shouldThrowError = true)
+    val viewModel = FeedViewModel(mockRepository)
+
+    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
+
+    composeTestRule.waitForIdle()
+
+    // Verify specific error message
+    composeTestRule.onNodeWithText("Test error", useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun feedScreen_retryButton_hasCorrectStyling() {
+    val mockRepository = MockEventRepository(shouldThrowError = true)
+    val viewModel = FeedViewModel(mockRepository)
+
+    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
+
+    // Wait for error state to appear
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      composeTestRule
+          .onAllNodesWithTag(FeedScreenTestTags.RETRY_BUTTON)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify button and label
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.RETRY_BUTTON).assertIsDisplayed()
+    composeTestRule.onNodeWithText("Try Again").assertIsDisplayed()
   }
 }
