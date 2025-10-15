@@ -29,24 +29,24 @@ class PassDataTest {
 
   /** Creates a minimal valid Pass ready for QR generation. */
   private fun createValidPass(
-    uid: String = "user-123",
-    kid: String = "kid-001",
-    issuedAt: Long = 1_700_000_000L,
-    version: Int = 1,
-    signature: String = randomSigB64Url(),
-    active: Boolean = true,
-    revokedAt: Long? = null,
-    lastScannedAt: Long? = null,
+      uid: String = "user-123",
+      kid: String = "kid-001",
+      issuedAt: Long = 1_700_000_000L,
+      version: Int = 1,
+      signature: String = randomSigB64Url(),
+      active: Boolean = true,
+      revokedAt: Long? = null,
+      lastScannedAt: Long? = null,
   ): Pass =
-    Pass(
-      uid = uid,
-      kid = kid,
-      issuedAt = issuedAt,
-      lastScannedAt = lastScannedAt,
-      active = active,
-      version = version,
-      revokedAt = revokedAt,
-      signature = signature)
+      Pass(
+          uid = uid,
+          kid = kid,
+          issuedAt = issuedAt,
+          lastScannedAt = lastScannedAt,
+          active = active,
+          version = version,
+          revokedAt = revokedAt,
+          signature = signature)
 
   // ---------------------------------------------------------------
   // Basic validation
@@ -136,7 +136,7 @@ class PassDataTest {
   @Test
   fun payloadJson_expectedStructure() {
     val pass =
-      createValidPass(uid = "user-123", kid = "kid-001", issuedAt = 1700000000L, version = 1)
+        createValidPass(uid = "user-123", kid = "kid-001", issuedAt = 1700000000L, version = 1)
     val expected = """{"uid":"user-123","kid":"kid-001","iat":1700000000,"ver":1}"""
     assertEquals(expected, pass.payloadJson())
   }
@@ -201,9 +201,9 @@ class PassDataTest {
     // Payload must decode to payloadJson and must not be padded
     assertFalse(payloadB64.contains("="))
     val decoded =
-      String(
-        Base64.decode(payloadB64, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING),
-        Charsets.UTF_8)
+        String(
+            Base64.decode(payloadB64, Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING),
+            Charsets.UTF_8)
     assertEquals(pass.payloadJson(), decoded)
   }
 
@@ -225,11 +225,9 @@ class PassDataTest {
   @Test
   fun parseFromQr_roundTrip_randomized() {
     repeat(20) {
-      val original = createValidPass(
-        uid = randomAlphaNum(8),
-        kid = randomAlphaNum(6),
-        signature = randomSigB64Url()
-      )
+      val original =
+          createValidPass(
+              uid = randomAlphaNum(8), kid = randomAlphaNum(6), signature = randomSigB64Url())
       val parsed = Pass.parseFromQr(original.qrText).getOrThrow()
       assertEquals(original.uid, parsed.uid)
       assertEquals(original.kid, parsed.kid)
@@ -292,10 +290,9 @@ class PassDataTest {
     // Build a payload JSON without "uid"
     val json = """{"kid":"k","iat":1700000000,"ver":1}"""
     val payloadB64 =
-      Base64.encodeToString(
-        json.toByteArray(Charsets.UTF_8),
-        Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
-      )
+        Base64.encodeToString(
+            json.toByteArray(Charsets.UTF_8),
+            Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
     val qr = "onepass:user:v1.$payloadB64.${randomSigB64Url()}"
     val ex = Pass.parseFromQr(qr).exceptionOrNull()
     assertNotNull(ex)
@@ -306,10 +303,9 @@ class PassDataTest {
   fun parseFromQr_failsOnMissingFields_kid() {
     val json = """{"uid":"u","iat":1700000000,"ver":1}"""
     val payloadB64 =
-      Base64.encodeToString(
-        json.toByteArray(Charsets.UTF_8),
-        Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
-      )
+        Base64.encodeToString(
+            json.toByteArray(Charsets.UTF_8),
+            Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
     val qr = "onepass:user:v1.$payloadB64.${randomSigB64Url()}"
     val ex = Pass.parseFromQr(qr).exceptionOrNull()
     assertNotNull(ex)
@@ -320,10 +316,9 @@ class PassDataTest {
   fun parseFromQr_failsOnMissingFields_iat() {
     val json = """{"uid":"u","kid":"k","ver":1}"""
     val payloadB64 =
-      Base64.encodeToString(
-        json.toByteArray(Charsets.UTF_8),
-        Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
-      )
+        Base64.encodeToString(
+            json.toByteArray(Charsets.UTF_8),
+            Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
     val qr = "onepass:user:v1.$payloadB64.${randomSigB64Url()}"
     val ex = Pass.parseFromQr(qr).exceptionOrNull()
     assertNotNull(ex)
@@ -334,10 +329,9 @@ class PassDataTest {
   fun parseFromQr_failsOnMissingFields_ver() {
     val json = """{"uid":"u","kid":"k","iat":1700000000}"""
     val payloadB64 =
-      Base64.encodeToString(
-        json.toByteArray(Charsets.UTF_8),
-        Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
-      )
+        Base64.encodeToString(
+            json.toByteArray(Charsets.UTF_8),
+            Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
     val qr = "onepass:user:v1.$payloadB64.${randomSigB64Url()}"
     val ex = Pass.parseFromQr(qr).exceptionOrNull()
     assertNotNull(ex)
@@ -349,10 +343,9 @@ class PassDataTest {
     // ver <= 0 est parsé, mais devrait rendre l'objet incohérent
     val json = """{"uid":"u","kid":"k","iat":1700000000,"ver":0}"""
     val payloadB64 =
-      Base64.encodeToString(
-        json.toByteArray(Charsets.UTF_8),
-        Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
-      )
+        Base64.encodeToString(
+            json.toByteArray(Charsets.UTF_8),
+            Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
     val qr = "onepass:user:v1.$payloadB64.${randomSigB64Url()}"
     val parsed = Pass.parseFromQr(qr).getOrThrow()
     assertTrue(parsed.isIncomplete)
@@ -363,10 +356,9 @@ class PassDataTest {
     // iat <= 0 est parsé, mais devrait rendre l'objet incohérent
     val json = """{"uid":"u","kid":"k","iat":0,"ver":1}"""
     val payloadB64 =
-      Base64.encodeToString(
-        json.toByteArray(Charsets.UTF_8),
-        Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING
-      )
+        Base64.encodeToString(
+            json.toByteArray(Charsets.UTF_8),
+            Base64.URL_SAFE or Base64.NO_WRAP or Base64.NO_PADDING)
     val qr = "onepass:user:v1.$payloadB64.${randomSigB64Url()}"
     val parsed = Pass.parseFromQr(qr).getOrThrow()
     assertTrue(parsed.isIncomplete)

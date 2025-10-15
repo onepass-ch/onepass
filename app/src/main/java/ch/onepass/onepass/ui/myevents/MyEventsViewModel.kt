@@ -37,10 +37,8 @@ object MyEventsTestTags {
   const val TICKET_DIALOG_LOCATION = "TicketDialogLocation"
 }
 
-class MyEventsViewModel(
-  app: Application,
-  private val passRepository: PassRepository
-) : AndroidViewModel(app) {
+class MyEventsViewModel(app: Application, private val passRepository: PassRepository) :
+    AndroidViewModel(app) {
 
   private val QR_CACHE_KEY = stringPreferencesKey("cached_qr_text")
 
@@ -66,13 +64,15 @@ class MyEventsViewModel(
       _error.value = null
 
       val result = passRepository.getOrCreateSignedPass(uid)
-      result.onSuccess { pass ->
-        _userQrData.value = pass.qrText
-        saveCachedQr(pass.qrText)
-      }.onFailure { e ->
-        _error.value = e.message ?: "Unknown error"
-        loadCachedQr() // fallback to cache if available
-      }
+      result
+          .onSuccess { pass ->
+            _userQrData.value = pass.qrText
+            saveCachedQr(pass.qrText)
+          }
+          .onFailure { e ->
+            _error.value = e.message ?: "Unknown error"
+            loadCachedQr() // fallback to cache if available
+          }
 
       _isLoading.value = false
     }
@@ -80,12 +80,9 @@ class MyEventsViewModel(
 
   fun refreshPass(uid: String) = loadUserPass(uid)
 
-
   private suspend fun saveCachedQr(qrText: String) {
     withContext(Dispatchers.IO) {
-      getApplication<Application>().passDataStore.edit { prefs ->
-        prefs[QR_CACHE_KEY] = qrText
-      }
+      getApplication<Application>().passDataStore.edit { prefs -> prefs[QR_CACHE_KEY] = qrText }
     }
   }
 
