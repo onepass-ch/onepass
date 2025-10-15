@@ -37,6 +37,15 @@ import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.MarcFontFamily
 import ch.onepass.onepass.ui.theme.OnePassTheme
 
+/**
+ * Component that displays a ticket with title, status, date/time, and location.
+ *
+ * @param title Title of the event
+ * @param status Status of the ticket (e.g., CURRENTLY, UPCOMING, EXPIRED)
+ * @param dateTime Date and time of the event
+ * @param location Location of the event
+ * @param modifier Modifier for stylingg
+ */
 @Composable
 fun TicketComponent(
     title: String,

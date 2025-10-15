@@ -31,6 +31,7 @@ import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.MarcFontFamily
 import ch.onepass.onepass.ui.theme.OnePassTheme
 
+/** Test tags for MyEvents screen components */
 object MyEventsTestTags {
   const val TABS_ROW = "TabsRow"
   const val TAB_CURRENT = "TabCurrent"
@@ -48,6 +49,12 @@ object MyEventsTestTags {
   const val TICKET_DIALOG_LOCATION = "TicketDialogLocation"
 }
 
+/**
+ * Composable screen displaying user's events with tabs for current and expired tickets.
+ *
+ * @param viewModel ViewModel providing ticket data
+ * @param userQrData String data to be encoded in the user's QR code
+ */
 @Composable
 fun MyEventsScreen(viewModel: MyEventsViewModel, userQrData: String) {
   val currentTickets by viewModel.currentTickets.collectAsState()
@@ -57,6 +64,13 @@ fun MyEventsScreen(viewModel: MyEventsViewModel, userQrData: String) {
       userQrData = userQrData, currentTickets = currentTickets, expiredTickets = expiredTickets)
 }
 
+/**
+ * Composable screen displaying user's events with tabs for current and expired tickets.
+ *
+ * @param userQrData String data to be encoded in the user's QR code
+ * @param currentTickets List of current tickets to display
+ * @param expiredTickets List of expired tickets to display
+ */
 @Composable
 fun MyEventsContent(
     userQrData: String,

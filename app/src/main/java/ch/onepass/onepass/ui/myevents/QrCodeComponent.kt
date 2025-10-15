@@ -36,6 +36,13 @@ import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 
+/**
+ * Composable that displays a QR code icon which, when clicked, shows a dialog with the full QR
+ * code.
+ *
+ * @param qrData The data to encode in the QR code
+ * @param modifier Modifier for styling
+ */
 @Composable
 fun QrCodeComponent(qrData: String, modifier: Modifier = Modifier) {
   var showQrDialog by remember { mutableStateOf(false) }

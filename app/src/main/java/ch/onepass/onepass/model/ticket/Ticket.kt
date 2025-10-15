@@ -6,7 +6,7 @@ import ch.onepass.onepass.ui.myevents.TicketStatus
 import com.google.firebase.Timestamp
 
 /**
- * Ticket data model for Cloud Firestore.
+ * Ticket data model for Firestore.
  *
  * @property ticketId Unique identifier for the ticket.
  * @property eventId Identifier of the associated event.
