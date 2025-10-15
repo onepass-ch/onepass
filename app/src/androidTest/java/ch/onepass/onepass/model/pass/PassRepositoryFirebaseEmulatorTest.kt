@@ -13,28 +13,24 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/** Integration tests for PassRepositoryFirebase using Firebase Emulator (no Turbine). */
 @RunWith(AndroidJUnit4::class)
 class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
 
     private lateinit var uid: String
 
     private companion object {
-        const val TIMEOUT: Long = 10_000 // émulateur peut être lent selon la machine
+        const val TIMEOUT: Long = 10_000
     }
 
     @Before
     override fun setUp() {
         super.setUp()
         runBlocking {
-            // ✅ utilise la propriété "auth" du parent (désormais lazy, jamais null ni non init)
             auth.signInAnonymously().await()
             uid = requireNotNull(auth.currentUser?.uid) { "anonymous sign-in failed" }
             clearUserPass(uid)
         }
     }
-
-    // ---------- Helpers ----------
 
     private suspend fun writeValidPassAsNumbers(
         uid: String = this.uid,
@@ -83,8 +79,6 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
             }
         firestore.collection("user").document(uid).set(mapOf("pass" to pass)).await()
     }
-
-    // ---------- Tests ----------
 
     @Test
     fun getUserPass_emitsNull_thenPass() = runBlocking {
@@ -144,7 +138,7 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
         repository.revokePass(uid).getOrThrow()
 
         val snap = firestore.collection("user").document(uid).get().await()
-        val passMap = snap.get("pass") as? Map<*, *> ?: error("pass manquant")
+        val passMap = snap.get("pass") as? Map<*, *> ?: error("missing pass")
         Assert.assertEquals(false, passMap["active"])
         Assert.assertNotNull(passMap["revokedAt"])
     }
@@ -155,7 +149,7 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
         repository.markScanned(uid).getOrThrow()
 
         val snap = firestore.collection("user").document(uid).get().await()
-        val passMap = snap.get("pass") as? Map<*, *> ?: error("pass manquant")
+        val passMap = snap.get("pass") as? Map<*, *> ?: error("missing pass")
         Assert.assertNotNull(passMap["lastScannedAt"])
     }
 
