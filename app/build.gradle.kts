@@ -12,103 +12,112 @@ plugins {
 }
 
 android {
-    namespace = "ch.onepass.onepass"
-    compileSdk = 34
+  namespace = "ch.onepass.onepass"
+  compileSdk = 34
 
-    val localProperties = Properties()
-    val localPropertiesFile = rootProject.file("local.properties")
-    if (localPropertiesFile.exists()) {
-        localProperties.load(FileInputStream(localPropertiesFile))
+  val localProperties = Properties()
+  val localPropertiesFile = rootProject.file("local.properties")
+  if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
+  }
+
+  // Get Mapbox token from local.properties
+  val mapboxToken: String? = localProperties.getProperty("MAPBOX_ACCESS_TOKEN")
+
+  if (mapboxToken.isNullOrBlank()) {
+    logger.warn(
+      "⚠️ Mapbox access token not found in local.properties. " +
+              "Maps may not function correctly until MAPBOX_ACCESS_TOKEN is set."
+    )
+  }
+
+  defaultConfig {
+    applicationId = "ch.onepass.onepass"
+    minSdk = 28
+    targetSdk = 34
+    versionCode = 1
+    versionName = "1.0"
+
+    testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    vectorDrawables {
+      useSupportLibrary = true
+    }
+    buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxToken}\"")
+  }
+
+  buildTypes {
+    release {
+      isMinifyEnabled = false
+      proguardFiles(
+        getDefaultProguardFile("proguard-android-optimize.txt"),
+        "proguard-rules.pro"
+      )
     }
 
-    // Get Mapbox token from local.properties
-    val mapboxToken: String? = localProperties.getProperty("MAPBOX_ACCESS_TOKEN")
-
-    if (mapboxToken.isNullOrBlank()) {
-        logger.warn(
-            "⚠️ Mapbox access token not found in local.properties. " +
-                    "Maps may not function correctly until MAPBOX_ACCESS_TOKEN is set."
-        )
+    debug {
+      enableUnitTestCoverage = true
+      enableAndroidTestCoverage = true
     }
+  }
 
-    defaultConfig {
-        applicationId = "ch.onepass.onepass"
-        minSdk = 28
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0"
+  testCoverage {
+    jacocoVersion = "0.8.11"
+  }
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables { useSupportLibrary = true }
-        buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxToken}\"")
+  buildFeatures {
+    compose = true
+    buildConfig = true
+  }
+
+  composeOptions {
+    kotlinCompilerExtensionVersion = "1.4.2"
+  }
+
+  compileOptions {
+    sourceCompatibility = JavaVersion.VERSION_1_8
+    targetCompatibility = JavaVersion.VERSION_1_8
+  }
+
+  kotlinOptions {
+    jvmTarget = "1.8"
+  }
+
+  packaging {
+    resources {
+      excludes += "/META-INF/{AL2.0,LGPL2.1}"
+      merges += "META-INF/LICENSE.md"
+      merges += "META-INF/LICENSE-notice.md"
+      excludes += "META-INF/DEPENDENCIES"
     }
-
-    buildTypes {
-        release {
-            isMinifyEnabled = false
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-        }
-        debug {
-            enableUnitTestCoverage = true
-            enableAndroidTestCoverage = true
-        }
+    packagingOptions {
+      jniLibs {
+        useLegacyPackaging = true
+      }
     }
+  }
 
-    testCoverage { jacocoVersion = "0.8.11" }
-
-    buildFeatures {
-        compose = true
-        buildConfig = true
+  testOptions {
+    unitTests {
+      isIncludeAndroidResources = true
+      isReturnDefaultValues = true
     }
+  }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.2"
-    }
+  // Robolectric needs to be run only in debug. But its tests are placed in the shared source set (test)
+  // The next lines transfer the src/test/* from shared to the testDebug one
+  // This prevents errors from occurring during unit tests
+  sourceSets.getByName("testDebug") {
+    val test = sourceSets.getByName("test")
+    java.setSrcDirs(test.java.srcDirs)
+    res.setSrcDirs(test.res.srcDirs)
+    resources.setSrcDirs(test.resources.srcDirs)
+  }
 
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
-    }
-
-    kotlinOptions { jvmTarget = "11" }
-
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-            merges += "META-INF/LICENSE.md"
-            merges += "META-INF/LICENSE-notice.md"
-            excludes += "META-INF/DEPENDENCIES"
-        }
-        packagingOptions {
-            jniLibs { useLegacyPackaging = true }
-        }
-    }
-
-    testOptions {
-        unitTests {
-            isIncludeAndroidResources = true
-            isReturnDefaultValues = true
-        }
-    }
-
-    // Robolectric needs to be run only in debug. But its tests are placed in the shared source set (test)
-    // The next lines transfer the src/test/* from shared to the testDebug one
-    // This prevents errors from occurring during unit tests
-    sourceSets.getByName("testDebug") {
-        val test = sourceSets.getByName("test")
-        java.setSrcDirs(test.java.srcDirs)
-        res.setSrcDirs(test.res.srcDirs)
-        resources.setSrcDirs(test.resources.srcDirs)
-    }
-
-    sourceSets.getByName("test") {
-        java.setSrcDirs(emptyList<File>())
-        res.setSrcDirs(emptyList<File>())
-        resources.setSrcDirs(emptyList<File>())
-    }
+  sourceSets.getByName("test") {
+    java.setSrcDirs(emptyList<File>())
+    res.setSrcDirs(emptyList<File>())
+    resources.setSrcDirs(emptyList<File>())
+  }
 }
 
 sonar {
@@ -139,12 +148,12 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 }
 
 dependencies {
-
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-
+  implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
+  implementation("com.google.firebase:firebase-auth-ktx")
+  implementation("com.google.firebase:firebase-firestore-ktx")
+  implementation("com.google.firebase:firebase-functions-ktx")
+  androidTestImplementation("androidx.test:core-ktx:1.5.0")
+  androidTestImplementation("androidx.test.ext:junit-ktx:1.1.5")
   implementation("androidx.datastore:datastore-preferences:1.1.1")
   implementation("com.google.firebase:firebase-functions-ktx:20.4.0")
   implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
@@ -157,104 +166,94 @@ dependencies {
   globalTestImplementation(libs.androidx.junit)
   globalTestImplementation(libs.androidx.espresso.core)
 
-    // ------------- Firebase ------------------
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.auth.ktx)
-    implementation(libs.firebase.firestore.ktx)
-    implementation(libs.firebase.database.ktx)
+  // ------------- Firebase ------------------
+  implementation(platform(libs.firebase.bom))
+  implementation(libs.firebase.auth.ktx)
+  implementation(libs.firebase.firestore.ktx)
+  implementation(libs.firebase.database.ktx)
 
-    // ------------- Jetpack Compose ------------------
-    val composeBom = platform(libs.compose.bom)
-    implementation(composeBom)
-    globalTestImplementation(composeBom)
+  // ------------- Jetpack Compose ------------------
+  val composeBom = platform(libs.compose.bom)
+  implementation(composeBom)
+  globalTestImplementation(composeBom)
 
-    implementation(libs.compose.ui)
-    implementation(libs.compose.ui.graphics)
-    implementation(libs.compose.material3)
-    implementation(libs.compose.activity)
-    implementation(libs.compose.viewmodel)
-    implementation(libs.compose.preview)
-    debugImplementation(libs.compose.tooling)
-    globalTestImplementation(libs.compose.test.junit)
-    debugImplementation(libs.compose.test.manifest)
+  implementation(libs.compose.ui)
+  implementation(libs.compose.ui.graphics)
+  implementation(libs.compose.material3)
+  implementation(libs.compose.activity)
+  implementation(libs.compose.viewmodel)
+  implementation(libs.compose.preview)
+  debugImplementation(libs.compose.tooling)
+  globalTestImplementation(libs.compose.test.junit)
+  debugImplementation(libs.compose.test.manifest)
 
-    // --------- Kaspresso test framework ----------
-    globalTestImplementation(libs.kaspresso)
-    globalTestImplementation(libs.kaspresso.compose)
+  // --------- Kaspresso test framework ----------
+  globalTestImplementation(libs.kaspresso)
+  globalTestImplementation(libs.kaspresso.compose)
 
-    // ---------- Robolectric ------------
-    testImplementation(libs.robolectric)
+  // ----------       Robolectric     ------------
+  testImplementation(libs.robolectric)
 
-    // --------- Networking with OkHttp ---------
-    implementation(libs.okhttp)
+  // --------- Networking with OkHttp ---------
+  implementation(libs.okhttp)
 
-    // ------------- GeoFirestore ------------------
-    implementation(libs.geofirestore.android)
+  // ------------- GeoFirestore ------------------
+  implementation(libs.geofirestore.android)
 
-    // --------- Coroutines Test Support ---------
-    testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
-    androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+  // --------- Coroutines Test Support ---------
+  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+  androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 
-    // ---------- ZXing for QR code generation ------------
-    implementation("com.google.zxing:core:3.5.1")
+  // ---------- ZXing for QR code generation ------------
+  implementation("com.google.zxing:core:3.5.1")
 
-    // ---------- MapBox ------------
-    implementation("com.mapbox.maps:android-ndk27:11.15.2")
-    implementation("com.mapbox.extension:maps-compose-ndk27:11.15.2")
-    
-    // ---------- Navigation --------
-    implementation("androidx.navigation:navigation-compose:2.6.0")
+  // ----------       MapBox         ------------
+  implementation("com.mapbox.maps:android-ndk27:11.15.2")
+  implementation("com.mapbox.extension:maps-compose-ndk27:11.15.2")
 
-    // ---------- Google Sign-In (Credential Manager GoogleID) ------------
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
-
-    // --------- MockK for Mocking (unified version) ---------
-    testImplementation("io.mockk:mockk:1.13.10")
-    androidTestImplementation("io.mockk:mockk-android:1.13.10")
-
-    // --------- JUnit ---------
-    testImplementation(libs.junit)
-    globalTestImplementation(libs.androidx.junit)
-    globalTestImplementation(libs.androidx.espresso.core)
+  implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
+  androidTestImplementation("io.mockk:mockk-android:1.13.10")
 }
 
 tasks.withType<Test> {
-    if (name.contains("Release")) {
-        exclude("**/*ComposeTest.class")
-    }
-    configure<JacocoTaskExtension> {
-        isIncludeNoLocationClasses = true
-        excludes = listOf("jdk.internal.*")
-    }
+  if (name.contains("Release")) {
+    exclude("**/*ComposeTest.class")
+  }
+
+  configure<JacocoTaskExtension> {
+    isIncludeNoLocationClasses = true
+    excludes = listOf("jdk.internal.*")
+  }
 }
 
 tasks.register("jacocoTestReport", JacocoReport::class) {
-    mustRunAfter("testDebugUnitTest", "connectedDebugAndroidTest")
-    reports {
-        xml.required = true
-        html.required = true
-    }
+  mustRunAfter("testDebugUnitTest", "connectedDebugAndroidTest")
 
-    val fileFilter = listOf(
-        "**/R.class",
-        "**/R$*.class",
-        "**/BuildConfig.*",
-        "**/Manifest*.*",
-        "**/*Test*.*",
-        "android/**/*.*",
-    )
+  reports {
+    xml.required = true
+    html.required = true
+  }
 
-    val debugTree = fileTree("${project.layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
-        exclude(fileFilter)
-    }
+  val fileFilter = listOf(
+    "**/R.class",
+    "**/R$*.class",
+    "**/BuildConfig.*",
+    "**/Manifest*.*",
+    "**/*Test*.*",
+    "android/**/*.*",
+  )
 
-    val mainSrc = "${project.layout.projectDirectory}/src/main/java"
-    sourceDirectories.setFrom(files(mainSrc))
-    classDirectories.setFrom(files(debugTree))
-    executionData.setFrom(fileTree(project.layout.buildDirectory.get()) {
-        include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
-        include("outputs/code_coverage/debugAndroidTest/connected/*/coverage.ec")
-    })
+  val debugTree = fileTree("${project.layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
+    exclude(fileFilter)
+  }
+
+  val mainSrc = "${project.layout.projectDirectory}/src/main/java"
+  sourceDirectories.setFrom(files(mainSrc))
+  classDirectories.setFrom(files(debugTree))
+  executionData.setFrom(fileTree(project.layout.buildDirectory.get()) {
+    include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
+    include("outputs/code_coverage/debugAndroidTest/connected/*/coverage.ec")
+  })
 }
 
 configurations.forEach { configuration ->

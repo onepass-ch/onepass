@@ -27,6 +27,7 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
     override fun setUp() {
         super.setUp()
         runBlocking {
+            // ✅ utilise la propriété "auth" du parent (désormais lazy, jamais null ni non init)
             auth.signInAnonymously().await()
             uid = requireNotNull(auth.currentUser?.uid) { "anonymous sign-in failed" }
             clearUserPass(uid)
@@ -94,9 +95,7 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
 
         writeValidPassAsNumbers()
 
-        // attend la première valeur non nulle
         val second = withTimeout(TIMEOUT) { flow.filterNotNull().first() }
-
         val p = requireNotNull(second)
         Assert.assertEquals(uid, p.uid)
         Assert.assertEquals("kid-001", p.kid)
@@ -107,19 +106,16 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
 
     @Test
     fun getUserPass_updatesOnRevokeAndScan() = runBlocking {
-        // 1) Crée un pass actif
         writeValidPassAsNumbers(active = true)
 
         val flow = repository.getUserPass(uid)
             .distinctUntilChanged()
             .filterNotNull()
 
-        // 2) Observe l’état initial (actif)
         val initial = withTimeout(TIMEOUT) { flow.first() }
         Assert.assertTrue(initial.isValidNow)
         Assert.assertEquals("Active", initial.statusText)
 
-        // 3) Révoque -> attend l’état "Revoked"
         repository.revokePass(uid).getOrThrow()
         val revoked = withTimeout(TIMEOUT) {
             flow.first { !it.isValidNow && it.statusText == "Revoked" }
@@ -127,7 +123,6 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
         Assert.assertFalse(revoked.isValidNow)
         Assert.assertEquals("Revoked", revoked.statusText)
 
-        // 4) Marque scanné -> attend la mise à jour de lastScannedAt
         repository.markScanned(uid).getOrThrow()
         val scanned = withTimeout(TIMEOUT) { flow.first { it.lastScannedAt != null } }
         Assert.assertNotNull(scanned.lastScannedAt)
@@ -171,14 +166,16 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
             .document(uid)
             .set(
                 mapOf(
-                    "pass" to
-                            mapOf(
-                                "uid" to uid,
-                                "kid" to "",
-                                "issuedAt" to 1_700_000_000L,
-                                "version" to 1,
-                                "active" to true,
-                                "signature" to "A_-0"))).await()
+                    "pass" to mapOf(
+                        "uid" to uid,
+                        "kid" to "",
+                        "issuedAt" to 1_700_000_000L,
+                        "version" to 1,
+                        "active" to true,
+                        "signature" to "A_-0"
+                    )
+                )
+            ).await()
 
         val first = withTimeout(TIMEOUT) { repository.getUserPass(uid).first() }
         Assert.assertNull(first)
@@ -186,7 +183,8 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
         writeValidPassAsTimestamps(
             kid = "kid-TS",
             issuedAt = Timestamp(1_700_000_100L, 0),
-            lastScannedAt = Timestamp(1_700_000_200L, 0))
+            lastScannedAt = Timestamp(1_700_000_200L, 0)
+        )
         val p = withTimeout(TIMEOUT) {
             repository.getUserPass(uid).filterNotNull().distinctUntilChanged().first()
         }

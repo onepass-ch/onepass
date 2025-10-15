@@ -1,6 +1,5 @@
 package ch.onepass.onepass.model.pass
 
-
 import kotlinx.coroutines.tasks.await
 import android.content.Context
 import android.util.Log
@@ -18,39 +17,32 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Before
 
-
 open class PassFirestoreTestBase {
-
 
   protected lateinit var repository: PassRepository
   protected lateinit var firestore: FirebaseFirestore
-  protected lateinit var auth: FirebaseAuth
 
+  // ✅ plus de lateinit : initialisation sûre au premier accès
+  protected val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
 
   @OptIn(ExperimentalCoroutinesApi::class)
   private val testDispatcher = UnconfinedTestDispatcher() // exécute immédiatement, pas de temps virtuel
-
 
   @Before
   open fun setUp() {
     val ctx = ApplicationProvider.getApplicationContext<Context>()
 
-
     // 🔄 Réinitialise toute instance Firebase pour pouvoir appeler useEmulator() ensuite
     FirebaseApp.getApps(ctx).forEach { it.delete() }
     FirebaseApp.initializeApp(ctx)
-
 
     check(FirebaseEmulator.isRunning) {
       "Firebase emulators not reachable. Run: firebase emulators:start --only firestore,auth,functions,ui"
     }
 
-
     // Instances
-    auth = FirebaseAuth.getInstance()
     firestore = FirebaseFirestore.getInstance()
     val functions = FirebaseFunctions.getInstance()
-
 
     // ➜ Configuration émulateurs (avant tout usage)
     val host = FirebaseEmulator.HOST        // 10.0.2.2 sur AVD, 127.0.0.1 en JVM si codé ainsi
@@ -61,13 +53,11 @@ open class PassFirestoreTestBase {
       .build()
     functions.useEmulator(host, 5001)
 
-
     // Repo branché sur ces instances
     repository = PassRepositoryFirebase(
       db = firestore,
       functions = functions
     )
-
 
     // 🔧 Nettoyage éventuel en TEMPS RÉEL (pas de runTest / temps virtuel)
     runBlocking(testDispatcher) {
@@ -80,7 +70,6 @@ open class PassFirestoreTestBase {
     }
   }
 
-
   @After
   open fun tearDown() {
     runBlocking(testDispatcher) {
@@ -89,15 +78,12 @@ open class PassFirestoreTestBase {
     FirebaseEmulator.clearFirestoreEmulator()
   }
 
-
   // --- Helpers suspend ---
-
 
   protected suspend fun hasUserPass(uid: String): Boolean {
     val doc = firestore.collection("user").document(uid).get().await()
     return doc.contains("pass")
   }
-
 
   protected suspend fun clearUserPass(uid: String) {
     val docRef = firestore.collection("user").document(uid)
