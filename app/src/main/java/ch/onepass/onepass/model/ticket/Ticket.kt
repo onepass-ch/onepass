@@ -54,12 +54,33 @@ enum class TicketState {
 fun Ticket.toUiTicket(event: Event?): ch.onepass.onepass.ui.myevents.Ticket {
   return ch.onepass.onepass.ui.myevents.Ticket(
       title = event?.title ?: "Unknown Event",
-      status =
-          when (state) {
-            TicketState.REDEEMED,
-            TicketState.REVOKED -> TicketStatus.EXPIRED
-            else -> TicketStatus.CURRENTLY
-          },
+      status = computeUiStatus(), // dynamically compute status
       dateTime = event?.displayDateTime ?: issuedAt.formatAsDisplayDate(),
       location = event?.displayLocation ?: "Unknown Location")
+}
+
+/**
+ * Computes the UI status of the ticket based on its state and timing.
+ * - If the ticket is REDEEMED or REVOKED, it is considered EXPIRED.
+ * - If the current time is past the expiresAt timestamp, it is EXPIRED.
+ * - If the current time is past the issuedAt timestamp, it is CURRENTLY valid.
+ * - Otherwise, it is UPCOMING.
+ *
+ * @param currentTime The current time to compare against (default is now).
+ * @return The computed [TicketStatus] for UI display.
+ */
+fun Ticket.computeUiStatus(currentTime: Timestamp = Timestamp.now()): TicketStatus {
+  return when (state) {
+    TicketState.REDEEMED,
+    TicketState.REVOKED -> TicketStatus.EXPIRED
+    else -> {
+      if (expiresAt != null && currentTime.seconds > expiresAt.seconds) {
+        TicketStatus.EXPIRED
+      } else if (issuedAt != null && currentTime.seconds > issuedAt.seconds) {
+        TicketStatus.CURRENTLY
+      } else {
+        TicketStatus.UPCOMING
+      }
+    }
+  }
 }
