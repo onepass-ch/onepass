@@ -1,10 +1,14 @@
 package ch.onepass.onepass
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -28,22 +32,14 @@ import com.mapbox.common.MapboxOptions
 import kotlin.getValue
 
 class MainActivity : ComponentActivity() {
+  private val mapViewModel: MapViewModel by viewModels()
 
-  // --- Simple fake VM for demo/run purposes only ---
-  private class FakeProfileViewModel(
-      initial: ProfileUiState =
-          ProfileUiState(
-              displayName = "Will Smith",
-              email = "willsmith@email.com",
-              avatarUrl = null,
-              initials = "WS",
-              stats = ProfileStats(events = 12, upcoming = 3, saved = 7),
-              isOrganizer = false,
-              loading = false)
-  ) : ProfileViewModel() {
-    private val stateFlow = MutableStateFlow(initial)
-    override val state: StateFlow<ProfileUiState> = stateFlow
-  }
+  private val requestPermissionLauncher =
+      registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        if (isGranted) {
+          mapViewModel.enableLocationTracking()
+        }
+      }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -89,20 +85,25 @@ class MainActivity : ComponentActivity() {
     }
   }
 
-  // If you previously forwarded Mapbox lifecycle here, you can remove/keep these empty.
+  // --- MapView Lifecycle Delegation ---
+
   override fun onStart() {
     super.onStart()
+    mapViewModel.onMapStart()
   }
 
   override fun onStop() {
     super.onStop()
+    mapViewModel.onMapStop()
   }
 
   override fun onLowMemory() {
     super.onLowMemory()
+    mapViewModel.onMapLowMemory()
   }
 
   override fun onDestroy() {
     super.onDestroy()
+    // Map destruction is handled by ViewModel's onCleared()
   }
 }
