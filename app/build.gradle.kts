@@ -38,9 +38,7 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary = true
-        }
+        vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxToken}\"")
     }
 
@@ -52,16 +50,13 @@ android {
                 "proguard-rules.pro"
             )
         }
-
         debug {
             enableUnitTestCoverage = true
             enableAndroidTestCoverage = true
         }
     }
 
-    testCoverage {
-        jacocoVersion = "0.8.11"
-    }
+    testCoverage { jacocoVersion = "0.8.11" }
 
     buildFeatures {
         compose = true
@@ -77,9 +72,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
-    kotlinOptions {
-        jvmTarget = "11"
-    }
+    kotlinOptions { jvmTarget = "11" }
 
     packaging {
         resources {
@@ -89,9 +82,7 @@ android {
             excludes += "META-INF/DEPENDENCIES"
         }
         packagingOptions {
-            jniLibs {
-                useLegacyPackaging = true
-            }
+            jniLibs { useLegacyPackaging = true }
         }
     }
 
@@ -151,10 +142,6 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(platform(libs.compose.bom))
-    testImplementation(libs.junit)
-    globalTestImplementation(libs.androidx.junit)
-    globalTestImplementation(libs.androidx.espresso.core)
 
     // ------------- Firebase ------------------
     implementation(platform(libs.firebase.bom))
@@ -181,7 +168,7 @@ dependencies {
     globalTestImplementation(libs.kaspresso)
     globalTestImplementation(libs.kaspresso.compose)
 
-    // ----------       Robolectric     ------------
+    // ---------- Robolectric ------------
     testImplementation(libs.robolectric)
 
     // --------- Networking with OkHttp ---------
@@ -194,23 +181,30 @@ dependencies {
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
 
-    // --------- MockK for Mocking ---------
-    testImplementation("io.mockk:mockk:1.13.8")
-    androidTestImplementation("io.mockk:mockk-android:1.13.8")
-
     // ---------- ZXing for QR code generation ------------
     implementation("com.google.zxing:core:3.5.1")
 
-    // ----------       MapBox         ------------
+    // ---------- MapBox ------------
     implementation("com.mapbox.maps:android-ndk27:11.15.2")
     implementation("com.mapbox.extension:maps-compose-ndk27:11.15.2")
+
+    // ---------- Google Sign-In (Credential Manager GoogleID) ------------
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
+
+    // --------- MockK for Mocking (unified version) ---------
+    testImplementation("io.mockk:mockk:1.13.10")
+    androidTestImplementation("io.mockk:mockk-android:1.13.10")
+
+    // --------- JUnit ---------
+    testImplementation(libs.junit)
+    globalTestImplementation(libs.androidx.junit)
+    globalTestImplementation(libs.androidx.espresso.core)
 }
 
 tasks.withType<Test> {
     if (name.contains("Release")) {
         exclude("**/*ComposeTest.class")
     }
-
     configure<JacocoTaskExtension> {
         isIncludeNoLocationClasses = true
         excludes = listOf("jdk.internal.*")
@@ -219,7 +213,6 @@ tasks.withType<Test> {
 
 tasks.register("jacocoTestReport", JacocoReport::class) {
     mustRunAfter("testDebugUnitTest", "connectedDebugAndroidTest")
-
     reports {
         xml.required = true
         html.required = true
