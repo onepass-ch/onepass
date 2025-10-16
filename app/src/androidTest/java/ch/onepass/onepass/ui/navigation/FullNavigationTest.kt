@@ -1,8 +1,7 @@
 package ch.onepass.onepass.ui.navigation
 
-import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -17,7 +16,7 @@ import org.junit.Test
 
 class OnePassAppRoutesTest {
 
-  @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+  @get:Rule val compose = createComposeRule()
 
   private fun setApp() {
     compose.setContent {
