@@ -98,9 +98,10 @@ class MainActivity : ComponentActivity() {
  * AppNavHost.
  */
 @Composable
-private fun OnePassApp(
+fun OnePassApp(
     mapViewModel: MapViewModel,
     isLocationPermissionGranted: Boolean,
+    testAuthButtonTag: String? = null,
 ) {
   val navController = rememberNavController()
   val navActions = NavigationActions(navController)
@@ -125,6 +126,7 @@ private fun OnePassApp(
             navController = navController,
             modifier = Modifier.padding(padding),
             mapViewModel = mapViewModel,
-            isLocationPermissionGranted = isLocationPermissionGranted)
+            isLocationPermissionGranted = isLocationPermissionGranted,
+            testAuthButtonTag = testAuthButtonTag )
       }
 }
