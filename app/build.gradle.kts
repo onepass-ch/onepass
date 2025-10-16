@@ -2,12 +2,12 @@ import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
-    alias(libs.plugins.androidApplication)
-    alias(libs.plugins.jetbrainsKotlinAndroid)
-    alias(libs.plugins.ktfmt)
-    alias(libs.plugins.sonar)
-    id("jacoco")
-    id("com.google.gms.google-services")
+  alias(libs.plugins.androidApplication)
+  alias(libs.plugins.jetbrainsKotlinAndroid)
+  alias(libs.plugins.ktfmt)
+  alias(libs.plugins.sonar)
+  id("jacoco")
+  id("com.google.gms.google-services")
 }
 
 android {
@@ -111,30 +111,30 @@ android {
 }
 
 sonar {
-    properties {
-        property("sonar.projectKey", "onepass-ch_onepass")
-        property("sonar.projectName", "onepass")
-        property("sonar.organization", "onepass-ch")
-        property("sonar.host.url", "https://sonarcloud.io")
-        property(
-            "sonar.junit.reportPaths",
-            "${project.layout.buildDirectory.get()}/test-results/testDebugUnitTest/"
-        )
-        property(
-            "sonar.androidLint.reportPaths",
-            "${project.layout.buildDirectory.get()}/reports/lint-results-debug.xml"
-        )
-        property(
-            "sonar.coverage.jacoco.xmlReportPaths",
-            "${project.layout.buildDirectory.get()}/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
-        )
-    }
+  properties {
+    property("sonar.projectKey", "onepass-ch_onepass")
+    property("sonar.projectName", "onepass")
+    property("sonar.organization", "onepass-ch")
+    property("sonar.host.url", "https://sonarcloud.io")
+    property(
+      "sonar.junit.reportPaths",
+      "${project.layout.buildDirectory.get()}/test-results/testDebugUnitTest/"
+    )
+    property(
+      "sonar.androidLint.reportPaths",
+      "${project.layout.buildDirectory.get()}/reports/lint-results-debug.xml"
+    )
+    property(
+      "sonar.coverage.jacoco.xmlReportPaths",
+      "${project.layout.buildDirectory.get()}/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
+    )
+  }
 }
 
 // When a library is used both by robolectric and connected tests, use this function
 fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
-    androidTestImplementation(dep)
-    testImplementation(dep)
+  androidTestImplementation(dep)
+  testImplementation(dep)
 }
 
 dependencies {
@@ -187,6 +187,9 @@ dependencies {
     // ---------- MapBox ------------
     implementation("com.mapbox.maps:android-ndk27:11.15.2")
     implementation("com.mapbox.extension:maps-compose-ndk27:11.15.2")
+    
+    // ---------- Navigation --------
+    implementation("androidx.navigation:navigation-compose:2.6.0")
 
     // ---------- Google Sign-In (Credential Manager GoogleID) ------------
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
@@ -241,5 +244,5 @@ tasks.register("jacocoTestReport", JacocoReport::class) {
 }
 
 configurations.forEach { configuration ->
-    configuration.exclude("com.google.protobuf", "protobuf-lite")
+  configuration.exclude("com.google.protobuf", "protobuf-lite")
 }

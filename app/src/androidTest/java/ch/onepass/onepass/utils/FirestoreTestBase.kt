@@ -11,6 +11,7 @@ import org.junit.After
 import org.junit.Before
 
 const val EVENTS_COLLECTION_PATH = "events"
+const val UI_WAIT_TIMEOUT = 5_000L
 
 /**
  * Base class for Firebase Firestore emulated tests for the OnePass app.
