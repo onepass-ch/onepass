@@ -4,6 +4,7 @@ import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.formatAsDisplayDate
 import ch.onepass.onepass.ui.myevents.TicketStatus
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.ServerTimestamp
 
 /**
  * Ticket data model for Firestore.
@@ -27,11 +28,15 @@ data class Ticket(
     val state: TicketState = TicketState.ISSUED,
     val tierId: String = "",
     val purchasePrice: Double = 0.0,
-    val issuedAt: Timestamp? = null,
+
+    // Automatic server timestamp when the ticket is issued
+    @ServerTimestamp val issuedAt: Timestamp? = null,
     val expiresAt: Timestamp? = null,
     val transferLock: Boolean = false,
     val version: Int = 1,
-    val deletedAt: Timestamp? = null
+
+    // Automatic server timestamp when the document is deleted (soft delete)
+    @ServerTimestamp val deletedAt: Timestamp? = null
 )
 
 /** Enum representing the various states a ticket can be in. */

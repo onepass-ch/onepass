@@ -213,24 +213,6 @@ class TicketRepositoryFirebaseTest : FirestoreTestBase() {
   }
 
   @Test
-  fun canHandleTicketsWithNullTimestamps() = runTest {
-    val ticketWithNullTimestamps =
-        TicketTestData.createTestTicket(
-            ownerId = userId, issuedAt = null, expiresAt = null, deletedAt = null)
-
-    val result = ticketRepository.createTicket(ticketWithNullTimestamps)
-    assertTrue("Should create ticket with null timestamps", result.isSuccess)
-
-    val ticketId = result.getOrNull()!!
-    val retrievedTicket = ticketRepository.getTicketById(ticketId).first()
-
-    assertNotNull("Ticket should be retrieved", retrievedTicket)
-    assertNull("IssuedAt should be null", retrievedTicket?.issuedAt)
-    assertNull("ExpiresAt should be null", retrievedTicket?.expiresAt)
-    assertNull("DeletedAt should be null", retrievedTicket?.deletedAt)
-  }
-
-  @Test
   fun canCreateMultipleTicketsForSameEvent() = runTest {
     val eventId = "event_multi_ticket"
     val tickets =
