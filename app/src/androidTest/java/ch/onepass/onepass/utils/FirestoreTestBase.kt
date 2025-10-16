@@ -100,7 +100,6 @@ open class FirestoreTestBase {
       }
     }
   }
-
   /** Cleans up all Firestore data and resets the emulator after each test. */
   @After
   open fun tearDown() {
