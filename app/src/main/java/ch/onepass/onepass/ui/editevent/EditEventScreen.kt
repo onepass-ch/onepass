@@ -17,7 +17,14 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.model.event.Event
+import ch.onepass.onepass.model.event.EventStatus
+import ch.onepass.onepass.model.event.PricingTier
+import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.ui.event.EventCard
+import ch.onepass.onepass.ui.theme.OnePassTheme
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.GeoPoint
+import java.util.Date
 
 /**
  * Test tags for the edit event screen.
@@ -104,8 +111,8 @@ fun EditEventScreen(
 private fun EventListContent(events: List<Event>, onEventClick: (String) -> Unit) {
   LazyColumn(
       modifier = Modifier.fillMaxSize().testTag(EditEventScreenTestTags.EVENT_LIST),
-      contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-      verticalArrangement = Arrangement.spacedBy(24.dp)) {
+      contentPadding = PaddingValues(horizontal = 10.dp, vertical = 0.dp),
+      verticalArrangement = Arrangement.spacedBy(10.dp)) {
         items(items = events, key = { it.eventId }) { event ->
           EventCard(
               event = event,
@@ -182,4 +189,145 @@ private fun EmptyState(modifier: Modifier = Modifier) {
             textAlign = TextAlign.Center)
       }
 }
+
+//@Preview(showBackground = true, showSystemUi = true)
+//@Composable
+//fun EditEventScreenPreview() {
+//  // Create sample events for preview
+//  val sampleEvents = listOf(
+//      Event(
+//          eventId = "1",
+//          title = "Lausanne Free Party",
+//          description = "Amazing party in the heart of Lausanne",
+//          organizerId = "org-1",
+//          organizerName = "Best Organizer",
+//          status = EventStatus.PUBLISHED,
+//          location = Location(
+//              coordinates = GeoPoint(46.5191, 6.6323),
+//              name = "Lausanne, Flon"
+//          ),
+//          startTime = Timestamp(Date(2025, 11, 15, 21, 0)),
+//          endTime = Timestamp(Date(2025, 11, 16, 2, 0)),
+//          capacity = 200,
+//          ticketsRemaining = 150,
+//          ticketsIssued = 50,
+//          ticketsRedeemed = 0,
+//          pricingTiers = listOf(
+//              PricingTier(name = "General", price = 0.0, quantity = 200, remaining = 150)
+//          )
+//      ),
+//      Event(
+//          eventId = "2",
+//          title = "Jazz Night at Montreux",
+//          description = "Experience the best of jazz music",
+//          organizerId = "org-1",
+//          organizerName = "Best Organizer",
+//          status = EventStatus.DRAFT,
+//          location = Location(
+//              coordinates = GeoPoint(46.4316, 6.9101),
+//              name = "Montreux, Riviera"
+//          ),
+//          startTime = Timestamp(Date(2025, 11, 20, 19, 30)),
+//          endTime = Timestamp(Date(2025, 11, 20, 23, 0)),
+//          capacity = 100,
+//          ticketsRemaining = 80,
+//          ticketsIssued = 20,
+//          ticketsRedeemed = 0,
+//          pricingTiers = listOf(
+//              PricingTier(name = "General", price = 35.0, quantity = 100, remaining = 80)
+//          )
+//      ),
+//      Event(
+//          eventId = "3",
+//          title = "Tech Conference EPFL",
+//          description = "Annual tech conference featuring industry leaders",
+//          organizerId = "org-1",
+//          organizerName = "Best Organizer",
+//          status = EventStatus.PUBLISHED,
+//          location = Location(
+//              coordinates = GeoPoint(46.5191, 6.5668),
+//              name = "EPFL, Lausanne"
+//          ),
+//          startTime = Timestamp(Date(2025, 12, 1, 9, 0)),
+//          endTime = Timestamp(Date(2025, 12, 1, 18, 0)),
+//          capacity = 500,
+//          ticketsRemaining = 200,
+//          ticketsIssued = 300,
+//          ticketsRedeemed = 50,
+//          pricingTiers = listOf(
+//              PricingTier(name = "Early Bird", price = 50.0, quantity = 200, remaining = 50),
+//              PricingTier(name = "Regular", price = 75.0, quantity = 300, remaining = 150)
+//          )
+//      )
+//  )
+//
+//  OnePassTheme {
+//    // Simulate the screen with events loaded
+//    Box(
+//        modifier = Modifier.fillMaxSize().background(Color(0xFF0A0A0A)),
+//        contentAlignment = Alignment.TopCenter) {
+//      Column(modifier = Modifier.fillMaxSize()) {
+//        Text(
+//            text = "Edit event",
+//            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 24.dp),
+//            style = MaterialTheme.typography.headlineLarge,
+//            fontWeight = FontWeight.Bold,
+//            color = Color.White,
+//            letterSpacing = 2.sp,
+//            textAlign = TextAlign.Start)
+//
+//        EventListContent(
+//            events = sampleEvents,
+//            onEventClick = { /* Preview - no action */ }
+//        )
+//      }
+//    }
+//  }
+//}
+//
+//@Preview(showBackground = true, showSystemUi = true)
+//@Composable
+//fun EditEventScreenEmptyPreview() {
+//  OnePassTheme {
+//    Box(
+//        modifier = Modifier.fillMaxSize().background(Color(0xFF0A0A0A)),
+//        contentAlignment = Alignment.TopCenter) {
+//      Column(modifier = Modifier.fillMaxSize()) {
+//        Text(
+//            text = "Edit event",
+//            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 24.dp),
+//            style = MaterialTheme.typography.headlineLarge,
+//            fontWeight = FontWeight.Bold,
+//            color = Color.White,
+//            letterSpacing = 2.sp,
+//            textAlign = TextAlign.Start)
+//
+//        EmptyState()
+//      }
+//    }
+//  }
+//}
+//
+//@Preview(showBackground = true, showSystemUi = true)
+//@Composable
+//fun EditEventScreenLoadingPreview() {
+//  OnePassTheme {
+//    Box(
+//        modifier = Modifier.fillMaxSize().background(Color(0xFF0A0A0A)),
+//        contentAlignment = Alignment.TopCenter) {
+//      Column(modifier = Modifier.fillMaxSize()) {
+//        Text(
+//            text = "Edit event",
+//            modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 24.dp),
+//            style = MaterialTheme.typography.headlineLarge,
+//            fontWeight = FontWeight.Bold,
+//            color = Color.White,
+//            letterSpacing = 2.sp,
+//            textAlign = TextAlign.Start)
+//
+//        LoadingState()
+//      }
+//    }
+//  }
+//}
 
