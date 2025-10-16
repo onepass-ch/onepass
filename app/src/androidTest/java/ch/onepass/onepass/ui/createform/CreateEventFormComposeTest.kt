@@ -42,12 +42,12 @@ class CreateEventFormComposeTest {
   fun createEventForm_displaysAllRequiredFields() {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
-    // Check for all required field labels
+    // Check for all required field labels (scroll to each to ensure visibility)
     composeTestRule.onNodeWithText("Title*").assertIsDisplayed()
     composeTestRule.onNodeWithText("Description*").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Date & time*").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Location*").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Tickets*").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Date & time*").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Location*").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Tickets*").performScrollTo().assertIsDisplayed()
   }
 
   @Test
@@ -89,52 +89,57 @@ class CreateEventFormComposeTest {
   fun priceField_acceptsNumericInput() {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
-    // Find price field by placeholder
-    composeTestRule.onNodeWithText("ex: 12").performTextInput("25.50")
+    // Find price field by placeholder (scroll to it first)
+    composeTestRule.onNodeWithText("ex: 12").performScrollTo().performTextInput("25.50")
 
     // Verify the input was accepted
-    composeTestRule.onNodeWithText("25.50").assertIsDisplayed()
+    composeTestRule.onNodeWithText("25.50").performScrollTo().assertIsDisplayed()
   }
 
   @Test
   fun capacityField_acceptsNumericInput() {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
-    // Find capacity field by placeholder
-    composeTestRule.onNodeWithText("ex: 250").performTextInput("100")
+    // Find capacity field by placeholder (scroll to it first)
+    composeTestRule.onNodeWithText("ex: 250").performScrollTo().performTextInput("100")
 
     // Verify the input was accepted
-    composeTestRule.onNodeWithText("100").assertIsDisplayed()
+    composeTestRule.onNodeWithText("100").performScrollTo().assertIsDisplayed()
   }
 
   @Test
   fun createTicketButton_isDisplayed() {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
-    composeTestRule.onNodeWithText("Create ticket").assertIsDisplayed()
+    // Button is at the bottom, so scroll to it first
+    composeTestRule.onNodeWithText("Create ticket").performScrollTo().assertIsDisplayed()
   }
 
   @Test
   fun createTicketButton_isClickable() {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
-    composeTestRule.onNodeWithText("Create ticket").assertHasClickAction()
+    // Button is at the bottom, so scroll to it first
+    composeTestRule.onNodeWithText("Create ticket").performScrollTo().assertHasClickAction()
   }
 
   @Test
   fun formFields_updateViewModelState() = runTest {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
-    // Input data into fields
+    // Input data into fields (scroll to each field first)
     composeTestRule.onNodeWithText("Amazing event").performTextInput("Test Event")
 
     composeTestRule.onNodeWithText("This is amazing..").performTextInput("Test Description")
 
-    composeTestRule.onNodeWithText("Type a location").performTextInput("Test Location")
+    composeTestRule
+        .onNodeWithText("Type a location")
+        .performScrollTo()
+        .performTextInput("Test Location")
 
-    composeTestRule.onNodeWithText("ex: 12").performTextInput("20")
+    composeTestRule.onNodeWithText("ex: 12").performScrollTo().performTextInput("20")
 
-    composeTestRule.onNodeWithText("ex: 250").performTextInput("50")
+    composeTestRule.onNodeWithText("ex: 250").performScrollTo().performTextInput("50")
 
     // Wait for state to update
     composeTestRule.waitForIdle()
@@ -204,10 +209,11 @@ class CreateEventFormComposeTest {
 
     composeTestRule.waitForIdle()
 
-    // Trigger recomposition by scrolling
+    // Trigger recomposition by scrolling to bottom
     composeTestRule.onNodeWithText("Create ticket").performScrollTo()
 
-    // Verify data is still there
+    // Scroll back to top to verify data is still there
+    composeTestRule.onNodeWithText("CREATE YOUR EVENT").performScrollTo()
     composeTestRule.onNodeWithText("Test Event").assertIsDisplayed()
   }
 }
