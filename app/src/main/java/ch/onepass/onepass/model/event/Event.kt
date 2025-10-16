@@ -133,3 +133,15 @@ data class PricingTier(
     val quantity: Int = 0,
     val remaining: Int = 0
 )
+
+/**
+ * Extension function to format a Firestore [Timestamp] into a user-friendly date string.
+ *
+ * @return Formatted date string like "MMMM dd, yyyy • h:mm a", or "Date not set" if null.
+ * @receiver Timestamp? The Firestore timestamp to format (nullable).
+ */
+fun Timestamp?.formatAsDisplayDate(): String {
+  val date = this?.toDate() ?: return "Date not set"
+  val dateFormatter = SimpleDateFormat("MMMM dd, yyyy • h:mm a", Locale.getDefault())
+  return dateFormatter.format(date)
+}

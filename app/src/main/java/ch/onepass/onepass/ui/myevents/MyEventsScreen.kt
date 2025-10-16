@@ -1,6 +1,5 @@
 package ch.onepass.onepass.ui.myevents
 
-import androidx.annotation.ColorRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -18,6 +17,7 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
@@ -31,21 +31,52 @@ import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.MarcFontFamily
 import ch.onepass.onepass.ui.theme.OnePassTheme
 
-data class Ticket(
-    val title: String,
-    val status: TicketStatus,
-    val dateTime: String,
-    val location: String,
-)
-
-enum class TicketStatus(@ColorRes val colorRes: Int) {
-  CURRENTLY(R.color.status_currently),
-  UPCOMING(R.color.status_upcoming),
-  EXPIRED(R.color.status_expired)
+/** Test tags for MyEvents screen components */
+object MyEventsTestTags {
+  const val TABS_ROW = "TabsRow"
+  const val TAB_CURRENT = "TabCurrent"
+  const val TAB_EXPIRED = "TabExpired"
+  const val QR_CODE_ICON = "QrCodeIcon"
+  const val QR_CODE_DIALOG = "QrCodeDialog"
+  const val TICKET_CARD = "TicketCard"
+  const val TICKET_TITLE = "TicketTitle"
+  const val TICKET_STATUS = "TicketStatus"
+  const val TICKET_DATE = "TicketDate"
+  const val TICKET_LOCATION = "TicketLocation"
+  const val TICKET_DIALOG_TITLE = "TicketDialogTitle"
+  const val TICKET_DIALOG_STATUS = "TicketDialogStatus"
+  const val TICKET_DIALOG_DATE = "TicketDialogDate"
+  const val TICKET_DIALOG_LOCATION = "TicketDialogLocation"
 }
 
+/**
+ * Composable screen displaying user's events with tabs for current and expired tickets.
+ *
+ * @param viewModel ViewModel providing ticket data
+ * @param userQrData String data to be encoded in the user's QR code
+ */
 @Composable
-fun MyEventsScreen(userQrData: String, currentTickets: List<Ticket>, expiredTickets: List<Ticket>) {
+fun MyEventsScreen(viewModel: MyEventsViewModel, userQrData: String) {
+  val currentTickets by viewModel.currentTickets.collectAsState()
+  val expiredTickets by viewModel.expiredTickets.collectAsState()
+
+  MyEventsContent(
+      userQrData = userQrData, currentTickets = currentTickets, expiredTickets = expiredTickets)
+}
+
+/**
+ * Composable screen displaying user's events with tabs for current and expired tickets.
+ *
+ * @param userQrData String data to be encoded in the user's QR code
+ * @param currentTickets List of current tickets to display
+ * @param expiredTickets List of expired tickets to display
+ */
+@Composable
+fun MyEventsContent(
+    userQrData: String,
+    currentTickets: List<Ticket>,
+    expiredTickets: List<Ticket>
+) {
   var selectedTab by remember { mutableIntStateOf(0) }
   val tabs = listOf("Current", "Expired")
   val tickets = if (selectedTab == 0) currentTickets else expiredTickets
@@ -114,7 +145,7 @@ fun MyEventsScreen(userQrData: String, currentTickets: List<Ticket>, expiredTick
 
 @Preview(showBackground = true)
 @Composable
-fun MyEventsScreenPreview() {
+fun MyEventsContentPreview() {
   OnePassTheme {
     val currentTickets =
         listOf(
@@ -127,6 +158,7 @@ fun MyEventsScreenPreview() {
     val expiredTickets =
         listOf(Ticket("Morges Party", TicketStatus.EXPIRED, "Nov 10, 2024 • 8:00 PM", "Morges"))
 
-    MyEventsScreen("USER-QR-DATA", currentTickets = currentTickets, expiredTickets = expiredTickets)
+    MyEventsContent(
+        "USER-QR-DATA", currentTickets = currentTickets, expiredTickets = expiredTickets)
   }
 }
