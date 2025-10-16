@@ -16,8 +16,8 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel for the Create Event Form screen. Manages the state of the form and handles event
- * creation logic.
+ * ViewModel for the Create/Edit Event Form screen. Manages the state of the form and handles event
+ * creation and update logic.
  *
  * @property eventRepository Repository for event operations
  */
@@ -34,6 +34,10 @@ class CreateEventFormViewModel(
   // UI state
   private val _uiState = MutableStateFlow<CreateEventUiState>(CreateEventUiState.Idle)
   val uiState: StateFlow<CreateEventUiState> = _uiState.asStateFlow()
+
+  // Track if we're in edit mode
+  private var editingEventId: String? = null
+  private var originalEvent: Event? = null
 
   /** Updates the event title */
   fun updateTitle(title: String) {
@@ -73,6 +77,58 @@ class CreateEventFormViewModel(
   /** Updates the event capacity */
   fun updateCapacity(capacity: String) {
     _formState.value = _formState.value.copy(capacity = capacity)
+  }
+
+  /**
+   * Loads an existing event for editing.
+   *
+   * @param eventId The ID of the event to edit.
+   */
+  fun loadEvent(eventId: String) {
+    viewModelScope.launch {
+      _uiState.value = CreateEventUiState.Loading
+      try {
+        eventRepository.getEventById(eventId).collect { event ->
+          if (event != null) {
+            editingEventId = eventId
+            originalEvent = event
+            populateFormFromEvent(event)
+            _uiState.value = CreateEventUiState.Idle
+          } else {
+            _uiState.value = CreateEventUiState.Error("Event not found")
+          }
+        }
+      } catch (e: Exception) {
+        _uiState.value = CreateEventUiState.Error(e.message ?: "Failed to load event")
+      }
+    }
+  }
+
+  /**
+   * Populates the form fields from an existing event.
+   *
+   * @param event The event to populate from.
+   */
+  private fun populateFormFromEvent(event: Event) {
+    val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+    val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+    val date = event.startTime?.toDate()?.let { dateFormat.format(it) } ?: ""
+    val startTime = event.startTime?.toDate()?.let { timeFormat.format(it) } ?: ""
+    val endTime = event.endTime?.toDate()?.let { timeFormat.format(it) } ?: ""
+
+    val price = event.pricingTiers.firstOrNull()?.price?.toString() ?: ""
+
+    _formState.value = CreateEventFormState(
+        title = event.title,
+        description = event.description,
+        startTime = startTime,
+        endTime = endTime,
+        date = date,
+        location = event.displayLocation,
+        price = price,
+        capacity = event.capacity.toString()
+    )
   }
 
   /**
@@ -133,26 +189,46 @@ class CreateEventFormViewModel(
     val startTimestamp = parseDateAndTime(state.date, state.startTime)
     val endTimestamp = parseDateAndTime(state.date, state.endTime)
 
-    return Event(
-        title = state.title,
-        description = state.description,
-        organizerId = organizerId,
-        organizerName = organizerName,
-        status = EventStatus.DRAFT,
-        location = null, // TODO: Create Location object from location string (requires geocoding)
-        startTime = startTimestamp,
-        endTime = endTimestamp,
-        capacity = capacity,
-        ticketsRemaining = capacity,
-        ticketsIssued = 0,
-        ticketsRedeemed = 0,
-        currency = "CHF",
-        pricingTiers =
-            listOf(
-                PricingTier(
-                    name = "General", price = price, quantity = capacity, remaining = capacity)),
-        images = emptyList(),
-        tags = emptyList())
+    // If editing, preserve original event data
+    val baseEvent = originalEvent
+
+    return if (baseEvent != null) {
+      // Update existing event
+      baseEvent.copy(
+          title = state.title,
+          description = state.description,
+          startTime = startTimestamp,
+          endTime = endTimestamp,
+          capacity = capacity,
+          ticketsRemaining = capacity - (baseEvent.ticketsIssued - baseEvent.ticketsRemaining),
+          pricingTiers =
+              listOf(
+                  PricingTier(
+                      name = "General", price = price, quantity = capacity, remaining = capacity))
+      )
+    } else {
+      // Create new event
+      Event(
+          title = state.title,
+          description = state.description,
+          organizerId = organizerId,
+          organizerName = organizerName,
+          status = EventStatus.DRAFT,
+          location = null, // TODO: Create Location object from location string (requires geocoding)
+          startTime = startTimestamp,
+          endTime = endTimestamp,
+          capacity = capacity,
+          ticketsRemaining = capacity,
+          ticketsIssued = 0,
+          ticketsRedeemed = 0,
+          currency = "CHF",
+          pricingTiers =
+              listOf(
+                  PricingTier(
+                      name = "General", price = price, quantity = capacity, remaining = capacity)),
+          images = emptyList(),
+          tags = emptyList())
+    }
   }
 
   /**
@@ -187,6 +263,16 @@ class CreateEventFormViewModel(
    * @param organizerName The name of the organizer
    */
   fun createEvent(organizerId: String, organizerName: String) {
+    saveEvent(organizerId, organizerName)
+  }
+
+  /**
+   * Saves the event (create or update based on edit mode).
+   *
+   * @param organizerId The ID of the user creating/editing the event
+   * @param organizerName The name of the organizer
+   */
+  fun saveEvent(organizerId: String, organizerName: String) {
     viewModelScope.launch {
       // Validate form
       val errors = validateForm()
@@ -205,8 +291,13 @@ class CreateEventFormViewModel(
       // Set loading state
       _uiState.value = CreateEventUiState.Loading
 
-      // Create event in repository
-      val result = eventRepository.createEvent(event)
+      // Create or update event in repository
+      val result = if (editingEventId != null) {
+        eventRepository.updateEvent(event)
+            .map { editingEventId!! } // Return the eventId on success
+      } else {
+        eventRepository.createEvent(event)
+      }
 
       result.fold(
           onSuccess = { eventId ->
@@ -214,7 +305,8 @@ class CreateEventFormViewModel(
             resetForm()
           },
           onFailure = { error ->
-            _uiState.value = CreateEventUiState.Error(error.message ?: "Failed to create event")
+            val action = if (editingEventId != null) "update" else "create"
+            _uiState.value = CreateEventUiState.Error(error.message ?: "Failed to $action event")
           })
     }
   }
@@ -223,7 +315,12 @@ class CreateEventFormViewModel(
   fun resetForm() {
     _formState.value = CreateEventFormState()
     _uiState.value = CreateEventUiState.Idle
+    editingEventId = null
+    originalEvent = null
   }
+
+  /** Returns true if we're in edit mode */
+  fun isEditMode(): Boolean = editingEventId != null
 
   /** Clears any error state */
   fun clearError() {
