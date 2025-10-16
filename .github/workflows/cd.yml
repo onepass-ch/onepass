@@ -1,0 +1,148 @@
+name: Build & Release APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:   # Support manual trigger
+
+permissions:
+  contents: write
+
+env:
+  MODULE_DIR: app
+  BASE_TAG_START: v1.0.0
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v3
+
+      # Decode google-services.json from base64 (matches your existing CI)
+      - name: Decode google-services.json
+        env:
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+        run: |
+          mkdir -p $MODULE_DIR
+          if [ -z "$GOOGLE_SERVICES" ]; then
+            echo "GOOGLE_SERVICES secret not set!" && exit 1
+          fi
+          echo "$GOOGLE_SERVICES" | base64 --decode > $MODULE_DIR/google-services.json
+          ls -la $MODULE_DIR/google-services.json || true
+
+      # Restore local.properties from base64, then inject/override MAPBOX_ACCESS_TOKEN
+      - name: Restore local.properties and inject Mapbox token
+        env:
+          LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
+          MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
+        run: |
+          if [ -z "$LOCAL_PROPERTIES" ]; then
+            echo "LOCAL_PROPERTIES secret not set!" && exit 1
+          fi
+          echo "$LOCAL_PROPERTIES" | base64 --decode > ./local.properties
+          if [ -n "$MAPBOX_ACCESS_TOKEN" ]; then
+            if grep -q '^MAPBOX_ACCESS_TOKEN=' ./local.properties; then
+              sed -i.bak "s/^MAPBOX_ACCESS_TOKEN=.*/MAPBOX_ACCESS_TOKEN=$MAPBOX_ACCESS_TOKEN/" ./local.properties
+            else
+              echo "MAPBOX_ACCESS_TOKEN=$MAPBOX_ACCESS_TOKEN" >> ./local.properties
+            fi
+          fi
+          echo "local.properties content:"
+          cat ./local.properties || true
+
+      # Decode keystore for signing (assumes you already added the 4 secrets)
+      - name: Decode keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "ANDROID_KEYSTORE_BASE64 secret not set!" && exit 1
+          fi
+          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > keystore.jks
+          ls -l keystore.jks
+
+      - name: Build signed release APK
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          chmod +x ./gradlew
+          ./gradlew clean :$MODULE_DIR:assembleRelease \
+            -Pandroid.injected.signing.store.file=$PWD/keystore.jks \
+            -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
+            -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
+            -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD" \
+            --stacktrace
+
+      - name: Locate generated APKs
+        id: apk
+        run: |
+          APK_DIR="$MODULE_DIR/build/outputs/apk/release"
+          echo "Listing APKs in $APK_DIR"
+          ls -l "$APK_DIR" || true
+          APKS=$(ls -1 "$APK_DIR"/*.apk)
+          echo "$APKS" | tr ' ' '\n' > apk_list.txt
+          echo "apk_list<<EOF" >> $GITHUB_OUTPUT
+          cat apk_list.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Generate SHA256 checksums
+        run: |
+          rm -f SHA256SUMS.txt
+          while IFS= read -r f; do
+            shasum -a 256 "$f" >> SHA256SUMS.txt
+          done < apk_list.txt
+          echo "SHA256SUMS:"
+          cat SHA256SUMS.txt
+
+      - name: Determine next version tag
+        id: tag
+        shell: bash
+        run: |
+          latest_tag=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
+          if [ -z "$latest_tag" ]; then
+            latest_tag="${{ env.BASE_TAG_START }}"
+            echo "No existing v* tags. Using base: $latest_tag"
+          else
+            echo "Latest tag: $latest_tag"
+          fi
+          base="${latest_tag#v}"
+          IFS='.' read -r major minor patch <<< "$base"
+          major=${major:-1}
+          minor=${minor:-0}
+          patch=${patch:-0}
+          next_patch=$((patch + 1))
+          next_tag="v${major}.${minor}.${next_patch}"
+          echo "Next tag: $next_tag"
+          echo "tag_name=$next_tag" >> "$GITHUB_OUTPUT"
+
+      - name: Create Release with auto-bumped tag
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.tag.outputs.tag_name }}
+          name: ${{ steps.tag.outputs.tag_name }}
+          commit: ${{ github.sha }}
+          allowUpdates: false
+          draft: false
+          prerelease: false
+          generateReleaseNotes: true
+          artifacts: |
+            ${{ steps.apk.outputs.apk_list }}
+            SHA256SUMS.txt
+          artifactErrorsFailBuild: true
