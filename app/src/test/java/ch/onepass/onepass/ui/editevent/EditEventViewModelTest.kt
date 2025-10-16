@@ -58,10 +58,8 @@ class EditEventViewModelTest {
 
   @Test
   fun `loadUserEvents handles repository success`() = runTest {
-    val testEvents = listOf(
-        Event(eventId = "1", title = "Event 1"),
-        Event(eventId = "2", title = "Event 2")
-    )
+    val testEvents =
+        listOf(Event(eventId = "1", title = "Event 1"), Event(eventId = "2", title = "Event 2"))
     coEvery { mockRepository.getEventsByOrganization("user-123") } returns flowOf(testEvents)
 
     viewModel.loadUserEvents("user-123")
@@ -76,8 +74,7 @@ class EditEventViewModelTest {
 
   @Test
   fun `loadUserEvents handles repository error`() = runTest {
-    coEvery { mockRepository.getEventsByOrganization("user-id") } throws
-        Exception("Network error")
+    coEvery { mockRepository.getEventsByOrganization("user-id") } throws Exception("Network error")
 
     viewModel.loadUserEvents("user-id")
     advanceUntilIdle()
@@ -103,8 +100,7 @@ class EditEventViewModelTest {
 
   @Test
   fun `clearError removes error message`() = runTest {
-    coEvery { mockRepository.getEventsByOrganization("user-id") } throws
-        Exception("Error")
+    coEvery { mockRepository.getEventsByOrganization("user-id") } throws Exception("Error")
 
     viewModel.loadUserEvents("user-id")
     advanceUntilIdle()

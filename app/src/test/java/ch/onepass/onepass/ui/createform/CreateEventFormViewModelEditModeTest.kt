@@ -8,6 +8,7 @@ import com.google.firebase.Timestamp
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
@@ -16,7 +17,6 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import java.util.Date
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class CreateEventFormViewModelEditModeTest {
@@ -25,19 +25,20 @@ class CreateEventFormViewModelEditModeTest {
   private lateinit var mockRepository: EventRepository
   private val testDispatcher = UnconfinedTestDispatcher()
 
-  private val testEvent = Event(
-      eventId = "test-event-id",
-      title = "Test Event",
-      description = "Test Description",
-      organizerId = "org-id",
-      organizerName = "Test Organizer",
-      status = EventStatus.DRAFT,
-      startTime = Timestamp(Date(2025, 10, 25, 14, 30)),
-      endTime = Timestamp(Date(2025, 10, 25, 16, 30)),
-      capacity = 100,
-      ticketsRemaining = 100,
-      pricingTiers = listOf(PricingTier(name = "General", price = 25.0, quantity = 100, remaining = 100))
-  )
+  private val testEvent =
+      Event(
+          eventId = "test-event-id",
+          title = "Test Event",
+          description = "Test Description",
+          organizerId = "org-id",
+          organizerName = "Test Organizer",
+          status = EventStatus.DRAFT,
+          startTime = Timestamp(Date(2025, 10, 25, 14, 30)),
+          endTime = Timestamp(Date(2025, 10, 25, 16, 30)),
+          capacity = 100,
+          ticketsRemaining = 100,
+          pricingTiers =
+              listOf(PricingTier(name = "General", price = 25.0, quantity = 100, remaining = 100)))
 
   @Before
   fun setUp() {
@@ -168,8 +169,7 @@ class CreateEventFormViewModelEditModeTest {
   @Test
   fun `saveEvent handles update failure`() = runTest {
     coEvery { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-    coEvery { mockRepository.updateEvent(any()) } returns 
-        Result.failure(Exception("Update failed"))
+    coEvery { mockRepository.updateEvent(any()) } returns Result.failure(Exception("Update failed"))
 
     viewModel.loadEvent("test-event-id")
     advanceUntilIdle()

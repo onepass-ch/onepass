@@ -12,23 +12,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.model.event.Event
-import ch.onepass.onepass.model.event.EventStatus
-import ch.onepass.onepass.model.event.PricingTier
-import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.ui.event.EventCard
-import ch.onepass.onepass.ui.theme.OnePassTheme
-import com.google.firebase.Timestamp
-import com.google.firebase.firestore.GeoPoint
-import java.util.Date
 
-/**
- * Test tags for the edit event screen.
- */
+/** Test tags for the edit event screen. */
 object EditEventScreenTestTags {
   const val EDIT_EVENT_SCREEN = "editEventScreen"
   const val EDIT_EVENT_TITLE = "editEventTitle"
@@ -44,8 +34,8 @@ object EditEventScreenTestTags {
 /**
  * Edit Event Screen composable.
  *
- * Displays a list of events associated with the current user/organization.
- * Users can select an event to edit it.
+ * Displays a list of events associated with the current user/organization. Users can select an
+ * event to edit it.
  *
  * @param userId The ID of the user/organization whose events to display.
  * @param onNavigateToEditForm Callback when an event card is clicked, receives eventId.
@@ -91,9 +81,7 @@ fun EditEventScreen(
               LoadingState()
             }
             uiState.error != null && uiState.events.isEmpty() -> {
-              ErrorState(
-                  error = uiState.error!!,
-                  onRetry = { viewModel.refreshEvents(userId) })
+              ErrorState(error = uiState.error!!, onRetry = { viewModel.refreshEvents(userId) })
             }
             uiState.events.isEmpty() && !uiState.isLoading -> {
               EmptyState()
@@ -117,8 +105,7 @@ private fun EventListContent(events: List<Event>, onEventClick: (String) -> Unit
           EventCard(
               event = event,
               modifier =
-                  Modifier.testTag(
-                      EditEventScreenTestTags.getTestTagForEventItem(event.eventId)),
+                  Modifier.testTag(EditEventScreenTestTags.getTestTagForEventItem(event.eventId)),
               onCardClick = { onEventClick(event.eventId) })
         }
       }
@@ -139,10 +126,7 @@ private fun LoadingState(modifier: Modifier = Modifier) {
 private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
   Column(
       modifier =
-          modifier
-              .fillMaxSize()
-              .padding(32.dp)
-              .testTag(EditEventScreenTestTags.ERROR_MESSAGE),
+          modifier.fillMaxSize().padding(32.dp).testTag(EditEventScreenTestTags.ERROR_MESSAGE),
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center) {
         Text(
@@ -172,8 +156,7 @@ private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = 
 @Composable
 private fun EmptyState(modifier: Modifier = Modifier) {
   Column(
-      modifier =
-          modifier.fillMaxSize().padding(32.dp).testTag(EditEventScreenTestTags.EMPTY_STATE),
+      modifier = modifier.fillMaxSize().padding(32.dp).testTag(EditEventScreenTestTags.EMPTY_STATE),
       horizontalAlignment = Alignment.CenterHorizontally,
       verticalArrangement = Arrangement.Center) {
         Text(
@@ -190,9 +173,9 @@ private fun EmptyState(modifier: Modifier = Modifier) {
       }
 }
 
-//@Preview(showBackground = true, showSystemUi = true)
-//@Composable
-//fun EditEventScreenPreview() {
+// @Preview(showBackground = true, showSystemUi = true)
+// @Composable
+// fun EditEventScreenPreview() {
 //  // Create sample events for preview
 //  val sampleEvents = listOf(
 //      Event(
@@ -283,11 +266,11 @@ private fun EmptyState(modifier: Modifier = Modifier) {
 //      }
 //    }
 //  }
-//}
+// }
 //
-//@Preview(showBackground = true, showSystemUi = true)
-//@Composable
-//fun EditEventScreenEmptyPreview() {
+// @Preview(showBackground = true, showSystemUi = true)
+// @Composable
+// fun EditEventScreenEmptyPreview() {
 //  OnePassTheme {
 //    Box(
 //        modifier = Modifier.fillMaxSize().background(Color(0xFF0A0A0A)),
@@ -306,11 +289,11 @@ private fun EmptyState(modifier: Modifier = Modifier) {
 //      }
 //    }
 //  }
-//}
+// }
 //
-//@Preview(showBackground = true, showSystemUi = true)
-//@Composable
-//fun EditEventScreenLoadingPreview() {
+// @Preview(showBackground = true, showSystemUi = true)
+// @Composable
+// fun EditEventScreenLoadingPreview() {
 //  OnePassTheme {
 //    Box(
 //        modifier = Modifier.fillMaxSize().background(Color(0xFF0A0A0A)),
@@ -329,5 +312,4 @@ private fun EmptyState(modifier: Modifier = Modifier) {
 //      }
 //    }
 //  }
-//}
-
+// }

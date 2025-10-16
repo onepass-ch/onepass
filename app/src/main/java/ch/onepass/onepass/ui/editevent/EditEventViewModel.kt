@@ -46,9 +46,7 @@ class EditEventViewModel(private val repository: EventRepository = EventReposito
           _uiState.update { it.copy(events = events, isLoading = false, error = null) }
         }
       } catch (e: Exception) {
-        _uiState.update {
-          it.copy(isLoading = false, error = e.message ?: "Failed to load events")
-        }
+        _uiState.update { it.copy(isLoading = false, error = e.message ?: "Failed to load events") }
       }
     }
   }

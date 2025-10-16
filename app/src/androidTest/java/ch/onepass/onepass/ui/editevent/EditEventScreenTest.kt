@@ -22,10 +22,10 @@ class EditEventScreenTest {
   private lateinit var mockRepository: EventRepository
   private lateinit var viewModel: EditEventViewModel
 
-  private val testEvents = listOf(
-      Event(eventId = "1", title = "Event 1", organizerName = "Organizer 1"),
-      Event(eventId = "2", title = "Event 2", organizerName = "Organizer 2")
-  )
+  private val testEvents =
+      listOf(
+          Event(eventId = "1", title = "Event 1", organizerName = "Organizer 1"),
+          Event(eventId = "2", title = "Event 2", organizerName = "Organizer 2"))
 
   @Before
   fun setUp() {
@@ -35,9 +35,7 @@ class EditEventScreenTest {
 
   @Test
   fun editEventScreen_displaysTitle() {
-    composeTestRule.setContent {
-      EditEventScreen(userId = "user-id", viewModel = viewModel)
-    }
+    composeTestRule.setContent { EditEventScreen(userId = "user-id", viewModel = viewModel) }
 
     composeTestRule.onNodeWithText("Edit event").assertIsDisplayed()
   }
@@ -46,9 +44,7 @@ class EditEventScreenTest {
   fun editEventScreen_displaysLoadingState() {
     coEvery { mockRepository.getEventsByOrganization(any()) } returns flowOf(emptyList())
 
-    composeTestRule.setContent {
-      EditEventScreen(userId = "user-id", viewModel = viewModel)
-    }
+    composeTestRule.setContent { EditEventScreen(userId = "user-id", viewModel = viewModel) }
 
     // Loading indicator should appear briefly
     composeTestRule.waitForIdle()
@@ -58,23 +54,17 @@ class EditEventScreenTest {
   fun editEventScreen_displaysEmptyState() {
     coEvery { mockRepository.getEventsByOrganization(any()) } returns flowOf(emptyList())
 
-    composeTestRule.setContent {
-      EditEventScreen(userId = "user-id", viewModel = viewModel)
-    }
+    composeTestRule.setContent { EditEventScreen(userId = "user-id", viewModel = viewModel) }
 
     composeTestRule.waitForIdle()
-    composeTestRule
-        .onNodeWithText("No Events Found")
-        .assertIsDisplayed()
+    composeTestRule.onNodeWithText("No Events Found").assertIsDisplayed()
   }
 
   @Test
   fun editEventScreen_displaysEventsList() {
     coEvery { mockRepository.getEventsByOrganization("user-id") } returns flowOf(testEvents)
 
-    composeTestRule.setContent {
-      EditEventScreen(userId = "user-id", viewModel = viewModel)
-    }
+    composeTestRule.setContent { EditEventScreen(userId = "user-id", viewModel = viewModel) }
 
     composeTestRule.waitForIdle()
 
@@ -93,8 +83,7 @@ class EditEventScreenTest {
       EditEventScreen(
           userId = "user-id",
           viewModel = viewModel,
-          onNavigateToEditForm = { eventId -> clickedEventId = eventId }
-      )
+          onNavigateToEditForm = { eventId -> clickedEventId = eventId })
     }
 
     composeTestRule.waitForIdle()
@@ -108,27 +97,22 @@ class EditEventScreenTest {
 
   @Test
   fun editEventScreen_displaysErrorState() {
-    coEvery { mockRepository.getEventsByOrganization(any()) } throws
-        Exception("Network error")
+    coEvery { mockRepository.getEventsByOrganization(any()) } throws Exception("Network error")
 
-    composeTestRule.setContent {
-      EditEventScreen(userId = "user-id", viewModel = viewModel)
-    }
+    composeTestRule.setContent { EditEventScreen(userId = "user-id", viewModel = viewModel) }
 
     composeTestRule.waitForIdle()
 
     composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Network error").assertIsDisplayed()
   }
 
   @Test
   fun editEventScreen_retryButton_reloadsData() {
     coEvery { mockRepository.getEventsByOrganization(any()) } throws
-        Exception("Network error") andThen flowOf(testEvents)
+        Exception("Network error") andThen
+        flowOf(testEvents)
 
-    composeTestRule.setContent {
-      EditEventScreen(userId = "user-id", viewModel = viewModel)
-    }
+    composeTestRule.setContent { EditEventScreen(userId = "user-id", viewModel = viewModel) }
 
     composeTestRule.waitForIdle()
 

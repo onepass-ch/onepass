@@ -119,16 +119,16 @@ class CreateEventFormViewModel(
 
     val price = event.pricingTiers.firstOrNull()?.price?.toString() ?: ""
 
-    _formState.value = CreateEventFormState(
-        title = event.title,
-        description = event.description,
-        startTime = startTime,
-        endTime = endTime,
-        date = date,
-        location = event.displayLocation,
-        price = price,
-        capacity = event.capacity.toString()
-    )
+    _formState.value =
+        CreateEventFormState(
+            title = event.title,
+            description = event.description,
+            startTime = startTime,
+            endTime = endTime,
+            date = date,
+            location = event.displayLocation,
+            price = price,
+            capacity = event.capacity.toString())
   }
 
   /**
@@ -204,8 +204,7 @@ class CreateEventFormViewModel(
           pricingTiers =
               listOf(
                   PricingTier(
-                      name = "General", price = price, quantity = capacity, remaining = capacity))
-      )
+                      name = "General", price = price, quantity = capacity, remaining = capacity)))
     } else {
       // Create new event
       Event(
@@ -292,12 +291,14 @@ class CreateEventFormViewModel(
       _uiState.value = CreateEventUiState.Loading
 
       // Create or update event in repository
-      val result = if (editingEventId != null) {
-        eventRepository.updateEvent(event)
-            .map { editingEventId!! } // Return the eventId on success
-      } else {
-        eventRepository.createEvent(event)
-      }
+      val result =
+          if (editingEventId != null) {
+            eventRepository.updateEvent(event).map {
+              editingEventId!!
+            } // Return the eventId on success
+          } else {
+            eventRepository.createEvent(event)
+          }
 
       result.fold(
           onSuccess = { eventId ->
