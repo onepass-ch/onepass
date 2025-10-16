@@ -12,35 +12,35 @@ import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Before
 
-// --- Constants for test configuration ---
-private const val EVENTS_COLLECTION_PATH = "events"
-private const val MAX_BATCH_RETRIES = 12 // Maximum retry attempts for batch deletion
-private const val MAX_BATCH_SIZE =
-    200L // Max number of documents deleted per batch (Long required by Firestore)
-private const val BASE_DELAY_MS = 100L // Base delay (ms) between retries
+// --- Public constants shared by tests and utilities ---
+const val EVENTS_COLLECTION_PATH = "events" // may be imported by other test utils
+const val UI_WAIT_TIMEOUT = 5_000L // common UI wait timeout for instrumentation tests
+
+// --- Internal tuning knobs for cleanup behavior ---
+private const val MAX_BATCH_RETRIES = 12 // max retry attempts for batched deletion
+private const val MAX_BATCH_SIZE = 200L // Firestore limit(...) expects Long
+private const val BASE_DELAY_MS = 100L // base delay (ms) between retries
 
 /**
- * Base class for Firestore integration tests using Firebase Emulator.
+ * Base class for Firestore integration tests using the Firebase Emulator.
  *
- * Ensures a clean test environment by clearing test data before and after each test. Provides
- * helper functions for Firestore event queries and cleanup.
+ * Responsibilities:
+ * - Ensures emulator is running before tests.
+ * - Provides helpers to count/fetch events for the authenticated test user.
+ * - Clears test data before/after each test with robust batched deletion + retry.
  */
 open class FirestoreTestBase {
 
   protected lateinit var repository: EventRepository
 
   init {
-    // Ensure that the Firebase emulator is running before tests
+    // Fail fast if emulator is not available.
     assert(FirebaseEmulator.isRunning) {
-      "FirebaseEmulator must be running for Firestore tests. " +
-          "Start emulators with: firebase emulators:start"
+      "FirebaseEmulator must be running for Firestore tests. Start with: firebase emulators:start"
     }
   }
 
-  /**
-   * Returns the number of events belonging to the current user from the Firestore emulator. Always
-   * uses Source.SERVER to avoid stale cache data.
-   */
+  /** Counts events for the current user (server source to avoid cache). */
   protected suspend fun getEventsCount(): Int {
     val user = FirebaseEmulator.auth.currentUser ?: return 0
     return FirebaseEmulator.firestore
@@ -51,14 +51,16 @@ open class FirestoreTestBase {
         .size()
   }
 
-  /** Retrieves all events for the current user through the repository layer. */
+  /** Retrieves all events via the repository layer (useful for integration assertions). */
   protected suspend fun getAllEventsFromFirestore(): List<Event> {
     return repository.getAllEvents().first()
   }
 
   /**
-   * Clears all test events associated with the current user from Firestore. Uses batched deletions
-   * and retries to handle potential Firestore propagation delays.
+   * Clears all test events belonging to the current user.
+   *
+   * Uses batched deletes (MAX_BATCH_SIZE) and retries (MAX_BATCH_RETRIES) with a growing delay to
+   * absorb Firestore emulator propagation latency.
    */
   private suspend fun clearTestCollection() {
     val user = FirebaseEmulator.auth.currentUser ?: return
@@ -67,7 +69,6 @@ open class FirestoreTestBase {
             .collection(EVENTS_COLLECTION_PATH)
             .whereEqualTo("organizerId", user.uid)
 
-    // Retry up to MAX_BATCH_RETRIES to ensure complete cleanup
     repeat(MAX_BATCH_RETRIES) { attempt ->
       val snaps = col.limit(MAX_BATCH_SIZE).get(Source.SERVER).await()
       if (snaps.isEmpty) return
@@ -76,7 +77,7 @@ open class FirestoreTestBase {
       snaps.documents.forEach { batch.delete(it.reference) }
       batch.commit().await()
 
-      // Gradual delay to allow Firestore to process deletions
+      // Gradual delay (100ms, 200ms, …) to let the emulator settle between passes.
       delay(BASE_DELAY_MS * (attempt + 1).toLong())
     }
 
@@ -86,7 +87,7 @@ open class FirestoreTestBase {
     }
   }
 
-  /** Sets up a clean Firestore state before each test. */
+  /** Prepares a clean state and a concrete repository before each test. */
   @Before
   open fun setUp() {
     repository = EventRepositoryFirebase()
@@ -95,12 +96,13 @@ open class FirestoreTestBase {
       if (eventsCount > 0) {
         Log.w(
             "FirestoreTestBase",
-            "Warning: Test collection is not empty at the beginning of the test, count: $eventsCount. Clearing...")
+            "Warning: initial test collection not empty (count=$eventsCount). Clearing…")
         clearTestCollection()
       }
     }
   }
-  /** Cleans up all Firestore data and resets the emulator after each test. */
+
+  /** Cleans up any leftover data and resets the emulator after each test. */
   @After
   open fun tearDown() {
     runTest { clearTestCollection() }
