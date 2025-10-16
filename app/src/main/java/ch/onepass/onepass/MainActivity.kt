@@ -127,6 +127,6 @@ fun OnePassApp(
             modifier = Modifier.padding(padding),
             mapViewModel = mapViewModel,
             isLocationPermissionGranted = isLocationPermissionGranted,
-            testAuthButtonTag = testAuthButtonTag )
+            testAuthButtonTag = testAuthButtonTag)
       }
 }

@@ -14,7 +14,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import ch.onepass.onepass.ui.auth.AuthScreen
 import ch.onepass.onepass.ui.auth.AuthViewModel
-import ch.onepass.onepass.ui.createform.CreateEventForm
 import ch.onepass.onepass.ui.feed.FeedScreen
 import ch.onepass.onepass.ui.map.MapScreen
 import ch.onepass.onepass.ui.map.MapViewModel
@@ -40,33 +39,30 @@ fun AppNavHost(
       modifier = modifier) {
 
         // ------------------ Auth ------------------
-      composable(Screen.Auth.route) {
+        composable(Screen.Auth.route) {
           if (testAuthButtonTag != null) {
-              // test shortcut: tagged button that immediately navigates to Events
-              Box(modifier = Modifier.fillMaxSize()) {
-                  Button(
-                      onClick = {
-                          navController.navigate(Screen.Events.route) {
-                              launchSingleTop = true
-                          }
-                      },
-                      modifier = Modifier.semantics { testTag = testAuthButtonTag }
-                  ) {
-                      Text("Login")
-                  }
-              }
-          } else {
-              val authVm: AuthViewModel = viewModel()
-              AuthScreen(
-                  onSignedIn = {
-                      navController.navigate(Screen.Events.route) {
-                          popUpTo(Screen.Auth.route) { inclusive = true }
-                          launchSingleTop = true
-                      }
+            // test shortcut: tagged button that immediately navigates to Events
+            Box(modifier = Modifier.fillMaxSize()) {
+              Button(
+                  onClick = {
+                    navController.navigate(Screen.Events.route) { launchSingleTop = true }
                   },
-                  authViewModel = authVm)
+                  modifier = Modifier.semantics { testTag = testAuthButtonTag }) {
+                    Text("Login")
+                  }
+            }
+          } else {
+            val authVm: AuthViewModel = viewModel()
+            AuthScreen(
+                onSignedIn = {
+                  navController.navigate(Screen.Events.route) {
+                    popUpTo(Screen.Auth.route) { inclusive = true }
+                    launchSingleTop = true
+                  }
+                },
+                authViewModel = authVm)
           }
-      }
+        }
 
         // ------------------ Events (Feed) ------------------
         composable(Screen.Events.route) {
