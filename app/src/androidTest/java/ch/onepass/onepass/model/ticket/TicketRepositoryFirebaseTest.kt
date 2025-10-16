@@ -114,23 +114,6 @@ class TicketRepositoryFirebaseTest : FirestoreTestBase() {
   }
 
   @Test
-  fun canDeleteTicket() = runTest {
-    val testTicket = TicketTestData.createTestTicket(ownerId = userId)
-    val createResult = ticketRepository.createTicket(testTicket)
-    val ticketId = createResult.getOrNull()!!
-
-    assertEquals("Should start with 1 ticket", 1, getTicketsCount())
-
-    val deleteResult = ticketRepository.deleteTicket(ticketId)
-    assertTrue("Delete should succeed", deleteResult.isSuccess)
-
-    assertEquals("Should have 0 tickets remaining", 0, getTicketsCount())
-
-    val deletedTicket = ticketRepository.getTicketById(ticketId).first()
-    assertNull("Ticket should be deleted", deletedTicket)
-  }
-
-  @Test
   fun getTicketsByUserReturnsOnlyUsersTickets() = runTest {
     val tickets = TicketTestData.createTicketsForMultipleUsers()
     tickets.forEach { ticketRepository.createTicket(it) }

@@ -1,5 +1,6 @@
 package ch.onepass.onepass.model.ticket
 
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
@@ -70,7 +71,7 @@ class TicketRepositoryFirebase : TicketRepository {
 
   /** Delete ticket (soft delete). */
   override suspend fun deleteTicket(ticketId: String): Result<Unit> = runCatching {
-    ticketsCollection.document(ticketId).delete().await()
+    ticketsCollection.document(ticketId).update("deletedAt", FieldValue.serverTimestamp()).await()
   }
 
   /** Helper to create a [Flow] from a Firestore query using a snapshot listener. */
