@@ -20,3 +20,6 @@ val CardBackground = Color(0xFF262626)
 val CardShadow = Color(0x1A000000)
 val TextSecondary = Color(0xFF9CA3AF) // Gray-400
 val EventDateColor = Color(0xFF683F88) // Purple/Magenta
+
+// Default background color for the app
+val DefaultBackground = Color(0xFF1A1A1A)
