@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.sonar)
   id("jacoco")
   id("com.google.gms.google-services")
+  // Must match the Kotlin compiler version, mismatched versions can break @Serializable
   id("org.jetbrains.kotlin.plugin.serialization") version "1.8.10"
 }
 
@@ -148,35 +149,42 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 }
 
 dependencies {
-  implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
-  implementation("com.google.firebase:firebase-auth-ktx")
-  implementation("com.google.firebase:firebase-firestore-ktx")
-  implementation("com.google.firebase:firebase-functions-ktx")
-  androidTestImplementation("androidx.test:core-ktx:1.5.0")
-  androidTestImplementation("androidx.test.ext:junit-ktx:1.1.5")
-  implementation("androidx.datastore:datastore-preferences:1.1.1")
-  implementation("com.google.firebase:firebase-functions-ktx:20.4.0")
-  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+
+
+  // 🔹 Core Android / Kotlin
+  // =========================================================
   implementation(libs.androidx.core.ktx)
   implementation(libs.androidx.appcompat)
   implementation(libs.material)
   implementation(libs.androidx.lifecycle.runtime.ktx)
-  implementation(platform(libs.compose.bom))
-  testImplementation(libs.junit)
-  globalTestImplementation(libs.androidx.junit)
-  globalTestImplementation(libs.androidx.espresso.core)
+  implementation("androidx.datastore:datastore-preferences:1.1.1")
+  implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
 
-  // ------------- Firebase ------------------
+  // =========================================================
+  // 🔹 Navigation
+  // =========================================================
+
+  implementation(libs.androidx.navigation.compose)
+
+  // =========================================================
+  // 🔹 Firebase
+  // =========================================================
+
+  implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
   implementation(platform(libs.firebase.bom))
+  implementation("com.google.firebase:firebase-auth-ktx")
+  implementation("com.google.firebase:firebase-firestore-ktx")
+  implementation("com.google.firebase:firebase-functions-ktx:20.4.0")
   implementation(libs.firebase.auth.ktx)
   implementation(libs.firebase.firestore.ktx)
   implementation(libs.firebase.database.ktx)
 
-  // ------------- Jetpack Compose ------------------
+  // =========================================================
+  // 🔹 Jetpack Compose
+  // =========================================================
+
   val composeBom = platform(libs.compose.bom)
   implementation(composeBom)
-  globalTestImplementation(composeBom)
-
   implementation(libs.compose.ui)
   implementation(libs.compose.ui.graphics)
   implementation(libs.compose.material3)
@@ -184,36 +192,51 @@ dependencies {
   implementation(libs.compose.viewmodel)
   implementation(libs.compose.preview)
   debugImplementation(libs.compose.tooling)
-  globalTestImplementation(libs.compose.test.junit)
   debugImplementation(libs.compose.test.manifest)
 
-  // --------- Kaspresso test framework ----------
-  globalTestImplementation(libs.kaspresso)
-  globalTestImplementation(libs.kaspresso.compose)
+  // =========================================================
+  // 🔹 Networking / Data
+  // =========================================================
 
-  // ----------       Robolectric     ------------
-  testImplementation(libs.robolectric)
-
-  // --------- Networking with OkHttp ---------
   implementation(libs.okhttp)
-
-  // ------------- GeoFirestore ------------------
   implementation(libs.geofirestore.android)
 
-  // --------- Coroutines Test Support ---------
-  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
-  androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+  // =========================================================
+  // 🔹 Map / Location
+  // =========================================================
 
-  // ---------- ZXing for QR code generation ------------
-  implementation("com.google.zxing:core:3.5.1")
-
-  // ----------       MapBox         ------------
   implementation("com.mapbox.maps:android-ndk27:11.15.2")
   implementation("com.mapbox.extension:maps-compose-ndk27:11.15.2")
 
+  // =========================================================
+  // 🔹 QR / Google Identity
+  // =========================================================
+  implementation("com.google.zxing:core:3.5.1")
   implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
+
+  // =========================================================
+  // 🔹 Testing
+  // =========================================================
+
+  testImplementation(libs.junit)
+  globalTestImplementation(libs.androidx.junit)
+  globalTestImplementation(libs.androidx.espresso.core)
+  globalTestImplementation(composeBom)
+  globalTestImplementation(libs.compose.test.junit)
+  globalTestImplementation(libs.kaspresso)
+  globalTestImplementation(libs.kaspresso.compose)
+  testImplementation(libs.robolectric)
+
+  // Coroutines test
+  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+  androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
+  // Android instrumented tests
+  androidTestImplementation("androidx.test:core-ktx:1.5.0")
+  androidTestImplementation("androidx.test.ext:junit-ktx:1.1.5")
   androidTestImplementation("io.mockk:mockk-android:1.13.10")
 }
+
 
 tasks.withType<Test> {
   if (name.contains("Release")) {
