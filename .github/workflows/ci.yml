@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-      - 93-add-cdyml-workflow-for-apk-build-and-release-automation
   pull_request:
     types:
       - opened
