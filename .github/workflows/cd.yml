@@ -19,45 +19,48 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
 
+      # Setup JDK
       - name: Set up JDK
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
+      # Enable Gradle cache
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v3
 
-      # Decode google-services.json from base64 (matches your existing CI)
+      # Decode google-services.json from secret
       - name: Decode google-services.json
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
         run: |
-          mkdir -p $MODULE_DIR
+          mkdir -p "$MODULE_DIR"
           if [ -z "$GOOGLE_SERVICES" ]; then
             echo "GOOGLE_SERVICES secret not set!" && exit 1
           fi
-          echo "$GOOGLE_SERVICES" | base64 --decode > $MODULE_DIR/google-services.json
-          ls -la $MODULE_DIR/google-services.json || true
+          echo "$GOOGLE_SERVICES" | base64 --decode > "$MODULE_DIR/google-services.json"
+          ls -la "$MODULE_DIR/google-services.json" || true
 
-      # Load local.properties from the secrets
+      # Decode local.properties from secret
       - name: Decode secrets
         env:
           LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
         run: |
           if [ -n "$LOCAL_PROPERTIES" ]; then
-          echo "$LOCAL_PROPERTIES" | base64 --decode > ./local.properties
+            echo "$LOCAL_PROPERTIES" | base64 --decode > ./local.properties
           else
-          echo "::warning::LOCAL_PROPERTIES secret is not set. local.properties will not be created."
+            echo "::warning::LOCAL_PROPERTIES secret is not set. local.properties will not be created."
           fi
 
-      # Decode keystore for signing (assumes you already added the 4 secrets)
+      # Decode keystore for signing
       - name: Decode keystore
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -68,6 +71,41 @@ jobs:
           echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > keystore.jks
           ls -l keystore.jks
 
+      # Verify keystore can be opened as PKCS12
+      - name: Verify keystore open (PKCS12)
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+        run: |
+          set -e
+          keytool -list -keystore keystore.jks -storepass "$ANDROID_KEYSTORE_PASSWORD" -storetype PKCS12 > /dev/null
+          echo "Keystore opened as PKCS12."
+
+      # Verify alias exists in keystore
+      - name: Verify alias exists
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -e
+          keytool -list -v -keystore keystore.jks -storepass "$ANDROID_KEYSTORE_PASSWORD" -storetype PKCS12 \
+            | grep -q "Alias name: $ANDROID_KEY_ALIAS" || { echo "Alias '$ANDROID_KEY_ALIAS' not found"; exit 1; }
+          echo "Alias '$ANDROID_KEY_ALIAS' found."
+
+      # Verify key password works (private key can be decrypted)
+      - name: Verify key password works (private key)
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -e
+          keytool -importkeystore \
+            -srckeystore keystore.jks -srcstoretype PKCS12 -srcstorepass "$ANDROID_KEYSTORE_PASSWORD" \
+            -srcalias "$ANDROID_KEY_ALIAS" -srckeypass "$ANDROID_KEY_PASSWORD" \
+            -destkeystore /tmp/test.p12 -deststoretype PKCS12 -deststorepass testpass -destalias testalias >/dev/null
+          echo "Private key decryption succeeded with provided key password."
+
+      # Build signed release APK
       - name: Build signed release APK
         env:
           ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
@@ -76,25 +114,26 @@ jobs:
         run: |
           chmod +x ./gradlew
           ./gradlew clean :$MODULE_DIR:assembleRelease \
-            -Pandroid.injected.signing.store.file=$PWD/keystore.jks \
+            -Pandroid.injected.signing.store.file="$PWD/keystore.jks" \
             -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
             -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
             -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD" \
             -Pandroid.injected.signing.store.type=PKCS12 \
             --stacktrace
 
+      # Locate generated APKs safely
       - name: Locate generated APKs
         id: apk
         run: |
           APK_DIR="$MODULE_DIR/build/outputs/apk/release"
-          echo "Listing APKs in $APK_DIR"
-          ls -l "$APK_DIR" || true
-          APKS=$(ls -1 "$APK_DIR"/*.apk)
-          echo "$APKS" | tr ' ' '\n' > apk_list.txt
+          echo "Searching for APKs in $APK_DIR"
+          find "$APK_DIR" -maxdepth 1 -type f -name "*.apk" | sort > apk_list.txt
+          cat apk_list.txt || echo "No APKs found!"
           echo "apk_list<<EOF" >> $GITHUB_OUTPUT
           cat apk_list.txt >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
+      # Generate SHA256 checksums for APKs
       - name: Generate SHA256 checksums
         run: |
           rm -f SHA256SUMS.txt
@@ -104,6 +143,7 @@ jobs:
           echo "SHA256SUMS:"
           cat SHA256SUMS.txt
 
+      # Determine next semantic version tag
       - name: Determine next version tag
         id: tag
         shell: bash
@@ -125,6 +165,7 @@ jobs:
           echo "Next tag: $next_tag"
           echo "tag_name=$next_tag" >> "$GITHUB_OUTPUT"
 
+      # Create a GitHub release and attach APKs + checksums
       - name: Create Release with auto-bumped tag
         uses: ncipollo/release-action@v1
         with:
