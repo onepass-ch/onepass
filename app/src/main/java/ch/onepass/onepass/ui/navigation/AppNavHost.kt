@@ -9,6 +9,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -18,12 +20,12 @@ import ch.onepass.onepass.ui.feed.FeedScreen
 import ch.onepass.onepass.ui.map.MapScreen
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.myevents.MyEventsScreen
-import ch.onepass.onepass.ui.myevents.Ticket
-import ch.onepass.onepass.ui.myevents.TicketStatus
+import ch.onepass.onepass.ui.myevents.MyEventsViewModel
 import ch.onepass.onepass.ui.navigation.NavigationDestinations.Screen
 import ch.onepass.onepass.ui.profile.ProfileEffect
 import ch.onepass.onepass.ui.profile.ProfileScreen
 import ch.onepass.onepass.ui.profile.ProfileViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun AppNavHost(
@@ -77,26 +79,12 @@ fun AppNavHost(
 
         // ------------------ Tickets (My Events) ------------------
         composable(Screen.Tickets.route) {
-          // TODO: replace sample data with repository-backed tickets + real user QR
-          val currentTickets =
-              listOf(
-                  Ticket(
-                      title = "Lausanne Party",
-                      status = TicketStatus.CURRENTLY,
-                      dateTime = "Dec 15, 2024 • 9:00 PM",
-                      location = "Lausanne, Flon"))
-          val expiredTickets =
-              listOf(
-                  Ticket(
-                      title = "Morges Party",
-                      status = TicketStatus.EXPIRED,
-                      dateTime = "Nov 10, 2024 • 8:00 PM",
-                      location = "Morges"))
+          val uid = FirebaseAuth.getInstance().currentUser?.uid ?: "LOCAL_TEST_UID"
 
-          MyEventsScreen(
-              userQrData = "USER-QR-DEMO",
-              currentTickets = currentTickets,
-              expiredTickets = expiredTickets)
+          val myEventsVm: MyEventsViewModel =
+              viewModel(
+                  factory = viewModelFactory { initializer { MyEventsViewModel(userId = uid) } })
+          MyEventsScreen(viewModel = myEventsVm, userQrData = "USER-QR-DEMO")
         }
 
         // ------------------ Map ------------------
@@ -108,7 +96,6 @@ fun AppNavHost(
 
         // ------------------ Profile ------------------
         composable(Screen.Profile.route) {
-          // Create a screen-scoped VM (replace with Hilt if you use it)
           val profileVm: ProfileViewModel = viewModel()
           val authVm: AuthViewModel = viewModel()
           ProfileScreen(
