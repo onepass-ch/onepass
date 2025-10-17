@@ -10,7 +10,6 @@ import ch.onepass.onepass.ui.auth.SignInScreenTestTags
 import ch.onepass.onepass.ui.feed.FeedScreenTestTags
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.myevents.MyEventsTestTags
-import ch.onepass.onepass.ui.profile.ProfileTestTags
 import org.junit.Rule
 import org.junit.Test
 
@@ -48,5 +47,4 @@ class OnePassAppRoutesTest {
     compose.onNodeWithTag("BOTTOM_TAB_TICKETS").assertIsDisplayed().performClick()
     compose.onNodeWithTag(MyEventsTestTags.TABS_ROW).assertIsDisplayed()
   }
-
 }
