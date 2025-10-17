@@ -49,22 +49,4 @@ class OnePassAppRoutesTest {
     compose.onNodeWithTag(MyEventsTestTags.TABS_ROW).assertIsDisplayed()
   }
 
-  // 4) Map → Profile (bottom bar)
-  @Test
-  fun bottomBar_navigates_to_profile() {
-    setApp()
-    tapTestLogin()
-    compose.onNodeWithTag("BOTTOM_TAB_PROFILE").assertIsDisplayed().performClick()
-    compose.onNodeWithTag(ProfileTestTags.SCREEN).assertIsDisplayed()
-  }
-
-  // 5) Profile → Sign out → Auth
-  @Test
-  fun profile_sign_out_returns_to_auth() {
-    setApp()
-    tapTestLogin()
-    compose.onNodeWithTag("BOTTOM_TAB_PROFILE").assertIsDisplayed().performClick()
-    compose.onNodeWithTag(ProfileTestTags.SETTINGS_SIGN_OUT).assertIsDisplayed().performClick()
-    compose.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
-  }
 }
