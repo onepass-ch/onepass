@@ -5,7 +5,7 @@ on:
     branches:
       - main
       - 93-add-cdyml-workflow-for-apk-build-and-release-automation
-  workflow_dispatch:   # Support manual trigger
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,26 +18,31 @@ jobs:
   build-release:
     runs-on: ubuntu-latest
 
+    # Plain-text RELEASE_* variables you requested
+    env:
+      RELEASE_STORE_FILE: ${{ github.workspace }}/apk/keystore.jks
+      RELEASE_STORE_PASSWORD: onepass123
+      RELEASE_KEY_ALIAS: onepass123
+      RELEASE_KEY_PASSWORD: onepass123
+      RELEASE_STORE_TYPE: PKCS12
+
     steps:
-      # Checkout the repository
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
           fetch-tags: true
 
-      # Setup JDK
-      - name: Set up JDK
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      # Enable Gradle cache
       - name: Gradle cache
         uses: gradle/actions/setup-gradle@v3
 
-      # Decode google-services.json from secret
+      # Decode google-services.json from a base64 secret (optional)
       - name: Decode google-services.json
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
@@ -49,8 +54,8 @@ jobs:
           echo "$GOOGLE_SERVICES" | base64 --decode > "$MODULE_DIR/google-services.json"
           ls -la "$MODULE_DIR/google-services.json" || true
 
-      # Decode local.properties from secret
-      - name: Decode secrets
+      # Decode local.properties from a secret (optional)
+      - name: Decode local.properties
         env:
           LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
         run: |
@@ -60,68 +65,63 @@ jobs:
             echo "::warning::LOCAL_PROPERTIES secret is not set. local.properties will not be created."
           fi
 
-      # Decode keystore for signing
-      - name: Decode keystore
+      # 1) Decode the keystore from KEYSTORE_B64 into apk/keystore.jks
+      - name: Decode keystore from KEYSTORE_B64
         env:
-          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
         run: |
-          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
-            echo "ANDROID_KEYSTORE_BASE64 secret not set!" && exit 1
+          set -e
+          mkdir -p apk
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "KEYSTORE_B64 secret not set!" && exit 1
           fi
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 -d > keystore.jks
-          ls -l keystore.jks
+          echo "$KEYSTORE_B64" | base64 -d > "$RELEASE_STORE_FILE"
+          ls -l "$RELEASE_STORE_FILE"
 
-      # Verify keystore can be opened as PKCS12
+      # 2) Verify the keystore can be opened as PKCS12
       - name: Verify keystore open (PKCS12)
-        env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
         run: |
           set -e
-          keytool -list -keystore keystore.jks -storepass "$ANDROID_KEYSTORE_PASSWORD" -storetype PKCS12 > /dev/null
-          echo "Keystore opened as PKCS12."
+          keytool -list -keystore "$RELEASE_STORE_FILE" \
+            -storepass "$RELEASE_STORE_PASSWORD" \
+            -storetype "$RELEASE_STORE_TYPE" > /dev/null
+          echo "Keystore opened as $RELEASE_STORE_TYPE."
 
-      # Verify alias exists in keystore
+      # 3) Verify that the alias exists in the keystore
       - name: Verify alias exists
-        env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
           set -e
-          keytool -list -v -keystore keystore.jks -storepass "$ANDROID_KEYSTORE_PASSWORD" -storetype PKCS12 \
-            | grep -q "Alias name: $ANDROID_KEY_ALIAS" || { echo "Alias '$ANDROID_KEY_ALIAS' not found"; exit 1; }
-          echo "Alias '$ANDROID_KEY_ALIAS' found."
+          keytool -list -v -keystore "$RELEASE_STORE_FILE" \
+            -storepass "$RELEASE_STORE_PASSWORD" \
+            -storetype "$RELEASE_STORE_TYPE" \
+            | grep -q "Alias name: $RELEASE_KEY_ALIAS" \
+            || { echo "Alias '$RELEASE_KEY_ALIAS' not found"; exit 1; }
+          echo "Alias '$RELEASE_KEY_ALIAS' found."
 
-      # Verify key password works (private key can be decrypted)
+      # 4) Verify that the private key password works
       - name: Verify key password works (private key)
-        env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
           set -e
           keytool -importkeystore \
-            -srckeystore keystore.jks -srcstoretype PKCS12 -srcstorepass "$ANDROID_KEYSTORE_PASSWORD" \
-            -srcalias "$ANDROID_KEY_ALIAS" -srckeypass "$ANDROID_KEY_PASSWORD" \
+            -srckeystore "$RELEASE_STORE_FILE" -srcstoretype "$RELEASE_STORE_TYPE" -srcstorepass "$RELEASE_STORE_PASSWORD" \
+            -srcalias "$RELEASE_KEY_ALIAS" -srckeypass "$RELEASE_KEY_PASSWORD" \
             -destkeystore /tmp/test.p12 -deststoretype PKCS12 -deststorepass testpass -destalias testalias >/dev/null
           echo "Private key decryption succeeded with provided key password."
 
-      # Build signed release APK
+      # 5) Build a signed release APK using -P RELEASE_* Gradle properties
       - name: Build signed release APK
-        env:
-          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
         run: |
+          set -e
           chmod +x ./gradlew
           ./gradlew clean :$MODULE_DIR:assembleRelease \
-            -Pandroid.injected.signing.store.file="$PWD/keystore.jks" \
-            -Pandroid.injected.signing.store.password="$ANDROID_KEYSTORE_PASSWORD" \
-            -Pandroid.injected.signing.key.alias="$ANDROID_KEY_ALIAS" \
-            -Pandroid.injected.signing.key.password="$ANDROID_KEY_PASSWORD" \
-            -Pandroid.injected.signing.store.type=PKCS12 \
+            -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
+            -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
+            -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS" \
+            -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
+            -PRELEASE_STORE_TYPE="$RELEASE_STORE_TYPE" \
             --stacktrace
 
-      # Locate generated APKs safely
+      # 6) Locate generated APK files
       - name: Locate generated APKs
         id: apk
         run: |
@@ -133,7 +133,7 @@ jobs:
           cat apk_list.txt >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-      # Generate SHA256 checksums for APKs
+      # 7) Generate SHA256 checksums for all APKs
       - name: Generate SHA256 checksums
         run: |
           rm -f SHA256SUMS.txt
@@ -143,7 +143,7 @@ jobs:
           echo "SHA256SUMS:"
           cat SHA256SUMS.txt
 
-      # Determine next semantic version tag
+      # 8) Determine the next semantic version tag automatically (increment patch)
       - name: Determine next version tag
         id: tag
         shell: bash
@@ -165,7 +165,7 @@ jobs:
           echo "Next tag: $next_tag"
           echo "tag_name=$next_tag" >> "$GITHUB_OUTPUT"
 
-      # Create a GitHub release and attach APKs + checksums
+      # 9) Create a GitHub Release and attach APKs and checksums
       - name: Create Release with auto-bumped tag
         uses: ncipollo/release-action@v1
         with:
