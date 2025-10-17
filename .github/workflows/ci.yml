@@ -139,7 +139,7 @@ jobs:
           if [ -n "$LOCAL_PROPERTIES" ]; then
           echo "$LOCAL_PROPERTIES" | base64 --decode > ./local.properties
           else
-          echo "::warning::LOCAL_PROPERTIES secret is not set. local.properties will not be created. Should be present after B3"
+          echo "::warning::LOCAL_PROPERTIES secret is not set. local.properties will not be created."
           fi
 
       - name: Grant execute permission for gradlew

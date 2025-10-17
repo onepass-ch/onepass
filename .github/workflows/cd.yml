@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 93-add-cdyml-workflow-for-apk-build-and-release-automation
   workflow_dispatch:   # Support manual trigger
 
 permissions:
@@ -45,25 +46,16 @@ jobs:
           echo "$GOOGLE_SERVICES" | base64 --decode > $MODULE_DIR/google-services.json
           ls -la $MODULE_DIR/google-services.json || true
 
-      # Restore local.properties from base64, then inject/override MAPBOX_ACCESS_TOKEN
-      - name: Restore local.properties and inject Mapbox token
+      # Load local.properties from the secrets
+      - name: Decode secrets
         env:
           LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
-          MAPBOX_ACCESS_TOKEN: ${{ secrets.MAPBOX_ACCESS_TOKEN }}
         run: |
-          if [ -z "$LOCAL_PROPERTIES" ]; then
-            echo "LOCAL_PROPERTIES secret not set!" && exit 1
-          fi
+          if [ -n "$LOCAL_PROPERTIES" ]; then
           echo "$LOCAL_PROPERTIES" | base64 --decode > ./local.properties
-          if [ -n "$MAPBOX_ACCESS_TOKEN" ]; then
-            if grep -q '^MAPBOX_ACCESS_TOKEN=' ./local.properties; then
-              sed -i.bak "s/^MAPBOX_ACCESS_TOKEN=.*/MAPBOX_ACCESS_TOKEN=$MAPBOX_ACCESS_TOKEN/" ./local.properties
-            else
-              echo "MAPBOX_ACCESS_TOKEN=$MAPBOX_ACCESS_TOKEN" >> ./local.properties
-            fi
+          else
+          echo "::warning::LOCAL_PROPERTIES secret is not set. local.properties will not be created."
           fi
-          echo "local.properties content:"
-          cat ./local.properties || true
 
       # Decode keystore for signing (assumes you already added the 4 secrets)
       - name: Decode keystore
