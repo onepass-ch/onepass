@@ -23,7 +23,7 @@ jobs:
       RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
       RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
       RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-      RELEASE_STORE_TYPE: PKCS12
+      RELEASE_STORE_TYPE: ${{ secrets.RELEASE_STORE_TYPE }}
 
     steps:
       # First step : Checkout the repository on the runner
@@ -157,6 +157,40 @@ jobs:
       - name: KTFmt Check
         run: |
           ./gradlew ktfmtCheck --stacktrace
+
+      - name: Decode keystore from KEYSTORE_B64
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          set -e
+          mkdir -p "$(dirname "$RELEASE_STORE_FILE")"
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "KEYSTORE_B64 secret not set!" && exit 1
+          fi
+          echo "$KEYSTORE_B64" | base64 --decode > "$RELEASE_STORE_FILE"
+          ls -l "$RELEASE_STORE_FILE"
+
+      - name: Verify keystore open
+        run: |
+          keytool -list -keystore "$RELEASE_STORE_FILE" \
+            -storepass "$RELEASE_STORE_PASSWORD" \
+            -storetype "$RELEASE_STORE_TYPE" > /dev/null
+
+      - name: Verify alias exists
+        run: |
+          keytool -list -v -keystore "$RELEASE_STORE_FILE" \
+            -storepass "$RELEASE_STORE_PASSWORD" \
+            -storetype "$RELEASE_STORE_TYPE" | grep -q "Alias name: $RELEASE_KEY_ALIAS"
+
+      - name: Verify key password works (private key)
+        run: |
+          set -e
+          keytool -importkeystore \
+            -srckeystore "$RELEASE_STORE_FILE" -srcstoretype "$RELEASE_STORE_TYPE" -srcstorepass "$RELEASE_STORE_PASSWORD" \
+            -srcalias "$RELEASE_KEY_ALIAS" -srckeypass "$RELEASE_KEY_PASSWORD" \
+            -destkeystore /tmp/test.p12 -deststoretype PKCS12 -deststorepass testpass -destalias testalias >/dev/null
+          echo "Private key decryption succeeded."
+          
 
       # Assemble and lint
       - name: Assemble
