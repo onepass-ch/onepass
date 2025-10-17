@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - 93-add-cdyml-workflow-for-apk-build-and-release-automation
   workflow_dispatch:
 
 permissions:
@@ -20,10 +21,10 @@ jobs:
     # Plain-text RELEASE_* variables you requested
     env:
       RELEASE_STORE_FILE: ${{ github.workspace }}/apk/keystore.jks
-      RELEASE_STORE_PASSWORD: onepass123
-      RELEASE_KEY_ALIAS: onepass123
-      RELEASE_KEY_PASSWORD: onepass123
-      RELEASE_STORE_TYPE: PKCS12
+      RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+      RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+      RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+      RELEASE_STORE_TYPE: ${{ secrets.RELEASE_STORE_TYPE }}
 
     steps:
       - name: Checkout repository
