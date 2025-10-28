@@ -156,9 +156,22 @@ class OrganizationTest {
 
   @Test
   fun organizationEqualityBasedOnAllFields() {
-    val org1 = OrganizationTestData.createTestOrganization(id = "same_id", name = "Org 1")
-    val org2 = OrganizationTestData.createTestOrganization(id = "same_id", name = "Org 1")
-    val org3 = OrganizationTestData.createTestOrganization(id = "different_id", name = "Org 1")
+    val fixedTimestamp = Timestamp(1234567890, 123000000)
+
+    val org1 =
+        OrganizationTestData.createTestOrganization(
+            id = "same_id", name = "Org 1", createdAt = fixedTimestamp, updatedAt = fixedTimestamp)
+
+    val org2 =
+        OrganizationTestData.createTestOrganization(
+            id = "same_id", name = "Org 1", createdAt = fixedTimestamp, updatedAt = fixedTimestamp)
+
+    val org3 =
+        OrganizationTestData.createTestOrganization(
+            id = "different_id",
+            name = "Org 1",
+            createdAt = fixedTimestamp,
+            updatedAt = fixedTimestamp)
 
     assertEquals("Organizations with same values should be equal", org1, org2)
     assertNotEquals("Organizations with different IDs should not be equal", org1, org3)
