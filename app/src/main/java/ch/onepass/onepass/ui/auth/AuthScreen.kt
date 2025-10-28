@@ -76,7 +76,8 @@ fun AuthScreen(onSignedIn: () -> Unit = {}, authViewModel: AuthViewModel = AuthV
 
           // Authenticate With Google Button
           if (isLoading) {
-            CircularProgressIndicator(modifier = Modifier.size(48.dp).testTag(SignInScreenTestTags.LOADING_INDICATOR))
+            CircularProgressIndicator(
+                modifier = Modifier.size(48.dp).testTag(SignInScreenTestTags.LOADING_INDICATOR))
           } else {
             GoogleSignInButton(onSignInClick = { authViewModel.signIn(context, credentialManager) })
           }

@@ -29,84 +29,86 @@ import org.junit.Test
 @ExperimentalCoroutinesApi
 class AuthViewModelTest {
 
-    private lateinit var viewModel: AuthViewModel
-    private lateinit var mockAuthRepository: AuthRepositoryFirebase
-    private lateinit var mockCredentialManager: CredentialManager
-    private lateinit var mockContext: Context
+  private lateinit var viewModel: AuthViewModel
+  private lateinit var mockAuthRepository: AuthRepositoryFirebase
+  private lateinit var mockCredentialManager: CredentialManager
+  private lateinit var mockContext: Context
 
-    private val testDispatcher = StandardTestDispatcher()
+  private val testDispatcher = StandardTestDispatcher()
 
-    @Before
-    fun setUp() {
-        Dispatchers.setMain(testDispatcher)
-        mockAuthRepository = mockk(relaxed = true)
-        mockCredentialManager = mockk()
-        mockContext = mockk(relaxed = true)
-        viewModel = AuthViewModel(mockAuthRepository)
+  @Before
+  fun setUp() {
+    Dispatchers.setMain(testDispatcher)
+    mockAuthRepository = mockk(relaxed = true)
+    mockCredentialManager = mockk()
+    mockContext = mockk(relaxed = true)
+    viewModel = AuthViewModel(mockAuthRepository)
 
-        every { mockContext.getString(any()) } returns "test_client_id"
-    }
+    every { mockContext.getString(any()) } returns "test_client_id"
+  }
 
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
-    }
+  @After
+  fun tearDown() {
+    Dispatchers.resetMain()
+  }
 
-    @Test
-    fun `signIn success updates uiState correctly`() = runTest {
-        // Given
-        val mockGoogleIdOption = mockk<GetSignInWithGoogleOption>()
-        val mockCredentialResponse = mockk<GetCredentialResponse>()
-        val mockFirebaseUser = mockk<FirebaseUser>()
-        val mockCredential = mockk<Credential>()
+  @Test
+  fun `signIn success updates uiState correctly`() = runTest {
+    // Given
+    val mockGoogleIdOption = mockk<GetSignInWithGoogleOption>()
+    val mockCredentialResponse = mockk<GetCredentialResponse>()
+    val mockFirebaseUser = mockk<FirebaseUser>()
+    val mockCredential = mockk<Credential>()
 
-        every { mockCredentialResponse.credential } returns mockCredential
-        coEvery { mockAuthRepository.getGoogleSignInOption(any()) } returns mockGoogleIdOption
-        coEvery { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) } returns mockCredentialResponse
-        coEvery { mockAuthRepository.signInWithGoogle(any()) } returns Result.success(mockFirebaseUser)
+    every { mockCredentialResponse.credential } returns mockCredential
+    coEvery { mockAuthRepository.getGoogleSignInOption(any()) } returns mockGoogleIdOption
+    coEvery { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) } returns
+        mockCredentialResponse
+    coEvery { mockAuthRepository.signInWithGoogle(any()) } returns Result.success(mockFirebaseUser)
 
-        // When
-        viewModel.signIn(mockContext, mockCredentialManager)
-        testDispatcher.scheduler.advanceUntilIdle()
+    // When
+    viewModel.signIn(mockContext, mockCredentialManager)
+    testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState.isSignedIn)
-        assertFalse(uiState.isLoading)
-    }
+    // Then
+    val uiState = viewModel.uiState.value
+    assertTrue(uiState.isSignedIn)
+    assertFalse(uiState.isLoading)
+  }
 
-    @Test
-    fun `signIn failure updates uiState with error`() = runTest {
-        // Given
-        val errorMessage = "Sign in failed"
-        val mockGoogleIdOption = mockk<GetSignInWithGoogleOption>()
-        val mockException = mockk<GetCredentialException>()
-        every { mockException.message } returns errorMessage
+  @Test
+  fun `signIn failure updates uiState with error`() = runTest {
+    // Given
+    val errorMessage = "Sign in failed"
+    val mockGoogleIdOption = mockk<GetSignInWithGoogleOption>()
+    val mockException = mockk<GetCredentialException>()
+    every { mockException.message } returns errorMessage
 
-        coEvery { mockAuthRepository.getGoogleSignInOption(any()) } returns mockGoogleIdOption
-        coEvery { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) } throws mockException
+    coEvery { mockAuthRepository.getGoogleSignInOption(any()) } returns mockGoogleIdOption
+    coEvery { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) } throws
+        mockException
 
-        // When
-        viewModel.signIn(mockContext, mockCredentialManager)
-        testDispatcher.scheduler.advanceUntilIdle()
+    // When
+    viewModel.signIn(mockContext, mockCredentialManager)
+    testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
-        val uiState = viewModel.uiState.value
-        assertFalse(uiState.isSignedIn)
-        assertFalse(uiState.isLoading)
-        assertNotNull(uiState.errorMessage)
-        assertTrue(uiState.errorMessage!!.contains(errorMessage))
-    }
+    // Then
+    val uiState = viewModel.uiState.value
+    assertFalse(uiState.isSignedIn)
+    assertFalse(uiState.isLoading)
+    assertNotNull(uiState.errorMessage)
+    assertTrue(uiState.errorMessage!!.contains(errorMessage))
+  }
 
-    @Test
-    fun `signOut updates uiState correctly`() = runTest {
-        // When
-        viewModel.signOut()
-        testDispatcher.scheduler.advanceUntilIdle()
+  @Test
+  fun `signOut updates uiState correctly`() = runTest {
+    // When
+    viewModel.signOut()
+    testDispatcher.scheduler.advanceUntilIdle()
 
-        // Then
-        coVerify { mockAuthRepository.signOut() }
-        val uiState = viewModel.uiState.value
-        assertFalse(uiState.isSignedIn)
-    }
+    // Then
+    coVerify { mockAuthRepository.signOut() }
+    val uiState = viewModel.uiState.value
+    assertFalse(uiState.isSignedIn)
+  }
 }

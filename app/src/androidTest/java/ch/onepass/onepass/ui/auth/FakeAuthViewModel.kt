@@ -19,7 +19,7 @@ class FakeAuthViewModel : AuthViewModel() {
     viewModelScope.launch { _fakeUiState.value = AuthUiState(isLoading = true) }
   }
 
-    fun setLoading(isLoading: Boolean) {
-        _fakeUiState.value = AuthUiState(isLoading = isLoading)
-    }
+  fun setLoading(isLoading: Boolean) {
+    _fakeUiState.value = AuthUiState(isLoading = isLoading)
+  }
 }

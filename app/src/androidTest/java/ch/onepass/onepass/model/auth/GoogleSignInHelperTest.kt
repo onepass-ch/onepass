@@ -14,26 +14,26 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class GoogleSignInHelperTest {
 
-    private lateinit var googleSignInHelper: GoogleSignInHelper
+  private lateinit var googleSignInHelper: GoogleSignInHelper
 
-    @Before
-    fun setup() {
-        googleSignInHelper = DefaultGoogleSignInHelper()
-    }
+  @Before
+  fun setup() {
+    googleSignInHelper = DefaultGoogleSignInHelper()
+  }
 
-    @Test
-    fun testToFirebaseCredential() {
-        val idToken = "test_id_token"
-        val credential = googleSignInHelper.toFirebaseCredential(idToken)
-        assertNotNull(credential)
-        assertEquals(GoogleAuthProvider.PROVIDER_ID, credential.provider)
-    }
+  @Test
+  fun testToFirebaseCredential() {
+    val idToken = "test_id_token"
+    val credential = googleSignInHelper.toFirebaseCredential(idToken)
+    assertNotNull(credential)
+    assertEquals(GoogleAuthProvider.PROVIDER_ID, credential.provider)
+  }
 
-    @Test
-    fun testExtractIdTokenCredential_withEmptyBundle_throwsException() {
-        val bundle = Bundle()
-        assertThrows(GoogleIdTokenParsingException::class.java) {
-            googleSignInHelper.extractIdTokenCredential(bundle)
-        }
+  @Test
+  fun testExtractIdTokenCredential_withEmptyBundle_throwsException() {
+    val bundle = Bundle()
+    assertThrows(GoogleIdTokenParsingException::class.java) {
+      googleSignInHelper.extractIdTokenCredential(bundle)
     }
+  }
 }

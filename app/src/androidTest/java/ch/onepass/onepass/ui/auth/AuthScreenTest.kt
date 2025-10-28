@@ -16,70 +16,68 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class AuthScreenTest {
 
-    @get:Rule
-    val composeRule = createComposeRule()
+  @get:Rule val composeRule = createComposeRule()
 
-    @Test
-    fun authScreen_displaysLogoAndLoginButton() {
-        val vm = FakeAuthViewModel()
+  @Test
+  fun authScreen_displaysLogoAndLoginButton() {
+    val vm = FakeAuthViewModel()
 
-        composeRule.setContent { AuthScreen(onSignedIn = {}, authViewModel = vm) }
+    composeRule.setContent { AuthScreen(onSignedIn = {}, authViewModel = vm) }
 
-        composeRule.onNodeWithTag(SignInScreenTestTags.APP_LOGO).assertIsDisplayed()
-        composeRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
-    }
+    composeRule.onNodeWithTag(SignInScreenTestTags.APP_LOGO).assertIsDisplayed()
+    composeRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
+  }
 
-    @Test
-    fun clickingLogo_togglesBetweenStates() {
-        val vm = FakeAuthViewModel()
+  @Test
+  fun clickingLogo_togglesBetweenStates() {
+    val vm = FakeAuthViewModel()
 
-        composeRule.setContent { AuthScreen(onSignedIn = {}, authViewModel = vm) }
+    composeRule.setContent { AuthScreen(onSignedIn = {}, authViewModel = vm) }
 
-        val logoNode = composeRule.onNodeWithTag(SignInScreenTestTags.APP_LOGO)
-        logoNode.assertIsDisplayed()
+    val logoNode = composeRule.onNodeWithTag(SignInScreenTestTags.APP_LOGO)
+    logoNode.assertIsDisplayed()
 
-        logoNode.performClick()
-        logoNode.assertIsDisplayed()
+    logoNode.performClick()
+    logoNode.assertIsDisplayed()
 
-        logoNode.performClick()
-        logoNode.assertIsDisplayed()
-    }
+    logoNode.performClick()
+    logoNode.assertIsDisplayed()
+  }
 
-    @Test
-    fun clickingLoginButton_triggersSignIn() {
-        val vm = FakeAuthViewModel()
+  @Test
+  fun clickingLoginButton_triggersSignIn() {
+    val vm = FakeAuthViewModel()
 
-        composeRule.setContent { AuthScreen(onSignedIn = {}, authViewModel = vm) }
+    composeRule.setContent { AuthScreen(onSignedIn = {}, authViewModel = vm) }
 
-        composeRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
+    composeRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
 
-        assertTrue("signIn() should be called", vm.signInCalled)
-    }
+    assertTrue("signIn() should be called", vm.signInCalled)
+  }
 
-    @Test
-    fun google_sign_in_is_configured() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
+  @Test
+  fun google_sign_in_is_configured() {
+    val context = ApplicationProvider.getApplicationContext<Context>()
 
-        val resourceId =
-            context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
+    val resourceId =
+        context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
 
-        // Skip test if resource doesn't exist (useful for CI environments)
-        Assume.assumeTrue("Google Sign-In not configured - skipping test", resourceId != 0)
+    // Skip test if resource doesn't exist (useful for CI environments)
+    Assume.assumeTrue("Google Sign-In not configured - skipping test", resourceId != 0)
 
-        val clientId = context.getString(resourceId)
-        assertTrue(
-            "Invalid Google client ID format: $clientId", clientId.endsWith(".googleusercontent.com")
-        )
-    }
+    val clientId = context.getString(resourceId)
+    assertTrue(
+        "Invalid Google client ID format: $clientId", clientId.endsWith(".googleusercontent.com"))
+  }
 
-    @Test
-    fun loadingState_showsProgressBarAndHidesButton() {
-        val vm = FakeAuthViewModel()
-        vm.setLoading(true)
+  @Test
+  fun loadingState_showsProgressBarAndHidesButton() {
+    val vm = FakeAuthViewModel()
+    vm.setLoading(true)
 
-        composeRule.setContent { AuthScreen(onSignedIn = {}, authViewModel = vm) }
+    composeRule.setContent { AuthScreen(onSignedIn = {}, authViewModel = vm) }
 
-        composeRule.onNodeWithTag(SignInScreenTestTags.LOADING_INDICATOR).assertIsDisplayed()
-        composeRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertDoesNotExist()
-    }
+    composeRule.onNodeWithTag(SignInScreenTestTags.LOADING_INDICATOR).assertIsDisplayed()
+    composeRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertDoesNotExist()
+  }
 }
