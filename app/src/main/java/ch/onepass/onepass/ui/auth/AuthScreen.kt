@@ -36,7 +36,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
@@ -48,7 +47,6 @@ object SignInScreenTestTags {
 }
 
 @Composable
-@Preview
 fun AuthScreen(onSignedIn: () -> Unit = {}, authViewModel: AuthViewModel = AuthViewModel()) {
   val context = LocalContext.current
   val credentialManager = remember { CredentialManager.create(context) }

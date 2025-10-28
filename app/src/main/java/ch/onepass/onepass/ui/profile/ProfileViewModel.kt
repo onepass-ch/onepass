@@ -118,11 +118,7 @@ open class ProfileViewModel(private val userRepository: UserRepository = UserRep
         // _effects.emit(ProfileEffect.NavigateToHelp)
       }
 
-  fun onSignOut() =
-      viewModelScope.launch {
-        // TODO: implement sign-out flow + effect
-        // _effects.emit(ProfileEffect.SignOut)
-      }
+  fun onSignOut() = viewModelScope.launch { _effects.tryEmit(ProfileEffect.SignOut) }
 }
 
 // --- Extension: Map User model to UI state ---

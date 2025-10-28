@@ -5,7 +5,6 @@ on:
   push:
     branches:
       - main
-
   pull_request:
     types:
       - opened
@@ -17,6 +16,13 @@ jobs:
     name: CI
     # Execute the CI on the course's runners
     runs-on: ubuntu-latest
+    env:
+      MODULE_DIR: app
+      RELEASE_STORE_FILE: ${{ github.workspace }}/apk/keystore.jks
+      RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+      RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+      RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+      RELEASE_STORE_TYPE: ${{ secrets.RELEASE_STORE_TYPE }}
 
     steps:
       # First step : Checkout the repository on the runner
@@ -55,10 +61,10 @@ jobs:
       # Decode and save google-services.json from GitHub secrets
       - name: Decode google-services.json
         env:
-          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES }}
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
         run: |
-          echo "$GOOGLE_SERVICES_JSON" | base64 --decode > app/google-services.json
-          ls -la app/google-services.json
+          echo "$GOOGLE_SERVICES" | base64 --decode > $MODULE_DIR/google-services.json
+          ls -la $MODULE_DIR/google-services.json
 
       # Gradle cache
       - name: Gradle cache
@@ -139,7 +145,7 @@ jobs:
           if [ -n "$LOCAL_PROPERTIES" ]; then
           echo "$LOCAL_PROPERTIES" | base64 --decode > ./local.properties
           else
-          echo "::warning::LOCAL_PROPERTIES secret is not set. local.properties will not be created. Should be present after B3"
+          echo "::warning::LOCAL_PROPERTIES secret is not set. local.properties will not be created."
           fi
 
       - name: Grant execute permission for gradlew
@@ -151,10 +157,49 @@ jobs:
         run: |
           ./gradlew ktfmtCheck --stacktrace
 
+      - name: Decode keystore from KEYSTORE_B64
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          set -e
+          mkdir -p "$(dirname "$RELEASE_STORE_FILE")"
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "KEYSTORE_B64 secret not set!" && exit 1
+          fi
+          echo "$KEYSTORE_B64" | base64 --decode > "$RELEASE_STORE_FILE"
+          ls -l "$RELEASE_STORE_FILE"
+
+      - name: Verify keystore open
+        run: |
+          keytool -list -keystore "$RELEASE_STORE_FILE" \
+            -storepass "$RELEASE_STORE_PASSWORD" \
+            -storetype "$RELEASE_STORE_TYPE" > /dev/null
+
+      - name: Verify alias exists
+        run: |
+          keytool -list -v -keystore "$RELEASE_STORE_FILE" \
+            -storepass "$RELEASE_STORE_PASSWORD" \
+            -storetype "$RELEASE_STORE_TYPE" | grep -q "Alias name: $RELEASE_KEY_ALIAS"
+
+      - name: Verify key password works (private key)
+        run: |
+          set -e
+          keytool -importkeystore \
+            -srckeystore "$RELEASE_STORE_FILE" -srcstoretype "$RELEASE_STORE_TYPE" -srcstorepass "$RELEASE_STORE_PASSWORD" \
+            -srcalias "$RELEASE_KEY_ALIAS" -srckeypass "$RELEASE_KEY_PASSWORD" \
+            -destkeystore /tmp/test.p12 -deststoretype PKCS12 -deststorepass testpass -destalias testalias >/dev/null
+          echo "Private key decryption succeeded."
+          
+
       # Assemble and lint
       - name: Assemble
         run: |
-          ./gradlew assemble lint --parallel --build-cache --stacktrace
+          ./gradlew assemble lint --parallel --build-cache --stacktrace \
+            -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
+            -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
+            -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS" \
+            -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
+            -PRELEASE_STORE_TYPE="$RELEASE_STORE_TYPE"
 
       # Run Unit tests
       - name: Run tests
@@ -194,8 +239,8 @@ jobs:
         with:
           name: test-results
           path: |
-            app/build/reports/tests/
-            app/build/test-results/
+            $MODULE_DIR/build/reports/tests/
+            $MODULE_DIR/build/test-results/
           retention-days: 7
 
       # Upload coverage reports
@@ -204,12 +249,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: coverage-reports
-          path: app/build/reports/jacoco/
+          path: $MODULE_DIR/build/reports/jacoco/
           retention-days: 7
 
-      # Upload the various reports to sonar (uncomment if needed)
-#      - name: Upload report to SonarCloud
-#        env:
-#          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-#        run: ./gradlew sonar --parallel --build-cache
+      # Upload the various reports to sonar
+      - name: Upload report to SonarCloud
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: ./gradlew sonar --parallel --build-cache

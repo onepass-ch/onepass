@@ -108,6 +108,22 @@ android {
     res.setSrcDirs(emptyList<File>())
     resources.setSrcDirs(emptyList<File>())
   }
+
+  signingConfigs {
+    create("release") {
+      storeFile = file((project.findProperty("RELEASE_STORE_FILE") as String?) ?: "keystore.jks")
+      storePassword = project.findProperty("RELEASE_STORE_PASSWORD") as String?
+      keyAlias      = project.findProperty("RELEASE_KEY_ALIAS") as String?
+      keyPassword   = project.findProperty("RELEASE_KEY_PASSWORD") as String?
+      storeType     = (project.findProperty("RELEASE_STORE_TYPE") as String?) ?: "pkcs12"
+    }
+  }
+
+  buildTypes {
+    getByName("release") {
+      signingConfig = signingConfigs.getByName("release")
+    }
+  }
 }
 
 sonar {
@@ -148,13 +164,13 @@ dependencies {
 
   // Navigation
   implementation(libs.androidx.navigation.compose)
+  implementation("androidx.navigation:navigation-compose:2.6.0")
 
   // Firebase
   implementation(platform(libs.firebase.bom))
   implementation(libs.firebase.auth.ktx)
   implementation(libs.firebase.firestore.ktx)
   implementation(libs.firebase.database.ktx)
-  implementation("com.google.firebase:firebase-functions-ktx:20.4.0")
 
   // Jetpack Compose
   val composeBom = platform(libs.compose.bom)
@@ -167,6 +183,26 @@ dependencies {
   implementation(libs.compose.preview)
   debugImplementation(libs.compose.tooling)
   debugImplementation(libs.compose.test.manifest)
+  globalTestImplementation(composeBom)
+  globalTestImplementation(libs.compose.test.junit)
+
+  // Kaspresso test framework
+  globalTestImplementation(libs.kaspresso)
+  globalTestImplementation(libs.kaspresso.compose)
+
+  // Testing
+  testImplementation(libs.junit)
+  globalTestImplementation(libs.androidx.junit)
+  globalTestImplementation(libs.androidx.espresso.core)
+  testImplementation(libs.robolectric)
+
+  // Coroutines test
+  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+  androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
+
+  // MockK
+  testImplementation("io.mockk:mockk:1.13.10")
+  androidTestImplementation("io.mockk:mockk-android:1.13.10")
 
   // Networking / Data
   implementation(libs.okhttp)
@@ -179,24 +215,6 @@ dependencies {
   // QR / Google Identity
   implementation("com.google.zxing:core:3.5.1")
   implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
-
-  // Testing
-  testImplementation(libs.junit)
-  globalTestImplementation(libs.androidx.junit)
-  globalTestImplementation(libs.androidx.espresso.core)
-  globalTestImplementation(composeBom)
-  globalTestImplementation(libs.compose.test.junit)
-  globalTestImplementation(libs.kaspresso)
-  globalTestImplementation(libs.kaspresso.compose)
-  testImplementation(libs.robolectric)
-
-  // Coroutines test
-  testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
-  androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
-
-  // MockK
-  testImplementation("io.mockk:mockk:1.13.10")
-  androidTestImplementation("io.mockk:mockk-android:1.13.10")
 }
 
 tasks.withType<Test> {
@@ -245,3 +263,4 @@ tasks.register("jacocoTestReport", JacocoReport::class) {
 configurations.forEach { configuration ->
   configuration.exclude("com.google.protobuf", "protobuf-lite")
 }
+
