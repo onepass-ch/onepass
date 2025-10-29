@@ -70,7 +70,6 @@ class MyEventsViewModelTest {
     writer.loadUserPass()
     advanceUntilIdle()
     val cached = writer.userQrData.first()
-
     val reader = MyEventsViewModel(app, passRepo, ticketRepo, eventRepo, "u1")
     coEvery { passRepo.getOrCreateSignedPass("u1") } returns Result.failure(Exception("net"))
     reader.loadUserPass()
@@ -86,7 +85,6 @@ class MyEventsViewModelTest {
         Result.success(Pass(uid = "u2", kid = "k", issuedAt = 1, version = 1, signature = "sigx"))
     writer.loadUserPass()
     advanceUntilIdle()
-
     val reader = MyEventsViewModel(app, passRepo, ticketRepo, eventRepo, "u2")
     advanceUntilIdle()
     assertEquals(writer.userQrData.first(), reader.userQrData.first())
@@ -116,5 +114,38 @@ class MyEventsViewModelTest {
     advanceUntilIdle()
     assertEquals(emptyList<Ticket>(), vm.currentTickets.first())
     assertEquals(emptyList<Ticket>(), vm.expiredTickets.first())
+  }
+
+  @Test
+  fun cache_isIsolated_perUser_noLeakBetweenDifferentUids() = runTest {
+    val writerA = MyEventsViewModel(app, passRepo, ticketRepo, eventRepo, "uA")
+    coEvery { passRepo.getOrCreateSignedPass("uA") } returns
+        Result.success(Pass(uid = "uA", kid = "k", issuedAt = 1, version = 1, signature = "sigA"))
+    writerA.loadUserPass()
+    advanceUntilIdle()
+    val cachedA = writerA.userQrData.first()
+    val readerB = MyEventsViewModel(app, passRepo, ticketRepo, eventRepo, "uB")
+    coEvery { passRepo.getOrCreateSignedPass("uB") } returns Result.failure(Exception("net"))
+    readerB.loadUserPass()
+    advanceUntilIdle()
+    assertNull(readerB.userQrData.first())
+    assertNotNull(readerB.error.first())
+  }
+
+  @Test
+  fun loadUserPass_notAuthenticated_setsError_andKeepsQrNull() = runTest {
+    val vm = MyEventsViewModel(app, passRepo, ticketRepo, eventRepo, null)
+    vm.loadUserPass()
+    advanceUntilIdle()
+    assertNotNull(vm.error.first())
+    assertNull(vm.userQrData.first())
+    assertFalse(vm.isLoading.first())
+  }
+
+  @Test
+  fun init_withNullUser_doesNotLoadAnyCachedQr() = runTest {
+    val vm = MyEventsViewModel(app, passRepo, ticketRepo, eventRepo, null)
+    advanceUntilIdle()
+    assertNull(vm.userQrData.first())
   }
 }
