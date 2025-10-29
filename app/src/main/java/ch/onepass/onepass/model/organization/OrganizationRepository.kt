@@ -62,8 +62,9 @@ interface OrganizationRepository {
 
   /**
    * Searches for organizations whose names match the given query (case-insensitive prefix match).
+   * Returns an empty list if the query is empty or contains only whitespace.
    *
-   * @param query The search term.
+   * @param query The search term. Empty or whitespace-only queries return empty results.
    * @return A [Flow] emitting a list of matching organizations.
    */
   fun searchOrganizations(query: String): Flow<List<Organization>>
@@ -129,10 +130,11 @@ interface OrganizationRepository {
   fun getPendingInvitations(organizationId: String): Flow<List<OrganizationInvitation>>
 
   /**
-   * Retrieves invitations for a specific email address.
+   * Retrieves invitations for a specific email address. Returns invitations across all statuses
+   * (pending, accepted, rejected, expired, revoked).
    *
    * @param email The email address to search for.
-   * @return A [Flow] emitting a list of invitations for that email.
+   * @return A [Flow] emitting a list of invitations for that email across all statuses.
    */
   fun getInvitationsByEmail(email: String): Flow<List<OrganizationInvitation>>
 
