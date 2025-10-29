@@ -1,14 +1,20 @@
-package ch.onepass.onepass.ui.eventFilters
+package ch.onepass.onepass.ui.eventfilters
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.model.eventFilters.EventFilters
+import ch.onepass.onepass.model.eventfilters.DateRangePresets
+import ch.onepass.onepass.model.eventfilters.EventFilters
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ActiveFiltersBar(
     filters: EventFilters,
@@ -25,7 +31,11 @@ fun ActiveFiltersBar(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-      Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.weight(1f)) {
+      FlowRow(
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+          verticalArrangement = Arrangement.spacedBy(8.dp),
+          modifier = Modifier.weight(1f),
+      ) {
         filters.region?.let { region ->
           FilterChip(
               selected = true,
@@ -45,7 +55,7 @@ fun ActiveFiltersBar(
               onClick = { /* Could add individual removal later */},
               label = {
                 Text(
-                    "Date Range",
+                    text = getDateRangeDisplayText(filters.dateRange),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium,
                 )
@@ -78,5 +88,25 @@ fun ActiveFiltersBar(
         )
       }
     }
+  }
+}
+
+private fun formatDateRange(dateRange: ClosedRange<Long>?): String? {
+  return dateRange?.let {
+    val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
+    "${dateFormat.format(Date(it.start))} - ${dateFormat.format(Date(it.endInclusive))}"
+  }
+}
+
+private fun getDateRangeDisplayText(dateRange: ClosedRange<Long>): String {
+  val todayRange = DateRangePresets.getTodayRange()
+  val next7Days = DateRangePresets.getNext7DaysRange()
+  val weekend = DateRangePresets.getNextWeekendRange()
+
+  return when (dateRange) {
+    todayRange -> "Today"
+    next7Days -> "Next 7 Days"
+    weekend -> "This Weekend"
+    else -> formatDateRange(dateRange) ?: "Not set"
   }
 }

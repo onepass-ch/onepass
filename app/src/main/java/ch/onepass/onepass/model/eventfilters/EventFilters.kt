@@ -1,4 +1,4 @@
-package ch.onepass.onepass.model.eventFilters
+package ch.onepass.onepass.model.eventfilters
 
 import java.util.Calendar
 
