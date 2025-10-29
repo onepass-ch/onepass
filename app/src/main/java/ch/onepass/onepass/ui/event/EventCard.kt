@@ -7,8 +7,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,8 +48,8 @@ import ch.onepass.onepass.ui.theme.TextSecondary
 fun EventCard(
     event: Event,
     modifier: Modifier = Modifier,
-    isLiked: Boolean,
-    onLikeToggle: (String) -> Unit,
+    isLiked: Boolean = false,
+    onLikeToggle: (String) -> Unit = {},
     onCardClick: () -> Unit = {},
     onDismiss: () -> Unit = {},
 ) {
