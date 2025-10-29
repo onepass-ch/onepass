@@ -234,4 +234,168 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
     val p = withTimeout(TIMEOUT) { flow.filterNotNull().first() }
     Assert.assertEquals("newKID", p.kid)
   }
+
+  // ===== AJOUTS SUPPLÉMENTAIRES POUR PLUS DE COUVERTURE =====
+
+  @Test
+  fun mapping_usesDocumentIdWhenUidMissing() = runBlocking {
+    val pass =
+        mapOf(
+            "kid" to "kid-x",
+            "issuedAt" to 1_700_000_321L,
+            "version" to 2,
+            "active" to true,
+            "signature" to "B_1-")
+    firestore.collection("user").document(uid).set(mapOf("pass" to pass)).await()
+    val p = withTimeout(TIMEOUT) { repository.getUserPass(uid).filterNotNull().first() }
+    Assert.assertEquals(uid, p.uid)
+    Assert.assertEquals("kid-x", p.kid)
+    Assert.assertEquals(2, p.version)
+  }
+
+  @Test
+  fun mapping_supportsNumberForLastScannedAndRevokedAt() = runBlocking {
+    val pass =
+        mapOf(
+            "uid" to uid,
+            "kid" to "kid-z",
+            "issuedAt" to 1_700_000_400L,
+            "version" to 1,
+            "active" to false,
+            "revokedAt" to 1_700_000_500L,
+            "lastScannedAt" to 1_700_000_450L,
+            "signature" to "A_-0")
+    firestore.collection("user").document(uid).set(mapOf("pass" to pass)).await()
+    val p = withTimeout(TIMEOUT) { repository.getUserPass(uid).filterNotNull().first() }
+    Assert.assertEquals(1_700_000_450L, p.lastScannedAt)
+    Assert.assertEquals(1_700_000_500L, p.revokedAt)
+    Assert.assertFalse(p.isValidNow)
+    Assert.assertEquals("Revoked", p.statusText)
+  }
+
+  @Test
+  fun mapping_defaultsVersionAndActiveWhenMissing() = runBlocking {
+    val pass =
+        mapOf("uid" to uid, "kid" to "kid-def", "issuedAt" to 1_700_000_600L, "signature" to "A_-0")
+    firestore.collection("user").document(uid).set(mapOf("pass" to pass)).await()
+    val p = withTimeout(TIMEOUT) { repository.getUserPass(uid).filterNotNull().first() }
+    Assert.assertEquals(1, p.version)
+    Assert.assertTrue(p.isValidNow)
+    Assert.assertEquals("Active", p.statusText)
+  }
+
+  @Test
+  fun mapping_rejectsIssuedAtZero() = runBlocking {
+    val pass =
+        mapOf(
+            "uid" to uid,
+            "kid" to "kid-bad",
+            "issuedAt" to 0L,
+            "version" to 1,
+            "active" to true,
+            "signature" to "A_-0")
+    firestore.collection("user").document(uid).set(mapOf("pass" to pass)).await()
+    val p = withTimeout(TIMEOUT) { repository.getUserPass(uid).first() }
+    Assert.assertNull(p)
+  }
+
+  @Test
+  fun mapping_rejectsInvalidSignature() = runBlocking {
+    val pass =
+        mapOf(
+            "uid" to uid,
+            "kid" to "kid-bad2",
+            "issuedAt" to 1_700_000_700L,
+            "version" to 1,
+            "active" to true,
+            "signature" to "+++") // invalid base64url
+    firestore.collection("user").document(uid).set(mapOf("pass" to pass)).await()
+    val p = withTimeout(TIMEOUT) { repository.getUserPass(uid).first() }
+    Assert.assertNull(p)
+  }
+
+  @Test
+  fun getUserPass_emitsOnKidChange() = runBlocking {
+    writeValidPassAsNumbers(kid = "kid-1")
+    val flow = repository.getUserPass(uid).distinctUntilChanged().filterNotNull()
+    withTimeout(TIMEOUT) { flow.first() }
+    firestore
+        .collection("user")
+        .document(uid)
+        .set(
+            mapOf(
+                "pass" to
+                    mapOf(
+                        "uid" to uid,
+                        "kid" to "kid-2",
+                        "issuedAt" to 1_700_000_000L,
+                        "version" to 1,
+                        "active" to true,
+                        "signature" to "A_-0")))
+        .await()
+    val updated = withTimeout(TIMEOUT) { flow.first() }
+    Assert.assertEquals("kid-2", updated.kid)
+  }
+
+  @Test
+  fun getOrCreateSignedPass_treatsIncompleteAsMissing_thenFails() = runBlocking {
+    firestore
+        .collection("user")
+        .document(uid)
+        .set(
+            mapOf(
+                "pass" to
+                    mapOf(
+                        "uid" to uid,
+                        "kid" to "",
+                        "issuedAt" to 1_700_000_000L,
+                        "version" to 1,
+                        "active" to true,
+                        "signature" to "A_-0")))
+        .await()
+    val res = repository.getOrCreateSignedPass(uid)
+    Assert.assertTrue(res.isFailure)
+  }
+
+  @Test
+  fun mapping_acceptsTimestampsForRevokedAndScan() = runBlocking {
+    writeValidPassAsTimestamps(
+        kid = "kid-ts2",
+        issuedAt = Timestamp(1_700_000_800L, 0),
+        lastScannedAt = Timestamp(1_700_000_810L, 0),
+        revokedAt = Timestamp(1_700_000_820L, 0),
+        active = false)
+    val p = withTimeout(TIMEOUT) { repository.getUserPass(uid).filterNotNull().first() }
+    Assert.assertEquals(1_700_000_810L, p.lastScannedAt)
+    Assert.assertEquals(1_700_000_820L, p.revokedAt)
+    Assert.assertFalse(p.isValidNow)
+  }
+
+  @Test
+  fun statusText_inactiveWhenActiveFalseWithoutRevokedAt() = runBlocking {
+    writeValidPassAsNumbers(active = false, kid = "kid-inact")
+    val p = withTimeout(TIMEOUT) { repository.getUserPass(uid).filterNotNull().first() }
+    Assert.assertEquals("Inactive", p.statusText)
+    Assert.assertFalse(p.isValidNow)
+    Assert.assertNull(p.revokedAt)
+  }
+
+  @Test
+  fun extraUnknownFields_doNotBreakMapping() = runBlocking {
+    val pass =
+        mapOf(
+            "uid" to uid,
+            "kid" to "kid-extra",
+            "issuedAt" to 1_700_000_900L,
+            "version" to 3,
+            "active" to true,
+            "signature" to "A_-0",
+            "foo" to "bar",
+            "bar" to 1234)
+    firestore.collection("user").document(uid).set(mapOf("pass" to pass)).await()
+    val p = withTimeout(TIMEOUT) { repository.getUserPass(uid).filterNotNull().first() }
+    Assert.assertEquals("kid-extra", p.kid)
+    Assert.assertEquals(3, p.version)
+    Assert.assertTrue(p.isValidNow)
+  }
 }
