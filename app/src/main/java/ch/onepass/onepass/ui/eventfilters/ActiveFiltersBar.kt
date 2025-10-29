@@ -10,8 +10,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.model.eventfilters.DateRangePresets
 import ch.onepass.onepass.model.eventfilters.EventFilters
-import java.text.SimpleDateFormat
-import java.util.Date
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @OptIn(ExperimentalLayoutApi::class)
@@ -91,10 +92,16 @@ fun ActiveFiltersBar(
   }
 }
 
-private fun formatDateRange(dateRange: ClosedRange<Long>?): String? {
+internal fun formatDateRange(dateRange: ClosedRange<Long>?): String? {
   return dateRange?.let {
-    val dateFormat = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-    "${dateFormat.format(Date(it.start))} - ${dateFormat.format(Date(it.endInclusive))}"
+    val startDate =
+        Instant.ofEpochMilli(it.start)
+            .atZone(ZoneId.systemDefault()) // Use user's timezone
+            .toLocalDate()
+    val endDate = Instant.ofEpochMilli(it.endInclusive).atZone(ZoneId.systemDefault()).toLocalDate()
+
+    val formatter = DateTimeFormatter.ofPattern("MMM dd, yyyy", Locale.getDefault())
+    "${startDate.format(formatter)} - ${endDate.format(formatter)}"
   }
 }
 

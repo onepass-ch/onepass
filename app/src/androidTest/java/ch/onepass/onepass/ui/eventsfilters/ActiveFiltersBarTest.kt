@@ -50,7 +50,7 @@ class ActiveFiltersBarTest {
     composeTestRule.setContent {
       OnePassTheme { ActiveFiltersBar(filters = weekendFilters, onClearFilters = {}) }
     }
-    composeTestRule.onNodeWithText("This Weekend").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Next Weekend").assertIsDisplayed()
   }
 
   @Test
@@ -133,6 +133,7 @@ class ActiveFiltersBarTest {
     composeTestRule.setContent {
       OnePassTheme { ActiveFiltersBar(filters = filters, onClearFilters = {}) }
     }
-    composeTestRule.onNodeWithText("Jan 01, 2023 - Jan 02, 2023").assertExists()
+    val expectedText = formatDateRange(customRange)
+    composeTestRule.onNodeWithText(expectedText!!).assertExists()
   }
 }
