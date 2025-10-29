@@ -22,8 +22,12 @@ class OnePassAppRoutesTest {
       OnePassApp(
           mapViewModel = viewModel<MapViewModel>(),
           isLocationPermissionGranted = true,
-          testAuthButtonTag = SignInScreenTestTags.LOGIN_BUTTON // use AppNavHost bypass
-          )
+          testAuthButtonTag = SignInScreenTestTags.LOGIN_BUTTON,
+          app = androidx.test.core.app.ApplicationProvider.getApplicationContext(),
+          passRepository =
+              ch.onepass.onepass.model.pass.PassRepositoryFirebase(
+                  db = com.google.firebase.firestore.FirebaseFirestore.getInstance(),
+                  functions = com.google.firebase.functions.FirebaseFunctions.getInstance()))
     }
   }
 

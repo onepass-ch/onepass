@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.navigation
 
+import android.app.Application
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
@@ -14,6 +15,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import ch.onepass.onepass.model.pass.PassRepository
 import ch.onepass.onepass.ui.auth.AuthScreen
 import ch.onepass.onepass.ui.auth.AuthViewModel
 import ch.onepass.onepass.ui.feed.FeedScreen
@@ -33,7 +35,9 @@ fun AppNavHost(
     modifier: Modifier = Modifier,
     mapViewModel: MapViewModel,
     isLocationPermissionGranted: Boolean,
-    testAuthButtonTag: String? = null
+    testAuthButtonTag: String? = null,
+    app: Application,
+    passRepository: PassRepository
 ) {
   NavHost(
       navController = navController,
@@ -83,7 +87,14 @@ fun AppNavHost(
 
           val myEventsVm: MyEventsViewModel =
               viewModel(
-                  factory = viewModelFactory { initializer { MyEventsViewModel(userId = uid) } })
+                  factory =
+                      viewModelFactory {
+                        initializer {
+                          MyEventsViewModel(
+                              app = app, passRepository = passRepository, userId = uid)
+                        }
+                      })
+
           MyEventsScreen(viewModel = myEventsVm, userQrData = "USER-QR-DEMO")
         }
 
