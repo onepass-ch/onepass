@@ -52,30 +52,35 @@ object SwissRegions {
       )
 }
 
+typealias DateRange = ClosedRange<Long>
+
 // Date range presets
 object DateRangePresets {
-  fun getTodayRange(): ClosedRange<Long> {
+  private fun dayRange(startOffsetDays: Int, lengthDays: Int): DateRange {
     val calendar =
         Calendar.getInstance().apply {
           set(Calendar.HOUR_OF_DAY, 0)
           set(Calendar.MINUTE, 0)
           set(Calendar.SECOND, 0)
           set(Calendar.MILLISECOND, 0)
+          add(Calendar.DAY_OF_MONTH, startOffsetDays)
         }
     val start = calendar.timeInMillis
-    calendar.add(Calendar.DAY_OF_MONTH, 1)
+    calendar.add(Calendar.DAY_OF_MONTH, lengthDays)
     val end = calendar.timeInMillis - 1
     return start..end
   }
 
-  fun getThisWeekendRange(): ClosedRange<Long> {
+  fun getTodayRange() = dayRange(0, 1)
+
+  fun getNext7DaysRange() = dayRange(0, 7)
+
+  fun getNextWeekendRange(): ClosedRange<Long> {
     val calendar =
         Calendar.getInstance().apply {
-          // Find coming Saturday
           val currentDay = get(Calendar.DAY_OF_WEEK)
-          val daysUntilSaturday = Calendar.SATURDAY - currentDay
-          if (daysUntilSaturday < 0) add(Calendar.DAY_OF_MONTH, daysUntilSaturday + 7)
-          else add(Calendar.DAY_OF_MONTH, daysUntilSaturday)
+          val daysUntilNextSaturday = (Calendar.SATURDAY - currentDay) % 7
+          add(Calendar.DAY_OF_MONTH, if (daysUntilNextSaturday == 0) 7 else daysUntilNextSaturday)
           set(Calendar.HOUR_OF_DAY, 0)
           set(Calendar.MINUTE, 0)
           set(Calendar.SECOND, 0)
@@ -85,19 +90,5 @@ object DateRangePresets {
     calendar.add(Calendar.DAY_OF_MONTH, 2) // Sunday end
     val sundayEnd = calendar.timeInMillis - 1
     return saturdayStart..sundayEnd
-  }
-
-  fun getNext7DaysRange(): ClosedRange<Long> {
-    val calendar =
-        Calendar.getInstance().apply {
-          set(Calendar.HOUR_OF_DAY, 0)
-          set(Calendar.MINUTE, 0)
-          set(Calendar.SECOND, 0)
-          set(Calendar.MILLISECOND, 0)
-        }
-    val start = calendar.timeInMillis
-    calendar.add(Calendar.DAY_OF_MONTH, 7)
-    val end = calendar.timeInMillis - 1
-    return start..end
   }
 }

@@ -108,8 +108,8 @@ class EventFiltersTest {
   }
 
   @Test
-  fun dateRangePresetsGetThisWeekendRangeReturnsCorrectRange() {
-    val weekendRange = DateRangePresets.getThisWeekendRange()
+  fun dateRangePresetsGetNextWeekendRangeReturnsCorrectRange() {
+    val weekendRange = DateRangePresets.getNextWeekendRange()
     // Verify it's a valid range
     assertTrue(weekendRange.start <= weekendRange.endInclusive)
     // The range should be 2 days (Saturday to Sunday)
@@ -199,7 +199,7 @@ class EventFiltersTest {
   @Test
   fun dateRangePresetsProduceValidRanges() {
     val todayRange = DateRangePresets.getTodayRange()
-    val weekendRange = DateRangePresets.getThisWeekendRange()
+    val weekendRange = DateRangePresets.getNextWeekendRange()
     val next7DaysRange = DateRangePresets.getNext7DaysRange()
     // All ranges should have start <= end
     assertTrue(todayRange.start <= todayRange.endInclusive)
