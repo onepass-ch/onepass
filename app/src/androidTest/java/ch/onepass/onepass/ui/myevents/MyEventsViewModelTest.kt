@@ -51,7 +51,6 @@ class MyEventsViewModelTest {
     Dispatchers.resetMain()
   }
 
-
   @Test
   fun loadUserPass_failure_setsError_andKeepsQrNull_whenNoCache() = runTest {
     val vm = MyEventsViewModel(app, passRepo, ticketRepo, eventRepo, "u1")
