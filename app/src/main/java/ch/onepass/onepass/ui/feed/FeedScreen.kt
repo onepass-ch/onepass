@@ -18,6 +18,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.ui.event.EventCard
+import ch.onepass.onepass.ui.event.EventCardViewModel
 
 /**
  * Feed screen showing all published events. Displays a list of events with loading, error, and
@@ -151,6 +152,9 @@ private fun EventListContent(
     isLoadingMore: Boolean,
     onEventClick: (String) -> Unit
 ) {
+  val eventCardViewModel = EventCardViewModel.getInstance()
+  val likedEvents by eventCardViewModel.likedEvents.collectAsState()
+
   LazyColumn(
       modifier = Modifier.fillMaxSize().testTag(FeedScreenTestTags.EVENT_LIST),
       contentPadding = PaddingValues(16.dp),
@@ -159,6 +163,8 @@ private fun EventListContent(
           EventCard(
               event = event,
               modifier = Modifier.testTag(FeedScreenTestTags.getTestTagForEventItem(event.eventId)),
+              isLiked = likedEvents.contains(event.eventId),
+              onLikeToggle = { eventId -> eventCardViewModel.toggleLike(eventId) },
               onCardClick = { onEventClick(event.eventId) })
         }
         if (isLoadingMore && events.isNotEmpty()) {

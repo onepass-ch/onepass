@@ -8,8 +8,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,7 +18,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.resources.C
@@ -28,7 +25,6 @@ import ch.onepass.onepass.ui.theme.CardBackground
 import ch.onepass.onepass.ui.theme.CardShadow
 import ch.onepass.onepass.ui.theme.EventCardDimens
 import ch.onepass.onepass.ui.theme.EventDateColor
-import ch.onepass.onepass.ui.theme.OnePassTheme
 import ch.onepass.onepass.ui.theme.TextSecondary
 
 /**
@@ -54,6 +50,8 @@ import ch.onepass.onepass.ui.theme.TextSecondary
 fun EventCard(
     event: Event,
     modifier: Modifier = Modifier,
+    isLiked: Boolean,
+    onLikeToggle: (String) -> Unit,
     onCardClick: () -> Unit = {},
     onDismiss: () -> Unit = {},
 ) {
@@ -62,8 +60,6 @@ fun EventCard(
   val location = event.displayLocation
   val price = event.lowestPrice
   val organizer = event.organizerName
-
-  var isLiked by remember { mutableStateOf(false) }
 
   Column(
       modifier =
@@ -128,7 +124,7 @@ fun EventCard(
       // Like button in top-right corner
       LikeButton(
           isLiked = isLiked,
-          onLikeToggle = { isLiked = it },
+          onLikeToggle = { onLikeToggle(event.eventId) },
           modifier =
               Modifier.align(Alignment.TopEnd)
                   .padding(EventCardDimens.likeButtonPadding)
@@ -205,23 +201,6 @@ fun EventCard(
             modifier = Modifier.testTag(C.Tag.event_card_price),
         )
       }
-    }
-  }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun PreviewEventCard() {
-  OnePassTheme {
-    Box(
-        modifier = Modifier.fillMaxSize().background(color = Color(0xFF1A1A1A)),
-        contentAlignment = Alignment.Center,
-    ) {
-      EventCard(
-          Event(
-              title = "Lausanne Free Party",
-              organizerName = "Best Organizer",
-          ))
     }
   }
 }
