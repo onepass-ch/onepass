@@ -22,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -32,6 +33,31 @@ import ch.onepass.onepass.ui.myevents.TicketComponent
 import ch.onepass.onepass.ui.myevents.TicketStatus
 import ch.onepass.onepass.ui.theme.Typography
 import ch.onepass.onepass.ui.theme.White
+
+object OrganizerProfileTestTags {
+    const val SCREEN = "organizer_profile_screen"
+    const val HEADER_SECTION = "organizer_header_section"
+    const val BANNER_IMAGE = "organizer_banner_image"
+    const val PROFILE_IMAGE = "organizer_profile_image"
+    const val INFO_SECTION = "organizer_info_section"
+    const val NAME_TEXT = "organizer_name_text"
+    const val DESCRIPTION_TEXT = "organizer_description_text"
+    const val SOCIAL_MEDIA_SECTION = "organizer_social_media_section"
+    const val WEBSITE_LINK = "organizer_website_link"
+    const val WEBSITE_TEXT = "organizer_website_text"
+    const val INSTAGRAM_ICON = "organizer_instagram_icon"
+    const val TIKTOK_ICON = "organizer_tiktok_icon"
+    const val FACEBOOK_ICON = "organizer_facebook_icon"
+    const val FOLLOW_SECTION = "organizer_follow_section"
+    const val FOLLOW_BUTTON = "organizer_follow_button"
+    const val FOLLOW_BUTTON_TEXT = "organizer_follow_button_text"
+    const val FOLLOWERS_TEXT = "organizer_followers_text"
+    const val TAB_SECTION = "organizer_tab_section"
+    const val TAB_POSTS = "organizer_tab_posts"
+    const val TAB_UPCOMING = "organizer_tab_upcoming"
+    const val TAB_PAST = "organizer_tab_past"
+    const val EVENT_LIST = "organizer_event_list"
+}
 
 // Extracted Components for better testability and modularity
 
@@ -47,6 +73,7 @@ fun OrganizerHeaderSection(
         modifier = modifier
             .width(392.dp)
             .height(310.dp)
+            .testTag(OrganizerProfileTestTags.HEADER_SECTION)
     ) {
         // Banner
         Image(
@@ -57,6 +84,7 @@ fun OrganizerHeaderSection(
                 .fillMaxWidth()
                 .height(261.dp)
                 .clip(RoundedCornerShape(10.dp))
+                .testTag(OrganizerProfileTestTags.BANNER_IMAGE)
         )
         // Profile Picture
         Image(
@@ -68,6 +96,7 @@ fun OrganizerHeaderSection(
                 .height(98.dp)
                 .background(color = Color(0xFF262626), shape = RoundedCornerShape(50.dp))
                 .clip(RoundedCornerShape(50.dp))
+                .testTag(OrganizerProfileTestTags.PROFILE_IMAGE)
         )
     }
 }
@@ -81,12 +110,15 @@ fun OrganizerInfoSection(
     Column(
         verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag(OrganizerProfileTestTags.INFO_SECTION)
     ) {
         // Name/Title
         Text(
             text = name,
-            style = Typography.titleLarge.copy(color = White)
+            style = Typography.titleLarge.copy(color = White),
+            modifier = Modifier.testTag(OrganizerProfileTestTags.NAME_TEXT)
         )
         // Description
         Text(
@@ -95,7 +127,9 @@ fun OrganizerInfoSection(
                 color = Color(0xFFC4C4C4),
                 textAlign = TextAlign.Center
             ),
-            modifier = Modifier.padding(horizontal = 20.dp)
+            modifier = Modifier
+                .padding(horizontal = 20.dp)
+                .testTag(OrganizerProfileTestTags.DESCRIPTION_TEXT)
         )
     }
 }
@@ -132,12 +166,14 @@ fun SocialMediaSection(
             .fillMaxWidth()
             .wrapContentHeight()
             .padding(horizontal = 20.dp)
+            .testTag(OrganizerProfileTestTags.SOCIAL_MEDIA_SECTION)
     ) {
         // Website Link
         if (websiteUrl != null) {
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.CenterVertically
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.testTag(OrganizerProfileTestTags.WEBSITE_LINK)
             ) {
                 Image(
                     painter = painterResource(id = R.drawable.internet_logo),
@@ -153,7 +189,8 @@ fun SocialMediaSection(
                         color = Color(0xFFA3A3A3),
                         fontSize = 15.sp,
                         lineHeight = 20.sp
-                    )
+                    ),
+                    modifier = Modifier.testTag(OrganizerProfileTestTags.WEBSITE_TEXT)
                 )
                 Image(
                     painter = painterResource(id = R.drawable.link_icon),
@@ -171,19 +208,22 @@ fun SocialMediaSection(
             if (instagramUrl != null) {
                 SocialMediaIcon(
                     iconRes = R.drawable.instagram_logo,
-                    contentDescription = "Instagram"
+                    contentDescription = "Instagram",
+                    modifier = Modifier.testTag(OrganizerProfileTestTags.INSTAGRAM_ICON)
                 )
             }
             if (tiktokUrl != null) {
                 SocialMediaIcon(
                     iconRes = R.drawable.tiktok_logo,
-                    contentDescription = "TikTok"
+                    contentDescription = "TikTok",
+                    modifier = Modifier.testTag(OrganizerProfileTestTags.TIKTOK_ICON)
                 )
             }
             if (facebookUrl != null) {
                 SocialMediaIcon(
                     iconRes = R.drawable.facebook_logo,
-                    contentDescription = "Facebook"
+                    contentDescription = "Facebook",
+                    modifier = Modifier.testTag(OrganizerProfileTestTags.FACEBOOK_ICON)
                 )
             }
         }
@@ -204,6 +244,7 @@ fun FollowSection(
             .fillMaxWidth()
             .wrapContentHeight()
             .padding(horizontal = 20.dp)
+            .testTag(OrganizerProfileTestTags.FOLLOW_SECTION)
     ) {
         // Follow Button
         Row(
@@ -221,10 +262,12 @@ fun FollowSection(
                     color = Color(0xFF242424),
                     shape = RoundedCornerShape(size = 5.dp)
                 )
+                .testTag(OrganizerProfileTestTags.FOLLOW_BUTTON)
         ) {
             Text(
                 text = if (isFollowing) "FOLLOWING" else "FOLLOW",
-                style = Typography.titleMedium.copy(color = White)
+                style = Typography.titleMedium.copy(color = White),
+                modifier = Modifier.testTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT)
             )
         }
         // Community Count
@@ -234,7 +277,8 @@ fun FollowSection(
                 color = White,
                 fontSize = 12.sp,
                 lineHeight = 20.sp
-            )
+            ),
+            modifier = Modifier.testTag(OrganizerProfileTestTags.FOLLOWERS_TEXT)
         )
     }
 }
@@ -252,18 +296,22 @@ fun TabSection(
             .fillMaxWidth()
             .wrapContentHeight()
             .padding(horizontal = 20.dp)
+            .testTag(OrganizerProfileTestTags.TAB_SECTION)
     ) {
         Text(
             text = "Posts",
-            style = Typography.titleMedium.copy(color = White)
+            style = Typography.titleMedium.copy(color = White),
+            modifier = Modifier.testTag(OrganizerProfileTestTags.TAB_POSTS)
         )
         Text(
             text = "UPCOMING",
-            style = Typography.titleMedium.copy(color = White)
+            style = Typography.titleMedium.copy(color = White),
+            modifier = Modifier.testTag(OrganizerProfileTestTags.TAB_UPCOMING)
         )
         Text(
             text = "PAST",
-            style = Typography.titleMedium.copy(color = White)
+            style = Typography.titleMedium.copy(color = White),
+            modifier = Modifier.testTag(OrganizerProfileTestTags.TAB_PAST)
         )
     }
 }
@@ -290,6 +338,7 @@ fun OrganizerProfileScreen(
             .fillMaxSize()
             .background(color = Color(0xFF1A1A1A)) // TODO change to theme
             .padding(start = 10.dp, top = 20.dp, end = 10.dp, bottom = 12.dp)
+            .testTag(OrganizerProfileTestTags.SCREEN)
     ) {
         // Header with banner and profile picture
         OrganizerHeaderSection(
@@ -328,7 +377,9 @@ fun OrganizerProfileScreen(
         Column(
             verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Top),
             horizontalAlignment = Alignment.CenterHorizontally,
-            modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+            modifier = Modifier
+                .padding(top = 8.dp, bottom = 8.dp)
+                .testTag(OrganizerProfileTestTags.EVENT_LIST)
         ) {
             TicketComponent(
                 title = "Lausanne Party",
