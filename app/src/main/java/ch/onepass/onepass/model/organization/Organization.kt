@@ -2,6 +2,7 @@ package ch.onepass.onepass.model.organization
 
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.ServerTimestamp
+import java.util.Locale
 
 /**
  * Represents an organization stored in Cloud Firestore.
@@ -51,7 +52,7 @@ data class Organization(
 ) {
   /** Returns organization name in lowercase for case-insensitive searching. */
   val nameLower: String
-    get() = name.lowercase()
+    get() = name.lowercase(Locale.ROOT)
 
   /** Indicates if the organization is currently active. */
   val isActive: Boolean
