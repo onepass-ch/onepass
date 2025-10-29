@@ -106,7 +106,7 @@ private fun getDateRangeDisplayText(dateRange: ClosedRange<Long>): String {
   return when (dateRange) {
     todayRange -> "Today"
     next7Days -> "Next 7 Days"
-    weekend -> "This Weekend"
+    weekend -> "Next Weekend"
     else -> formatDateRange(dateRange) ?: "Not set"
   }
 }
