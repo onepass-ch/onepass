@@ -23,7 +23,6 @@ class PassRepositoryFirebase(
     private val db: FirebaseFirestore,
     private val functions: FirebaseFunctions
 ) : PassRepository {
-
   // --------------------- READ ---------------------
 
   override fun getUserPass(uid: String): Flow<Pass?> = callbackFlow {
