@@ -167,6 +167,7 @@ dependencies {
   implementation("androidx.navigation:navigation-compose:2.6.0")
 
   // Firebase
+  implementation("com.google.firebase:firebase-functions")
   implementation(platform(libs.firebase.bom))
   implementation(libs.firebase.auth.ktx)
   implementation(libs.firebase.firestore.ktx)
