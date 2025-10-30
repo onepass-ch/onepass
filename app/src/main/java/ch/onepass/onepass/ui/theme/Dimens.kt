@@ -27,7 +27,7 @@ object EventCardDimens {
   val eventCardPadding = 10.dp
 
   // Text section dimensions
-  val titleSectionHeight = 55.17.dp
+  val titleSectionHeight = 60.dp
   val titleTopPadding = 9.dp
   val sectionSpacing = 20.dp
   val dateLocationSpacing = 4.dp
