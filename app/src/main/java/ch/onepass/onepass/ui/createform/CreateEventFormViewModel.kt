@@ -35,6 +35,10 @@ class CreateEventFormViewModel(
   private val _uiState = MutableStateFlow<CreateEventUiState>(CreateEventUiState.Idle)
   val uiState: StateFlow<CreateEventUiState> = _uiState.asStateFlow()
 
+  // Validation Errors
+  private val _fieldErrors = MutableStateFlow<Map<String, String>>(emptyMap())
+  val fieldErrors: StateFlow<Map<String, String>> = _fieldErrors.asStateFlow()
+
   /** Updates the event title */
   fun updateTitle(title: String) {
     _formState.value = _formState.value.copy(title = title)
@@ -80,37 +84,30 @@ class CreateEventFormViewModel(
    *
    * @return List of validation errors, empty if valid
    */
-  private fun validateForm(): List<String> {
-    val errors = mutableListOf<String>()
+  private fun validateForm(): Map<String, String> {
+    val errors = mutableMapOf<String, String>()
     val state = _formState.value
 
-    if (state.title.isBlank()) {
-      errors.add("Title is required")
-    }
-    if (state.description.isBlank()) {
-      errors.add("Description is required")
-    }
-    if (state.date.isBlank()) {
-      errors.add("Date is required")
-    }
-    if (state.startTime.isBlank()) {
-      errors.add("Start time is required")
-    }
-    if (state.endTime.isBlank()) {
-      errors.add("End time is required")
-    }
-    if (state.location.isBlank()) {
-      errors.add("Location is required")
-    }
+    if (state.title.isBlank()) errors["title"] = "Title cannot be empty"
+    if (state.description.isBlank()) errors["description"] = "Description cannot be empty"
+    if (state.date.isBlank()) errors["date"] = "Date cannot be empty"
+    if (state.startTime.isBlank()) errors["startTime"] = "Start time cannot be empty"
+    if (state.endTime.isBlank()) errors["endTime"] = "End time cannot be empty"
+    if (state.location.isBlank()) errors["location"] = "Location cannot be empty"
+
     if (state.price.isBlank()) {
-      errors.add("Price is required")
+      errors["price"] = "Price cannot be empty"
     } else {
-      state.price.toDoubleOrNull() ?: errors.add("Price must be a valid number")
+      state.price.toDoubleOrNull()?.let { if (it <= 0) errors["price"] = "Price must be positive" }
+          ?: run { errors["price"] = "Invalid price format" }
     }
+
     if (state.capacity.isBlank()) {
-      errors.add("Capacity is required")
+      errors["capacity"] = "Capacity cannot be empty"
     } else {
-      state.capacity.toIntOrNull() ?: errors.add("Capacity must be a valid number")
+      state.capacity.toIntOrNull()?.let {
+        if (it <= 0) errors["capacity"] = "Capacity must be positive"
+      } ?: run { errors["capacity"] = "Invalid capacity format" }
     }
 
     return errors
@@ -175,7 +172,7 @@ class CreateEventFormViewModel(
 
       // Convert Java Date to Firebase Timestamp
       Timestamp(date)
-    } catch (e: Exception) {
+    } catch (_: Exception) {
       null // Return null if parsing fails
     }
   }
@@ -190,8 +187,8 @@ class CreateEventFormViewModel(
     viewModelScope.launch {
       // Validate form
       val errors = validateForm()
+      _fieldErrors.value = errors
       if (errors.isNotEmpty()) {
-        _uiState.value = CreateEventUiState.Error(errors.joinToString("\n"))
         return@launch
       }
 
@@ -209,10 +206,7 @@ class CreateEventFormViewModel(
       val result = eventRepository.createEvent(event)
 
       result.fold(
-          onSuccess = { eventId ->
-            _uiState.value = CreateEventUiState.Success(eventId)
-            resetForm()
-          },
+          onSuccess = { eventId -> _uiState.value = CreateEventUiState.Success(eventId) },
           onFailure = { error ->
             _uiState.value = CreateEventUiState.Error(error.message ?: "Failed to create event")
           })
