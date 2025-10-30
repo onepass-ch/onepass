@@ -43,31 +43,31 @@ class OrganizationRepositoryFirebase : OrganizationRepository {
     awaitClose { listener.remove() }
   }
 
-  override fun getOrganizationsByOwner(ownerId: String): Flow<List<Organization>> = snapshotFlow {
+  override fun getOrganizationsByOwner(ownerId: String): Flow<List<Organization>> = firestoreFlow {
     organizationsCollection
         .whereEqualTo("ownerId", ownerId)
         .orderBy("createdAt", Query.Direction.DESCENDING)
   }
 
-  override fun getOrganizationsByMember(userId: String): Flow<List<Organization>> = snapshotFlow {
+  override fun getOrganizationsByMember(userId: String): Flow<List<Organization>> = firestoreFlow {
     organizationsCollection
         .whereIn("members.${userId}.role", OrganizationRole.values().map { it.name })
         .orderBy("createdAt", Query.Direction.DESCENDING)
   }
 
   override fun getOrganizationsByStatus(status: OrganizationStatus): Flow<List<Organization>> =
-      snapshotFlow {
+      firestoreFlow {
         organizationsCollection
             .whereEqualTo("status", status.name)
             .orderBy("createdAt", Query.Direction.DESCENDING)
       }
 
-  override fun searchOrganizations(query: String): Flow<List<Organization>> = snapshotFlow {
+  override fun searchOrganizations(query: String): Flow<List<Organization>> = firestoreFlow {
     val lowerQuery = query.lowercase()
     organizationsCollection.orderBy("nameLower").startAt(lowerQuery).endAt("$lowerQuery\uFFFF")
   }
 
-  override fun getVerifiedOrganizations(): Flow<List<Organization>> = snapshotFlow {
+  override fun getVerifiedOrganizations(): Flow<List<Organization>> = firestoreFlow {
     organizationsCollection
         .whereEqualTo("verified", true)
         .orderBy("followerCount", Query.Direction.DESCENDING)
@@ -122,13 +122,14 @@ class OrganizationRepositoryFirebase : OrganizationRepository {
   override suspend fun createInvitation(invitation: OrganizationInvitation): Result<String> =
       runCatching {
         val docRef = invitationsCollection.document()
-        val invitationWithMetadata = invitation.copy(id = docRef.id, createdAt = null)
+        val invitationWithMetadata =
+            invitation.copy(id = docRef.id, createdAt = null, updatedAt = null)
         docRef.set(invitationWithMetadata).await()
         docRef.id
       }
 
   override fun getPendingInvitations(organizationId: String): Flow<List<OrganizationInvitation>> =
-      invitationSnapshotFlow {
+      firestoreFlow {
         invitationsCollection
             .whereEqualTo("orgId", organizationId)
             .whereEqualTo("status", InvitationStatus.PENDING.name)
@@ -136,7 +137,7 @@ class OrganizationRepositoryFirebase : OrganizationRepository {
       }
 
   override fun getInvitationsByEmail(email: String): Flow<List<OrganizationInvitation>> =
-      invitationSnapshotFlow {
+      firestoreFlow {
         invitationsCollection
             .whereEqualTo("inviteeEmail", email)
             .orderBy("createdAt", Query.Direction.DESCENDING)
@@ -146,7 +147,10 @@ class OrganizationRepositoryFirebase : OrganizationRepository {
       invitationId: String,
       newStatus: InvitationStatus
   ): Result<Unit> = runCatching {
-    invitationsCollection.document(invitationId).update("status", newStatus.name).await()
+    invitationsCollection
+        .document(invitationId)
+        .update(mapOf("status" to newStatus.name, "updatedAt" to FieldValue.serverTimestamp()))
+        .await()
   }
 
   override suspend fun deleteInvitation(invitationId: String): Result<Unit> = runCatching {
@@ -156,46 +160,22 @@ class OrganizationRepositoryFirebase : OrganizationRepository {
   /**
    * Helper function to create a [Flow] from a Firestore query using a snapshot listener.
    *
+   * @param T The type of objects to emit in the Flow
    * @param queryBuilder Lambda that returns a configured [Query].
-   * @return A [Flow] emitting a list of [Organization] objects.
+   * @return A [Flow] emitting a list of objects of type [T].
    */
-  private fun snapshotFlow(queryBuilder: () -> Query): Flow<List<Organization>> = callbackFlow {
-    val query = queryBuilder()
-    val listener =
-        query.addSnapshotListener { snap, error ->
-          if (error != null) {
-            close(error)
-            return@addSnapshotListener
-          }
-          val list =
-              snap?.documents?.mapNotNull { it.toObject(Organization::class.java) } ?: emptyList()
-          trySend(list)
-        }
-    awaitClose { listener.remove() }
-  }
-
-  /**
-   * Helper function to create a [Flow] from a Firestore query using a snapshot listener for
-   * invitations.
-   *
-   * @param queryBuilder Lambda that returns a configured [Query].
-   * @return A [Flow] emitting a list of [OrganizationInvitation] objects.
-   */
-  private fun invitationSnapshotFlow(
-      queryBuilder: () -> Query
-  ): Flow<List<OrganizationInvitation>> = callbackFlow {
-    val query = queryBuilder()
-    val listener =
-        query.addSnapshotListener { snap, error ->
-          if (error != null) {
-            close(error)
-            return@addSnapshotListener
-          }
-          val list =
-              snap?.documents?.mapNotNull { it.toObject(OrganizationInvitation::class.java) }
-                  ?: emptyList()
-          trySend(list)
-        }
-    awaitClose { listener.remove() }
-  }
+  private inline fun <reified T> firestoreFlow(noinline queryBuilder: () -> Query): Flow<List<T>> =
+      callbackFlow {
+        val query = queryBuilder()
+        val listener =
+            query.addSnapshotListener { snap, error ->
+              if (error != null) {
+                close(error)
+                return@addSnapshotListener
+              }
+              val list = snap?.documents?.mapNotNull { it.toObject(T::class.java) } ?: emptyList()
+              trySend(list)
+            }
+        awaitClose { listener.remove() }
+      }
 }
