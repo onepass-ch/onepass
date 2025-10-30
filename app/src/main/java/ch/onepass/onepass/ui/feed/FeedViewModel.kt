@@ -7,7 +7,6 @@ import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
-import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
 import kotlin.collections.filter
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -34,7 +33,6 @@ data class FeedUIState(
  */
 class FeedViewModel(
     private val repository: EventRepository = EventRepositoryFirebase(),
-    private val filterViewModel: EventFilterViewModel = EventFilterViewModel(),
 ) : ViewModel() {
 
   companion object {
@@ -46,13 +44,6 @@ class FeedViewModel(
   val uiState: StateFlow<FeedUIState> = _uiState.asStateFlow()
   private val _allEvents = MutableStateFlow<List<Event>>(emptyList())
 
-  init {
-    // React to filter changes and update the displayed events
-    viewModelScope.launch {
-      filterViewModel.currentFilters.collect { filters -> applyFiltersToCurrentEvents(filters) }
-    }
-  }
-
   /** Loads events from the repository, filtering for PUBLISHED status. */
   fun loadEvents() {
     _uiState.update { it.copy(isLoading = true, error = null) }
@@ -62,8 +53,7 @@ class FeedViewModel(
         repository.getEventsByStatus(EventStatus.PUBLISHED).take(LOADED_EVENTS_LIMIT).collect {
             events ->
           _allEvents.value = events
-          applyFiltersToCurrentEvents(filterViewModel.currentFilters.value)
-          _uiState.update { it.copy(isLoading = false, error = null) }
+          _uiState.update { it.copy(events = events, isLoading = false, error = null) }
         }
       } catch (e: Exception) {
         _uiState.update { it.copy(isLoading = false, error = e.message ?: "Failed to load events") }

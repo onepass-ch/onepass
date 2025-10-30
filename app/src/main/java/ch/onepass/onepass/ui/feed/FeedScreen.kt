@@ -67,7 +67,12 @@ fun FeedScreen(
   var showFilterDialog by rememberSaveable { mutableStateOf(false) }
   // Load events when screen is first displayed
   LaunchedEffect(Unit) { viewModel.loadEvents() }
-  LaunchedEffect(currentFilters) { viewModel.applyFiltersToCurrentEvents(currentFilters) }
+  // Apply filters when they change OR when events are loaded
+  LaunchedEffect(currentFilters, uiState.isLoading) {
+    if (!uiState.isLoading) { // Only apply filters after events are loaded
+      viewModel.applyFiltersToCurrentEvents(currentFilters)
+    }
+  }
 
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(FeedScreenTestTags.FEED_SCREEN),
@@ -104,7 +109,7 @@ fun FeedScreen(
         uiState.error != null && uiState.events.isEmpty() -> {
           ErrorState(error = uiState.error!!, onRetry = { viewModel.refreshEvents() })
         }
-        uiState.events.isEmpty() && !uiState.isLoading -> {
+        !uiState.isLoading && uiState.events.isEmpty() -> {
           EmptyFeedState()
         }
         else -> {
