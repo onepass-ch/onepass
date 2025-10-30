@@ -7,6 +7,7 @@ import junit.framework.TestCase.*
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertNotEquals
 import org.junit.Before
 import org.junit.Test
 
@@ -274,16 +275,46 @@ class OrganizationRepositoryFirebaseTest : FirestoreTestBase() {
   }
 
   @Test
-  fun canUpdateInvitationStatus() = runTest {
+  fun updateInvitationStatusUpdatesTimestamp() = runTest {
     val testOrg = OrganizationTestData.createTestOrganization(ownerId = userId)
     val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
-
     val invitation =
         OrganizationTestData.createTestInvitation(orgId = orgId, status = InvitationStatus.PENDING)
     val inviteId = orgRepository.createInvitation(invitation).getOrNull()!!
 
+    // Get initial invitation
+    val initialInvite =
+        FirebaseEmulator.firestore
+            .collection("organization_invitations")
+            .document(inviteId)
+            .get()
+            .await()
+            .toObject(OrganizationInvitation::class.java)
+    val initialUpdatedAt = initialInvite?.updatedAt
+
+    kotlinx.coroutines.delay(100) // Wait a moment to ensure timestamp difference
     val updateResult = orgRepository.updateInvitationStatus(inviteId, InvitationStatus.ACCEPTED)
     assertTrue("Update invitation status should succeed", updateResult.isSuccess)
+
+    // Verify updatedAt changed
+    val updatedInvite =
+        FirebaseEmulator.firestore
+            .collection("organization_invitations")
+            .document(inviteId)
+            .get()
+            .await()
+            .toObject(OrganizationInvitation::class.java)
+    val updatedUpdatedAt = updatedInvite?.updatedAt
+
+    assertNotNull("Updated invitation should have updatedAt", updatedInvite?.updatedAt)
+    assertEquals("Status should be updated", InvitationStatus.ACCEPTED, updatedInvite?.status)
+    assertNotEquals(
+        "updatedAt should be different from the initial timestamp",
+        initialUpdatedAt,
+        updatedUpdatedAt)
+    assertTrue(
+        "updatedAt timestamp ($updatedUpdatedAt) should be greater than the initial one ($initialUpdatedAt)",
+        updatedUpdatedAt!! > initialUpdatedAt!!)
   }
 
   @Test
@@ -314,5 +345,26 @@ class OrganizationRepositoryFirebaseTest : FirestoreTestBase() {
     val memberOrgs = orgRepository.getOrganizationsByMember(memberId).first()
     assertEquals("Should find 1 organization for member", 1, memberOrgs.size)
     assertEquals("Organization ID should match", orgId, memberOrgs.first().id)
+  }
+
+  @Test
+  fun creatingInvitationSetsCreatedAtAndUpdatedAt() = runTest {
+    val testOrg = OrganizationTestData.createTestOrganization(ownerId = userId)
+    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
+
+    val invitation =
+        OrganizationTestData.createTestInvitation(orgId = orgId, inviteeEmail = "new@example.com")
+    val inviteId = orgRepository.createInvitation(invitation).getOrNull()!!
+
+    val storedInvite =
+        FirebaseEmulator.firestore
+            .collection("organization_invitations")
+            .document(inviteId)
+            .get()
+            .await()
+            .toObject(OrganizationInvitation::class.java)
+
+    assertNotNull("createdAt should be set", storedInvite?.createdAt)
+    assertNotNull("updatedAt should be set", storedInvite?.updatedAt)
   }
 }
