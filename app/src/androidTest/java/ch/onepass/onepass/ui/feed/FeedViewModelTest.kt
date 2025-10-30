@@ -3,6 +3,7 @@ package ch.onepass.onepass.ui.feed
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
+import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.map.Location
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
@@ -38,7 +39,8 @@ class FeedViewModelTest {
           capacity = 100,
           ticketsRemaining = 50,
           ticketsIssued = 50,
-          pricingTiers = emptyList())
+          pricingTiers = emptyList(),
+      )
 
   private val testEvent2 =
       Event(
@@ -53,11 +55,12 @@ class FeedViewModelTest {
           capacity = 200,
           ticketsRemaining = 100,
           ticketsIssued = 100,
-          pricingTiers = emptyList())
+          pricingTiers = emptyList(),
+      )
 
   private class MockEventRepository(
       private val events: List<Event> = emptyList(),
-      private val shouldThrowError: Boolean = false
+      private val shouldThrowError: Boolean = false,
   ) : EventRepository {
     override fun getAllEvents(): Flow<List<Event>> = flowOf(events)
 
@@ -109,7 +112,7 @@ class FeedViewModelTest {
     assertEquals(emptyList<Event>(), state.events)
     assertFalse(state.isLoading)
     assertNull(state.error)
-    assertEquals("LAUSANNE", state.location)
+    assertEquals("SWITZERLAND", state.location)
   }
 
   @Test
@@ -251,5 +254,134 @@ class FeedViewModelTest {
     assertEquals(emptyList<Event>(), state.events)
     assertFalse(state.isLoading)
     assertNull(state.error)
+  }
+
+  @Test
+  fun feedViewModel_applyFiltersToCurrentEvents_filtersByRegion() = runTest {
+    val events =
+        listOf(
+            testEvent1.copy(location = Location(GeoPoint(46.5197, 6.6323), "Lausanne", "Vaud")),
+            testEvent2.copy(location = Location(GeoPoint(46.2044, 6.1432), "Geneva", "Geneva")),
+        )
+    val mockRepository = MockEventRepository(events)
+    val viewModel = FeedViewModel(mockRepository)
+
+    viewModel.loadEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Apply region filter
+    val filters = EventFilters(region = "Vaud")
+    viewModel.applyFiltersToCurrentEvents(filters)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val filteredState = viewModel.uiState.value
+    assertEquals(1, filteredState.events.size)
+    assertEquals("Lausanne", filteredState.events.first().location?.name)
+  }
+
+  @Test
+  fun feedViewModel_applyFiltersToCurrentEvents_filtersByDateRange() = runTest {
+    val calendar = Calendar.getInstance()
+    val today = calendar.timeInMillis
+
+    calendar.add(Calendar.DAY_OF_MONTH, 1)
+    val tomorrow = calendar.timeInMillis
+
+    calendar.add(Calendar.DAY_OF_MONTH, 6)
+    val nextWeek = calendar.timeInMillis
+
+    val events =
+        listOf(
+            testEvent1.copy(startTime = Timestamp(Date(today))),
+            testEvent2.copy(startTime = Timestamp(Date(nextWeek))),
+        )
+    val mockRepository = MockEventRepository(events)
+    val viewModel = FeedViewModel(mockRepository)
+
+    viewModel.loadEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Apply date range filter (today only)
+    val filters = EventFilters(dateRange = today..tomorrow)
+    viewModel.applyFiltersToCurrentEvents(filters)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val filteredState = viewModel.uiState.value
+    assertEquals(1, filteredState.events.size)
+    assertEquals(testEvent1.eventId, filteredState.events.first().eventId)
+  }
+
+  @Test
+  fun feedViewModel_applyFiltersToCurrentEvents_filtersSoldOut() = runTest {
+    val events =
+        listOf(
+            testEvent1.copy(ticketsRemaining = 0), // Sold out
+            testEvent2.copy(ticketsRemaining = 50), // Available
+        )
+    val mockRepository = MockEventRepository(events)
+    val viewModel = FeedViewModel(mockRepository)
+
+    viewModel.loadEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Apply hide sold out filter
+    val filters = EventFilters(hideSoldOut = true)
+    viewModel.applyFiltersToCurrentEvents(filters)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val filteredState = viewModel.uiState.value
+    assertEquals(1, filteredState.events.size)
+    assertEquals(testEvent2.eventId, filteredState.events.first().eventId)
+  }
+
+  @Test
+  fun feedViewModel_applyFiltersToCurrentEvents_combinesMultipleFilters() = runTest {
+    val events =
+        listOf(
+            testEvent1.copy(
+                location = Location(GeoPoint(46.5197, 6.6323), "Lausanne", "Vaud"),
+                ticketsRemaining = 0,
+            ),
+            testEvent2.copy(
+                location = Location(GeoPoint(46.5197, 6.6323), "Lausanne", "Vaud"),
+                ticketsRemaining = 50,
+            ),
+        )
+    val mockRepository = MockEventRepository(events)
+    val viewModel = FeedViewModel(mockRepository)
+
+    viewModel.loadEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Apply combined filters
+    val filters = EventFilters(region = "Vaud", hideSoldOut = true)
+    viewModel.applyFiltersToCurrentEvents(filters)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val filteredState = viewModel.uiState.value
+    assertEquals(1, filteredState.events.size)
+    assertEquals(testEvent2.eventId, filteredState.events.first().eventId)
+  }
+
+  @Test
+  fun feedViewModel_applyFiltersToCurrentEvents_clearsFilters() = runTest {
+    val events = listOf(testEvent1, testEvent2)
+    val mockRepository = MockEventRepository(events)
+    val viewModel = FeedViewModel(mockRepository)
+
+    viewModel.loadEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Apply filter then clear
+    val filters = EventFilters(region = "Vaud")
+    viewModel.applyFiltersToCurrentEvents(filters)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val clearedFilters = EventFilters()
+    viewModel.applyFiltersToCurrentEvents(clearedFilters)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val finalState = viewModel.uiState.value
+    assertEquals(2, finalState.events.size)
   }
 }
