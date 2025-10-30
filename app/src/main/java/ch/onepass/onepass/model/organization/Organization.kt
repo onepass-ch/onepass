@@ -90,6 +90,7 @@ data class OrganizationMember(
  * @property invitedBy User ID of the inviter (must be an OWNER or ADMIN).
  * @property status Current status of the invitation (e.g., PENDING, ACCEPTED).
  * @property createdAt Timestamp when the invitation was created (server-set).
+ * @property updatedAt Timestamp when the invitation was last updated (server-set).
  * @property expiresAt Timestamp when the invitation automatically expires.
  */
 data class OrganizationInvitation(
@@ -100,6 +101,7 @@ data class OrganizationInvitation(
     val invitedBy: String = "",
     val status: InvitationStatus = InvitationStatus.PENDING,
     @ServerTimestamp val createdAt: Timestamp? = null,
+    @ServerTimestamp val updatedAt: Timestamp? = null,
     val expiresAt: Timestamp? = null
 )
 
