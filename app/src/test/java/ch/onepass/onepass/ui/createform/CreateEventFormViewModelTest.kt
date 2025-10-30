@@ -11,6 +11,8 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import kotlin.collections.containsKey
+import kotlin.text.get
 
 /**
  * Unit tests for CreateEventFormViewModel.
@@ -131,9 +133,9 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue((uiState as CreateEventUiState.Error).message.contains("Title is required"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey("title"))
+        assertEquals("Title cannot be empty", fieldErrors["title"])
       }
 
   @Test
@@ -149,10 +151,9 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue(
-            (uiState as CreateEventUiState.Error).message.contains("Description is required"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey("description"))
+        assertEquals("Description cannot be empty", fieldErrors["description"])
       }
 
   @Test
@@ -168,9 +169,9 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue((uiState as CreateEventUiState.Error).message.contains("Date is required"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey("date"))
+        assertEquals("Date cannot be empty", fieldErrors["date"])
       }
 
   @Test
@@ -186,9 +187,9 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue((uiState as CreateEventUiState.Error).message.contains("Start time is required"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey("startTime"))
+        assertEquals("Start time cannot be empty", fieldErrors["startTime"])
       }
 
   @Test
@@ -204,9 +205,9 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue((uiState as CreateEventUiState.Error).message.contains("End time is required"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey("endTime"))
+        assertEquals("End time cannot be empty", fieldErrors["endTime"])
       }
 
   @Test
@@ -222,9 +223,9 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue((uiState as CreateEventUiState.Error).message.contains("Location is required"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey("location"))
+        assertEquals("Location cannot be empty", fieldErrors["location"])
       }
 
   @Test
@@ -241,10 +242,9 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue(
-            (uiState as CreateEventUiState.Error).message.contains("Price must be a valid number"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey("price"))
+        assertEquals("Invalid price format", fieldErrors["price"])
       }
 
   @Test
@@ -261,12 +261,9 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue(
-            (uiState as CreateEventUiState.Error)
-                .message
-                .contains("Capacity must be a valid number"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey("capacity"))
+        assertEquals("Invalid capacity format", fieldErrors["capacity"])
       }
 
   @Test
@@ -291,8 +288,9 @@ class CreateEventFormViewModelTest {
         coVerify(timeout = 2000) { mockRepository.createEvent(any()) }
 
         // Verify UI state is Success (form is reset after success)
-        val formState = viewModel.formState.value
-        assertEquals("", formState.title)
+        val uiState = viewModel.uiState.value
+        assertTrue(uiState is CreateEventUiState.Success)
+        assertEquals("new-event-id", (uiState as CreateEventUiState.Success).eventId)
       }
 
   @Test
@@ -432,9 +430,14 @@ class CreateEventFormViewModelTest {
         advanceUntilIdle()
 
         // After successful creation, form should be reset
+        viewModel.resetForm()
+
         val formState = viewModel.formState.value
         assertEquals("", formState.title)
         assertEquals("", formState.description)
+
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.isEmpty())
       }
 
   @Test
