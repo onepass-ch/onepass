@@ -35,7 +35,7 @@ class CreateEventFormComposeTest {
   fun createEventForm_displaysTitle() {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
-    composeTestRule.onNodeWithText("CREATE YOUR EVENT").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Create your Event").assertIsDisplayed()
   }
 
   @Test
@@ -101,7 +101,7 @@ class CreateEventFormComposeTest {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Find capacity field by placeholder (scroll to it first)
-    composeTestRule.onNodeWithText("ex: 250").performScrollTo().performTextInput("100")
+    composeTestRule.onNodeWithText("ex: 100").performScrollTo().performTextInput("100")
 
     // Verify the input was accepted
     composeTestRule.onNodeWithText("100").performScrollTo().assertIsDisplayed()
@@ -139,7 +139,7 @@ class CreateEventFormComposeTest {
 
     composeTestRule.onNodeWithText("ex: 12").performScrollTo().performTextInput("20")
 
-    composeTestRule.onNodeWithText("ex: 250").performScrollTo().performTextInput("50")
+    composeTestRule.onNodeWithText("ex: 100").performScrollTo().performTextInput("50")
 
     // Wait for state to update
     composeTestRule.waitForIdle()
@@ -179,11 +179,14 @@ class CreateEventFormComposeTest {
   fun formIsScrollable() {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
-    // Verify that we can perform scroll action
-    composeTestRule.onNodeWithText("CREATE YOUR EVENT").assertIsDisplayed()
+    // Verify that we can see the top of the form
+    composeTestRule.onNodeWithText("Title*").assertIsDisplayed()
 
     // The form should be scrollable to see the button at the bottom
     composeTestRule.onNodeWithText("Create ticket").performScrollTo().assertIsDisplayed()
+
+    // Verify we can scroll back to top
+    composeTestRule.onNodeWithText("Title*").performScrollTo().assertIsDisplayed()
   }
 
   @Test
@@ -213,7 +216,7 @@ class CreateEventFormComposeTest {
     composeTestRule.onNodeWithText("Create ticket").performScrollTo()
 
     // Scroll back to top to verify data is still there
-    composeTestRule.onNodeWithText("CREATE YOUR EVENT").performScrollTo()
+    composeTestRule.onNodeWithText("Title*").performScrollTo()
     composeTestRule.onNodeWithText("Test Event").assertIsDisplayed()
   }
 }
