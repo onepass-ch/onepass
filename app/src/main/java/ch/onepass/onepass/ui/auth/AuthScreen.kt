@@ -44,6 +44,7 @@ import ch.onepass.onepass.R
 object SignInScreenTestTags {
   const val APP_LOGO = "appLogo"
   const val LOGIN_BUTTON = "loginButton"
+  const val LOADING_INDICATOR = "loadingIndicator"
 }
 
 @Composable
@@ -75,7 +76,8 @@ fun AuthScreen(onSignedIn: () -> Unit = {}, authViewModel: AuthViewModel = AuthV
 
           // Authenticate With Google Button
           if (isLoading) {
-            CircularProgressIndicator(modifier = Modifier.size(48.dp))
+            CircularProgressIndicator(
+                modifier = Modifier.size(48.dp).testTag(SignInScreenTestTags.LOADING_INDICATOR))
           } else {
             GoogleSignInButton(onSignInClick = { authViewModel.signIn(context, credentialManager) })
           }
