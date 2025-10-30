@@ -1,6 +1,7 @@
 package ch.onepass.onepass
 
 import android.Manifest
+import android.app.Application
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -23,6 +24,8 @@ import androidx.compose.ui.semantics.testTag
 import androidx.core.content.ContextCompat
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import ch.onepass.onepass.model.pass.PassRepository
+import ch.onepass.onepass.model.pass.PassRepositoryFirebase
 import ch.onepass.onepass.resources.C
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.navigation.AppNavHost
@@ -30,6 +33,8 @@ import ch.onepass.onepass.ui.navigation.BottomNavigationBar
 import ch.onepass.onepass.ui.navigation.NavigationActions
 import ch.onepass.onepass.ui.navigation.NavigationDestinations
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.functions.FirebaseFunctions
 import com.mapbox.common.MapboxOptions
 
 class MainActivity : ComponentActivity() {
@@ -70,7 +75,13 @@ class MainActivity : ComponentActivity() {
             modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
             color = MaterialTheme.colorScheme.background) {
               OnePassApp(
-                  mapViewModel = mapViewModel, isLocationPermissionGranted = hasLocationPermission)
+                  mapViewModel = mapViewModel,
+                  isLocationPermissionGranted = hasLocationPermission,
+                  app = application,
+                  passRepository =
+                      PassRepositoryFirebase(
+                          db = FirebaseFirestore.getInstance(),
+                          functions = FirebaseFunctions.getInstance()))
             }
       }
     }
@@ -101,6 +112,8 @@ class MainActivity : ComponentActivity() {
 fun OnePassApp(
     mapViewModel: MapViewModel,
     isLocationPermissionGranted: Boolean,
+    app: Application,
+    passRepository: PassRepository,
     testAuthButtonTag: String? = null,
 ) {
   val navController = rememberNavController()
@@ -127,6 +140,8 @@ fun OnePassApp(
             modifier = Modifier.padding(padding),
             mapViewModel = mapViewModel,
             isLocationPermissionGranted = isLocationPermissionGranted,
-            testAuthButtonTag = testAuthButtonTag)
+            testAuthButtonTag = testAuthButtonTag,
+            app = app,
+            passRepository = passRepository)
       }
 }

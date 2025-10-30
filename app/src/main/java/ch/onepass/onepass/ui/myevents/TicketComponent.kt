@@ -144,7 +144,6 @@ fun TicketComponent(
                         style = MaterialTheme.typography.bodyMedium,
                         color = colorResource(id = R.color.on_background))
                   }
-
               Text(
                   text = dateTime,
                   style = MaterialTheme.typography.bodyMedium,
