@@ -151,6 +151,106 @@ class OrganizerProfileScreenComposeTest {
   }
 
   @Test
+  fun socialMediaSection_websiteOnly_displaysWebsite() {
+    composeTestRule.setContent {
+      OnePassTheme {
+        SocialMediaSection(
+            websiteUrl = "https://example.com",
+            instagramUrl = null,
+            tiktokUrl = null,
+            facebookUrl = null)
+      }
+    }
+
+    // Verify website link is displayed when websiteUrl is non-null
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertIsDisplayed()
+    // Verify social media icons are not displayed when URLs are null
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertDoesNotExist()
+  }
+
+  @Test
+  fun socialMediaSection_instagramOnly_displaysInstagram() {
+    composeTestRule.setContent {
+      OnePassTheme {
+        SocialMediaSection(
+            websiteUrl = null,
+            instagramUrl = "instagram",
+            tiktokUrl = null,
+            facebookUrl = null)
+      }
+    }
+
+    // Verify instagram icon is displayed when instagramUrl is non-null
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertIsDisplayed()
+    // Verify other icons are not displayed when URLs are null
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertDoesNotExist()
+  }
+
+  @Test
+  fun socialMediaSection_tiktokOnly_displaysTiktok() {
+    composeTestRule.setContent {
+      OnePassTheme {
+        SocialMediaSection(
+            websiteUrl = null,
+            instagramUrl = null,
+            tiktokUrl = "tiktok",
+            facebookUrl = null)
+      }
+    }
+
+    // Verify tiktok icon is displayed when tiktokUrl is non-null
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertIsDisplayed()
+    // Verify other icons are not displayed when URLs are null
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertDoesNotExist()
+  }
+
+  @Test
+  fun socialMediaSection_facebookOnly_displaysFacebook() {
+    composeTestRule.setContent {
+      OnePassTheme {
+        SocialMediaSection(
+            websiteUrl = null,
+            instagramUrl = null,
+            tiktokUrl = null,
+            facebookUrl = "facebook")
+      }
+    }
+
+    // Verify facebook icon is displayed when facebookUrl is non-null
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertIsDisplayed()
+    // Verify other icons are not displayed when URLs are null
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertDoesNotExist()
+  }
+
+  @Test
+  fun socialMediaSection_websiteNull_othersNonNull_websiteHidden() {
+    composeTestRule.setContent {
+      OnePassTheme {
+        SocialMediaSection(
+            websiteUrl = null,
+            instagramUrl = "instagram",
+            tiktokUrl = "tiktok",
+            facebookUrl = "facebook")
+      }
+    }
+
+    // Verify website link is NOT displayed when websiteUrl is null
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertDoesNotExist()
+    // Verify social media icons are displayed when URLs are non-null
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertIsDisplayed()
+  }
+
+  @Test
   fun followSection_displaysFollowButton_notFollowing() {
     val followersCount = "1.5k"
 
