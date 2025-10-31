@@ -19,29 +19,17 @@ class AuthScreenTest {
   @get:Rule val composeRule = createComposeRule()
 
   @Test
-  fun authScreen_displaysLogoAndLoginButton() {
-    val vm = FakeAuthViewModel()
+  fun authScreen_initialState_displaysAllElements() {
+    val vm = AuthViewModel()
 
     composeRule.setContent { AuthScreen(onSignedIn = {}, authViewModel = vm) }
 
+    composeRule.onNodeWithTag(SignInScreenTestTags.AUTH_SCREEN).assertIsDisplayed()
     composeRule.onNodeWithTag(SignInScreenTestTags.APP_LOGO).assertIsDisplayed()
     composeRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
-  }
-
-  @Test
-  fun clickingLogo_togglesBetweenStates() {
-    val vm = FakeAuthViewModel()
-
-    composeRule.setContent { AuthScreen(onSignedIn = {}, authViewModel = vm) }
-
-    val logoNode = composeRule.onNodeWithTag(SignInScreenTestTags.APP_LOGO)
-    logoNode.assertIsDisplayed()
-
-    logoNode.performClick()
-    logoNode.assertIsDisplayed()
-
-    logoNode.performClick()
-    logoNode.assertIsDisplayed()
+    composeRule.onNodeWithTag(SignInScreenTestTags.HERO_TITLE).assertIsDisplayed()
+    composeRule.onNodeWithTag(SignInScreenTestTags.BLUR_CIRCLE_TOP).assertIsDisplayed()
+    composeRule.onNodeWithTag(SignInScreenTestTags.BLUR_CIRCLE_BOTTOM).assertIsDisplayed()
   }
 
   @Test
@@ -52,7 +40,8 @@ class AuthScreenTest {
 
     composeRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
 
-    assertTrue("signIn() should be called", vm.signInCalled)
+    assertTrue("signIn method was not called", vm.signInCalled)
+    composeRule.onNodeWithTag(SignInScreenTestTags.LOADING_INDICATOR).assertIsDisplayed()
   }
 
   @Test
