@@ -101,6 +101,33 @@ class AuthViewModelTest {
   }
 
   @Test
+  fun `signIn with google failure updates uiState with error`() = runTest {
+    // Given
+    val errorMessage = "Google sign in failed"
+    val mockGoogleIdOption = mockk<GetSignInWithGoogleOption>()
+    val mockCredentialResponse = mockk<GetCredentialResponse>()
+    val mockCredential = mockk<Credential>()
+
+    every { mockCredentialResponse.credential } returns mockCredential
+    coEvery { mockAuthRepository.getGoogleSignInOption(any()) } returns mockGoogleIdOption
+    coEvery { mockCredentialManager.getCredential(any(), any<GetCredentialRequest>()) } returns
+        mockCredentialResponse
+    coEvery { mockAuthRepository.signInWithGoogle(any()) } returns
+        Result.failure(Exception(errorMessage))
+
+    // When
+    viewModel.signIn(mockContext, mockCredentialManager)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Then
+    val uiState = viewModel.uiState.value
+    assertFalse(uiState.isSignedIn)
+    assertFalse(uiState.isLoading)
+    assertNotNull(uiState.errorMessage)
+    assertTrue(uiState.errorMessage!!.contains(errorMessage))
+  }
+
+  @Test
   fun `signOut updates uiState correctly`() = runTest {
     // When
     viewModel.signOut()
