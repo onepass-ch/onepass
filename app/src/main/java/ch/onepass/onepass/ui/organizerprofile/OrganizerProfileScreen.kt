@@ -121,7 +121,7 @@ fun OrganizerInfoSection(name: String, description: String, modifier: Modifier =
 fun SocialMediaIcon(
     iconRes: Int,
     contentDescription: String,
-    //onClick: () -> Unit = {},
+    // onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
   Image(
@@ -203,7 +203,7 @@ fun FollowSection(
     modifier: Modifier = Modifier,
     followersCount: String,
     isFollowing: Boolean,
-    //onFollowClick: () -> Unit = {},
+    // onFollowClick: () -> Unit = {},
 ) {
   Row(
       horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
@@ -242,9 +242,7 @@ fun FollowSection(
 }
 
 @Composable
-fun TabSection(
-    modifier: Modifier = Modifier
-) {
+fun TabSection(modifier: Modifier = Modifier) {
   Row(
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically,
@@ -283,7 +281,7 @@ fun OrganizerProfileScreen(
     facebookUrl: String? = "facebook",
     followersCount: String = "2.4k",
     isFollowing: Boolean = false,
-    //onFollowClick: () -> Unit = {}
+    // onFollowClick: () -> Unit = {}
 ) {
   Column(
       verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Top),
@@ -311,7 +309,7 @@ fun OrganizerProfileScreen(
             followersCount = followersCount,
             isFollowing = isFollowing,
             // onFollowClick = onFollowClick
-            )
+        )
 
         // Section separator
         Spacer(modifier = Modifier.height(50.dp))
