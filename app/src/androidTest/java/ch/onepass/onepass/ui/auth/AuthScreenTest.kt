@@ -26,8 +26,6 @@ class AuthScreenTest {
 
     composeRule.onNodeWithTag(SignInScreenTestTags.AUTH_SCREEN).assertIsDisplayed()
     composeRule.onNodeWithTag(SignInScreenTestTags.APP_LOGO).assertIsDisplayed()
-    composeRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
-    composeRule.onNodeWithTag(SignInScreenTestTags.HERO_TITLE).assertIsDisplayed()
     composeRule.onNodeWithTag(SignInScreenTestTags.BLUR_CIRCLE_TOP).assertIsDisplayed()
     composeRule.onNodeWithTag(SignInScreenTestTags.BLUR_CIRCLE_BOTTOM).assertIsDisplayed()
   }

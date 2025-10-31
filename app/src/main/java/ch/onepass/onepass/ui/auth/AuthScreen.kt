@@ -132,7 +132,7 @@ fun Logo(
     Image(
         painter = painterResource(id = R.drawable.ticket_logo),
         contentDescription = "App Logo Icon",
-        modifier = Modifier.size(iconSize))
+        modifier = Modifier.size(iconSize).testTag("logo_icon"))
     Spacer(Modifier.width(gap))
     Column {
       Text(
