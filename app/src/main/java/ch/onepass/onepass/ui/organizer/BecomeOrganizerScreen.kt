@@ -3,36 +3,32 @@ package ch.onepass.onepass.ui.organizer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
-import ch.onepass.onepass.ui.theme.MarcFontFamily
 import ch.onepass.onepass.ui.theme.OnePassTheme
 
 @Composable
 fun BecomeOrganizerScreen(
     ownerId: String,
     viewModel: BecomeOrganizerViewModel = viewModel(),
-    onOrganizationCreated: () -> Unit = {},
-    onNavigateBack: () -> Unit = {}
+    onOrganizationCreated: () -> Unit = {}
 ) {
   val formState by viewModel.formState.collectAsState()
   val uiState by viewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
   val snackbarHostState = remember { SnackbarHostState() }
-  val context = LocalContext.current
 
   LaunchedEffect(uiState) {
     when (val state = uiState) {
@@ -54,136 +50,109 @@ fun BecomeOrganizerScreen(
                 .padding(16.dp)) {
           Text(
               text = "Become an Organizer",
-              style = MaterialTheme.typography.headlineMedium.copy(fontFamily = MarcFontFamily),
+              style = MaterialTheme.typography.headlineMedium,
               color = colorResource(id = R.color.on_background),
-              modifier = Modifier.padding(vertical = 16.dp))
+              modifier = Modifier.padding(vertical = 24.dp))
 
-          TextField(
-              value = formState.name,
+          val nameState = formState.name
+          OutlinedTextField(
+              value = nameState.value,
               onValueChange = { viewModel.updateName(it) },
               label = { Text("Organization Name*") },
-              modifier = Modifier.fillMaxWidth(),
-              colors =
-                  TextFieldDefaults.colors(
-                      focusedContainerColor = colorResource(id = R.color.surface_container),
-                      unfocusedContainerColor = colorResource(id = R.color.surface_container_low),
-                      focusedTextColor = colorResource(id = R.color.on_background),
-                      unfocusedTextColor = colorResource(id = R.color.on_background)),
-              shape = RoundedCornerShape(8.dp))
+              modifier =
+                  Modifier.fillMaxWidth().onFocusChanged {
+                    viewModel.onFocusChangeName(it.isFocused)
+                  },
+              isError = nameState.error != null)
+          if (nameState.error != null)
+              Text(nameState.error, color = Color.Red, style = MaterialTheme.typography.bodySmall)
           Spacer(Modifier.height(16.dp))
 
-          TextField(
-              value = formState.description,
+          val descState = formState.description
+          OutlinedTextField(
+              value = descState.value,
               onValueChange = { viewModel.updateDescription(it) },
               label = { Text("Description*") },
-              modifier = Modifier.fillMaxWidth().height(120.dp),
-              colors =
-                  TextFieldDefaults.colors(
-                      focusedContainerColor = colorResource(id = R.color.surface_container),
-                      unfocusedContainerColor = colorResource(id = R.color.surface_container_low),
-                      focusedTextColor = colorResource(id = R.color.on_background),
-                      unfocusedTextColor = colorResource(id = R.color.on_background)),
-              shape = RoundedCornerShape(8.dp))
+              modifier =
+                  Modifier.fillMaxWidth().height(120.dp).onFocusChanged {
+                    viewModel.onFocusChangeDescription(it.isFocused)
+                  },
+              isError = descState.error != null)
+          if (descState.error != null)
+              Text(descState.error, color = Color.Red, style = MaterialTheme.typography.bodySmall)
           Spacer(Modifier.height(16.dp))
 
-          TextField(
-              value = formState.contactEmail,
+          val emailState = formState.contactEmail
+          OutlinedTextField(
+              value = emailState.value,
               onValueChange = { viewModel.updateContactEmail(it) },
               label = { Text("Contact Email*") },
-              modifier = Modifier.fillMaxWidth(),
-              keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-              colors =
-                  TextFieldDefaults.colors(
-                      focusedContainerColor = colorResource(id = R.color.surface_container),
-                      unfocusedContainerColor = colorResource(id = R.color.surface_container_low),
-                      focusedTextColor = colorResource(id = R.color.on_background),
-                      unfocusedTextColor = colorResource(id = R.color.on_background)),
-              shape = RoundedCornerShape(8.dp))
+              modifier =
+                  Modifier.fillMaxWidth().onFocusChanged {
+                    viewModel.onFocusChangeEmail(it.isFocused)
+                  },
+              isError = emailState.error != null,
+              keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
+          if (emailState.error != null)
+              Text(emailState.error, color = Color.Red, style = MaterialTheme.typography.bodySmall)
           Spacer(Modifier.height(16.dp))
 
-          TextField(
-              value = formState.contactPhone,
+          val phoneState = formState.contactPhone
+          OutlinedTextField(
+              value = phoneState.value,
               onValueChange = { viewModel.updateContactPhone(it) },
               label = { Text("Contact Phone") },
-              modifier = Modifier.fillMaxWidth(),
-              keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
-              colors =
-                  TextFieldDefaults.colors(
-                      focusedContainerColor = colorResource(id = R.color.surface_container),
-                      unfocusedContainerColor = colorResource(id = R.color.surface_container_low),
-                      focusedTextColor = colorResource(id = R.color.on_background),
-                      unfocusedTextColor = colorResource(id = R.color.on_background)),
-              shape = RoundedCornerShape(8.dp))
+              modifier =
+                  Modifier.fillMaxWidth().onFocusChanged {
+                    viewModel.onFocusChangePhone(it.isFocused)
+                  },
+              isError = phoneState.error != null,
+              keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
+          if (phoneState.error != null)
+              Text(phoneState.error, color = Color.Red, style = MaterialTheme.typography.bodySmall)
           Spacer(Modifier.height(16.dp))
 
-          TextField(
-              value = formState.website,
+          val websiteState = formState.website
+          OutlinedTextField(
+              value = websiteState.value,
               onValueChange = { viewModel.updateWebsite(it) },
               label = { Text("Website") },
-              modifier = Modifier.fillMaxWidth(),
-              colors =
-                  TextFieldDefaults.colors(
-                      focusedContainerColor = colorResource(id = R.color.surface_container),
-                      unfocusedContainerColor = colorResource(id = R.color.surface_container_low),
-                      focusedTextColor = colorResource(id = R.color.on_background),
-                      unfocusedTextColor = colorResource(id = R.color.on_background)),
-              shape = RoundedCornerShape(8.dp))
+              modifier =
+                  Modifier.fillMaxWidth().onFocusChanged {
+                    viewModel.onFocusChangeWebsite(it.isFocused)
+                  },
+              isError = websiteState.error != null)
+          if (websiteState.error != null)
+              Text(
+                  websiteState.error, color = Color.Red, style = MaterialTheme.typography.bodySmall)
           Spacer(Modifier.height(16.dp))
 
-          TextField(
-              value = formState.instagram,
+          OutlinedTextField(
+              value = formState.instagram.value,
               onValueChange = { viewModel.updateInstagram(it) },
               label = { Text("Instagram") },
-              modifier = Modifier.fillMaxWidth(),
-              colors =
-                  TextFieldDefaults.colors(
-                      focusedContainerColor = colorResource(id = R.color.surface_container),
-                      unfocusedContainerColor = colorResource(id = R.color.surface_container_low),
-                      focusedTextColor = colorResource(id = R.color.on_background),
-                      unfocusedTextColor = colorResource(id = R.color.on_background)),
-              shape = RoundedCornerShape(8.dp))
+              modifier = Modifier.fillMaxWidth())
           Spacer(Modifier.height(16.dp))
 
-          TextField(
-              value = formState.facebook,
+          OutlinedTextField(
+              value = formState.facebook.value,
               onValueChange = { viewModel.updateFacebook(it) },
               label = { Text("Facebook") },
-              modifier = Modifier.fillMaxWidth(),
-              colors =
-                  TextFieldDefaults.colors(
-                      focusedContainerColor = colorResource(id = R.color.surface_container),
-                      unfocusedContainerColor = colorResource(id = R.color.surface_container_low),
-                      focusedTextColor = colorResource(id = R.color.on_background),
-                      unfocusedTextColor = colorResource(id = R.color.on_background)),
-              shape = RoundedCornerShape(8.dp))
+              modifier = Modifier.fillMaxWidth())
           Spacer(Modifier.height(16.dp))
 
-          TextField(
-              value = formState.tiktok,
+          OutlinedTextField(
+              value = formState.tiktok.value,
               onValueChange = { viewModel.updateTiktok(it) },
               label = { Text("TikTok") },
-              modifier = Modifier.fillMaxWidth(),
-              colors =
-                  TextFieldDefaults.colors(
-                      focusedContainerColor = colorResource(id = R.color.surface_container),
-                      unfocusedContainerColor = colorResource(id = R.color.surface_container_low),
-                      focusedTextColor = colorResource(id = R.color.on_background),
-                      unfocusedTextColor = colorResource(id = R.color.on_background)),
-              shape = RoundedCornerShape(8.dp))
+              modifier = Modifier.fillMaxWidth())
           Spacer(Modifier.height(16.dp))
 
-          TextField(
-              value = formState.address,
+          OutlinedTextField(
+              value = formState.address.value,
               onValueChange = { viewModel.updateAddress(it) },
               label = { Text("Address") },
-              modifier = Modifier.fillMaxWidth(),
-              colors =
-                  TextFieldDefaults.colors(
-                      focusedContainerColor = colorResource(id = R.color.surface_container),
-                      unfocusedContainerColor = colorResource(id = R.color.surface_container_low),
-                      focusedTextColor = colorResource(id = R.color.on_background),
-                      unfocusedTextColor = colorResource(id = R.color.on_background)),
-              shape = RoundedCornerShape(8.dp))
+              modifier = Modifier.fillMaxWidth())
           Spacer(Modifier.height(32.dp))
 
           Button(
