@@ -175,10 +175,7 @@ class OrganizerProfileScreenComposeTest {
     composeTestRule.setContent {
       OnePassTheme {
         SocialMediaSection(
-            websiteUrl = null,
-            instagramUrl = "instagram",
-            tiktokUrl = null,
-            facebookUrl = null)
+            websiteUrl = null, instagramUrl = "instagram", tiktokUrl = null, facebookUrl = null)
       }
     }
 
@@ -195,10 +192,7 @@ class OrganizerProfileScreenComposeTest {
     composeTestRule.setContent {
       OnePassTheme {
         SocialMediaSection(
-            websiteUrl = null,
-            instagramUrl = null,
-            tiktokUrl = "tiktok",
-            facebookUrl = null)
+            websiteUrl = null, instagramUrl = null, tiktokUrl = "tiktok", facebookUrl = null)
       }
     }
 
@@ -215,10 +209,7 @@ class OrganizerProfileScreenComposeTest {
     composeTestRule.setContent {
       OnePassTheme {
         SocialMediaSection(
-            websiteUrl = null,
-            instagramUrl = null,
-            tiktokUrl = null,
-            facebookUrl = "facebook")
+            websiteUrl = null, instagramUrl = null, tiktokUrl = null, facebookUrl = "facebook")
       }
     }
 
