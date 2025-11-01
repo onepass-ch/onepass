@@ -264,6 +264,7 @@ fun DatePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
 @Composable
 fun CreateEventForm(
     modifier: Modifier = Modifier,
+    eventId: String? = null,
     viewModel: CreateEventFormViewModel = viewModel(),
     onNavigateBack: () -> Unit = {},
     onEventCreated: () -> Unit = {},
@@ -271,6 +272,13 @@ fun CreateEventForm(
   // Collect state from ViewModel
   val formState by viewModel.formState.collectAsState()
   val uiState by viewModel.uiState.collectAsState()
+
+  // Load event if editing
+  LaunchedEffect(eventId) {
+    if (eventId != null) {
+      viewModel.loadEvent(eventId)
+    }
+  }
 
   val scrollState = rememberScrollState()
 
@@ -314,7 +322,7 @@ fun CreateEventForm(
                       .background(color = DefaultBackground)
                       .padding(top = 47.dp, bottom = 6.dp)) {
                 Text(
-                    text = "CREATE YOUR EVENT",
+                    text = if (viewModel.isEditMode()) "EDIT YOUR EVENT" else "CREATE YOUR EVENT",
                     style = MaterialTheme.typography.displaySmall.copy(color = Color(0xFFFFFFFF)),
                     modifier = Modifier.fillMaxWidth())
               }
@@ -591,12 +599,12 @@ fun CreateEventForm(
 
           Spacer(modifier = Modifier.height(32.dp))
 
-          // Create Ticket Button
+          // Create/Update Ticket Button
           Button(
               onClick = {
                 // TODO: Get organizerId and organizerName from AuthViewModel/User context
                 // For now using placeholder values
-                viewModel.createEvent(
+                viewModel.saveEvent(
                     organizerId = "temp-organizer-id", organizerName = "Temporary Organizer")
               },
               modifier =
@@ -627,7 +635,9 @@ fun CreateEventForm(
                           contentDescription = null,
                           modifier = Modifier.size(16.dp))
                       Spacer(Modifier.width(8.dp))
-                      Text(text = "Create ticket", style = MaterialTheme.typography.labelLarge)
+                      Text(
+                          text = if (viewModel.isEditMode()) "Update ticket" else "Create ticket",
+                          style = MaterialTheme.typography.labelLarge)
                     }
               }
 
