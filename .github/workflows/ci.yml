@@ -11,6 +11,9 @@ on:
       - synchronize
       - reopened
 
+env:
+  MODULE_DIR: app
+
 jobs:
   ci:
     name: CI
