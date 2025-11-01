@@ -178,7 +178,7 @@ class FeedScreenTest {
 
     composeTestRule.waitForIdle()
 
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_LOCATION).assertTextEquals("LAUSANNE")
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_LOCATION).assertTextEquals("SWITZERLAND")
   }
 
   @Test
@@ -190,7 +190,7 @@ class FeedScreenTest {
 
     composeTestRule.waitForIdle()
 
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("TODAY")
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("WELCOME")
   }
 
   @Test
