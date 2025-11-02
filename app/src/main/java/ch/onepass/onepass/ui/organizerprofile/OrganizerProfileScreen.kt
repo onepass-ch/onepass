@@ -282,6 +282,7 @@ fun TabSection(
               .wrapContentHeight()
               .padding(horizontal = 20.dp)
               .testTag(OrganizerProfileTestTags.TAB_SECTION)) {
+      // TODO: remove duplication with tabs in MyEventsScreen
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
           Text(
               text = "Posts",
@@ -374,8 +375,7 @@ fun OrganizerProfileScreen(
 }
 
 /**
- * Content composable for OrganizerProfileScreen.
- * Separated for easier testing and preview.
+ * This is just the preview of the OrganizerProfileContent composable independant of the viewModel for easier UI testing.
  */
 @Preview
 @Composable
@@ -495,7 +495,7 @@ fun UpcomingTabContent(
               style = Typography.bodyMedium.copy(color = Color(0xFF808080)),
               modifier = Modifier.padding(32.dp))
         } else {
-          events.forEach { event ->
+          events.filter { event -> determineTicketStatus(event) != TicketStatus.EXPIRED}.forEach { event ->
             TicketComponent(
                 title = event.title,
                 status = determineTicketStatus(event),
@@ -531,7 +531,7 @@ fun PastTabContent(
               style = Typography.bodyMedium.copy(color = Color(0xFF808080)),
               modifier = Modifier.padding(32.dp))
         } else {
-          events.forEach { event ->
+          events.filter { event -> determineTicketStatus(event) == TicketStatus.EXPIRED }.forEach { event ->
             TicketComponent(
                 title = event.title,
                 status = TicketStatus.EXPIRED,
@@ -558,7 +558,7 @@ private fun determineTicketStatus(event: Event): TicketStatus {
       when {
         now.seconds < startTime.seconds -> TicketStatus.UPCOMING
         now.seconds in startTime.seconds..endTime.seconds -> TicketStatus.CURRENTLY
-        else -> TicketStatus.UPCOMING // Fallback for edge cases
+        else -> TicketStatus.EXPIRED // Fallback for edge cases
       }
     }
     else -> TicketStatus.UPCOMING
