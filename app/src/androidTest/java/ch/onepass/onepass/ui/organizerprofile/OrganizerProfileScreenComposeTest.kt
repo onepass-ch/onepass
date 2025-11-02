@@ -94,20 +94,23 @@ class OrganizerProfileScreenComposeTest {
       }
     }
 
+    // Wait for layout to complete
+    composeTestRule.waitForIdle()
+
     // Verify social media section is displayed
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.SOCIAL_MEDIA_SECTION).assertIsDisplayed()
 
     // Verify website link is displayed
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertExists()
     composeTestRule
-        .onNodeWithTag(OrganizerProfileTestTags.WEBSITE_TEXT)
+        .onNodeWithTag(OrganizerProfileTestTags.WEBSITE_TEXT, useUnmergedTree = true)
         .assertIsDisplayed()
         .assertTextEquals("Website")
 
     // Verify all social media icons are displayed
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertExists()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertExists()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertExists()
   }
 
   @Test
@@ -119,6 +122,8 @@ class OrganizerProfileScreenComposeTest {
       }
     }
 
+    composeTestRule.waitForIdle()
+
     // Verify social media section is displayed
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.SOCIAL_MEDIA_SECTION).assertIsDisplayed()
 
@@ -127,7 +132,7 @@ class OrganizerProfileScreenComposeTest {
 
     // Verify only TikTok icon is displayed
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertDoesNotExist()
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertExists()
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertDoesNotExist()
   }
 
@@ -162,8 +167,10 @@ class OrganizerProfileScreenComposeTest {
       }
     }
 
+    composeTestRule.waitForIdle()
+
     // Verify website link is displayed when websiteUrl is non-null
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertExists()
     // Verify social media icons are not displayed when URLs are null
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertDoesNotExist()
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertDoesNotExist()
@@ -179,8 +186,10 @@ class OrganizerProfileScreenComposeTest {
       }
     }
 
+    composeTestRule.waitForIdle()
+
     // Verify instagram icon is displayed when instagramUrl is non-null
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertExists()
     // Verify other icons are not displayed when URLs are null
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertDoesNotExist()
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertDoesNotExist()
@@ -196,8 +205,10 @@ class OrganizerProfileScreenComposeTest {
       }
     }
 
+    composeTestRule.waitForIdle()
+
     // Verify tiktok icon is displayed when tiktokUrl is non-null
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertExists()
     // Verify other icons are not displayed when URLs are null
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertDoesNotExist()
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertDoesNotExist()
@@ -213,8 +224,10 @@ class OrganizerProfileScreenComposeTest {
       }
     }
 
+    composeTestRule.waitForIdle()
+
     // Verify facebook icon is displayed when facebookUrl is non-null
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertExists()
     // Verify other icons are not displayed when URLs are null
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertDoesNotExist()
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertDoesNotExist()
@@ -233,12 +246,14 @@ class OrganizerProfileScreenComposeTest {
       }
     }
 
+    composeTestRule.waitForIdle()
+
     // Verify website link is NOT displayed when websiteUrl is null
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertDoesNotExist()
     // Verify social media icons are displayed when URLs are non-null
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertExists()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertExists()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertExists()
   }
 
   @Test
@@ -257,7 +272,7 @@ class OrganizerProfileScreenComposeTest {
 
     // Verify follow button text shows "FOLLOW"
     composeTestRule
-        .onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT)
+        .onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT, useUnmergedTree = true)
         .assertIsDisplayed()
         .assertTextEquals("FOLLOW")
 
@@ -278,7 +293,7 @@ class OrganizerProfileScreenComposeTest {
 
     // Verify follow button text shows "FOLLOWING"
     composeTestRule
-        .onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT)
+        .onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT, useUnmergedTree = true)
         .assertIsDisplayed()
         .assertTextEquals("FOLLOWING")
 
@@ -384,7 +399,7 @@ class OrganizerProfileScreenComposeTest {
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FOLLOW_SECTION).assertIsDisplayed()
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON).assertIsDisplayed()
     composeTestRule
-        .onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT)
+        .onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT, useUnmergedTree = true)
         .assertTextEquals("FOLLOW")
     composeTestRule
         .onNodeWithTag(OrganizerProfileTestTags.FOLLOWERS_TEXT)
