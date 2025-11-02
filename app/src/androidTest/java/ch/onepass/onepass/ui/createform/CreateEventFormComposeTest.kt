@@ -6,6 +6,7 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.event.EventRepository
+import ch.onepass.onepass.ui.createform.CreateEventFormViewModel.ValidationError
 import io.mockk.mockk
 import java.util.Calendar
 import kotlinx.coroutines.test.runTest
@@ -13,7 +14,7 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import ch.onepass.onepass.ui.createform.CreateEventFormViewModel.ValidationError
+
 /**
  * UI tests for CreateEventForm composable.
  *
@@ -329,7 +330,10 @@ class CreateEventFormComposeTest {
     composeTestRule.onNodeWithText("Create event").performScrollTo().performClick()
 
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText(ValidationError.PRICE_INVALID.message).performScrollTo().assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(ValidationError.PRICE_INVALID.message)
+        .performScrollTo()
+        .assertIsDisplayed()
   }
 }
 // Fixed Helper function - moved outside test class

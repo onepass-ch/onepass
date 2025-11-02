@@ -1,6 +1,7 @@
 package ch.onepass.onepass.ui.createform
 
 import ch.onepass.onepass.model.event.EventRepository
+import ch.onepass.onepass.ui.createform.CreateEventFormViewModel.ValidationError
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -11,7 +12,6 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
-import ch.onepass.onepass.ui.createform.CreateEventFormViewModel.ValidationError
 
 /**
  * Unit tests for CreateEventFormViewModel.
@@ -152,7 +152,8 @@ class CreateEventFormViewModelTest {
 
         val fieldErrors = viewModel.fieldErrors.value
         assertTrue(fieldErrors.containsKey(ValidationError.DESCRIPTION.key))
-        assertEquals(ValidationError.DESCRIPTION.message, fieldErrors[ValidationError.DESCRIPTION.key])
+        assertEquals(
+            ValidationError.DESCRIPTION.message, fieldErrors[ValidationError.DESCRIPTION.key])
       }
 
   @Test
@@ -188,7 +189,8 @@ class CreateEventFormViewModelTest {
 
         val fieldErrors = viewModel.fieldErrors.value
         assertTrue(fieldErrors.containsKey(ValidationError.START_TIME.key))
-        assertEquals(ValidationError.START_TIME.message, fieldErrors[ValidationError.START_TIME.key])
+        assertEquals(
+            ValidationError.START_TIME.message, fieldErrors[ValidationError.START_TIME.key])
       }
 
   @Test
@@ -243,7 +245,8 @@ class CreateEventFormViewModelTest {
 
         val fieldErrors = viewModel.fieldErrors.value
         assertTrue(fieldErrors.containsKey(ValidationError.PRICE_INVALID.key))
-        assertEquals(ValidationError.PRICE_INVALID.message, fieldErrors[ValidationError.PRICE_INVALID.key])
+        assertEquals(
+            ValidationError.PRICE_INVALID.message, fieldErrors[ValidationError.PRICE_INVALID.key])
       }
 
   @Test
@@ -262,7 +265,9 @@ class CreateEventFormViewModelTest {
 
         val fieldErrors = viewModel.fieldErrors.value
         assertTrue(fieldErrors.containsKey(ValidationError.CAPACITY_INVALID.key))
-        assertEquals(ValidationError.CAPACITY_INVALID.message, fieldErrors[ValidationError.CAPACITY_INVALID.key])
+        assertEquals(
+            ValidationError.CAPACITY_INVALID.message,
+            fieldErrors[ValidationError.CAPACITY_INVALID.key])
       }
 
   @Test

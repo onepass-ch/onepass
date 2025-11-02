@@ -221,7 +221,6 @@ class CreateEventFormViewModel(
    * @param organizerId The ID of the user creating the event
    * @param organizerName The name of the organizer
    */
-
   fun createEvent(organizerId: String, organizerName: String) {
     viewModelScope.launch {
       // Validate form
