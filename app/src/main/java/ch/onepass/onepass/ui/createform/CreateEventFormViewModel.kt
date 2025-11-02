@@ -27,16 +27,22 @@ class CreateEventFormViewModel(
     private val eventRepository: EventRepository = EventRepositoryFirebase()
 ) : ViewModel() {
 
-  object ValidationErrorKeys {
-    const val TITLE = "title"
-    const val DESCRIPTION = "description"
-    const val DATE = "date"
-    const val START_TIME = "startTime"
-    const val END_TIME = "endTime"
-    const val LOCATION = "location"
-    const val PRICE = "price"
-    const val CAPACITY = "capacity"
-    const val TIME = "time"
+  enum class ValidationError(val key: String, val message: String) {
+    TITLE("title", "Title cannot be empty"),
+    DESCRIPTION("description", "Description cannot be empty"),
+    DATE("date", "Date cannot be empty"),
+    START_TIME("startTime", "Start time cannot be empty"),
+    END_TIME("endTime", "End time cannot be empty"),
+    TIME("time", "End time must be after start time"),
+    LOCATION("location", "Location cannot be empty"),
+    PRICE_EMPTY("price", "Price cannot be empty"),
+    PRICE_INVALID("price", "Invalid price format"),
+    PRICE_NEGATIVE("price", "Price must be positive"),
+    CAPACITY_EMPTY("capacity", "Capacity cannot be empty"),
+    CAPACITY_INVALID("capacity", "Invalid capacity format"),
+    CAPACITY_NEGATIVE("capacity", "Capacity must be positive");
+
+    fun toError(): Pair<String, String> = key to message
   }
 
   // Form state
@@ -54,41 +60,55 @@ class CreateEventFormViewModel(
   /** Updates the event title */
   fun updateTitle(title: String) {
     _formState.value = _formState.value.copy(title = title)
+    clearFieldError(ValidationError.TITLE.key)
   }
 
   /** Updates the event description */
   fun updateDescription(description: String) {
     _formState.value = _formState.value.copy(description = description)
+    clearFieldError(ValidationError.DESCRIPTION.key)
   }
 
   /** Updates the event start time */
   fun updateStartTime(startTime: String) {
     _formState.value = _formState.value.copy(startTime = startTime)
+    clearFieldError(ValidationError.START_TIME.key, ValidationError.TIME.key)
   }
 
   /** Updates the event end time */
   fun updateEndTime(endTime: String) {
     _formState.value = _formState.value.copy(endTime = endTime)
+    clearFieldError(ValidationError.END_TIME.key, ValidationError.TIME.key)
   }
 
   /** Updates the event date */
   fun updateDate(date: String) {
     _formState.value = _formState.value.copy(date = date)
+    clearFieldError(ValidationError.DATE.key)
   }
 
   /** Updates the event location */
   fun updateLocation(location: String) {
     _formState.value = _formState.value.copy(location = location)
+    clearFieldError(ValidationError.LOCATION.key)
   }
 
   /** Updates the ticket price */
   fun updatePrice(price: String) {
     _formState.value = _formState.value.copy(price = price)
+    clearFieldError(
+        ValidationError.PRICE_EMPTY.key,
+        ValidationError.PRICE_INVALID.key,
+        ValidationError.PRICE_NEGATIVE.key)
   }
 
   /** Updates the event capacity */
   fun updateCapacity(capacity: String) {
     _formState.value = _formState.value.copy(capacity = capacity)
+    clearFieldError(
+        ValidationError.CAPACITY_EMPTY.key,
+        ValidationError.CAPACITY_INVALID.key,
+        ValidationError.CAPACITY_NEGATIVE.key)
   }
 
   /**
@@ -100,32 +120,29 @@ class CreateEventFormViewModel(
     val errors = mutableMapOf<String, String>()
     val state = _formState.value
 
-    if (state.title.isBlank()) errors[ValidationErrorKeys.TITLE] = "Title cannot be empty"
-    if (state.description.isBlank())
-        errors[ValidationErrorKeys.DESCRIPTION] = "Description cannot be empty"
-    if (state.date.isBlank()) errors[ValidationErrorKeys.DATE] = "Date cannot be empty"
-    if (state.startTime.isBlank())
-        errors[ValidationErrorKeys.START_TIME] = "Start time cannot be empty"
-    if (state.endTime.isBlank()) errors[ValidationErrorKeys.END_TIME] = "End time cannot be empty"
+    if (state.title.isBlank()) errors += ValidationError.TITLE.toError()
+    if (state.description.isBlank()) errors += ValidationError.DESCRIPTION.toError()
+    if (state.date.isBlank()) errors += ValidationError.DATE.toError()
+    if (state.startTime.isBlank()) errors += ValidationError.START_TIME.toError()
+    if (state.endTime.isBlank()) errors += ValidationError.END_TIME.toError()
 
-    if (state.endTime <= state.startTime)
-        errors[ValidationErrorKeys.TIME] = "End time must be after start time"
-    if (state.location.isBlank()) errors[ValidationErrorKeys.LOCATION] = "Location cannot be empty"
+    if (state.endTime <= state.startTime) errors += ValidationError.TIME.toError()
+    if (state.location.isBlank()) errors += ValidationError.LOCATION.toError()
 
     if (state.price.isBlank()) {
-      errors[ValidationErrorKeys.PRICE] = "Price cannot be empty"
+      errors += ValidationError.PRICE_EMPTY.toError()
     } else {
       state.price.toDoubleOrNull()?.let {
-        if (it < 0) errors[ValidationErrorKeys.PRICE] = "Price must be positive"
-      } ?: run { errors[ValidationErrorKeys.PRICE] = "Invalid price format" }
+        if (it < 0) errors += ValidationError.PRICE_NEGATIVE.toError()
+      } ?: run { errors += ValidationError.PRICE_INVALID.toError() }
     }
 
     if (state.capacity.isBlank()) {
-      errors[ValidationErrorKeys.CAPACITY] = "Capacity cannot be empty"
+      errors += ValidationError.CAPACITY_EMPTY.toError()
     } else {
       state.capacity.toIntOrNull()?.let {
-        if (it <= 0) errors[ValidationErrorKeys.CAPACITY] = "Capacity must be positive"
-      } ?: run { errors[ValidationErrorKeys.CAPACITY] = "Invalid capacity format" }
+        if (it <= 0) errors += ValidationError.CAPACITY_NEGATIVE.toError()
+      } ?: run { errors += ValidationError.CAPACITY_INVALID.toError() }
     }
 
     return errors
@@ -195,8 +212,8 @@ class CreateEventFormViewModel(
     }
   }
 
-  fun clearFieldErrors() {
-    _fieldErrors.value = emptyMap()
+  private fun clearFieldError(vararg keys: String) {
+    _fieldErrors.value = _fieldErrors.value.filterKeys { it !in keys }
   }
   /**
    * Creates a new event with the current form data
@@ -204,6 +221,7 @@ class CreateEventFormViewModel(
    * @param organizerId The ID of the user creating the event
    * @param organizerName The name of the organizer
    */
+
   fun createEvent(organizerId: String, organizerName: String) {
     viewModelScope.launch {
       // Validate form

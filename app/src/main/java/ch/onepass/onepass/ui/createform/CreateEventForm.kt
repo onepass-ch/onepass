@@ -25,7 +25,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
-import ch.onepass.onepass.ui.createform.CreateEventFormViewModel.ValidationErrorKeys
+import ch.onepass.onepass.ui.createform.CreateEventFormViewModel.ValidationError
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
 import java.text.SimpleDateFormat
@@ -652,7 +652,7 @@ fun CreateEventForm(
   EventFormScaffold(onNavigateBack, scrollState) {
     // Title
     TitleInputField(value = formState.title, onValueChange = { viewModel.updateTitle(it) })
-    fieldErrors[ValidationErrorKeys.TITLE]?.let {
+    fieldErrors[ValidationError.TITLE.key]?.let {
       Text(
           text = it,
           color = Color.Red,
@@ -664,7 +664,7 @@ fun CreateEventForm(
     // Description
     DescriptionInputField(
         value = formState.description, onValueChange = { viewModel.updateDescription(it) })
-    fieldErrors[ValidationErrorKeys.DESCRIPTION]?.let {
+    fieldErrors[ValidationError.DESCRIPTION.key]?.let {
       Text(
           text = it,
           color = Color.Red,
@@ -681,18 +681,18 @@ fun CreateEventForm(
         onEndTimeChange = { viewModel.updateEndTime(it) })
 
     Row(modifier = Modifier.padding(start = 8.dp, top = 4.dp)) {
-      fieldErrors[ValidationErrorKeys.START_TIME]?.let {
+      fieldErrors[ValidationError.START_TIME.key]?.let {
         Text(
             text = it,
             color = Color.Red,
             style = MaterialTheme.typography.bodySmall,
             modifier = Modifier.padding(end = 12.dp))
       }
-      fieldErrors[ValidationErrorKeys.END_TIME]?.let {
+      fieldErrors[ValidationError.END_TIME.key]?.let {
         Text(text = it, color = Color.Red, style = MaterialTheme.typography.bodySmall)
       }
     }
-    fieldErrors[ValidationErrorKeys.TIME]?.let {
+    fieldErrors[ValidationError.TIME.key]?.let {
       Text(
           text = it,
           color = Color.Red,
@@ -704,7 +704,7 @@ fun CreateEventForm(
     // Date Input
     DateInputField(value = formState.date, onValueChange = { viewModel.updateDate(it) })
 
-    fieldErrors[ValidationErrorKeys.DATE]?.let {
+    fieldErrors[ValidationError.DATE.key]?.let {
       Text(
           text = it,
           color = Color.Red,
@@ -715,7 +715,7 @@ fun CreateEventForm(
 
     // Location
     LocationInputField(value = formState.location, onValueChange = { viewModel.updateLocation(it) })
-    fieldErrors[ValidationErrorKeys.LOCATION]?.let {
+    fieldErrors[ValidationError.LOCATION.key]?.let {
       Text(
           text = it,
           color = Color.Red,

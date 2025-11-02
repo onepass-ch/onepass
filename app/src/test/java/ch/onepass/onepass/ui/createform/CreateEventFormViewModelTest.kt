@@ -11,6 +11,7 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import ch.onepass.onepass.ui.createform.CreateEventFormViewModel.ValidationError
 
 /**
  * Unit tests for CreateEventFormViewModel.
@@ -132,8 +133,8 @@ class CreateEventFormViewModelTest {
         viewModel.createEvent("org-id", "Organizer")
 
         val fieldErrors = viewModel.fieldErrors.value
-        assertTrue(fieldErrors.containsKey("title"))
-        assertEquals("Title cannot be empty", fieldErrors["title"])
+        assertTrue(fieldErrors.containsKey(ValidationError.TITLE.key))
+        assertEquals(ValidationError.TITLE.message, fieldErrors[ValidationError.TITLE.key])
       }
 
   @Test
@@ -150,8 +151,8 @@ class CreateEventFormViewModelTest {
         viewModel.createEvent("org-id", "Organizer")
 
         val fieldErrors = viewModel.fieldErrors.value
-        assertTrue(fieldErrors.containsKey("description"))
-        assertEquals("Description cannot be empty", fieldErrors["description"])
+        assertTrue(fieldErrors.containsKey(ValidationError.DESCRIPTION.key))
+        assertEquals(ValidationError.DESCRIPTION.message, fieldErrors[ValidationError.DESCRIPTION.key])
       }
 
   @Test
@@ -168,8 +169,8 @@ class CreateEventFormViewModelTest {
         viewModel.createEvent("org-id", "Organizer")
 
         val fieldErrors = viewModel.fieldErrors.value
-        assertTrue(fieldErrors.containsKey("date"))
-        assertEquals("Date cannot be empty", fieldErrors["date"])
+        assertTrue(fieldErrors.containsKey(ValidationError.DATE.key))
+        assertEquals(ValidationError.DATE.message, fieldErrors[ValidationError.DATE.key])
       }
 
   @Test
@@ -186,8 +187,8 @@ class CreateEventFormViewModelTest {
         viewModel.createEvent("org-id", "Organizer")
 
         val fieldErrors = viewModel.fieldErrors.value
-        assertTrue(fieldErrors.containsKey("startTime"))
-        assertEquals("Start time cannot be empty", fieldErrors["startTime"])
+        assertTrue(fieldErrors.containsKey(ValidationError.START_TIME.key))
+        assertEquals(ValidationError.START_TIME.message, fieldErrors[ValidationError.START_TIME.key])
       }
 
   @Test
@@ -204,8 +205,8 @@ class CreateEventFormViewModelTest {
         viewModel.createEvent("org-id", "Organizer")
 
         val fieldErrors = viewModel.fieldErrors.value
-        assertTrue(fieldErrors.containsKey("endTime"))
-        assertEquals("End time cannot be empty", fieldErrors["endTime"])
+        assertTrue(fieldErrors.containsKey(ValidationError.END_TIME.key))
+        assertEquals(ValidationError.END_TIME.message, fieldErrors[ValidationError.END_TIME.key])
       }
 
   @Test
@@ -222,8 +223,8 @@ class CreateEventFormViewModelTest {
         viewModel.createEvent("org-id", "Organizer")
 
         val fieldErrors = viewModel.fieldErrors.value
-        assertTrue(fieldErrors.containsKey("location"))
-        assertEquals("Location cannot be empty", fieldErrors["location"])
+        assertTrue(fieldErrors.containsKey(ValidationError.LOCATION.key))
+        assertEquals(ValidationError.LOCATION.message, fieldErrors[ValidationError.LOCATION.key])
       }
 
   @Test
@@ -241,8 +242,8 @@ class CreateEventFormViewModelTest {
         viewModel.createEvent("org-id", "Organizer")
 
         val fieldErrors = viewModel.fieldErrors.value
-        assertTrue(fieldErrors.containsKey("price"))
-        assertEquals("Invalid price format", fieldErrors["price"])
+        assertTrue(fieldErrors.containsKey(ValidationError.PRICE_INVALID.key))
+        assertEquals(ValidationError.PRICE_INVALID.message, fieldErrors[ValidationError.PRICE_INVALID.key])
       }
 
   @Test
@@ -260,8 +261,8 @@ class CreateEventFormViewModelTest {
         viewModel.createEvent("org-id", "Organizer")
 
         val fieldErrors = viewModel.fieldErrors.value
-        assertTrue(fieldErrors.containsKey("capacity"))
-        assertEquals("Invalid capacity format", fieldErrors["capacity"])
+        assertTrue(fieldErrors.containsKey(ValidationError.CAPACITY_INVALID.key))
+        assertEquals(ValidationError.CAPACITY_INVALID.message, fieldErrors[ValidationError.CAPACITY_INVALID.key])
       }
 
   @Test

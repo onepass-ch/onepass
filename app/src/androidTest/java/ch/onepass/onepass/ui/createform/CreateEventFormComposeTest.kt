@@ -8,13 +8,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.event.EventRepository
 import io.mockk.mockk
 import java.util.Calendar
-import kotlin.text.get
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-
+import ch.onepass.onepass.ui.createform.CreateEventFormViewModel.ValidationError
 /**
  * UI tests for CreateEventForm composable.
  *
@@ -115,7 +114,7 @@ class CreateEventFormComposeTest {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Button is at the bottom, so scroll to it first
-    composeTestRule.onNodeWithText("Create ticket").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Create event").performScrollTo().assertIsDisplayed()
   }
 
   @Test
@@ -123,7 +122,7 @@ class CreateEventFormComposeTest {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Button is at the bottom, so scroll to it first
-    composeTestRule.onNodeWithText("Create ticket").performScrollTo().assertHasClickAction()
+    composeTestRule.onNodeWithText("Create event").performScrollTo().assertHasClickAction()
   }
 
   @Test
@@ -186,7 +185,7 @@ class CreateEventFormComposeTest {
     composeTestRule.onNodeWithText("Title*").assertIsDisplayed()
 
     // The form should be scrollable to see the button at the bottom
-    composeTestRule.onNodeWithText("Create ticket").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Create event").performScrollTo().assertIsDisplayed()
 
     // Verify we can scroll back to top
     composeTestRule.onNodeWithText("Title*").performScrollTo().assertIsDisplayed()
@@ -216,7 +215,7 @@ class CreateEventFormComposeTest {
     composeTestRule.waitForIdle()
 
     // Trigger recomposition by scrolling to bottom
-    composeTestRule.onNodeWithText("Create ticket").performScrollTo()
+    composeTestRule.onNodeWithText("Create event").performScrollTo()
 
     // Scroll back to top to verify data is still there
     composeTestRule.onNodeWithText("Title*").performScrollTo()
@@ -301,15 +300,14 @@ class CreateEventFormComposeTest {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Click create button without filling fields
-    composeTestRule.onNodeWithText("Create ticket").performScrollTo().performClick()
+    composeTestRule.onNodeWithText("Create event").performScrollTo().performClick()
 
     composeTestRule.waitForIdle()
 
     // Scroll to top to see error messages
     composeTestRule.onNodeWithText("Title*").performScrollTo()
 
-    // Check for validation errors
-    composeTestRule.onNodeWithText("Title cannot be empty").assertIsDisplayed()
+    composeTestRule.onNodeWithText(ValidationError.TITLE.message).assertIsDisplayed()
   }
 
   @Test
@@ -328,12 +326,10 @@ class CreateEventFormComposeTest {
     composeTestRule.onNodeWithText("ex: 12").performScrollTo().performTextInput("abc")
 
     // Try to create
-    composeTestRule.onNodeWithText("Create ticket").performScrollTo().performClick()
+    composeTestRule.onNodeWithText("Create event").performScrollTo().performClick()
 
     composeTestRule.waitForIdle()
-
-    // Check for price error
-    composeTestRule.onNodeWithText("Invalid price format").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText(ValidationError.PRICE_INVALID.message).performScrollTo().assertIsDisplayed()
   }
 }
 // Fixed Helper function - moved outside test class
