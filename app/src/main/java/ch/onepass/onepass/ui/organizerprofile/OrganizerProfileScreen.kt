@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -224,7 +225,7 @@ fun FollowSection(
     onFollowClick: () -> Unit = {},
 ) {
   Row(
-      horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+      horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically,
       modifier =
           modifier
@@ -256,7 +257,10 @@ fun FollowSection(
             text = "join $followersCount community",
             style =
                 Typography.titleMedium.copy(color = White, fontSize = 12.sp, lineHeight = 20.sp),
-            modifier = Modifier.testTag(OrganizerProfileTestTags.FOLLOWERS_TEXT))
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentWidth(Alignment.CenterHorizontally)
+                .testTag(OrganizerProfileTestTags.FOLLOWERS_TEXT))
       }
 }
 
@@ -376,7 +380,7 @@ fun OrganizerProfileScreen(
 @Preview
 @Composable
 fun OrganizerProfileContent(
-    name: String = "Lausanne - best organizer",
+    name: String = "No Title",
     description: String =
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vitae nisi nec magna consequat tincidunt. Curabitur suscipit sem vel.",
     bannerImageRes: Int = R.drawable.image_fallback,
