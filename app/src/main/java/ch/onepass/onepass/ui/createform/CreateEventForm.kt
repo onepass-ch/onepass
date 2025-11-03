@@ -226,7 +226,7 @@ fun DatePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
           Button(
               onClick = {
                 datePickerState.selectedDateMillis?.let { millis ->
-                  val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.FRENCH)
+                  val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
                   val date = Date(millis)
                   onValueChange(sdf.format(date))
                 }
