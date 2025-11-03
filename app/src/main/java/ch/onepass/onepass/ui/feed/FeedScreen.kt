@@ -237,8 +237,6 @@ private fun EventListContent(
           }
         }
       }
-    }
-  }
 }
 
 /** Loading state indicator. */
