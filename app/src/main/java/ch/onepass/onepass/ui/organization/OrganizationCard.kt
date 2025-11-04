@@ -211,13 +211,27 @@ private fun formatDate(timestamp: Timestamp): String {
 private fun formatFollowerCount(count: Int): String {
   return when {
     count < 1000 -> count.toString()
-    count < 1_000_000 -> {
+    count < 10_000 -> {
       val k = count / 1000.0
-      if (k % 1 == 0.0) "${k.toInt()}k" else "%.1fk".format(k)
+      if (k % 1.0 == 0.0) "${k.toInt()}k"
+      else String.format("%.2fk", k).replace(Regex("\\.?0+k$"), "k")
     }
-    else -> {
+    count < 100_000 -> {
+      val k = count / 1000.0
+      if (k % 1.0 == 0.0) "${k.toInt()}k"
+      else String.format("%.1fk", k).replace(Regex("\\.?0+k$"), "k")
+    }
+    count < 1_000_000 -> String.format("%dk", count / 1000)
+    count < 10_000_000 -> {
       val m = count / 1_000_000.0
-      if (m % 1 == 0.0) "${m.toInt()}M" else "%.1fM".format(m)
+      if (m % 1.0 == 0.0) "${m.toInt()}M"
+      else String.format("%.2fM", m).replace(Regex("\\.?0+M$"), "M")
     }
+    count < 100_000_000 -> {
+      val m = count / 1_000_000.0
+      if (m % 1.0 == 0.0) "${m.toInt()}M"
+      else String.format("%.1fM", m).replace(Regex("\\.?0+M$"), "M")
+    }
+    else -> String.format("%dM", count / 1_000_000)
   }
 }
