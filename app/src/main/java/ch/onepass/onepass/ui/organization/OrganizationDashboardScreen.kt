@@ -1,11 +1,16 @@
 package ch.onepass.onepass.ui.organization
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.KeyboardArrowDown
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -17,6 +22,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.R
+import ch.onepass.onepass.model.event.Event
+import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.TextSecondary
@@ -190,13 +198,13 @@ private fun DashboardContent(
             rating = organization.averageRating,
             onClick = { onNavigateToProfile(organization.id) })
 
-        // Manage Events Section - Placeholder for PR4
-        Text(
-            text = "MANAGE EVENTS",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.testTag(OrganizationDashboardTestTags.MANAGE_EVENTS_SECTION))
+        // Manage Events Section
+        ManageEventsSection(
+            events = uiState.events,
+            currentUserRole = uiState.currentUserRole,
+            onCreateEvent = { onNavigateToCreateEvent(organization.id) },
+            onScanTickets = onNavigateToScanTickets,
+            onEditEvent = onNavigateToEditEvent)
 
         // Manage Staff Section - Placeholder for PR5
         Text(
@@ -283,6 +291,217 @@ private fun OrganizationSummaryCard(
               }
             }
       }
+}
+
+/**
+ * Displays the "Manage Events" section, including the "Create new event" button and the expandable
+ * "Your events" list.
+ *
+ * @param events The list of events for the organization.
+ * @param currentUserRole The role of the currently logged-in user.
+ * @param onCreateEvent Callback for the "Create new event" button.
+ * @param onScanTickets Callback for the "Scan" button on an event card.
+ * @param onEditEvent Callback for the "Edit" button on an event card.
+ */
+@Composable
+private fun ManageEventsSection(
+    events: List<Event>,
+    currentUserRole: OrganizationRole?,
+    onCreateEvent: () -> Unit,
+    onScanTickets: (String) -> Unit,
+    onEditEvent: (String) -> Unit
+) {
+  var eventsExpanded by remember { mutableStateOf(false) }
+
+  Column(
+      modifier =
+          Modifier.fillMaxWidth().testTag(OrganizationDashboardTestTags.MANAGE_EVENTS_SECTION)) {
+        Text(
+            text = "MANAGE EVENTS",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Create New Event Button
+        Button(
+            onClick = onCreateEvent,
+            modifier =
+                Modifier.fillMaxWidth().testTag(OrganizationDashboardTestTags.CREATE_EVENT_BUTTON),
+            colors = ButtonDefaults.buttonColors(containerColor = EventDateColor),
+            shape = RoundedCornerShape(6.dp)) {
+              Icon(
+                  imageVector = Icons.Default.Add,
+                  contentDescription = "Create",
+                  modifier = Modifier.size(20.dp))
+              Spacer(modifier = Modifier.width(8.dp))
+              Text(text = "Create new event", style = MaterialTheme.typography.bodyLarge)
+            }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Your Events Dropdown
+        Surface(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .shadow(elevation = 4.dp, shape = RoundedCornerShape(6.dp))
+                    .clickable { eventsExpanded = !eventsExpanded }
+                    .testTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN),
+            shape = RoundedCornerShape(6.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant) {
+              Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically) {
+                      Text(
+                          text = "Your events",
+                          style = MaterialTheme.typography.bodyLarge,
+                          color = MaterialTheme.colorScheme.onSurfaceVariant)
+                      Icon(
+                          imageVector =
+                              if (eventsExpanded) Icons.Default.KeyboardArrowUp
+                              else Icons.Default.KeyboardArrowDown,
+                          contentDescription = if (eventsExpanded) "Collapse" else "Expand",
+                          tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+
+                if (eventsExpanded) {
+                  HorizontalDivider(
+                      color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+
+                  if (events.isEmpty()) {
+                    Text(
+                        text = "No events created yet.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary,
+                        modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally))
+                  } else {
+                    events.forEach { event ->
+                      EventCard(
+                          event = event,
+                          currentUserRole = currentUserRole,
+                          onScanTickets = { onScanTickets(event.eventId) },
+                          onEditEvent = { onEditEvent(event.eventId) })
+                    }
+                  }
+                }
+              }
+            }
+      }
+}
+
+/**
+ * Displays a single event card within the "Your events" dropdown.
+ *
+ * This card shows event details and action buttons ("Scan", "Edit") based on user roles.
+ *
+ * @param event The [Event] to display.
+ * @param currentUserRole The role of the currently logged-in user, used to determine button
+ *   visibility.
+ * @param onScanTickets Callback for the "Scan" button.
+ * @param onEditEvent Callback for the "Edit" button.
+ */
+@Composable
+private fun EventCard(
+    event: Event,
+    currentUserRole: OrganizationRole?,
+    onScanTickets: () -> Unit,
+    onEditEvent: () -> Unit
+) {
+  val canEdit =
+      currentUserRole == OrganizationRole.MEMBER || currentUserRole == OrganizationRole.OWNER
+  val canScan = currentUserRole != null // All roles can scan
+
+  Column(
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(16.dp)
+              .testTag(OrganizationDashboardTestTags.getEventCardTag(event.eventId))) {
+        Text(
+            text = event.title.uppercase(),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis)
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+              Box(
+                  modifier =
+                      Modifier.size(8.dp)
+                          .background(
+                              color =
+                                  when (event.status.name.lowercase()) {
+                                    "upcoming" -> EventDateColor
+                                    "published" -> EventDateColor
+                                    else -> TextSecondary
+                                  },
+                              shape = RoundedCornerShape(2.dp)))
+              Text(
+                  text = event.status.name.lowercase().replaceFirstChar { it.uppercase() },
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = MaterialTheme.colorScheme.onSurface)
+            }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(
+            text = event.displayDateTime,
+            style = MaterialTheme.typography.bodySmall,
+            color = TextSecondary)
+
+        Text(
+            text = event.displayLocation,
+            style = MaterialTheme.typography.bodySmall,
+            color = TextSecondary)
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Action Buttons
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+              if (canScan) {
+                OutlinedButton(
+                    onClick = onScanTickets,
+                    modifier =
+                        Modifier.weight(1f)
+                            .testTag(
+                                OrganizationDashboardTestTags.getEventScanButtonTag(event.eventId)),
+                    colors =
+                        ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.onSurface),
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    shape = RoundedCornerShape(4.dp)) {
+                      Icon(
+                          painter = painterResource(id = R.drawable.qr_code_icon),
+                          contentDescription = "Scan",
+                          modifier = Modifier.size(20.dp))
+                    }
+              }
+
+              if (canEdit) {
+                Button(
+                    onClick = onEditEvent,
+                    modifier =
+                        Modifier.weight(if (canScan) 1f else 2f)
+                            .testTag(
+                                OrganizationDashboardTestTags.getEventEditButtonTag(event.eventId)),
+                    colors = ButtonDefaults.buttonColors(containerColor = EventDateColor),
+                    shape = RoundedCornerShape(4.dp)) {
+                      Text("Edit event")
+                    }
+              }
+            }
+      }
+
+  HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
 }
 
 /**
