@@ -115,7 +115,8 @@ fun TicketComponent(
               .testTag(MyEventsTestTags.TICKET_CARD),
       shape = RoundedCornerShape(12.dp),
       colors =
-          CardDefaults.cardColors(containerColor = colorResource(id = R.color.surface_card_color))) {
+          CardDefaults.cardColors(
+              containerColor = colorResource(id = R.color.surface_card_color))) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {

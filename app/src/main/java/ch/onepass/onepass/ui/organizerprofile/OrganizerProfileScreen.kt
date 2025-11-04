@@ -168,8 +168,9 @@ fun SocialMediaSection(
               horizontalArrangement = Arrangement.spacedBy(8.dp),
               verticalAlignment = Alignment.CenterVertically,
               modifier =
-                  Modifier.testTag(OrganizerProfileTestTags.WEBSITE_LINK)
-                      .clickable { onWebsiteClick() }) {
+                  Modifier.testTag(OrganizerProfileTestTags.WEBSITE_LINK).clickable {
+                    onWebsiteClick()
+                  }) {
                 Image(
                     painter = painterResource(id = R.drawable.internet_logo),
                     contentDescription = "Website icon",
@@ -257,10 +258,10 @@ fun FollowSection(
             text = "join $followersCount community",
             style =
                 Typography.titleMedium.copy(color = White, fontSize = 12.sp, lineHeight = 20.sp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentWidth(Alignment.CenterHorizontally)
-                .testTag(OrganizerProfileTestTags.FOLLOWERS_TEXT))
+            modifier =
+                Modifier.fillMaxWidth()
+                    .wrapContentWidth(Alignment.CenterHorizontally)
+                    .testTag(OrganizerProfileTestTags.FOLLOWERS_TEXT))
       }
 }
 
@@ -282,14 +283,13 @@ fun Tab(
     Text(
         text = text,
         style =
-            Typography.titleMedium.copy(
-                color = if (isSelected) selectedColor else unselectedColor),
+            Typography.titleMedium.copy(color = if (isSelected) selectedColor else unselectedColor),
         modifier =
-            Modifier.testTag(testTag)
-                .clickable { onTabSelected(tab) }
-                .padding(bottom = 4.dp))
+            Modifier.testTag(testTag).clickable { onTabSelected(tab) }.padding(bottom = 4.dp))
     if (isSelected) {
-      Spacer(modifier = Modifier.width(indicatorWidth.dp).height(2.dp).background(color = selectedColor))
+      Spacer(
+          modifier =
+              Modifier.width(indicatorWidth.dp).height(2.dp).background(color = selectedColor))
     }
   }
 }
@@ -334,8 +334,8 @@ fun TabSection(
 }
 
 /**
- * Main OrganizerProfileScreen that integrates with ViewModel.
- * This is the entry point for the organizer profile feature.
+ * Main OrganizerProfileScreen that integrates with ViewModel. This is the entry point for the
+ * organizer profile feature.
  */
 @Composable
 fun OrganizerProfileScreen(
@@ -368,7 +368,8 @@ fun OrganizerProfileScreen(
 }
 
 /**
- * This is just the preview of the OrganizerProfileContent composable independant of the viewModel for easier UI testing.
+ * This is just the preview of the OrganizerProfileContent composable independant of the viewModel
+ * for easier UI testing.
  */
 @Preview
 @Composable
@@ -423,7 +424,9 @@ fun OrganizerProfileContent(
 
         // Follow button and community count
         FollowSection(
-            followersCount = followersCount, isFollowing = isFollowing, onFollowClick = onFollowClick)
+            followersCount = followersCount,
+            isFollowing = isFollowing,
+            onFollowClick = onFollowClick)
 
         // Section separator
         Spacer(modifier = Modifier.height(50.dp))
@@ -442,19 +445,13 @@ fun OrganizerProfileContent(
       }
 }
 
-/**
- * Content for the Posts tab.
- * Currently empty, to be implemented in the future.
- */
+/** Content for the Posts tab. Currently empty, to be implemented in the future. */
 @Composable
 fun PostsTabContent(modifier: Modifier = Modifier) {
   // TODO: Implement posts content
   Column(
       modifier =
-          modifier
-              .fillMaxWidth()
-              .padding(top = 8.dp)
-              .testTag(OrganizerProfileTestTags.EVENT_LIST),
+          modifier.fillMaxWidth().padding(top = 8.dp).testTag(OrganizerProfileTestTags.EVENT_LIST),
       verticalArrangement = Arrangement.Center,
       horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
@@ -465,8 +462,8 @@ fun PostsTabContent(modifier: Modifier = Modifier) {
 }
 
 /**
- * Content for the Upcoming tab.
- * Shows events that are currently happening or will happen in the future.
+ * Content for the Upcoming tab. Shows events that are currently happening or will happen in the
+ * future.
  */
 @Composable
 fun UpcomingTabContent(
@@ -488,22 +485,21 @@ fun UpcomingTabContent(
               style = Typography.bodyMedium.copy(color = Color(0xFF808080)),
               modifier = Modifier.padding(32.dp))
         } else {
-          events.filter { event -> determineTicketStatus(event) != TicketStatus.EXPIRED}.forEach { event ->
-            TicketComponent(
-                title = event.title,
-                status = determineTicketStatus(event),
-                dateTime = event.displayDateTime,
-                location = event.displayLocation,
-                modifier = Modifier.clickable { onEventClick(event.eventId) })
-          }
+          events
+              .filter { event -> determineTicketStatus(event) != TicketStatus.EXPIRED }
+              .forEach { event ->
+                TicketComponent(
+                    title = event.title,
+                    status = determineTicketStatus(event),
+                    dateTime = event.displayDateTime,
+                    location = event.displayLocation,
+                    modifier = Modifier.clickable { onEventClick(event.eventId) })
+              }
         }
       }
 }
 
-/**
- * Content for the Past tab.
- * Shows events that have already ended.
- */
+/** Content for the Past tab. Shows events that have already ended. */
 @Composable
 fun PastTabContent(
     events: List<Event>,
@@ -524,14 +520,16 @@ fun PastTabContent(
               style = Typography.bodyMedium.copy(color = Color(0xFF808080)),
               modifier = Modifier.padding(32.dp))
         } else {
-          events.filter { event -> determineTicketStatus(event) == TicketStatus.EXPIRED }.forEach { event ->
-            TicketComponent(
-                title = event.title,
-                status = TicketStatus.EXPIRED,
-                dateTime = event.displayDateTime,
-                location = event.displayLocation,
-                modifier = Modifier.clickable { onEventClick(event.eventId) })
-          }
+          events
+              .filter { event -> determineTicketStatus(event) == TicketStatus.EXPIRED }
+              .forEach { event ->
+                TicketComponent(
+                    title = event.title,
+                    status = TicketStatus.EXPIRED,
+                    dateTime = event.displayDateTime,
+                    location = event.displayLocation,
+                    modifier = Modifier.clickable { onEventClick(event.eventId) })
+              }
         }
       }
 }

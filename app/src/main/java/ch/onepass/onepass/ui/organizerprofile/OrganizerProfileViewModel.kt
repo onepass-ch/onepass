@@ -9,7 +9,6 @@ import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import com.google.firebase.Timestamp
-import java.util.Date
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -64,15 +63,14 @@ private fun formatFollowersCount(count: Int): String {
       val thousands = count / 1000.0
       if (thousands % 1 == 0.0) "${thousands.toInt()}K"
       else {
-          // This fixes the rounding error where 999.95K would round to 1000.0K :)
-          val capped = thousands.coerceAtMost(999.9)
-          "%.1fK".format(capped)
+        // This fixes the rounding error where 999.95K would round to 1000.0K :)
+        val capped = thousands.coerceAtMost(999.9)
+        "%.1fK".format(capped)
       }
     }
     else -> {
       val millions = count / 1_000_000.0
-      if (millions % 1 == 0.0) "${millions.toInt()}M"
-      else "%.1fM".format(millions)
+      if (millions % 1 == 0.0) "${millions.toInt()}M" else "%.1fM".format(millions)
     }
   }
 }
@@ -98,7 +96,8 @@ open class OrganizerProfileViewModel(
   private val _state = MutableStateFlow(OrganizerProfileUiState())
   open val state: StateFlow<OrganizerProfileUiState> = _state.asStateFlow()
 
-  private val _effects = MutableSharedFlow<OrganizerProfileEffect>(replay = 0, extraBufferCapacity = 1)
+  private val _effects =
+      MutableSharedFlow<OrganizerProfileEffect>(replay = 0, extraBufferCapacity = 1)
   val effects = _effects.asSharedFlow()
 
   /**
@@ -120,18 +119,15 @@ open class OrganizerProfileViewModel(
             // This would require a user-organization relationship repository
           } else {
             _state.value =
-                _state.value.copy(
-                    loading = false, errorMessage = "Organization not found")
+                _state.value.copy(loading = false, errorMessage = "Organization not found")
           }
         }
       } catch (e: Exception) {
         _state.value =
             _state.value.copy(
-                loading = false,
-                errorMessage = e.message ?: "Failed to load organization profile")
+                loading = false, errorMessage = e.message ?: "Failed to load organization profile")
         _effects.tryEmit(
-            OrganizerProfileEffect.ShowError(
-                e.message ?: "Failed to load organization profile"))
+            OrganizerProfileEffect.ShowError(e.message ?: "Failed to load organization profile"))
       }
     }
   }
@@ -146,20 +142,16 @@ open class OrganizerProfileViewModel(
       try {
         eventRepository.getEventsByOrganization(organizationId).collect { events ->
           val now = Timestamp.now()
-          val (upcoming, past) = events.partition { event ->
-            event.endTime?.let { it.seconds >= now.seconds } ?: true
-          }
+          val (upcoming, past) =
+              events.partition { event -> event.endTime?.let { it.seconds >= now.seconds } ?: true }
 
           _state.value =
               _state.value.copy(
-                  upcomingEvents = upcoming,
-                  pastEvents = past,
-                  eventCount = events.size)
+                  upcomingEvents = upcoming, pastEvents = past, eventCount = events.size)
         }
       } catch (e: Exception) {
         _effects.tryEmit(
-            OrganizerProfileEffect.ShowError(
-                e.message ?: "Failed to load organization events"))
+            OrganizerProfileEffect.ShowError(e.message ?: "Failed to load organization events"))
       }
     }
   }
@@ -180,8 +172,7 @@ open class OrganizerProfileViewModel(
                     else currentState.followersCount + 1)
       } catch (e: Exception) {
         _effects.tryEmit(
-            OrganizerProfileEffect.ShowError(
-                e.message ?: "Failed to update follow status"))
+            OrganizerProfileEffect.ShowError(e.message ?: "Failed to update follow status"))
       }
     }
   }
