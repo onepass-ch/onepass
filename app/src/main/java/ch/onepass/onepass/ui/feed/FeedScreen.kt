@@ -5,7 +5,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -65,7 +64,6 @@ fun FeedScreen(
   val uiState by viewModel.uiState.collectAsState()
   val currentFilters by filterViewModel.currentFilters.collectAsState()
 
-  var showFilterDialog by rememberSaveable { mutableStateOf(false) }
   // Load events when screen is first displayed
   LaunchedEffect(Unit) { viewModel.loadEvents() }
   // Apply filters when they change OR when events are loaded
@@ -83,7 +81,7 @@ fun FeedScreen(
               currentLocation = uiState.location,
               currentDateRange = "WELCOME",
               onCalendarClick = onNavigateToCalendar,
-              onFilterClick = { showFilterDialog = true },
+              onFilterClick = { viewModel.setShowFilterDialog(true) },
           )
           if (currentFilters.hasActiveFilters) {
             ActiveFiltersBar(
@@ -122,14 +120,14 @@ fun FeedScreen(
         }
       }
       // Filter Dialog
-      if (showFilterDialog) {
+      if (uiState.showFilterDialog) {
         FilterDialog(
-            currentFilters = currentFilters,
+            viewModel = filterViewModel,
             onApply = { newFilters ->
               filterViewModel.applyFilters(newFilters)
-              showFilterDialog = false
+              viewModel.setShowFilterDialog(false)
             },
-            onDismiss = { showFilterDialog = false },
+            onDismiss = { viewModel.setShowFilterDialog(false) },
         )
       }
     }

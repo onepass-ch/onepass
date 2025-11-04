@@ -24,6 +24,7 @@ data class FeedUIState(
     val isLoading: Boolean = false,
     val error: String? = null,
     val location: String = "SWITZERLAND",
+    val showFilterDialog: Boolean = false,
 )
 
 /**
@@ -104,5 +105,9 @@ class FeedViewModel(
    */
   fun setLocation(location: String) {
     _uiState.update { it.copy(location = location) }
+  }
+
+  fun setShowFilterDialog(show: Boolean) {
+    _uiState.update { it.copy(showFilterDialog = show) }
   }
 }
