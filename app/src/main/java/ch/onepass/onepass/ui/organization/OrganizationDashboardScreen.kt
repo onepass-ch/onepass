@@ -16,6 +16,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -25,6 +26,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventStatus
+import ch.onepass.onepass.model.organization.OrganizationMember
 import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
@@ -207,13 +209,12 @@ private fun DashboardContent(
             onScanTickets = onNavigateToScanTickets,
             onEditEvent = onNavigateToEditEvent)
 
-        // Manage Staff Section - Placeholder for PR5
-        Text(
-            text = "MANAGE STAFF",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.testTag(OrganizationDashboardTestTags.MANAGE_STAFF_SECTION))
+        // Manage Staff Section
+        ManageStaffSection(
+            staffMembers = uiState.staffMembers,
+            currentUserRole = uiState.currentUserRole,
+            onAddStaff = { onNavigateToAddStaff(organization.id) },
+            onRemoveStaff = onRemoveStaff)
       }
 }
 
@@ -500,6 +501,174 @@ private fun EventCard(
                     }
               }
             }
+      }
+
+  HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+}
+
+/**
+ * Displays the "Manage Staff" section, including the "Add new staff" button and the expandable
+ * "Staff list" dropdown.
+ *
+ * @param staffMembers A map of user IDs to [OrganizationMember] objects.
+ * @param currentUserRole The role of the currently logged-in user.
+ * @param onAddStaff Callback for the "Add new staff" button.
+ * @param onRemoveStaff Callback for removing a staff member.
+ */
+@Composable
+private fun ManageStaffSection(
+    staffMembers: Map<String, OrganizationMember>,
+    currentUserRole: OrganizationRole?,
+    onAddStaff: () -> Unit,
+    onRemoveStaff: (String) -> Unit
+) {
+  var staffExpanded by remember { mutableStateOf(false) }
+  val canManageStaff = currentUserRole == OrganizationRole.OWNER
+
+  Column(
+      modifier =
+          Modifier.fillMaxWidth().testTag(OrganizationDashboardTestTags.MANAGE_STAFF_SECTION)) {
+        Text(
+            text = "MANAGE STAFF",
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onSurface)
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Add New Staff Button
+        Button(
+            onClick = onAddStaff,
+            modifier =
+                Modifier.fillMaxWidth().testTag(OrganizationDashboardTestTags.ADD_STAFF_BUTTON),
+            colors = ButtonDefaults.buttonColors(containerColor = EventDateColor),
+            shape = RoundedCornerShape(6.dp)) {
+              Icon(
+                  painter = painterResource(id = android.R.drawable.ic_input_add),
+                  contentDescription = "Add",
+                  modifier = Modifier.size(20.dp))
+              Spacer(modifier = Modifier.width(8.dp))
+              Text(text = "Add new staff", style = MaterialTheme.typography.bodyLarge)
+            }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Staff List Dropdown
+        Surface(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .shadow(elevation = 4.dp, shape = RoundedCornerShape(6.dp))
+                    .clickable { staffExpanded = !staffExpanded }
+                    .testTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN),
+            shape = RoundedCornerShape(6.dp),
+            color = MaterialTheme.colorScheme.surfaceVariant) {
+              Column {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically) {
+                      Text(
+                          text = "Staff list",
+                          style = MaterialTheme.typography.bodyLarge,
+                          color = MaterialTheme.colorScheme.onSurfaceVariant)
+                      Icon(
+                          imageVector =
+                              if (staffExpanded) Icons.Default.KeyboardArrowUp
+                              else Icons.Default.KeyboardArrowDown,
+                          contentDescription = if (staffExpanded) "Collapse" else "Expand",
+                          tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+
+                if (staffExpanded) {
+                  HorizontalDivider(
+                      color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+
+                  if (staffMembers.isEmpty()) {
+                    Text(
+                        text = "No staff members added yet.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = TextSecondary,
+                        modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally))
+                  } else {
+                    staffMembers.forEach { (userId, member) ->
+                      StaffItem(
+                          userId = userId,
+                          email = userId, // In real implementation, fetch from user repository once
+                          // implemented (current user repository doesn't offer such
+                          // methods)
+                          role = member.role,
+                          canRemove = canManageStaff && member.role != OrganizationRole.OWNER,
+                          onRemove = { onRemoveStaff(userId) })
+                    }
+                  }
+                }
+              }
+            }
+      }
+}
+
+/**
+ * Displays a single staff member in the "Staff list".
+ *
+ * @param userId The unique ID of the staff member.
+ * @param email The email (or display name) of the staff member.
+ * @param role The [OrganizationRole] of the staff member.
+ * @param canRemove Whether the current user has permission to remove this member.
+ * @param onRemove Callback invoked when the remove button is clicked.
+ */
+@Composable
+private fun StaffItem(
+    userId: String,
+    email: String,
+    role: OrganizationRole,
+    canRemove: Boolean,
+    onRemove: () -> Unit
+) {
+  Row(
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(16.dp)
+              .testTag(OrganizationDashboardTestTags.getStaffItemTag(userId)),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically) {
+        Column(modifier = Modifier.weight(1f)) {
+          Text(
+              text = email,
+              style = MaterialTheme.typography.bodyMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Surface(
+            shape = RoundedCornerShape(4.dp),
+            color =
+                when (role) {
+                  OrganizationRole.OWNER -> EventDateColor
+                  OrganizationRole.MEMBER -> MaterialTheme.colorScheme.primary
+                  OrganizationRole.STAFF -> MaterialTheme.colorScheme.secondary
+                }) {
+              Text(
+                  text = role.name,
+                  style = MaterialTheme.typography.labelMedium,
+                  color = Color.White,
+                  modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+            }
+
+        if (canRemove) {
+          Spacer(modifier = Modifier.width(8.dp))
+          IconButton(
+              onClick = onRemove,
+              modifier =
+                  Modifier.size(32.dp)
+                      .testTag(OrganizationDashboardTestTags.getStaffRemoveButtonTag(userId))) {
+                Icon(
+                    painter = painterResource(id = android.R.drawable.ic_menu_close_clear_cancel),
+                    contentDescription = "Remove",
+                    tint = TextSecondary,
+                    modifier = Modifier.size(20.dp))
+              }
+        }
       }
 
   HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
