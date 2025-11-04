@@ -108,6 +108,12 @@ class OrganizationDashboardScreenTest {
     composeTestRule
         .onNodeWithTag(OrganizationDashboardTestTags.MANAGE_EVENTS_SECTION)
         .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.CREATE_EVENT_BUTTON)
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN)
+        .assertIsDisplayed()
   }
 
   @Test
@@ -123,6 +129,112 @@ class OrganizationDashboardScreenTest {
     composeTestRule
         .onNodeWithTag(OrganizationDashboardTestTags.MANAGE_STAFF_SECTION)
         .assertIsDisplayed()
+  }
+
+  @Test
+  fun organizationDashboardScreen_expandsYourEventsDropdown() {
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)))
+    setScreen(viewModel = viewModel)
+
+    waitForTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN)
+
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule
+        .onNode(
+            hasTestTag(OrganizationDashboardTestTags.getEventCardTag("event-1")),
+            useUnmergedTree = true)
+        .assertIsDisplayed()
+    composeTestRule
+        .onNode(
+            hasTestTag(OrganizationDashboardTestTags.getEventCardTag("event-2")),
+            useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun organizationDashboardScreen_clicksCreateEventButton() {
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository())
+    var clicked = false
+    setScreen(viewModel = viewModel, onNavigateToCreateEvent = { clicked = true })
+
+    waitForTag(OrganizationDashboardTestTags.CREATE_EVENT_BUTTON)
+
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.CREATE_EVENT_BUTTON).performClick()
+    assert(clicked)
+  }
+
+  @Test
+  fun organizationDashboardScreen_clicksEventScanButton() {
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(events = listOf(testEvent1)),
+            auth = mockAuth)
+    var clickedEventId: String? = null
+    setScreen(viewModel = viewModel, onNavigateToScanTickets = { clickedEventId = it })
+
+    waitForTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN)
+
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntil(timeoutMillis = 3000) {
+      composeTestRule
+          .onAllNodes(
+              hasTestTag(OrganizationDashboardTestTags.getEventScanButtonTag("event-1")),
+              useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNode(
+            hasTestTag(OrganizationDashboardTestTags.getEventScanButtonTag("event-1")),
+            useUnmergedTree = true)
+        .performClick()
+
+    assert(clickedEventId == "event-1")
+  }
+
+  @Test
+  fun organizationDashboardScreen_clicksEventEditButton() {
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(events = listOf(testEvent1)),
+            auth = mockAuth)
+    var clickedEventId: String? = null
+    setScreen(viewModel = viewModel, onNavigateToEditEvent = { clickedEventId = it })
+
+    waitForTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN)
+
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntil(timeoutMillis = 3000) {
+      composeTestRule
+          .onAllNodes(
+              hasTestTag(OrganizationDashboardTestTags.getEventEditButtonTag("event-1")),
+              useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNode(
+            hasTestTag(OrganizationDashboardTestTags.getEventEditButtonTag("event-1")),
+            useUnmergedTree = true)
+        .performClick()
+
+    assert(clickedEventId == "event-1")
   }
 
   @Test
@@ -194,5 +306,21 @@ class OrganizationDashboardScreenTest {
 
     composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.ORG_SUMMARY_CARD).performClick()
     assert(clickedOrgId == "test-org-1")
+  }
+
+  @Test
+  fun organizationDashboardScreen_displaysNoEventsMessage() {
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(events = emptyList()))
+    setScreen(viewModel = viewModel)
+
+    waitForTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN)
+
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithText("No events created yet.").assertIsDisplayed()
   }
 }
