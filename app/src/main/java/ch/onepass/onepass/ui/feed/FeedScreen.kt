@@ -19,6 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.ui.event.EventCard
+import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
 import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
 import ch.onepass.onepass.ui.eventfilters.FilterDialog
@@ -211,29 +212,31 @@ private fun EventListContent(
     isLoadingMore: Boolean,
     onEventClick: (String) -> Unit,
 ) {
+  val eventCardViewModel = EventCardViewModel.getInstance()
+  val likedEvents by eventCardViewModel.likedEvents.collectAsState()
+
   LazyColumn(
       modifier = Modifier.fillMaxSize().testTag(FeedScreenTestTags.EVENT_LIST),
       contentPadding = PaddingValues(16.dp),
-      verticalArrangement = Arrangement.spacedBy(24.dp),
-  ) {
-    items(items = events, key = { it.eventId }) { event ->
-      EventCard(
-          event = event,
-          modifier = Modifier.testTag(FeedScreenTestTags.getTestTagForEventItem(event.eventId)),
-          onCardClick = { onEventClick(event.eventId) },
-      )
-    }
-    if (isLoadingMore && events.isNotEmpty()) {
-      item {
-        Box(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-          LoadingState()
+      verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        items(items = events, key = { it.eventId }) { event ->
+          EventCard(
+              event = event,
+              modifier = Modifier.testTag(FeedScreenTestTags.getTestTagForEventItem(event.eventId)),
+              isLiked = likedEvents.contains(event.eventId),
+              onLikeToggle = { eventId -> eventCardViewModel.toggleLike(eventId) },
+              onCardClick = { onEventClick(event.eventId) })
+        }
+        if (isLoadingMore && events.isNotEmpty()) {
+          item {
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                contentAlignment = Alignment.Center) {
+                  LoadingState()
+                }
+          }
         }
       }
-    }
-  }
 }
 
 /** Loading state indicator. */
