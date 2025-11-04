@@ -265,14 +265,41 @@ fun FollowSection(
 }
 
 @Composable
+fun Tab(
+    text: String,
+    tab: OrganizerProfileTab,
+    selectedTab: OrganizerProfileTab,
+    indicatorWidth: Int,
+    onTabSelected: (OrganizerProfileTab) -> Unit,
+    testTag: String,
+    modifier: Modifier = Modifier
+) {
+  val selectedColor = Color(0xFF8F60A0)
+  val unselectedColor = Color(0xFF808080)
+  val isSelected = selectedTab == tab
+
+  Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
+    Text(
+        text = text,
+        style =
+            Typography.titleMedium.copy(
+                color = if (isSelected) selectedColor else unselectedColor),
+        modifier =
+            Modifier.testTag(testTag)
+                .clickable { onTabSelected(tab) }
+                .padding(bottom = 4.dp))
+    if (isSelected) {
+      Spacer(modifier = Modifier.width(indicatorWidth.dp).height(2.dp).background(color = selectedColor))
+    }
+  }
+}
+
+@Composable
 fun TabSection(
     selectedTab: OrganizerProfileTab = OrganizerProfileTab.UPCOMING,
     onTabSelected: (OrganizerProfileTab) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-  val selectedColor = Color(0xFF8F60A0)
-  val unselectedColor = Color(0xFF808080)
-
   Row(
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically,
@@ -282,61 +309,27 @@ fun TabSection(
               .wrapContentHeight()
               .padding(horizontal = 20.dp)
               .testTag(OrganizerProfileTestTags.TAB_SECTION)) {
-      // TODO: remove duplication with tabs in MyEventsScreen
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          Text(
-              text = "Posts",
-              style =
-                  Typography.titleMedium.copy(
-                      color =
-                          if (selectedTab == OrganizerProfileTab.POSTS) selectedColor
-                          else unselectedColor),
-              modifier =
-                  Modifier.testTag(OrganizerProfileTestTags.TAB_POSTS)
-                      .clickable { onTabSelected(OrganizerProfileTab.POSTS) }
-                      .padding(bottom = 4.dp))
-          if (selectedTab == OrganizerProfileTab.POSTS) {
-            Spacer(
-                modifier =
-                    Modifier.width(50.dp).height(2.dp).background(color = selectedColor))
-          }
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          Text(
-              text = "UPCOMING",
-              style =
-                  Typography.titleMedium.copy(
-                      color =
-                          if (selectedTab == OrganizerProfileTab.UPCOMING) selectedColor
-                          else unselectedColor),
-              modifier =
-                  Modifier.testTag(OrganizerProfileTestTags.TAB_UPCOMING)
-                      .clickable { onTabSelected(OrganizerProfileTab.UPCOMING) }
-                      .padding(bottom = 4.dp))
-          if (selectedTab == OrganizerProfileTab.UPCOMING) {
-            Spacer(
-                modifier =
-                    Modifier.width(80.dp).height(2.dp).background(color = selectedColor))
-          }
-        }
-        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-          Text(
-              text = "PAST",
-              style =
-                  Typography.titleMedium.copy(
-                      color =
-                          if (selectedTab == OrganizerProfileTab.PAST) selectedColor
-                          else unselectedColor),
-              modifier =
-                  Modifier.testTag(OrganizerProfileTestTags.TAB_PAST)
-                      .clickable { onTabSelected(OrganizerProfileTab.PAST) }
-                      .padding(bottom = 4.dp))
-          if (selectedTab == OrganizerProfileTab.PAST) {
-            Spacer(
-                modifier =
-                    Modifier.width(40.dp).height(2.dp).background(color = selectedColor))
-          }
-        }
+        Tab(
+            text = "Posts",
+            tab = OrganizerProfileTab.POSTS,
+            selectedTab = selectedTab,
+            indicatorWidth = 50,
+            onTabSelected = onTabSelected,
+            testTag = OrganizerProfileTestTags.TAB_POSTS)
+        Tab(
+            text = "UPCOMING",
+            tab = OrganizerProfileTab.UPCOMING,
+            selectedTab = selectedTab,
+            indicatorWidth = 80,
+            onTabSelected = onTabSelected,
+            testTag = OrganizerProfileTestTags.TAB_UPCOMING)
+        Tab(
+            text = "PAST",
+            tab = OrganizerProfileTab.PAST,
+            selectedTab = selectedTab,
+            indicatorWidth = 40,
+            onTabSelected = onTabSelected,
+            testTag = OrganizerProfileTestTags.TAB_PAST)
       }
 }
 

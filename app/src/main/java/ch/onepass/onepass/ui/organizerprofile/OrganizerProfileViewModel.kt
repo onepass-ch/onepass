@@ -63,7 +63,11 @@ private fun formatFollowersCount(count: Int): String {
     count < 1_000_000 -> {
       val thousands = count / 1000.0
       if (thousands % 1 == 0.0) "${thousands.toInt()}K"
-      else "%.1fK".format(thousands)
+      else {
+          // This fixes the rounding error where 999.95K would round to 1000.0K :)
+          val capped = thousands.coerceAtMost(999.9)
+          "%.1fK".format(capped)
+      }
     }
     else -> {
       val millions = count / 1_000_000.0
@@ -165,6 +169,7 @@ open class OrganizerProfileViewModel(
     viewModelScope.launch {
       try {
         // TODO: Implement follow/unfollow logic with user-organization relationship
+        // this can't be done until  we have user list of organizations they follow
         // For now, just toggle the state locally
         val currentState = _state.value
         _state.value =
@@ -184,7 +189,6 @@ open class OrganizerProfileViewModel(
   /** Handles tab selection changes */
   fun onTabSelected(tab: OrganizerProfileTab) {
     _state.value = _state.value.copy(selectedTab = tab)
-    // TODO: Load events based on selected tab (posts/upcoming/past)
   }
 
   /** Handles website link clicks */
@@ -230,7 +234,7 @@ private fun Organization.toUiState(): OrganizerProfileUiState {
       tiktokUrl = tiktok,
       facebookUrl = facebook,
       followersCount = followerCount,
-      isFollowing = false, // TODO: Determine from user-organization relationship
+      isFollowing = false, // TODO: Determine from user-organization relationship, needs change !
       isVerified = verified,
       eventCount = eventIds.size,
       loading = false)
