@@ -7,6 +7,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+
+/** UI state for the filter dialog, including temporary selections. */
 data class FilterUIState(
     val localFilters: EventFilters = EventFilters(),
     val expandedRegion: Boolean = false,
@@ -16,14 +18,17 @@ data class FilterUIState(
     val tempEndDate: Long? = null,
 )
 
-/** Shared ViewModel for managing event filters across multiple screens. */
+/**
+ * Shared [ViewModel] to manage event filters both locally in the dialog
+ * and globally across screens.
+ */
 class EventFilterViewModel : ViewModel() {
 
-  // --- UI state ---
+  /** Current UI state inside the filter dialog. */
   private val _uiState = MutableStateFlow(FilterUIState())
   val uiState: StateFlow<FilterUIState> = _uiState
 
-  // --- Business-level filters (used across screens) ---
+  /** Global filters applied across the app. */
   private val _currentFilters = MutableStateFlow(EventFilters())
   val currentFilters: StateFlow<EventFilters> = _currentFilters
 
@@ -42,10 +47,12 @@ class EventFilterViewModel : ViewModel() {
     _uiState.value = _uiState.value.copy(showDatePicker = visible)
   }
 
+  /** Sets temporary start date for custom date range. */
   fun setTempStartDate(date: Long) {
     _uiState.value = _uiState.value.copy(tempStartDate = date, tempEndDate = null)
   }
 
+  /** Sets temporary end date for custom date range, if valid. */
   fun setTempEndDate(date: Long) {
     val start = _uiState.value.tempStartDate
     if (start != null && date >= start) {
@@ -53,6 +60,7 @@ class EventFilterViewModel : ViewModel() {
     }
   }
 
+  /** Confirms selected date range and updates the local filters. */
   fun confirmDateRange() {
     val start = _uiState.value.tempStartDate
     val end = _uiState.value.tempEndDate

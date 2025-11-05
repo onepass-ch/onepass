@@ -21,6 +21,7 @@ import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.eventfilters.SwissRegions
 import java.util.*
 
+/** Test tags for UI elements in the filter dialog. */
 object FeedScreenTestTags {
   const val FILTER_DIALOG = "filterDialog"
   const val REGION_DROPDOWN = "regionDropdown"
@@ -32,6 +33,13 @@ object FeedScreenTestTags {
   const val RESET_FILTERS_BUTTON = "resetFiltersButton"
 }
 
+/**
+ * Full-screen dialog allowing users to select filters for events.
+ *
+ * @param viewModel [EventFilterViewModel] providing filter state.
+ * @param onApply Callback invoked with updated [EventFilters].
+ * @param onDismiss Callback invoked when the dialog is dismissed.
+ */
 @Composable
 fun FilterDialog(
     viewModel: EventFilterViewModel = viewModel(),
@@ -89,6 +97,7 @@ fun FilterDialog(
   }
 }
 
+/** Displays a dropdown menu for selecting the event region. */
 @Composable
 private fun RegionFilter(
     uiState: FilterUIState = FilterUIState(),
@@ -131,6 +140,8 @@ private fun RegionFilter(
   }
 }
 
+
+/** Displays chips for selecting a date range or custom range via date picker. */
 @Composable
 private fun DateRangeFilter(
     uiState: FilterUIState = FilterUIState(),
@@ -198,6 +209,7 @@ private fun DateRangeFilter(
   }
 }
 
+/** Shows a checkbox to hide sold out events. */
 @Composable
 private fun AvailabilityFilter(filters: EventFilters, onFiltersChanged: (EventFilters) -> Unit) {
   FilterSection("Availability") {
@@ -215,6 +227,7 @@ private fun AvailabilityFilter(filters: EventFilters, onFiltersChanged: (EventFi
   }
 }
 
+/** Section wrapper with a title and content. */
 @Composable
 private fun FilterSection(title: String, content: @Composable () -> Unit) {
   Column(Modifier.fillMaxWidth()) {
@@ -227,6 +240,9 @@ private fun FilterSection(title: String, content: @Composable () -> Unit) {
   }
 }
 
+/**
+ * Dialog to pick a custom start and end date for filtering events.
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DateRangePickerDialog(
@@ -288,6 +304,8 @@ private fun DateRangePickerDialog(
       dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }
 
+
+/** Extends a [ClosedRange] to include the full end-of-day time for the end date. */
 private fun ClosedRange<Long>.inclusiveEndOfDay(): ClosedRange<Long> {
   val cal = Calendar.getInstance().apply { timeInMillis = this@inclusiveEndOfDay.endInclusive }
   cal.set(Calendar.HOUR_OF_DAY, 23)
