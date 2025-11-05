@@ -121,8 +121,8 @@ class FilterDialogTest {
     composeTestRule.setContent { OnePassTheme { FilterDialog() } }
 
     composeTestRule.onNodeWithText("Pick dates").performClick()
-    composeTestRule.onNodeWithText("Select Date Range").assertIsDisplayed()
-    composeTestRule.onNodeWithText("OK").performClick()
+    composeTestRule.onNodeWithText("When ?").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Cancel").performClick()
     composeTestRule.onNodeWithText("Filter Events").assertIsDisplayed()
   }
 
