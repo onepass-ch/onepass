@@ -15,6 +15,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.model.eventfilters.DateRangePresets
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.eventfilters.SwissRegions
@@ -31,11 +32,11 @@ object FeedScreenTestTags {
 
 @Composable
 fun FilterDialog(
-    currentFilters: EventFilters,
-    onApply: (EventFilters) -> Unit,
-    onDismiss: () -> Unit,
+    viewModel: EventFilterViewModel = viewModel(),
+    onApply: (EventFilters) -> Unit = {},
+    onDismiss: () -> Unit = {},
 ) {
-  var localFilters by remember { mutableStateOf(currentFilters) }
+  val uiState by viewModel.uiState.collectAsState()
   Dialog(
       onDismissRequest = onDismiss,
       properties = DialogProperties(usePlatformDefaultWidth = false),
@@ -52,24 +53,24 @@ fun FilterDialog(
             modifier = Modifier.padding(bottom = 16.dp),
         )
         Column(Modifier.verticalScroll(rememberScrollState()).weight(1f, false)) {
-          RegionFilter(localFilters) { localFilters = it }
+          RegionFilter(uiState, viewModel::updateLocalFilters, viewModel::toggleRegionDropdown)
           Spacer(Modifier.height(24.dp))
-          DateRangeFilter(localFilters) { localFilters = it }
+          DateRangeFilter(uiState, viewModel::updateLocalFilters, viewModel::toggleDatePicker)
           Spacer(Modifier.height(24.dp))
-          AvailabilityFilter(localFilters) { localFilters = it }
+          AvailabilityFilter(uiState.localFilters, viewModel::updateLocalFilters)
         }
         Spacer(Modifier.height(24.dp))
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
           TextButton(
-              onClick = { localFilters = EventFilters() },
-              enabled = localFilters.hasActiveFilters,
+              onClick = { viewModel.resetLocalFilters() },
+              enabled = uiState.localFilters.hasActiveFilters,
               modifier = Modifier.testTag(FeedScreenTestTags.RESET_FILTERS_BUTTON),
           ) {
             Text("Reset All")
           }
           Button(
-              onClick = { onApply(localFilters) },
-              enabled = localFilters != currentFilters,
+              onClick = { onApply(uiState.localFilters) },
+              enabled = uiState.localFilters != viewModel.currentFilters.collectAsState().value,
               modifier = Modifier.testTag(FeedScreenTestTags.APPLY_FILTERS_BUTTON),
           ) {
             Text("Apply Filters")
@@ -81,23 +82,30 @@ fun FilterDialog(
 }
 
 @Composable
-private fun RegionFilter(filters: EventFilters, onFiltersChanged: (EventFilters) -> Unit) {
-  var expanded by remember { mutableStateOf(false) }
+private fun RegionFilter(
+    uiState: FilterUIState = FilterUIState(),
+    onFiltersChanged: (EventFilters) -> Unit = {},
+    onExpandedChange: (Boolean) -> Unit = {},
+) {
   FilterSection("Region") {
     Box(Modifier.fillMaxWidth()) {
       OutlinedButton(
-          onClick = { expanded = true },
+          onClick = { onExpandedChange(true) },
           modifier = Modifier.fillMaxWidth().testTag(FeedScreenTestTags.REGION_DROPDOWN),
       ) {
-        Text(filters.region ?: SwissRegions.ALL_REGIONS, Modifier.weight(1f))
+        Text(uiState.localFilters.region ?: SwissRegions.ALL_REGIONS, Modifier.weight(1f))
         Icon(Icons.Default.ArrowDropDown, "Select region")
       }
-      DropdownMenu(expanded, { expanded = false }, Modifier.fillMaxWidth(0.8f)) {
+      DropdownMenu(
+          expanded = uiState.expandedRegion,
+          onDismissRequest = { onExpandedChange(false) },
+          modifier = Modifier.fillMaxWidth(0.8f),
+      ) {
         DropdownMenuItem(
             text = { Text(SwissRegions.ALL_REGIONS) },
             onClick = {
-              onFiltersChanged(filters.copy(region = null))
-              expanded = false
+              onFiltersChanged(uiState.localFilters.copy(region = null))
+              onExpandedChange(false)
             },
         )
         HorizontalDivider(Modifier, DividerDefaults.Thickness, DividerDefaults.color)
@@ -105,8 +113,8 @@ private fun RegionFilter(filters: EventFilters, onFiltersChanged: (EventFilters)
           DropdownMenuItem(
               text = { Text(region) },
               onClick = {
-                onFiltersChanged(filters.copy(region = region))
-                expanded = false
+                onFiltersChanged(uiState.localFilters.copy(region = region))
+                onExpandedChange(false)
               },
           )
         }
@@ -116,8 +124,11 @@ private fun RegionFilter(filters: EventFilters, onFiltersChanged: (EventFilters)
 }
 
 @Composable
-private fun DateRangeFilter(filters: EventFilters, onFiltersChanged: (EventFilters) -> Unit) {
-  var showDatePicker by remember { mutableStateOf(false) }
+private fun DateRangeFilter(
+    uiState: FilterUIState,
+    onFiltersChanged: (EventFilters) -> Unit,
+    onShowDatePickerChange: (Boolean) -> Unit,
+) {
   val datePresets =
       listOf(
           "Today" to DateRangePresets.getTodayRange(),
@@ -131,11 +142,12 @@ private fun DateRangeFilter(filters: EventFilters, onFiltersChanged: (EventFilte
           modifier = Modifier.fillMaxWidth(),
       ) {
         datePresets.forEach { (label, presetRange) ->
-          val isSelected = filters.dateRange == presetRange
+          val isSelected = uiState.localFilters.dateRange == presetRange
           FilterChip(
               selected = isSelected,
               onClick = {
-                onFiltersChanged(filters.copy(dateRange = if (isSelected) null else presetRange))
+                onFiltersChanged(
+                    uiState.localFilters.copy(dateRange = if (isSelected) null else presetRange))
               },
               label = { Text(label) },
               modifier = Modifier.weight(1f),
@@ -151,20 +163,22 @@ private fun DateRangeFilter(filters: EventFilters, onFiltersChanged: (EventFilte
         Column {
           Text("Custom range", style = MaterialTheme.typography.labelMedium)
           Text(
-              formatDateRange(filters.dateRange) ?: "Not set",
+              formatDateRange(uiState.localFilters.dateRange) ?: "Not set",
               style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
           )
         }
-        Button(onClick = { showDatePicker = true }, Modifier.height(36.dp)) { Text("Pick dates") }
+        Button(onClick = { onShowDatePickerChange(true) }, Modifier.height(36.dp)) {
+          Text("Pick dates")
+        }
       }
-      if (showDatePicker) {
+      if (uiState.showDatePicker) {
         SimpleDateRangePickerDialog(
-            currentRange = filters.dateRange,
-            onDismiss = { showDatePicker = false },
+            currentRange = uiState.localFilters.dateRange,
+            onDismiss = { onShowDatePickerChange(false) },
             onConfirm = { range ->
-              onFiltersChanged(filters.copy(dateRange = range))
-              showDatePicker = false
+              onFiltersChanged(uiState.localFilters.copy(dateRange = range))
+              onShowDatePickerChange(false)
             },
         )
       }

@@ -32,15 +32,13 @@ class EventFilterViewModelTest {
   }
 
   @Test
-  fun eventFilterViewModel_initialState_hasNoFilters() = runTest {
+  fun initial_uiState_and_currentFilters_areDefault() = runTest {
     val viewModel = EventFilterViewModel()
-
-    val initialState = viewModel.currentFilters.value
-
-    assertNull("Region should be null", initialState.region)
-    assertNull("Date range should be null", initialState.dateRange)
-    assertFalse("Hide sold out should be false", initialState.hideSoldOut)
-    assertFalse("Should have no active filters", initialState.hasActiveFilters)
+    assertEquals(EventFilters(), viewModel.uiState.value.localFilters)
+    assertEquals(EventFilters(), viewModel.currentFilters.value)
+    assertFalse(viewModel.uiState.value.expandedRegion)
+    assertFalse(viewModel.uiState.value.expandedDateRangePresets)
+    assertFalse(viewModel.uiState.value.showDatePicker)
   }
 
   @Test
@@ -61,6 +59,40 @@ class EventFilterViewModelTest {
     assertEquals("Date range should be updated", newFilters.dateRange, updatedState.dateRange)
     assertTrue("Hide sold out should be true", updatedState.hideSoldOut)
     assertTrue("Should have active filters", updatedState.hasActiveFilters)
+  }
+
+  @Test
+  fun updateLocalFilters_changesOnlyUiState() = runTest {
+    val viewModel = EventFilterViewModel()
+    val filters = EventFilters(region = "Bern", hideSoldOut = true)
+    viewModel.updateLocalFilters(filters)
+    assertEquals(filters, viewModel.uiState.value.localFilters)
+    assertEquals(EventFilters(), viewModel.currentFilters.value)
+  }
+
+  @Test
+  fun toggleRegionDropdown_and_toggleDatePicker_workCorrectly() = runTest {
+    val viewModel = EventFilterViewModel()
+
+    viewModel.toggleRegionDropdown(true)
+    assertTrue(viewModel.uiState.value.expandedRegion)
+
+    viewModel.toggleRegionDropdown(false)
+    assertFalse(viewModel.uiState.value.expandedRegion)
+
+    viewModel.toggleDatePicker(true)
+    assertTrue(viewModel.uiState.value.showDatePicker)
+
+    viewModel.toggleDatePicker(false)
+    assertFalse(viewModel.uiState.value.showDatePicker)
+  }
+
+  @Test
+  fun resetLocalFilters_resetsLocalStateOnly() = runTest {
+    val viewModel = EventFilterViewModel()
+    viewModel.updateLocalFilters(EventFilters(region = "Vaud", hideSoldOut = true))
+    viewModel.resetLocalFilters()
+    assertEquals(EventFilters(), viewModel.uiState.value.localFilters)
   }
 
   @Test

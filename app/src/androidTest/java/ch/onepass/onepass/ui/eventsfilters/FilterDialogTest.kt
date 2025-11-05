@@ -14,9 +14,7 @@ class FilterDialogTest {
 
   @Test
   fun filterDialog_displaysAllComponents() {
-    composeTestRule.setContent {
-      OnePassTheme { FilterDialog(currentFilters = EventFilters(), onApply = {}, onDismiss = {}) }
-    }
+    composeTestRule.setContent { OnePassTheme { FilterDialog() } }
 
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FILTER_DIALOG).assertIsDisplayed()
     composeTestRule.onNodeWithText("Filter Events").assertIsDisplayed()
@@ -29,9 +27,7 @@ class FilterDialogTest {
 
   @Test
   fun filterDialog_dateRangePresets_displayCorrectly() {
-    composeTestRule.setContent {
-      OnePassTheme { FilterDialog(currentFilters = EventFilters(), onApply = {}, onDismiss = {}) }
-    }
+    composeTestRule.setContent { OnePassTheme { FilterDialog() } }
 
     composeTestRule.onNodeWithText("Today").assertIsDisplayed()
     composeTestRule.onNodeWithText("Next Weekend").assertIsDisplayed()
@@ -41,51 +37,46 @@ class FilterDialogTest {
   }
 
   @Test
-  fun filterDialog_applyButton_initiallyDisabled() {
-    composeTestRule.setContent {
-      OnePassTheme { FilterDialog(currentFilters = EventFilters(), onApply = {}, onDismiss = {}) }
-    }
+  fun filterDialog_applyButton_initiallyDisabled_untilFilterChange() {
+    composeTestRule.setContent { OnePassTheme { FilterDialog(onApply = {}, onDismiss = {}) } }
 
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.APPLY_FILTERS_BUTTON).assertIsNotEnabled()
+
+    // Select region to enable
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.REGION_DROPDOWN).performClick()
+    composeTestRule.onNodeWithText("Zurich").performClick()
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.APPLY_FILTERS_BUTTON).assertIsEnabled()
+  }
+
+  @Test
+  fun filterDialog_resetButton_enabledAfterFilterChange() {
+    composeTestRule.setContent { OnePassTheme { FilterDialog() } }
+
+    // Select "Today" preset
+    composeTestRule.onNodeWithText("Today").performClick()
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.RESET_FILTERS_BUTTON).assertIsEnabled()
+
+    // Reset filters should disable Apply again
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.RESET_FILTERS_BUTTON).performClick()
     composeTestRule.onNodeWithTag(FeedScreenTestTags.APPLY_FILTERS_BUTTON).assertIsNotEnabled()
   }
 
   @Test
-  fun filterDialog_resetButton_initiallyDisabled() {
-    composeTestRule.setContent {
-      OnePassTheme { FilterDialog(currentFilters = EventFilters(), onApply = {}, onDismiss = {}) }
-    }
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.RESET_FILTERS_BUTTON).assertIsNotEnabled()
-  }
-
-  @Test
-  fun filterDialog_regionSelection_enablesApplyButton() {
-    composeTestRule.setContent {
-      OnePassTheme { FilterDialog(currentFilters = EventFilters(), onApply = {}, onDismiss = {}) }
-    }
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.REGION_DROPDOWN).performClick()
-    composeTestRule.onNodeWithText("Uri").performClick()
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.APPLY_FILTERS_BUTTON).assertIsEnabled()
-  }
-
-  @Test
   fun filterDialog_dateRangeSelection_enablesApplyButton() {
-    composeTestRule.setContent {
-      OnePassTheme { FilterDialog(currentFilters = EventFilters(), onApply = {}, onDismiss = {}) }
-    }
+    composeTestRule.setContent { OnePassTheme { FilterDialog() } }
 
-    composeTestRule.onNodeWithText("Today").performClick()
-
+    // Select "Next 7 Days"
+    composeTestRule.onNodeWithText("Next 7 Days").performClick()
     composeTestRule.onNodeWithTag(FeedScreenTestTags.APPLY_FILTERS_BUTTON).assertIsEnabled()
+
+    // Deselect same chip
+    composeTestRule.onNodeWithText("Next 7 Days").performClick()
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.APPLY_FILTERS_BUTTON).assertIsNotEnabled()
   }
 
   @Test
   fun filterDialog_hideSoldOutSelection_enablesApplyButton() {
-    composeTestRule.setContent {
-      OnePassTheme { FilterDialog(currentFilters = EventFilters(), onApply = {}, onDismiss = {}) }
-    }
+    composeTestRule.setContent { OnePassTheme { FilterDialog() } }
 
     composeTestRule.onNodeWithTag(FeedScreenTestTags.HIDE_SOLD_OUT_CHECKBOX).performClick()
 
@@ -93,24 +84,12 @@ class FilterDialogTest {
   }
 
   @Test
-  fun filterDialog_resetButton_enabledWithActiveFilters() {
-    composeTestRule.setContent {
-      OnePassTheme {
-        FilterDialog(currentFilters = EventFilters(region = "Zurich"), onApply = {}, onDismiss = {})
-      }
-    }
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.RESET_FILTERS_BUTTON).assertIsEnabled()
-  }
-
-  @Test
-  fun filterDialog_applyButton_callsOnApply() {
+  fun filterDialog_applyButton_callsOnApplyWithUpdatedFilters() {
     var appliedFilters: EventFilters? = null
 
     composeTestRule.setContent {
       OnePassTheme {
         FilterDialog(
-            currentFilters = EventFilters(),
             onApply = { appliedFilters = it },
             onDismiss = {},
         )
@@ -125,28 +104,8 @@ class FilterDialogTest {
   }
 
   @Test
-  fun filterDialog_resetButton_clearsAllFilters() {
-    composeTestRule.setContent {
-      OnePassTheme {
-        FilterDialog(
-            currentFilters = EventFilters(region = "Geneva", hideSoldOut = true),
-            onApply = {},
-            onDismiss = {},
-        )
-      }
-    }
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.RESET_FILTERS_BUTTON).performClick()
-
-    // After reset, apply button should be enabled (since filters changed from initial)ok
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.APPLY_FILTERS_BUTTON).assertIsEnabled()
-  }
-
-  @Test
   fun filterDialog_dateRangeChip_toggleBehavior() {
-    composeTestRule.setContent {
-      OnePassTheme { FilterDialog(currentFilters = EventFilters(), onApply = {}, onDismiss = {}) }
-    }
+    composeTestRule.setContent { OnePassTheme { FilterDialog() } }
 
     // Select date range
     composeTestRule.onNodeWithText("Today").performClick()
@@ -158,14 +117,12 @@ class FilterDialogTest {
   }
 
   @Test
-  fun filterDialog_customDateRangeButton_showsPicker() {
-    composeTestRule.setContent {
-      OnePassTheme { FilterDialog(currentFilters = EventFilters(), onApply = {}, onDismiss = {}) }
-    }
+  fun filterDialog_datePickerDialog_showsAndDismisses() {
+    composeTestRule.setContent { OnePassTheme { FilterDialog(onApply = {}, onDismiss = {}) } }
 
     composeTestRule.onNodeWithText("Pick dates").performClick()
-
     composeTestRule.onNodeWithText("Select Date Range").assertIsDisplayed()
-    composeTestRule.onNodeWithText("OK").assertIsDisplayed()
+    composeTestRule.onNodeWithText("OK").performClick()
+    composeTestRule.onNodeWithText("Filter Events").assertIsDisplayed()
   }
 }
