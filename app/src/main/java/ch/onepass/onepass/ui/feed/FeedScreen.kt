@@ -121,12 +121,10 @@ fun FeedScreen(
       }
       // Filter Dialog
       if (uiState.showFilterDialog) {
-          // Sync localFilters to current global filters on dialog open
-          LaunchedEffect(Unit) {
-              filterViewModel.updateLocalFilters(currentFilters)
-          }
+        // Sync localFilters to current global filters on dialog open
+        LaunchedEffect(Unit) { filterViewModel.updateLocalFilters(currentFilters) }
 
-          FilterDialog(
+        FilterDialog(
             viewModel = filterViewModel,
             onApply = { newFilters ->
               filterViewModel.applyFilters(newFilters)
