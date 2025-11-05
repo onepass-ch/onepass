@@ -26,8 +26,8 @@ object FeedScreenTestTags {
   const val FILTER_DIALOG = "filterDialog"
   const val REGION_DROPDOWN = "regionDropdown"
   const val DATE_RANGE_PRESETS = "dateRangePresets"
-    const val CUSTOM_RANGE_TEXT = "customRangeText"
-    const val PICK_DATES_BUTTON = "pickDatesButton"
+  const val CUSTOM_RANGE_TEXT = "customRangeText"
+  const val PICK_DATES_BUTTON = "pickDatesButton"
   const val HIDE_SOLD_OUT_CHECKBOX = "hideSoldOutCheckbox"
   const val APPLY_FILTERS_BUTTON = "applyFiltersButton"
   const val RESET_FILTERS_BUTTON = "resetFiltersButton"
@@ -140,7 +140,6 @@ private fun RegionFilter(
   }
 }
 
-
 /** Displays chips for selecting a date range or custom range via date picker. */
 @Composable
 private fun DateRangeFilter(
@@ -188,12 +187,13 @@ private fun DateRangeFilter(
               formatDateRange(uiState.localFilters.dateRange) ?: "Not set",
               style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
-              modifier = Modifier.testTag(FeedScreenTestTags.CUSTOM_RANGE_TEXT)
-          )
+              modifier = Modifier.testTag(FeedScreenTestTags.CUSTOM_RANGE_TEXT))
         }
-        Button(onClick = { onShowDatePickerChange(true) }, Modifier.height(36.dp).testTag(FeedScreenTestTags.PICK_DATES_BUTTON)) {
-          Text("Pick dates")
-        }
+        Button(
+            onClick = { onShowDatePickerChange(true) },
+            Modifier.height(36.dp).testTag(FeedScreenTestTags.PICK_DATES_BUTTON)) {
+              Text("Pick dates")
+            }
       }
       if (uiState.showDatePicker) {
         DateRangePickerDialog(
@@ -240,9 +240,7 @@ private fun FilterSection(title: String, content: @Composable () -> Unit) {
   }
 }
 
-/**
- * Dialog to pick a custom start and end date for filtering events.
- */
+/** Dialog to pick a custom start and end date for filtering events. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DateRangePickerDialog(
@@ -303,7 +301,6 @@ private fun DateRangePickerDialog(
       },
       dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }
-
 
 /** Extends a [ClosedRange] to include the full end-of-day time for the end date. */
 private fun ClosedRange<Long>.inclusiveEndOfDay(): ClosedRange<Long> {

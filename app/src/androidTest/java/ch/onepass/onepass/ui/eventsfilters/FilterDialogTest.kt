@@ -143,5 +143,4 @@ class FilterDialogTest {
     composeTestRule.onNodeWithText("Cancel").performClick()
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FILTER_DIALOG).assertIsDisplayed()
   }
-
 }

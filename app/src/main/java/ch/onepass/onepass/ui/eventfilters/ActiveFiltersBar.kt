@@ -99,9 +99,7 @@ fun ActiveFiltersBar(
   }
 }
 
-/**
- * Formats a date range as a human-readable string.
- */
+/** Formats a date range as a human-readable string. */
 internal fun formatDateRange(dateRange: ClosedRange<Long>?): String? {
   return dateRange?.let {
     val startDate =
@@ -115,9 +113,7 @@ internal fun formatDateRange(dateRange: ClosedRange<Long>?): String? {
   }
 }
 
-/**
- * Returns a display text for common date ranges like "Today" or "Next 7 Days".
- */
+/** Returns a display text for common date ranges like "Today" or "Next 7 Days". */
 private fun getDateRangeDisplayText(dateRange: ClosedRange<Long>): String {
   val todayRange = DateRangePresets.getTodayRange()
   val next7Days = DateRangePresets.getNext7DaysRange()

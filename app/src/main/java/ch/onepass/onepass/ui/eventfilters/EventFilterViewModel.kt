@@ -7,7 +7,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-
 /** UI state for the filter dialog, including temporary selections. */
 data class FilterUIState(
     val localFilters: EventFilters = EventFilters(),
@@ -19,8 +18,8 @@ data class FilterUIState(
 )
 
 /**
- * Shared [ViewModel] to manage event filters both locally in the dialog
- * and globally across screens.
+ * Shared [ViewModel] to manage event filters both locally in the dialog and globally across
+ * screens.
  */
 class EventFilterViewModel : ViewModel() {
 
