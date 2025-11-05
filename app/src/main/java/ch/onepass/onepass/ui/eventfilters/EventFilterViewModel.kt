@@ -52,6 +52,9 @@ class EventFilterViewModel : ViewModel() {
 
   /** Clears all active filters globally. */
   fun clearFilters() {
-    viewModelScope.launch { _currentFilters.value = EventFilters() }
+    viewModelScope.launch {
+      _currentFilters.value = EventFilters()
+      _uiState.value = FilterUIState(localFilters = EventFilters())
+    }
   }
 }
