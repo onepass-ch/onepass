@@ -49,6 +49,7 @@ private fun OrganizationProfileImage(imageUrl: String?, modifier: Modifier = Mod
   AsyncImage(
       model = imageUrl,
       contentDescription = "Organization profile",
+      placeholder = rememberVectorPainter(Icons.Default.Business),
       modifier =
           modifier
               .size(80.dp)
