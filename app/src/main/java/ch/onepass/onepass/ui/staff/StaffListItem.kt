@@ -1,18 +1,14 @@
+package ch.onepass.onepass.ui.staff
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -21,121 +17,165 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.model.staff.StaffSearchResult
-import ch.onepass.onepass.ui.theme.OnePassTheme
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
+import java.util.Locale
 
-@Composable
-fun StaffListItem(
-    user: StaffSearchResult,
-    modifier: Modifier = Modifier,
-    onClick: (StaffSearchResult) -> Unit
-) {
-  val primaryText = user.displayName.ifBlank { user.email }.ifBlank { "Unknown user" }
+object StaffTestTags {
+  object Item {
+    const val LIST_ITEM = "staffItem_listItem"
+    const val HEADLINE = "staffItem_headline"
+    const val SUPPORTING = "staffItem_supporting"
+  }
 
-  Surface(
-      shape = RoundedCornerShape(12.dp),
-      tonalElevation = 2.dp,
-      modifier = modifier.fillMaxWidth().clickable { onClick(user) }) {
-        Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-          Avatar(
-              displayName = primaryText,
-              avatarUrl = user.avatarUrl,
-              modifier = Modifier.size(40.dp))
+  object Avatar {
+    const val ROOT = "staffItem_avatar_root"
+    const val IMAGE = "staffItem_avatar_image"
 
-          Spacer(Modifier.width(width = 12.dp))
+    object Initials {
+      const val TEXT = "staffItem_avatar_initials_text"
+    }
 
-          Column(Modifier.weight(1f)) {
-            Text(
-                text = primaryText,
-                style = MaterialTheme.typography.titleMedium,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis)
-            if (user.email.isNotBlank()) {
-              Text(
-                  text = user.email,
-                  style = MaterialTheme.typography.bodyMedium,
-                  color = MaterialTheme.colorScheme.onSurfaceVariant,
-                  maxLines = 1,
-                  overflow = TextOverflow.Ellipsis)
-            }
-          }
-        }
-      }
+    object Loading {
+      const val CONTAINER = "staffItem_avatar_loading_container"
+      const val TEXT = "staffItem_avatar_loading_text"
+    }
+
+    object Error {
+      const val CONTAINER = "staffItem_avatar_error_container"
+      const val TEXT = "staffItem_avatar_error_text"
+    }
+  }
 }
 
+/**
+ * Renders a staff candidate item.
+ *
+ * Preconditions (must be guaranteed by the caller):
+ * - [user.displayName] is non-blank.
+ * - [user.email] is non-blank.
+ * - [user.avatarUrl] is either a valid URL string or null.
+ *
+ * All data sanitation must be done at the list layer (VM/mapper).
+ */
 @Composable
-private fun InitialsAvatar(displayName: String, modifier: Modifier = Modifier) {
-  val initials =
-      remember(displayName) {
-            displayName
-                .split(" ")
-                .map { it.trim() }
-                .filter { it.isNotEmpty() }
-                .take(2)
-                .joinToString("") { it.first().uppercaseChar().toString() }
-          }
-          .ifEmpty { "?" }
+fun StaffListItem(
+  user: StaffSearchResult,
+  modifier: Modifier = Modifier,
+  onClick: (StaffSearchResult) -> Unit
+) {
+  ListItem(
+    modifier = modifier
+      .fillMaxWidth()
+      .clickable(role = Role.Button) { onClick(user) }
+      .testTag(StaffTestTags.Item.LIST_ITEM),
+    leadingContent = {
+      Avatar(
+        displayName = user.displayName,
+        avatarUrl = user.avatarUrl,
+        modifier = Modifier.size(48.dp)
+      )
+    },
+    headlineContent = {
+      Text(
+        text = user.displayName,
+        style = MaterialTheme.typography.titleMedium,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.testTag(StaffTestTags.Item.HEADLINE)
+      )
+    },
+    supportingContent = {
+      Text(
+        text = user.email,
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        maxLines = 1,
+        overflow = TextOverflow.Ellipsis,
+        modifier = Modifier.testTag(StaffTestTags.Item.SUPPORTING)
+      )
+    }
+  )
+}
 
-  Box(
-      modifier = modifier.clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
-      contentAlignment = Alignment.Center) {
-        Text(
-            text = initials,
-            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-            color = MaterialTheme.colorScheme.onPrimaryContainer)
-      }
+private fun computeMonogram(name: String): String {
+  val trimmed = name.trim()
+  if (trimmed.isEmpty()) return "?"
+  val cp = Character.codePointAt(trimmed, 0)
+  val first = String(Character.toChars(cp))
+  return first.uppercase(Locale.ROOT)
 }
 
 @Composable
 private fun Avatar(displayName: String, avatarUrl: String?, modifier: Modifier = Modifier) {
-  if (avatarUrl.isNullOrBlank()) {
-    InitialsAvatar(displayName, modifier)
-  } else {
-    SubcomposeAsyncImage(
-        model = ImageRequest.Builder(LocalContext.current).data(avatarUrl).crossfade(true).build(),
-        contentDescription = "$displayName avatar",
-        contentScale = ContentScale.Crop,
-        modifier =
-            modifier.clip(CircleShape).background(MaterialTheme.colorScheme.primaryContainer),
-        loading = { InitialsAvatar(displayName, modifier = Modifier.matchParentSize()) },
-        error = { InitialsAvatar(displayName, modifier = Modifier.matchParentSize()) })
-  }
-}
+  val initials = remember(displayName) { computeMonogram(displayName) }
+  val context = LocalContext.current
 
-@Preview(showBackground = true, backgroundColor = 0xFFFFFFFF)
-@Composable
-private fun StaffListItemPreview() {
-  OnePassTheme {
-    Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-      Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-        StaffListItem(
-            user =
-                StaffSearchResult(
-                    id = "1",
-                    email = "alice@onepass.ch",
-                    displayName = "Alice Keller",
-                    avatarUrl = null),
-            onClick = {})
-        Spacer(Modifier.size(12.dp))
-        StaffListItem(
-            user = StaffSearchResult(id = "2", email = "", displayName = "", avatarUrl = null),
-            onClick = {})
-        Spacer(Modifier.size(12.dp))
-        StaffListItem(
-            user =
-                StaffSearchResult(
-                    id = "3",
-                    email = "bob@onepass.ch",
-                    displayName = "Bob Graf",
-                    avatarUrl = "https://picsum.photos/200"),
-            onClick = {})
-      }
+  Box(
+    modifier = modifier
+      .clip(CircleShape)
+      .background(MaterialTheme.colorScheme.primaryContainer)
+      .testTag(StaffTestTags.Avatar.ROOT),
+    contentAlignment = Alignment.Center
+  ) {
+    if (avatarUrl.isNullOrBlank()) {
+      Text(
+        text = initials,
+        style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+        color = MaterialTheme.colorScheme.onPrimaryContainer,
+        modifier = Modifier.testTag(StaffTestTags.Avatar.Initials.TEXT)
+      )
+    } else {
+      SubcomposeAsyncImage(
+        model = ImageRequest.Builder(context)
+          .data(avatarUrl)
+          .crossfade(200)
+          .build(),
+        contentDescription = null,
+        contentScale = ContentScale.Crop,
+        modifier = Modifier
+          .fillMaxSize()
+          .clip(CircleShape)
+          .testTag(StaffTestTags.Avatar.IMAGE),
+        loading = {
+          Box(
+            modifier = Modifier
+              .fillMaxSize()
+              .clip(CircleShape)
+              .testTag(StaffTestTags.Avatar.Loading.CONTAINER),
+            contentAlignment = Alignment.Center
+          ) {
+            Text(
+              text = initials,
+              style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+              color = MaterialTheme.colorScheme.onPrimaryContainer,
+              modifier = Modifier.testTag(StaffTestTags.Avatar.Loading.TEXT)
+            )
+          }
+        },
+        error = {
+          Box(
+            modifier = Modifier
+              .fillMaxSize()
+              .clip(CircleShape)
+              .testTag(StaffTestTags.Avatar.Error.CONTAINER),
+            contentAlignment = Alignment.Center
+          ) {
+            Text(
+              text = initials,
+              style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+              color = MaterialTheme.colorScheme.onPrimaryContainer,
+              modifier = Modifier.testTag(StaffTestTags.Avatar.Error.TEXT)
+            )
+          }
+        }
+      )
     }
   }
 }
