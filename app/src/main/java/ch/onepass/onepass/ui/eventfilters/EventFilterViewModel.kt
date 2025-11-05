@@ -12,6 +12,8 @@ data class FilterUIState(
     val expandedRegion: Boolean = false,
     val expandedDateRangePresets: Boolean = false,
     val showDatePicker: Boolean = false,
+    val tempStartDate: Long? = null,
+    val tempEndDate: Long? = null,
 )
 
 /** Shared ViewModel for managing event filters across multiple screens. */
@@ -38,6 +40,27 @@ class EventFilterViewModel : ViewModel() {
   /** Toggle date picker visibility. */
   fun toggleDatePicker(visible: Boolean) {
     _uiState.value = _uiState.value.copy(showDatePicker = visible)
+  }
+
+  fun setTempStartDate(date: Long) {
+    _uiState.value = _uiState.value.copy(tempStartDate = date, tempEndDate = null)
+  }
+
+  fun setTempEndDate(date: Long) {
+    val start = _uiState.value.tempStartDate
+    if (start != null && date >= start) {
+      _uiState.value = _uiState.value.copy(tempEndDate = date)
+    }
+  }
+
+  fun confirmDateRange() {
+    val start = _uiState.value.tempStartDate
+    val end = _uiState.value.tempEndDate
+    if (start != null && end != null) {
+      updateLocalFilters(_uiState.value.localFilters.copy(dateRange = start..end))
+      toggleDatePicker(false)
+      _uiState.value = _uiState.value.copy(tempStartDate = null, tempEndDate = null)
+    }
   }
 
   /** Reset the local filters (inside the dialog). */

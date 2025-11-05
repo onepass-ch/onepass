@@ -55,7 +55,13 @@ fun FilterDialog(
         Column(Modifier.verticalScroll(rememberScrollState()).weight(1f, false)) {
           RegionFilter(uiState, viewModel::updateLocalFilters, viewModel::toggleRegionDropdown)
           Spacer(Modifier.height(24.dp))
-          DateRangeFilter(uiState, viewModel::updateLocalFilters, viewModel::toggleDatePicker)
+          DateRangeFilter(
+              uiState = uiState,
+              onFiltersChanged = viewModel::updateLocalFilters,
+              onShowDatePickerChange = viewModel::toggleDatePicker,
+              onSetTempStartDate = viewModel::setTempStartDate,
+              onSetTempEndDate = viewModel::setTempEndDate,
+              onConfirmRange = viewModel::confirmDateRange)
           Spacer(Modifier.height(24.dp))
           AvailabilityFilter(uiState.localFilters, viewModel::updateLocalFilters)
         }
@@ -125,9 +131,12 @@ private fun RegionFilter(
 
 @Composable
 private fun DateRangeFilter(
-    uiState: FilterUIState,
-    onFiltersChanged: (EventFilters) -> Unit,
-    onShowDatePickerChange: (Boolean) -> Unit,
+    uiState: FilterUIState = FilterUIState(),
+    onFiltersChanged: (EventFilters) -> Unit = {},
+    onShowDatePickerChange: (Boolean) -> Unit = {},
+    onSetTempStartDate: (Long) -> Unit = {},
+    onSetTempEndDate: (Long) -> Unit = {},
+    onConfirmRange: () -> Unit = {},
 ) {
   val datePresets =
       listOf(
@@ -173,13 +182,13 @@ private fun DateRangeFilter(
         }
       }
       if (uiState.showDatePicker) {
-        SimpleDateRangePickerDialog(
-            currentRange = uiState.localFilters.dateRange,
+        DateRangePickerDialog(
+            startDate = uiState.tempStartDate,
+            endDate = uiState.tempEndDate,
+            onSelectStart = onSetTempStartDate,
+            onSelectEnd = onSetTempEndDate,
             onDismiss = { onShowDatePickerChange(false) },
-            onConfirm = { range ->
-              onFiltersChanged(uiState.localFilters.copy(dateRange = range))
-              onShowDatePickerChange(false)
-            },
+            onConfirm = onConfirmRange,
         )
       }
     }
@@ -215,19 +224,72 @@ private fun FilterSection(title: String, content: @Composable () -> Unit) {
   }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SimpleDateRangePickerDialog(
-    currentRange: ClosedRange<Long>?,
-    onDismiss: () -> Unit,
-    onConfirm: (ClosedRange<Long>) -> Unit,
+private fun DateRangePickerDialog(
+    startDate: Long? = null,
+    endDate: Long? = null,
+    onSelectStart: (Long) -> Unit = {},
+    onSelectEnd: (Long) -> Unit = {},
+    onDismiss: () -> Unit = {},
+    onConfirm: () -> Unit = {},
 ) {
+  val state =
+      rememberDateRangePickerState(
+          initialSelectedStartDateMillis = startDate, initialSelectedEndDateMillis = endDate)
+
   AlertDialog(
       onDismissRequest = onDismiss,
-      title = { Text("Select Date Range") },
+      properties = DialogProperties(usePlatformDefaultWidth = false),
+      title = { Text("When ?") },
       text = {
-        Text(
-            "For now, use the preset chips above for quick date ranges.\n\nA full calendar date range picker can be implemented here later.")
+        Column {
+          DateRangePicker(
+              title = {},
+              headline = {
+                val start = state.selectedStartDateMillis
+                val end = state.selectedEndDateMillis
+
+                val headlineText =
+                    when {
+                      start == null -> "Select start date"
+                      end == null -> "Select end date"
+                      else -> formatDateRange(start..end)
+                    }
+
+                Text(
+                    text = headlineText!!,
+                    style = MaterialTheme.typography.bodyMedium, // smaller and cleaner
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp))
+              },
+              state = state,
+          )
+        }
       },
-      confirmButton = { Button(onClick = onDismiss) { Text("OK") } },
-  )
+      confirmButton = {
+        if (state.selectedStartDateMillis != null && state.selectedEndDateMillis != null) {
+          Button(
+              onClick = {
+                val range =
+                    (state.selectedStartDateMillis!!..state.selectedEndDateMillis!!)
+                        .inclusiveEndOfDay()
+                onSelectStart(range.start)
+                onSelectEnd(range.endInclusive)
+                onConfirm()
+              }) {
+                Text("Confirm")
+              }
+        }
+      },
+      dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
+}
+
+private fun ClosedRange<Long>.inclusiveEndOfDay(): ClosedRange<Long> {
+  val cal = Calendar.getInstance().apply { timeInMillis = this@inclusiveEndOfDay.endInclusive }
+  cal.set(Calendar.HOUR_OF_DAY, 23)
+  cal.set(Calendar.MINUTE, 59)
+  cal.set(Calendar.SECOND, 59)
+  cal.set(Calendar.MILLISECOND, 999)
+  return this.start..cal.timeInMillis
 }
