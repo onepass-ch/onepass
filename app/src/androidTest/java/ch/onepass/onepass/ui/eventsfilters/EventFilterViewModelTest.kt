@@ -154,4 +154,23 @@ class EventFilterViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
     assertTrue("All filters should return true", viewModel.currentFilters.value.hasActiveFilters)
   }
+
+  @Test
+  fun tempStartAndEndDate_setAndConfirm_updatesLocalFilters() = runTest {
+    val viewModel = EventFilterViewModel()
+    val start = System.currentTimeMillis()
+    val end = start + 1000 * 60 * 60 * 24 // +1 day
+
+    viewModel.setTempStartDate(start)
+    assertEquals(start, viewModel.uiState.value.tempStartDate)
+    assertNull(viewModel.uiState.value.tempEndDate)
+
+    viewModel.setTempEndDate(end)
+    assertEquals(end, viewModel.uiState.value.tempEndDate)
+
+    viewModel.confirmDateRange()
+    assertEquals(start..end, viewModel.uiState.value.localFilters.dateRange)
+    assertNull(viewModel.uiState.value.tempStartDate)
+    assertNull(viewModel.uiState.value.tempEndDate)
+  }
 }

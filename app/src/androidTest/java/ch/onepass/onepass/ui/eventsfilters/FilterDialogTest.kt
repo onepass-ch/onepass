@@ -118,11 +118,30 @@ class FilterDialogTest {
 
   @Test
   fun filterDialog_datePickerDialog_showsAndDismisses() {
-    composeTestRule.setContent { OnePassTheme { FilterDialog(onApply = {}, onDismiss = {}) } }
+    composeTestRule.setContent { OnePassTheme { FilterDialog() } }
 
     composeTestRule.onNodeWithText("Pick dates").performClick()
     composeTestRule.onNodeWithText("Select Date Range").assertIsDisplayed()
     composeTestRule.onNodeWithText("OK").performClick()
     composeTestRule.onNodeWithText("Filter Events").assertIsDisplayed()
   }
+
+  @Test
+  fun filterDialog_customRangeText_andPickDatesButton_displayed() {
+    composeTestRule.setContent { OnePassTheme { FilterDialog() } }
+
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.CUSTOM_RANGE_TEXT).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.PICK_DATES_BUTTON).assertIsDisplayed()
+  }
+
+  @Test
+  fun filterDialog_pickDatesButton_showsDatePickerDialog() {
+    composeTestRule.setContent { OnePassTheme { FilterDialog() } }
+
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.PICK_DATES_BUTTON).performClick()
+    composeTestRule.onNodeWithText("When ?").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Cancel").performClick()
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.FILTER_DIALOG).assertIsDisplayed()
+  }
+
 }
