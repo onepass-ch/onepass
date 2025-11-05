@@ -175,23 +175,27 @@ class OrganizationDashboardScreenTest {
     composeTestRule
         .onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
         .performScrollTo()
-        .performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN).performClick()
     composeTestRule.waitForIdle()
 
     composeTestRule
         .onNode(
             hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("owner-1")),
             useUnmergedTree = true)
+        .performScrollTo()
         .assertIsDisplayed()
     composeTestRule
         .onNode(
             hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("member-1")),
             useUnmergedTree = true)
+        .performScrollTo()
         .assertIsDisplayed()
     composeTestRule
         .onNode(
             hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("staff-1")),
             useUnmergedTree = true)
+        .performScrollTo()
         .assertIsDisplayed()
   }
 
