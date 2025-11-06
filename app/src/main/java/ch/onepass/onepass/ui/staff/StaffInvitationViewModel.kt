@@ -51,7 +51,9 @@ data class StaffInvitationUiState(
  */
 sealed class InvitationResult {
   data object Success : InvitationResult()
+
   data class AlreadyInvited(val message: String) : InvitationResult()
+
   data class Error(val message: String) : InvitationResult()
 }
 
@@ -72,8 +74,7 @@ sealed class InvitationResult {
 class StaffInvitationViewModel(
     private val organizationId: String,
     private val userRepository: UserRepository = UserRepositoryFirebase(),
-    private val organizationRepository: OrganizationRepository =
-        OrganizationRepositoryFirebase()
+    private val organizationRepository: OrganizationRepository = OrganizationRepositoryFirebase()
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(StaffInvitationUiState())
@@ -86,9 +87,7 @@ class StaffInvitationViewModel(
     loadCurrentUserId()
   }
 
-  /**
-   * Loads the current user ID for creating invitations.
-   */
+  /** Loads the current user ID for creating invitations. */
   private fun loadCurrentUserId() {
     viewModelScope.launch {
       try {
@@ -96,8 +95,7 @@ class StaffInvitationViewModel(
         currentUserId = user?.uid
         if (currentUserId == null) {
           _uiState.value =
-              _uiState.value.copy(
-                  errorMessage = "User not found. Please log in and try again.")
+              _uiState.value.copy(errorMessage = "User not found. Please log in and try again.")
         }
       } catch (e: Exception) {
         _uiState.value =
@@ -168,10 +166,7 @@ class StaffInvitationViewModel(
       result.fold(
           onSuccess = { users ->
             _uiState.value =
-                _uiState.value.copy(
-                    searchResults = users,
-                    isLoading = false,
-                    errorMessage = null)
+                _uiState.value.copy(searchResults = users, isLoading = false, errorMessage = null)
           },
           onFailure = { error ->
             _uiState.value =
@@ -201,8 +196,7 @@ class StaffInvitationViewModel(
    */
   fun onUserSelected(user: StaffSearchResult) {
     if (currentUserId == null) {
-      _uiState.value =
-          _uiState.value.copy(errorMessage = "User not authenticated. Please log in.")
+      _uiState.value = _uiState.value.copy(errorMessage = "User not authenticated. Please log in.")
       return
     }
 
@@ -216,8 +210,7 @@ class StaffInvitationViewModel(
           is InvitationResult.Success -> {
             _uiState.value =
                 _uiState.value.copy(
-                    isInviting = false,
-                    invitedUserIds = _uiState.value.invitedUserIds + user.id)
+                    isInviting = false, invitedUserIds = _uiState.value.invitedUserIds + user.id)
           }
           is InvitationResult.AlreadyInvited -> {
             _uiState.value =
@@ -248,11 +241,12 @@ class StaffInvitationViewModel(
    */
   private suspend fun checkAndCreateInvitation(user: StaffSearchResult): InvitationResult {
     // Check if user is already invited to this organization
-    val existingInvitations =
-        organizationRepository.getInvitationsByEmail(user.email).first()
+    val existingInvitations = organizationRepository.getInvitationsByEmail(user.email).first()
 
     val hasPendingInvitation =
-        existingInvitations.any { it.orgId == organizationId && it.status == InvitationStatus.PENDING }
+        existingInvitations.any {
+          it.orgId == organizationId && it.status == InvitationStatus.PENDING
+        }
 
     if (hasPendingInvitation) {
       return InvitationResult.AlreadyInvited(
@@ -261,7 +255,9 @@ class StaffInvitationViewModel(
 
     // Check if user has already accepted an invitation (is a member)
     val hasAcceptedInvitation =
-        existingInvitations.any { it.orgId == organizationId && it.status == InvitationStatus.ACCEPTED }
+        existingInvitations.any {
+          it.orgId == organizationId && it.status == InvitationStatus.ACCEPTED
+        }
 
     if (hasAcceptedInvitation) {
       return InvitationResult.AlreadyInvited(
@@ -286,9 +282,7 @@ class StaffInvitationViewModel(
         })
   }
 
-  /**
-   * Clears the current error message.
-   */
+  /** Clears the current error message. */
   fun clearError() {
     _uiState.value = _uiState.value.copy(errorMessage = null)
   }
@@ -298,4 +292,3 @@ class StaffInvitationViewModel(
     private const val SEARCH_DEBOUNCE_MS = 500L
   }
 }
-
