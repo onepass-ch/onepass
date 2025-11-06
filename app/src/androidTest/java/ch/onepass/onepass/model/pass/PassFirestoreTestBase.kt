@@ -74,19 +74,22 @@ open class PassFirestoreTestBase {
     return doc.contains("pass")
   }
 
-  protected suspend fun clearUserPass(uid: String) {
-    val docRef = firestore.collection("user").document(uid)
-    val initial = docRef.get(Source.SERVER).await()
-    if (!initial.exists() || !initial.contains("pass")) return
-    docRef.update(mapOf("pass" to FieldValue.delete())).await()
-    repeat(8) { attempt ->
-      val snap = docRef.get(Source.SERVER).await()
-      if (!snap.contains("pass")) return
-      delay(50L * (attempt + 1))
+    protected suspend fun clearUserPass(uid: String) {
+        val docRef = firestore.collection("user").document(uid)
+        val initial = docRef.get(Source.SERVER).await()
+        if (!initial.exists() || !initial.contains("pass")) return
+        docRef.update(mapOf("pass" to FieldValue.delete())).await()
+
+        // Augmente les tentatives et le délai
+        repeat(10) { attempt ->  // 8 → 10
+            val snap = docRef.get(Source.SERVER).await()
+            if (!snap.contains("pass")) return
+            delay(100L * (attempt + 1))  // 50ms → 100ms
+        }
+
+        val left = docRef.get(Source.SERVER).await()
+        if (left.contains("pass")) {
+            error("Test cleanup failed: 'pass' still present for uid=$uid")
+        }
     }
-    val left = docRef.get(Source.SERVER).await()
-    if (left.contains("pass")) {
-      error("Test cleanup failed: 'pass' still present for uid=$uid")
-    }
-  }
 }
