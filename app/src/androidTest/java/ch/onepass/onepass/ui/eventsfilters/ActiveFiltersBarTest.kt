@@ -6,14 +6,12 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.eventfilters.DateRangePresets
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import java.time.Instant
 import junit.framework.Assert.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import java.time.Instant
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 class ActiveFiltersBarTest {

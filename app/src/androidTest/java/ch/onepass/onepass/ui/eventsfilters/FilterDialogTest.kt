@@ -4,10 +4,10 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import java.util.Calendar
 import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
-import java.util.Calendar
 
 class FilterDialogTest {
 
@@ -144,24 +144,27 @@ class FilterDialogTest {
     composeTestRule.onNodeWithText("Cancel").performClick()
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FILTER_DIALOG).assertIsDisplayed()
   }
-  
+
   @Test
   fun inclusiveEndOfDay_extendsEndTimeToEndOfDay() {
-    val start = Calendar.getInstance().apply {
-      set(2025, Calendar.JANUARY, 1, 10, 30, 0)
-      set(Calendar.MILLISECOND, 0)
-    }.timeInMillis
+    val start =
+        Calendar.getInstance()
+            .apply {
+              set(2025, Calendar.JANUARY, 1, 10, 30, 0)
+              set(Calendar.MILLISECOND, 0)
+            }
+            .timeInMillis
 
     val end = start
     val result = (start..end).inclusiveEndOfDay()
     val cal = Calendar.getInstance().apply { timeInMillis = result.endInclusive }
 
-    assert(2025==cal.get(Calendar.YEAR))
-    assert(Calendar.JANUARY== cal.get(Calendar.MONTH))
-    assert(1== cal.get(Calendar.DAY_OF_MONTH))
-    assert(END_OF_DAY_HOUR==cal.get(Calendar.HOUR_OF_DAY))
-    assert(END_OF_DAY_MINUTE== cal.get(Calendar.MINUTE))
-    assert(END_OF_DAY_SECOND== cal.get(Calendar.SECOND))
-    assert(END_OF_DAY_MILLISECOND==cal.get(Calendar.MILLISECOND))
+    assert(2025 == cal.get(Calendar.YEAR))
+    assert(Calendar.JANUARY == cal.get(Calendar.MONTH))
+    assert(1 == cal.get(Calendar.DAY_OF_MONTH))
+    assert(END_OF_DAY_HOUR == cal.get(Calendar.HOUR_OF_DAY))
+    assert(END_OF_DAY_MINUTE == cal.get(Calendar.MINUTE))
+    assert(END_OF_DAY_SECOND == cal.get(Calendar.SECOND))
+    assert(END_OF_DAY_MILLISECOND == cal.get(Calendar.MILLISECOND))
   }
 }

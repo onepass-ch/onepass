@@ -74,7 +74,8 @@ fun FilterDialog(
           DateRangeFilter(
               uiState = uiState,
               onFiltersChanged = viewModel::updateLocalFilters,
-              onShowDatePickerChange = viewModel::toggleDatePicker,)
+              onShowDatePickerChange = viewModel::toggleDatePicker,
+          )
           Spacer(Modifier.height(24.dp))
           AvailabilityFilter(uiState.localFilters, viewModel::updateLocalFilters)
         }
@@ -199,10 +200,9 @@ private fun DateRangeFilter(
         DateRangePickerDialog(
             onDismiss = { onShowDatePickerChange(false) },
             onConfirm = { start, end ->
-                onFiltersChanged(uiState.localFilters.copy(dateRange = start..end))
-                onShowDatePickerChange(false)
-            }
-        )
+              onFiltersChanged(uiState.localFilters.copy(dateRange = start..end))
+              onShowDatePickerChange(false)
+            })
       }
     }
   }
@@ -284,7 +284,7 @@ private fun DateRangePickerDialog(
                 val range =
                     (state.selectedStartDateMillis!!..state.selectedEndDateMillis!!)
                         .inclusiveEndOfDay()
-                  onConfirm(range.start, range.endInclusive)
+                onConfirm(range.start, range.endInclusive)
               }) {
                 Text("Confirm")
               }
@@ -295,10 +295,10 @@ private fun DateRangePickerDialog(
 
 /** Extends a [ClosedRange] to include the full end-of-day time for the end date. */
 fun ClosedRange<Long>.inclusiveEndOfDay(): ClosedRange<Long> {
-    val cal = Calendar.getInstance().apply { timeInMillis = this@inclusiveEndOfDay.endInclusive }
-    cal.set(Calendar.HOUR_OF_DAY, END_OF_DAY_HOUR)
-    cal.set(Calendar.MINUTE, END_OF_DAY_MINUTE)
-    cal.set(Calendar.SECOND, END_OF_DAY_SECOND)
-    cal.set(Calendar.MILLISECOND, END_OF_DAY_MILLISECOND)
-    return this.start..cal.timeInMillis
+  val cal = Calendar.getInstance().apply { timeInMillis = this@inclusiveEndOfDay.endInclusive }
+  cal.set(Calendar.HOUR_OF_DAY, END_OF_DAY_HOUR)
+  cal.set(Calendar.MINUTE, END_OF_DAY_MINUTE)
+  cal.set(Calendar.SECOND, END_OF_DAY_SECOND)
+  cal.set(Calendar.MILLISECOND, END_OF_DAY_MILLISECOND)
+  return this.start..cal.timeInMillis
 }
