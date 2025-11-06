@@ -6,10 +6,14 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.eventfilters.DateRangePresets
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import junit.framework.Assert.assertNull
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import java.time.Instant
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @RunWith(AndroidJUnit4::class)
 class ActiveFiltersBarTest {
@@ -135,5 +139,31 @@ class ActiveFiltersBarTest {
     }
     val expectedText = formatDateRange(customRange)
     composeTestRule.onNodeWithText(expectedText!!).assertExists()
+  }
+
+  @Test
+  fun formatDateRange_null_returnsNull() {
+    val result = formatDateRange(null)
+    assertNull(result)
+  }
+
+  @Test
+  fun formatDateRange_sameDay_returnsSingleDayRange() {
+    val start = Instant.parse("2025-01-01T10:00:00Z").toEpochMilli()
+    val end = Instant.parse("2025-01-01T22:00:00Z").toEpochMilli()
+    val expected = "Jan 01, 2025 - Jan 01, 2025"
+
+    val result = formatDateRange(start..end)
+    assertEquals(expected, result)
+  }
+
+  @Test
+  fun formatDateRange_crossYear_returnsCorrectString() {
+    val start = Instant.parse("2024-12-31T12:00:00Z").toEpochMilli()
+    val end = Instant.parse("2025-01-01T12:00:00Z").toEpochMilli()
+    val expected = "Dec 31, 2024 - Jan 01, 2025"
+
+    val result = formatDateRange(start..end)
+    assertEquals(expected, result)
   }
 }
