@@ -156,21 +156,27 @@ class EventFilterViewModelTest {
   }
 
   @Test
-  fun tempStartAndEndDate_setAndConfirm_updatesLocalFilters() = runTest {
-    val viewModel = EventFilterViewModel()
-    val start = System.currentTimeMillis()
-    val end = start + 1000 * 60 * 60 * 24 // +1 day
+  fun confirmDateRangeRejectsWhenStartGreaterThanEnd() = runTest {
+    val vm = EventFilterViewModel()
+    val start = 2000L
+    val end = 1000L
 
-    viewModel.setTempStartDate(start)
-    assertEquals(start, viewModel.uiState.value.tempStartDate)
-    assertNull(viewModel.uiState.value.tempEndDate)
+    vm.confirmDateRange(start, end)
 
-    viewModel.setTempEndDate(end)
-    assertEquals(end, viewModel.uiState.value.tempEndDate)
+    // Expect range to still be the default (no update) since start > end
+    assertNull(vm.uiState.value.localFilters.dateRange)
+  }
 
-    viewModel.confirmDateRange()
-    assertEquals(start..end, viewModel.uiState.value.localFilters.dateRange)
-    assertNull(viewModel.uiState.value.tempStartDate)
-    assertNull(viewModel.uiState.value.tempEndDate)
+  @Test
+  fun cancelingDatePickerClearsTemporarySelection() = runTest {
+    val vm = EventFilterViewModel()
+    vm.toggleDatePicker(true)
+    assertTrue(vm.uiState.value.showDatePicker)
+
+    // simulate cancel (dismiss)
+    vm.toggleDatePicker(false)
+    assertFalse(vm.uiState.value.showDatePicker)
+
+    assertNull(vm.uiState.value.localFilters.dateRange)
   }
 }

@@ -13,8 +13,6 @@ data class FilterUIState(
     val expandedRegion: Boolean = false,
     val expandedDateRangePresets: Boolean = false,
     val showDatePicker: Boolean = false,
-    val tempStartDate: Long? = null,
-    val tempEndDate: Long? = null,
 )
 
 /**
@@ -46,27 +44,11 @@ class EventFilterViewModel : ViewModel() {
     _uiState.value = _uiState.value.copy(showDatePicker = visible)
   }
 
-  /** Sets temporary start date for custom date range. */
-  fun setTempStartDate(date: Long) {
-    _uiState.value = _uiState.value.copy(tempStartDate = date, tempEndDate = null)
-  }
-
-  /** Sets temporary end date for custom date range, if valid. */
-  fun setTempEndDate(date: Long) {
-    val start = _uiState.value.tempStartDate
-    if (start != null && date >= start) {
-      _uiState.value = _uiState.value.copy(tempEndDate = date)
-    }
-  }
-
   /** Confirms selected date range and updates the local filters. */
-  fun confirmDateRange() {
-    val start = _uiState.value.tempStartDate
-    val end = _uiState.value.tempEndDate
-    if (start != null && end != null) {
+  fun confirmDateRange(start: Long, end: Long) {
+    if (start != null && end != null && end >= start) {
       updateLocalFilters(_uiState.value.localFilters.copy(dateRange = start..end))
       toggleDatePicker(false)
-      _uiState.value = _uiState.value.copy(tempStartDate = null, tempEndDate = null)
     }
   }
 

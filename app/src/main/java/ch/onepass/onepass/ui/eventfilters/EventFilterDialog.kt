@@ -33,6 +33,12 @@ object FeedScreenTestTags {
   const val RESET_FILTERS_BUTTON = "resetFiltersButton"
 }
 
+/** Constants for inclusiveEndOfDay function */
+const val END_OF_DAY_HOUR = 23
+const val END_OF_DAY_MINUTE = 59
+const val END_OF_DAY_SECOND = 59
+const val END_OF_DAY_MILLISECOND = 999
+
 /**
  * Full-screen dialog allowing users to select filters for events.
  *
@@ -68,10 +74,7 @@ fun FilterDialog(
           DateRangeFilter(
               uiState = uiState,
               onFiltersChanged = viewModel::updateLocalFilters,
-              onShowDatePickerChange = viewModel::toggleDatePicker,
-              onSetTempStartDate = viewModel::setTempStartDate,
-              onSetTempEndDate = viewModel::setTempEndDate,
-              onConfirmRange = viewModel::confirmDateRange)
+              onShowDatePickerChange = viewModel::toggleDatePicker,)
           Spacer(Modifier.height(24.dp))
           AvailabilityFilter(uiState.localFilters, viewModel::updateLocalFilters)
         }
@@ -146,9 +149,6 @@ private fun DateRangeFilter(
     uiState: FilterUIState = FilterUIState(),
     onFiltersChanged: (EventFilters) -> Unit = {},
     onShowDatePickerChange: (Boolean) -> Unit = {},
-    onSetTempStartDate: (Long) -> Unit = {},
-    onSetTempEndDate: (Long) -> Unit = {},
-    onConfirmRange: () -> Unit = {},
 ) {
   val datePresets =
       listOf(
@@ -197,12 +197,11 @@ private fun DateRangeFilter(
       }
       if (uiState.showDatePicker) {
         DateRangePickerDialog(
-            startDate = uiState.tempStartDate,
-            endDate = uiState.tempEndDate,
-            onSelectStart = onSetTempStartDate,
-            onSelectEnd = onSetTempEndDate,
             onDismiss = { onShowDatePickerChange(false) },
-            onConfirm = onConfirmRange,
+            onConfirm = { start, end ->
+                onFiltersChanged(uiState.localFilters.copy(dateRange = start..end))
+                onShowDatePickerChange(false)
+            }
         )
       }
     }
@@ -244,16 +243,10 @@ private fun FilterSection(title: String, content: @Composable () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun DateRangePickerDialog(
-    startDate: Long? = null,
-    endDate: Long? = null,
-    onSelectStart: (Long) -> Unit = {},
-    onSelectEnd: (Long) -> Unit = {},
     onDismiss: () -> Unit = {},
-    onConfirm: () -> Unit = {},
+    onConfirm: (Long, Long) -> Unit = { _, _ -> },
 ) {
-  val state =
-      rememberDateRangePickerState(
-          initialSelectedStartDateMillis = startDate, initialSelectedEndDateMillis = endDate)
+  val state = rememberDateRangePickerState()
 
   AlertDialog(
       onDismissRequest = onDismiss,
@@ -276,7 +269,7 @@ private fun DateRangePickerDialog(
 
                 Text(
                     text = headlineText!!,
-                    style = MaterialTheme.typography.bodyMedium, // smaller and cleaner
+                    style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(vertical = 8.dp))
               },
@@ -291,9 +284,7 @@ private fun DateRangePickerDialog(
                 val range =
                     (state.selectedStartDateMillis!!..state.selectedEndDateMillis!!)
                         .inclusiveEndOfDay()
-                onSelectStart(range.start)
-                onSelectEnd(range.endInclusive)
-                onConfirm()
+                  onConfirm(range.start, range.endInclusive)
               }) {
                 Text("Confirm")
               }
@@ -303,11 +294,11 @@ private fun DateRangePickerDialog(
 }
 
 /** Extends a [ClosedRange] to include the full end-of-day time for the end date. */
-private fun ClosedRange<Long>.inclusiveEndOfDay(): ClosedRange<Long> {
-  val cal = Calendar.getInstance().apply { timeInMillis = this@inclusiveEndOfDay.endInclusive }
-  cal.set(Calendar.HOUR_OF_DAY, 23)
-  cal.set(Calendar.MINUTE, 59)
-  cal.set(Calendar.SECOND, 59)
-  cal.set(Calendar.MILLISECOND, 999)
-  return this.start..cal.timeInMillis
+fun ClosedRange<Long>.inclusiveEndOfDay(): ClosedRange<Long> {
+    val cal = Calendar.getInstance().apply { timeInMillis = this@inclusiveEndOfDay.endInclusive }
+    cal.set(Calendar.HOUR_OF_DAY, END_OF_DAY_HOUR)
+    cal.set(Calendar.MINUTE, END_OF_DAY_MINUTE)
+    cal.set(Calendar.SECOND, END_OF_DAY_SECOND)
+    cal.set(Calendar.MILLISECOND, END_OF_DAY_MILLISECOND)
+    return this.start..cal.timeInMillis
 }
