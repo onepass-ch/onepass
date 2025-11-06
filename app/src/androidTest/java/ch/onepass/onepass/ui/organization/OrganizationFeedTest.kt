@@ -4,6 +4,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
+import ch.onepass.onepass.model.organization.OrganizationStatus
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.google.firebase.Timestamp
 import io.mockk.*
@@ -61,35 +62,30 @@ class OrganizationFeedTest {
   }
   // ==================== Success State Tests ====================
   @Test
-  fun organizationFeedScreen_displaysOrganizations_whenDataLoaded() {
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns
-        flowOf(testOrganizations)
-    viewModel = OrganizationFeedViewModel(mockRepository)
-    composeTestRule.setContent {
-      OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
-    }
-    composeTestRule.waitUntil(timeoutMillis = 3000) {
-      composeTestRule.onAllNodesWithText("Tech Events Zurich").fetchSemanticsNodes().isNotEmpty()
-    }
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("Tech Events Zurich").assertExists().assertIsDisplayed()
+  fun organizationFeedScreen_displaysOrganizationsWithDetails_whenDataLoaded() {
+      coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns
+              flowOf(testOrganizations)
+      viewModel = OrganizationFeedViewModel(mockRepository)
 
-    composeTestRule.onNodeWithText("Music Nights Geneva").assertExists().assertIsDisplayed()
+      composeTestRule.setContent {
+          OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
+      }
+
+      // Wait for data to load
+      composeTestRule.waitUntil(timeoutMillis = 3000) {
+          composeTestRule.onAllNodesWithText("Tech Events Zurich").fetchSemanticsNodes().isNotEmpty()
+      }
+      composeTestRule.waitForIdle()
+
+      // Verify first organization with details
+      composeTestRule.onNodeWithText("Tech Events Zurich").assertExists().assertIsDisplayed()
+      composeTestRule.onNodeWithText("Leading tech organizer").assertExists().assertIsDisplayed()
+
+      // Verify second organization with details
+      composeTestRule.onNodeWithText("Music Nights Geneva").assertExists().assertIsDisplayed()
+      composeTestRule.onNodeWithText("Unforgettable music experiences").assertExists().assertIsDisplayed()
   }
 
-  @Test
-  fun organizationFeedScreen_displaysOrganizationDetails_correctly() {
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns
-        flowOf(testOrganizations)
-    viewModel = OrganizationFeedViewModel(mockRepository)
-    composeTestRule.setContent {
-      OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
-    }
-    composeTestRule.onNodeWithText("Tech Events Zurich").assertExists().assertIsDisplayed()
-
-    composeTestRule.onNodeWithText("Leading tech organizer").assertExists().assertIsDisplayed()
-    composeTestRule.onNodeWithText("Music Nights Geneva").assertExists().assertIsDisplayed()
-  }
 
   @Test
   fun organizationFeedScreen_organizationCard_clickTriggersNavigation() {
@@ -210,7 +206,7 @@ class OrganizationFeedTest {
       }
     }
     composeTestRule
-        .onNodeWithContentDescription("Back")
+        .onNodeWithTag(OrganizationFeedTestTags.BACK_BUTTON)
         .assertExists()
         .assertIsDisplayed()
         .performClick()
@@ -280,5 +276,132 @@ class OrganizationFeedTest {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
     }
     composeTestRule.onNodeWithContentDescription("Verified").assertExists()
+  }
+  @Test
+  fun organizationFeedScaffold_callsOnOrganizationClick() {
+    val testOrg =
+        Organization(
+            id = "org-123",
+            name = "Test Organization",
+            description = "Test description",
+            verified = true,
+            status = OrganizationStatus.ACTIVE)
+
+    var clickedOrgId: String? = null
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        OrganizationFeedScaffold(
+            organizations = listOf(testOrg),
+            isLoading = false,
+            error = null,
+            onOrganizationClick = { clickedOrgId = it },
+            onNavigateBack = {},
+            onRetry = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(OrganizationFeedTestTags.getTestTagForOrganizationItem("org-123"))
+        .performClick()
+
+    assert(clickedOrgId == "org-123") { "onOrganizationClick was not called with correct orgId" }
+  }
+  @Test
+  fun organizationFeedScaffold_showsErrorState_whenErrorAndNoOrganizations() {
+    composeTestRule.setContent {
+      OnePassTheme {
+        OrganizationFeedScaffold(
+            organizations = emptyList(),
+            isLoading = false,
+            error = "Network error occurred",
+            onOrganizationClick = {},
+            onNavigateBack = {},
+            onRetry = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(OrganizationFeedTestTags.ERROR_MESSAGE)
+        .assertExists()
+        .assertIsDisplayed()
+
+    composeTestRule.onNodeWithText("Oops!").assertExists()
+    composeTestRule.onNodeWithText("Network error occurred").assertExists()
+  }
+
+  @Test
+  fun errorState_callsOnRetry_whenRetryButtonClicked() {
+    var retryCalled = false
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        OrganizationFeedScaffold(
+            organizations = emptyList(),
+            isLoading = false,
+            error = "Connection failed",
+            onOrganizationClick = {},
+            onNavigateBack = {},
+            onRetry = { retryCalled = true })
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(OrganizationFeedTestTags.RETRY_BUTTON)
+        .assertExists()
+        .performClick()
+
+    assert(retryCalled) { "onRetry was not called" }
+  }
+  @Test
+  fun organizationListContent_displaysMultipleOrganizations() {
+    val orgs =
+        listOf(
+            Organization(
+                id = "org-1",
+                name = "Org 1",
+                description = "Desc 1",
+                verified = true,
+                status = OrganizationStatus.ACTIVE),
+            Organization(
+                id = "org-2",
+                name = "Org 2",
+                description = "Desc 2",
+                verified = false,
+                status = OrganizationStatus.ACTIVE),
+            Organization(
+                id = "org-3",
+                name = "Org 3",
+                description = "Desc 3",
+                verified = true,
+                status = OrganizationStatus.ACTIVE))
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        OrganizationFeedScaffold(
+            organizations = orgs,
+            isLoading = false,
+            error = null,
+            onOrganizationClick = {},
+            onNavigateBack = {},
+            onRetry = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST)
+        .assertExists()
+        .assertIsDisplayed()
+
+    // Verify all organizations are displayed
+    composeTestRule
+        .onNodeWithTag(OrganizationFeedTestTags.getTestTagForOrganizationItem("org-1"))
+        .assertExists()
+    composeTestRule
+        .onNodeWithTag(OrganizationFeedTestTags.getTestTagForOrganizationItem("org-2"))
+        .assertExists()
+    composeTestRule
+        .onNodeWithTag(OrganizationFeedTestTags.getTestTagForOrganizationItem("org-3"))
+        .assertExists()
   }
 }

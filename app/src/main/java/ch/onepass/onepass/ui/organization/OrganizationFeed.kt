@@ -28,6 +28,7 @@ object OrganizationFeedTestTags {
   const val ERROR_MESSAGE = "errorMessage"
   const val RETRY_BUTTON = "retryButton"
   const val EMPTY_STATE = "emptyState"
+  const val BACK_BUTTON = "backButton"
 
   fun getTestTagForOrganizationItem(orgId: String) = "organizationItem_$orgId"
 }
@@ -116,13 +117,15 @@ private fun OrganizationFeedTopBar(onNavigateBack: () -> Unit = {}, modifier: Mo
   CenterAlignedTopAppBar(
       modifier = modifier.testTag(OrganizationFeedTestTags.ORGANIZATION_FEED_TOP_BAR),
       navigationIcon = {
-        IconButton(onClick = onNavigateBack, modifier = Modifier.size(48.dp)) {
-          Icon(
-              imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-              contentDescription = "Back",
-              tint = Color.White,
-              modifier = Modifier.size(24.dp))
-        }
+        IconButton(
+            onClick = onNavigateBack,
+            modifier = modifier.size(48.dp).testTag(OrganizationFeedTestTags.BACK_BUTTON)) {
+              Icon(
+                  imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                  contentDescription = "Back",
+                  tint = Color.White,
+                  modifier = modifier.size(24.dp))
+            }
       },
       title = {
         Text(
@@ -131,7 +134,7 @@ private fun OrganizationFeedTopBar(onNavigateBack: () -> Unit = {}, modifier: Mo
             fontWeight = FontWeight.Bold,
             color = Color.White,
             letterSpacing = 2.sp,
-            modifier = Modifier.testTag(OrganizationFeedTestTags.ORGANIZATION_FEED_TITLE))
+            modifier = modifier.testTag(OrganizationFeedTestTags.ORGANIZATION_FEED_TITLE))
       },
       colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color(0xFF0A0A0A)))
 }
@@ -182,17 +185,17 @@ private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = 
         fontWeight = FontWeight.Bold,
         color = Color.White,
     )
-    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = modifier.height(8.dp))
     Text(
         text = error,
         style = MaterialTheme.typography.bodyMedium,
         color = Color(0xFF9CA3AF),
         textAlign = TextAlign.Center,
     )
-    Spacer(modifier = Modifier.height(24.dp))
+    Spacer(modifier = modifier.height(24.dp))
     Button(
         onClick = onRetry,
-        modifier = Modifier.testTag(OrganizationFeedTestTags.RETRY_BUTTON),
+        modifier = modifier.testTag(OrganizationFeedTestTags.RETRY_BUTTON),
         colors =
             ButtonDefaults.buttonColors(
                 containerColor = Color(0xFF841DA4),
@@ -219,7 +222,7 @@ private fun EmptyOrganizationState(modifier: Modifier = Modifier) {
         fontWeight = FontWeight.Bold,
         color = Color.White,
     )
-    Spacer(modifier = Modifier.height(8.dp))
+    Spacer(modifier = modifier.height(8.dp))
     Text(
         text = "You haven't joined any organizations yet.",
         style = MaterialTheme.typography.bodyMedium,
