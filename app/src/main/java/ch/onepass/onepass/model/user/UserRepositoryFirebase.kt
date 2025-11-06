@@ -4,13 +4,15 @@ import ch.onepass.onepass.model.staff.StaffSearchResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.functions.ktx.functions
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
 
 class UserRepositoryFirebase(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val db: FirebaseFirestore = FirebaseFirestore.getInstance()
+    private val db: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val functions: FirebaseFunctions = Firebase.functions
 ) : UserRepository {
   private val userCollection = db.collection("users")
 
@@ -57,7 +59,6 @@ class UserRepositoryFirebase(
   ): Result<List<StaffSearchResult>> = runCatching {
     require(query.isNotBlank()) { "Query cannot be blank" }
 
-    val functions = Firebase.functions
     val payload = mutableMapOf<String, Any>("query" to query.trim(), "searchType" to "displayName")
     organizationId?.let { payload["organizationId"] = it }
 
@@ -88,7 +89,6 @@ class UserRepositoryFirebase(
   ): Result<List<StaffSearchResult>> = runCatching {
     require(query.isNotBlank()) { "Query cannot be blank" }
 
-    val functions = Firebase.functions
     val payload = mutableMapOf<String, Any>("query" to query.trim(), "searchType" to "email")
     organizationId?.let { payload["organizationId"] = it }
 
