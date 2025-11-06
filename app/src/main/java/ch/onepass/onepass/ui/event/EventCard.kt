@@ -136,7 +136,7 @@ fun EventCard(
     ) {
       // Title and Organizer section (Grid row 1)
       Column(
-          modifier = Modifier.fillMaxWidth().height(EventCardDimens.titleSectionHeight),
+          modifier = Modifier.fillMaxWidth(),
           verticalArrangement = Arrangement.Top,
           horizontalAlignment = Alignment.Start,
       ) {
@@ -152,7 +152,7 @@ fun EventCard(
         )
         Text(
             text = organizer,
-            style = MaterialTheme.typography.bodyLarge,
+            style = MaterialTheme.typography.headlineSmall,
             color = TextSecondary,
             modifier = Modifier.testTag(C.Tag.event_card_organizer),
             maxLines = 1,
