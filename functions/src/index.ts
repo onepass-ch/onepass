@@ -7,9 +7,14 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
+import * as functions from "firebase-functions";
 import {setGlobalOptions} from "firebase-functions";
 import {onRequest} from "firebase-functions/https";
 import * as logger from "firebase-functions/logger";
+import * as admin from "firebase-admin";
+
+admin.initializeApp();
+const db = admin.firestore();
 
 // Start writing functions
 // https://firebase.google.com/docs/functions/typescript
@@ -26,7 +31,53 @@ import * as logger from "firebase-functions/logger";
 // this will be the maximum concurrent request count.
 setGlobalOptions({ maxInstances: 10 });
 
-// export const helloWorld = onRequest((request, response) => {
-//   logger.info("Hello logs!", {structuredData: true});
-//   response.send("Hello from Firebase!");
-// });
+export const searchUsers = functions.https.onCall(async (payload, context) => {
+  const uid = context.auth?.uid;
+  if (!uid) {
+    throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+  }
+
+  const { query, searchType, organizationId } = payload || {};
+  const trimmed = (query ?? "").trim();
+  if (!trimmed) {
+    throw new functions.https.HttpsError("invalid-argument", "Query cannot be blank.");
+  }
+
+  let q = db.collection("users");
+  if (searchType === "EMAIL") {
+    q = q
+      .where("emailLower", ">=", trimmed.toLowerCase())
+      .where("emailLower", "<", trimmed.toLowerCase() + "\uf8ff");
+  } else if (searchType === "NAME") {
+    q = q
+      .where("displayNameLower", ">=", trimmed.toLowerCase())
+      .where("displayNameLower", "<", trimmed.toLowerCase() + "\uf8ff");
+  } else {
+    throw new functions.https.HttpsError("invalid-argument", "Invalid searchType.");
+  }
+
+  const snapshot = await q.limit(50).get();
+  const results = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+
+  // If organizationId is not null, exclude all users in the organization
+  let exclude = new Set<string>();
+  if (organizationId) {
+    const membersSnap = await db
+      .collection("orgs")
+      .doc(organizationId)
+      .collection("members")
+      .get();
+    exclude = new Set(membersSnap.docs.map((d) => d.id));
+  }
+
+  const users = results
+    .filter((u) => !exclude.has(u.id))
+    .map((u) => ({
+      id: u.id,
+      email: u.email ?? "",
+      displayName: u.displayName ?? "",
+      avatarUrl: u.avatarUrl ?? null,
+    }));
+
+  return { users };
+});
