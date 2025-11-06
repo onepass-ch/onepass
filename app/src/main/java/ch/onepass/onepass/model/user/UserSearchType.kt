@@ -11,8 +11,8 @@ enum class UserSearchType {
   /** Returns the string value used in the Firebase Cloud Function payload. */
   fun toSearchTypeString(): String {
     return when (this) {
-      DISPLAY_NAME -> "displayName"
-      EMAIL -> "email"
+      DISPLAY_NAME -> "NAME"
+      EMAIL -> "EMAIL"
     }
   }
 }

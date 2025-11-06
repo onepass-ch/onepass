@@ -8,6 +8,7 @@ import com.google.firebase.functions.HttpsCallableReference
 import com.google.firebase.functions.HttpsCallableResult
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
@@ -78,16 +79,20 @@ class UserRepositoryFirebaseSearchTest {
   @Test
   fun searchUsers_withDisplayName_withOrganizationId_includesInPayload() = runTest {
     val responseData = mapOf("users" to emptyList<Map<String, Any?>>())
+    val payloadSlot = slot<Map<String, Any>>()
 
     every { result.data } returns responseData
-    every { callable.call(any()) } returns Tasks.forResult(result)
+    every { callable.call(capture(payloadSlot)) } returns Tasks.forResult(result)
 
     val result = repository.searchUsers("John", UserSearchType.DISPLAY_NAME, "org-123")
 
     assertTrue("Search should succeed", result.isSuccess)
 
-    // Verify function was called (payload verification can be added if needed)
+    // Verify function was called and payload contains organizationId
     verify { callable.call(any()) }
+    val payload = payloadSlot.captured
+    assertEquals("org-123", payload["organizationId"])
+    assertEquals("NAME", payload["searchType"])
   }
 
   @Test
@@ -374,15 +379,19 @@ class UserRepositoryFirebaseSearchTest {
   @Test
   fun searchUsers_withEmail_withOrganizationId_includesInPayload() = runTest {
     val responseData = mapOf("users" to emptyList<Map<String, Any?>>())
+    val payloadSlot = slot<Map<String, Any>>()
 
     every { result.data } returns responseData
-    every { callable.call(any()) } returns Tasks.forResult(result)
+    every { callable.call(capture(payloadSlot)) } returns Tasks.forResult(result)
 
     val result = repository.searchUsers("john@example.com", UserSearchType.EMAIL, "org-123")
 
     assertTrue("Search should succeed", result.isSuccess)
 
     verify { callable.call(any()) }
+    val payload = payloadSlot.captured
+    assertEquals("org-123", payload["organizationId"])
+    assertEquals("EMAIL", payload["searchType"])
   }
 
   @Test
@@ -563,25 +572,35 @@ class UserRepositoryFirebaseSearchTest {
   @Test
   fun searchUsers_withEmail_usesCorrectSearchType() = runTest {
     val responseData = mapOf("users" to emptyList<Map<String, Any?>>())
+    val payloadSlot = slot<Map<String, Any>>()
 
     every { result.data } returns responseData
-    every { callable.call(any()) } returns Tasks.forResult(result)
+    every { callable.call(capture(payloadSlot)) } returns Tasks.forResult(result)
 
     repository.searchUsers("john@example.com", UserSearchType.EMAIL, null)
 
     verify { callable.call(any()) }
+    val payload = payloadSlot.captured
+    assertEquals("EMAIL", payload["searchType"])
+    assertEquals("john@example.com", payload["query"])
+    assertFalse("organizationId should not be present", payload.containsKey("organizationId"))
   }
 
   @Test
   fun searchUsers_withDisplayName_usesCorrectSearchType() = runTest {
     val responseData = mapOf("users" to emptyList<Map<String, Any?>>())
+    val payloadSlot = slot<Map<String, Any>>()
 
     every { result.data } returns responseData
-    every { callable.call(any()) } returns Tasks.forResult(result)
+    every { callable.call(capture(payloadSlot)) } returns Tasks.forResult(result)
 
     repository.searchUsers("John", UserSearchType.DISPLAY_NAME, null)
 
     verify { callable.call(any()) }
+    val payload = payloadSlot.captured
+    assertEquals("NAME", payload["searchType"])
+    assertEquals("John", payload["query"])
+    assertFalse("organizationId should not be present", payload.containsKey("organizationId"))
   }
 
   @Test
