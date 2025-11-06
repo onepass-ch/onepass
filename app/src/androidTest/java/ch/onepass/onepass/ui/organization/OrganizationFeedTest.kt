@@ -63,29 +63,31 @@ class OrganizationFeedTest {
   // ==================== Success State Tests ====================
   @Test
   fun organizationFeedScreen_displaysOrganizationsWithDetails_whenDataLoaded() {
-      coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns
-              flowOf(testOrganizations)
-      viewModel = OrganizationFeedViewModel(mockRepository)
+    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns
+        flowOf(testOrganizations)
+    viewModel = OrganizationFeedViewModel(mockRepository)
 
-      composeTestRule.setContent {
-          OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
-      }
+    composeTestRule.setContent {
+      OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
+    }
 
-      // Wait for data to load
-      composeTestRule.waitUntil(timeoutMillis = 3000) {
-          composeTestRule.onAllNodesWithText("Tech Events Zurich").fetchSemanticsNodes().isNotEmpty()
-      }
-      composeTestRule.waitForIdle()
+    // Wait for data to load
+    composeTestRule.waitUntil(timeoutMillis = 3000) {
+      composeTestRule.onAllNodesWithText("Tech Events Zurich").fetchSemanticsNodes().isNotEmpty()
+    }
+    composeTestRule.waitForIdle()
 
-      // Verify first organization with details
-      composeTestRule.onNodeWithText("Tech Events Zurich").assertExists().assertIsDisplayed()
-      composeTestRule.onNodeWithText("Leading tech organizer").assertExists().assertIsDisplayed()
+    // Verify first organization with details
+    composeTestRule.onNodeWithText("Tech Events Zurich").assertExists().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Leading tech organizer").assertExists().assertIsDisplayed()
 
-      // Verify second organization with details
-      composeTestRule.onNodeWithText("Music Nights Geneva").assertExists().assertIsDisplayed()
-      composeTestRule.onNodeWithText("Unforgettable music experiences").assertExists().assertIsDisplayed()
+    // Verify second organization with details
+    composeTestRule.onNodeWithText("Music Nights Geneva").assertExists().assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText("Unforgettable music experiences")
+        .assertExists()
+        .assertIsDisplayed()
   }
-
 
   @Test
   fun organizationFeedScreen_organizationCard_clickTriggersNavigation() {
@@ -277,6 +279,7 @@ class OrganizationFeedTest {
     }
     composeTestRule.onNodeWithContentDescription("Verified").assertExists()
   }
+
   @Test
   fun organizationFeedScaffold_callsOnOrganizationClick() {
     val testOrg =
@@ -307,6 +310,7 @@ class OrganizationFeedTest {
 
     assert(clickedOrgId == "org-123") { "onOrganizationClick was not called with correct orgId" }
   }
+
   @Test
   fun organizationFeedScaffold_showsErrorState_whenErrorAndNoOrganizations() {
     composeTestRule.setContent {
@@ -353,6 +357,7 @@ class OrganizationFeedTest {
 
     assert(retryCalled) { "onRetry was not called" }
   }
+
   @Test
   fun organizationListContent_displaysMultipleOrganizations() {
     val orgs =
