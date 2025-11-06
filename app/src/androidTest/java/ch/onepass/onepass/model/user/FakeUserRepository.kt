@@ -28,11 +28,35 @@ class FakeUserRepository(
     /* no-op */
   }
 
+  /** Configurable search results for testing. Set this to customize search behavior in tests. */
+  private var searchResultsFunction:
+      (String, UserSearchType, String?) -> Result<List<StaffSearchResult>> =
+      { _, _, _ ->
+        Result.success(emptyList())
+      }
+
   override suspend fun searchUsers(
       query: String,
       searchType: UserSearchType,
       organizationId: String?
   ): Result<List<StaffSearchResult>> {
-    return Result.success(emptyList())
+    return searchResultsFunction(query, searchType, organizationId)
+  }
+
+  /** Override searchUsers to return specific results. */
+  fun setSearchResults(results: List<StaffSearchResult>) {
+    searchResultsFunction = { _, _, _ -> Result.success(results) }
+  }
+
+  /** Override searchUsers to return an error. */
+  fun setSearchError(error: Throwable) {
+    searchResultsFunction = { _, _, _ -> Result.failure(error) }
+  }
+
+  /** Set a custom search function for more complex test scenarios. */
+  fun setSearchFunction(
+      function: (String, UserSearchType, String?) -> Result<List<StaffSearchResult>>
+  ) {
+    searchResultsFunction = function
   }
 }
