@@ -46,13 +46,10 @@ import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.model.user.UserSearchType
-import ch.onepass.onepass.ui.staff.StaffInvitationUiState
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
 
 object StaffInvitationTestTags {
   const val SCREEN = "staffInvitation_screen"
@@ -99,21 +96,18 @@ fun StaffInvitationScreen(
               IconButton(
                   onClick = onNavigateBack,
                   modifier = Modifier.testTag(StaffInvitationTestTags.BACK_BUTTON)) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White)
-              }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = Color.White)
+                  }
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = DefaultBackground),
             modifier = Modifier.testTag(StaffInvitationTestTags.TOP_BAR))
       },
       containerColor = DefaultBackground) { paddingValues ->
         Column(
-            modifier =
-                Modifier.fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(horizontal = 16.dp)) {
+            modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 16.dp)) {
               // Tab Row
               TabRow(
                   modifier = Modifier.fillMaxWidth().testTag(StaffInvitationTestTags.TAB_ROW),
@@ -123,15 +117,19 @@ fun StaffInvitationScreen(
                   contentColor = colorResource(id = R.color.on_surface),
                   indicator = { tabPositions ->
                     TabRowDefaults.Indicator(
-                        modifier = Modifier.tabIndicatorOffset(tabPositions[if (uiState.selectedTab == UserSearchType.DISPLAY_NAME) 0 else 1]),
+                        modifier =
+                            Modifier.tabIndicatorOffset(
+                                tabPositions[
+                                    if (uiState.selectedTab == UserSearchType.DISPLAY_NAME) 0
+                                    else 1]),
                         height = 4.dp,
                         color = colorResource(id = R.color.tab_indicator))
                   }) {
                     Tab(
                         text = {
                           Text(
-                              text = "Display Name",
-                              style = MaterialTheme.typography.titleLarge,
+                              text = "Search by username",
+                              style = MaterialTheme.typography.titleMedium,
                               color =
                                   if (uiState.selectedTab == UserSearchType.DISPLAY_NAME)
                                       colorResource(id = R.color.tab_selected)
@@ -144,8 +142,8 @@ fun StaffInvitationScreen(
                     Tab(
                         text = {
                           Text(
-                              text = "Email",
-                              style = MaterialTheme.typography.titleLarge,
+                              text = "Search by e-mail",
+                              style = MaterialTheme.typography.titleMedium,
                               color =
                                   if (uiState.selectedTab == UserSearchType.EMAIL)
                                       colorResource(id = R.color.tab_selected)
@@ -182,12 +180,10 @@ fun StaffInvitationScreen(
               Box(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) {
                 when {
                   uiState.isLoading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center) {
-                          CircularProgressIndicator(
-                              modifier = Modifier.testTag(StaffInvitationTestTags.LOADING_INDICATOR))
-                        }
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                      CircularProgressIndicator(
+                          modifier = Modifier.testTag(StaffInvitationTestTags.LOADING_INDICATOR))
+                    }
                   }
                   uiState.searchQuery.isBlank() -> {
                     EmptyState(
@@ -201,28 +197,27 @@ fun StaffInvitationScreen(
                   }
                   else -> {
                     LazyColumn(
-                        modifier = Modifier.fillMaxSize().testTag(StaffInvitationTestTags.RESULTS_LIST),
+                        modifier =
+                            Modifier.fillMaxSize().testTag(StaffInvitationTestTags.RESULTS_LIST),
                         contentPadding = PaddingValues(vertical = 8.dp),
                         verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                          items(
-                              items = uiState.searchResults,
-                              key = { it.id }) { user ->
-                                val isInvited = user.id in uiState.invitedUserIds
-                                val isAlreadyInvited = user.id in uiState.alreadyInvitedUserIds
+                          items(items = uiState.searchResults, key = { it.id }) { user ->
+                            val isInvited = user.id in uiState.invitedUserIds
+                            val isAlreadyInvited = user.id in uiState.alreadyInvitedUserIds
 
-                                StaffListItem(
-                                    user = user,
-                                    onClick = { viewModel.onUserSelected(user) },
-                                    modifier =
-                                        Modifier.fillMaxWidth()
-                                            .then(
-                                                if (isInvited || isAlreadyInvited) {
-                                                  Modifier.background(
-                                                      color = Color(0xFF1C1C1C).copy(alpha = 0.5f))
-                                                } else {
-                                                  Modifier
-                                                }))
-                              }
+                            StaffListItem(
+                                user = user,
+                                onClick = { viewModel.onUserSelected(user) },
+                                modifier =
+                                    Modifier.fillMaxWidth()
+                                        .then(
+                                            if (isInvited || isAlreadyInvited) {
+                                              Modifier.background(
+                                                  color = Color(0xFF1C1C1C).copy(alpha = 0.5f))
+                                            } else {
+                                              Modifier
+                                            }))
+                          }
                         }
                   }
                 }
@@ -285,7 +280,7 @@ private fun EmptyState(message: String, modifier: Modifier = Modifier) {
 @Suppress("UNCHECKED_CAST")
 private fun createPreviewViewModel(initialState: StaffInvitationUiState): StaffInvitationViewModel {
   val viewModel = StaffInvitationViewModel(organizationId = "preview-org-id")
-  
+
   // Use reflection to set the private _uiState field
   try {
     val field = StaffInvitationViewModel::class.java.getDeclaredField("_uiState")
@@ -296,7 +291,7 @@ private fun createPreviewViewModel(initialState: StaffInvitationUiState): StaffI
     // If reflection fails, the preview will use default state
     // This is acceptable for preview purposes
   }
-  
+
   return viewModel
 }
 
@@ -330,9 +325,9 @@ private fun StaffInvitationScreenPreview() {
             errorMessage = null,
             invitedUserIds = setOf("1"),
             alreadyInvitedUserIds = emptySet())
-    
+
     val mockViewModel = remember { createPreviewViewModel(initialState) }
-    
+
     // Ensure the state is set after ViewModel initialization
     LaunchedEffect(Unit) {
       // Give the ViewModel a moment to initialize, then set our preview state
@@ -361,9 +356,9 @@ private fun StaffInvitationScreenEmptyPreview() {
             searchQuery = "",
             searchResults = emptyList(),
             isLoading = false)
-    
+
     val mockViewModel = remember { createPreviewViewModel(initialState) }
-    
+
     LaunchedEffect(Unit) {
       delay(100)
       try {
@@ -390,9 +385,9 @@ private fun StaffInvitationScreenLoadingPreview() {
             searchQuery = "test",
             searchResults = emptyList(),
             isLoading = true)
-    
+
     val mockViewModel = remember { createPreviewViewModel(initialState) }
-    
+
     LaunchedEffect(Unit) {
       delay(100)
       try {
@@ -408,4 +403,3 @@ private fun StaffInvitationScreenLoadingPreview() {
     StaffInvitationScreen(viewModel = mockViewModel, onNavigateBack = {})
   }
 }
-
