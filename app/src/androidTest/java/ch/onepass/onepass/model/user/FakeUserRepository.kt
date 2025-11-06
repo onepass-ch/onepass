@@ -5,8 +5,8 @@ import ch.onepass.onepass.model.staff.StaffSearchResult
 /**
  * Fake implementation of UserRepository for testing purposes.
  *
- * This class provides a simple implementation that can be used in tests
- * where you don't need the full Firebase functionality.
+ * This class provides a simple implementation that can be used in tests where you don't need the
+ * full Firebase functionality.
  */
 class FakeUserRepository(
     private val currentUser: User? = null,
@@ -42,4 +42,3 @@ class FakeUserRepository(
     return Result.success(emptyList())
   }
 }
-

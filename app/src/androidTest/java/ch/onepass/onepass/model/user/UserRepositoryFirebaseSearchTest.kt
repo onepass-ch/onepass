@@ -1,6 +1,5 @@
 package ch.onepass.onepass.model.user
 
-import ch.onepass.onepass.model.staff.StaffSearchResult
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -26,8 +25,6 @@ import org.junit.Test
  * - Response parsing
  * - Error handling
  * - Edge cases
- *
- * Coverage target: 90%+ line coverage
  */
 class UserRepositoryFirebaseSearchTest {
 
@@ -185,11 +182,7 @@ class UserRepositoryFirebaseSearchTest {
   @Test
   fun searchUsersByDisplayName_withMissingAvatarUrl_handlesNull() = runTest {
     val usersData =
-        listOf(
-            mapOf(
-                "id" to "user1",
-                "email" to "john@example.com",
-                "displayName" to "John Doe"))
+        listOf(mapOf("id" to "user1", "email" to "john@example.com", "displayName" to "John Doe"))
 
     val responseData = mapOf("users" to usersData)
 
@@ -209,13 +202,8 @@ class UserRepositoryFirebaseSearchTest {
   fun searchUsersByDisplayName_withMissingId_filtersOutUser() = runTest {
     val usersData =
         listOf(
-            mapOf(
-                "email" to "john@example.com",
-                "displayName" to "John Doe"),
-            mapOf(
-                "id" to "user2",
-                "email" to "jane@example.com",
-                "displayName" to "Jane Smith"))
+            mapOf("email" to "john@example.com", "displayName" to "John Doe"),
+            mapOf("id" to "user2", "email" to "jane@example.com", "displayName" to "Jane Smith"))
 
     val responseData = mapOf("users" to usersData)
 
@@ -233,11 +221,7 @@ class UserRepositoryFirebaseSearchTest {
 
   @Test
   fun searchUsersByDisplayName_withMissingEmail_usesEmptyString() = runTest {
-    val usersData =
-        listOf(
-            mapOf(
-                "id" to "user1",
-                "displayName" to "John Doe"))
+    val usersData = listOf(mapOf("id" to "user1", "displayName" to "John Doe"))
 
     val responseData = mapOf("users" to usersData)
 
@@ -255,11 +239,7 @@ class UserRepositoryFirebaseSearchTest {
 
   @Test
   fun searchUsersByDisplayName_withMissingDisplayName_usesEmptyString() = runTest {
-    val usersData =
-        listOf(
-            mapOf(
-                "id" to "user1",
-                "email" to "john@example.com"))
+    val usersData = listOf(mapOf("id" to "user1", "email" to "john@example.com"))
 
     val responseData = mapOf("users" to usersData)
 
@@ -277,7 +257,8 @@ class UserRepositoryFirebaseSearchTest {
 
   @Test
   fun searchUsersByDisplayName_whenCloudFunctionThrows_returnsFailure() = runTest {
-    every { callable.call(any()) } returns Tasks.forException(RuntimeException("Cloud Function error"))
+    every { callable.call(any()) } returns
+        Tasks.forException(RuntimeException("Cloud Function error"))
 
     val result = repository.searchUsersByDisplayName("John", null)
 
@@ -494,7 +475,8 @@ class UserRepositoryFirebaseSearchTest {
 
   @Test
   fun searchUsersByEmail_whenCloudFunctionThrows_returnsFailure() = runTest {
-    every { callable.call(any()) } returns Tasks.forException(RuntimeException("Cloud Function error"))
+    every { callable.call(any()) } returns
+        Tasks.forException(RuntimeException("Cloud Function error"))
 
     val result = repository.searchUsersByEmail("john@example.com", null)
 
@@ -604,11 +586,7 @@ class UserRepositoryFirebaseSearchTest {
 
   @Test
   fun searchUsersByEmail_withNullEmail_usesEmptyString() = runTest {
-    val usersData =
-        listOf(
-            mapOf(
-                "id" to "user1",
-                "displayName" to "John Doe"))
+    val usersData = listOf(mapOf("id" to "user1", "displayName" to "John Doe"))
 
     val responseData = mapOf("users" to usersData)
 
@@ -626,11 +604,7 @@ class UserRepositoryFirebaseSearchTest {
 
   @Test
   fun searchUsersByEmail_withNullDisplayName_usesEmptyString() = runTest {
-    val usersData =
-        listOf(
-            mapOf(
-                "id" to "user1",
-                "email" to "john@example.com"))
+    val usersData = listOf(mapOf("id" to "user1", "email" to "john@example.com"))
 
     val responseData = mapOf("users" to usersData)
 
@@ -650,13 +624,8 @@ class UserRepositoryFirebaseSearchTest {
   fun searchUsersByEmail_withNullId_filtersOutUser() = runTest {
     val usersData =
         listOf(
-            mapOf(
-                "email" to "john@example.com",
-                "displayName" to "John Doe"),
-            mapOf(
-                "id" to "user2",
-                "email" to "jane@example.com",
-                "displayName" to "Jane Smith"))
+            mapOf("email" to "john@example.com", "displayName" to "John Doe"),
+            mapOf("id" to "user2", "email" to "jane@example.com", "displayName" to "Jane Smith"))
 
     val responseData = mapOf("users" to usersData)
 
@@ -672,4 +641,3 @@ class UserRepositoryFirebaseSearchTest {
     assertEquals("user2", users[0].id)
   }
 }
-
