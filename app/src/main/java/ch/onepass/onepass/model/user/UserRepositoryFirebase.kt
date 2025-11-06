@@ -53,43 +53,16 @@ class UserRepositoryFirebase(
     docRef.update("lastLoginAt", FieldValue.serverTimestamp()).await()
   }
 
-  override suspend fun searchUsersByDisplayName(
+  override suspend fun searchUsers(
       query: String,
+      searchType: UserSearchType,
       organizationId: String?
   ): Result<List<StaffSearchResult>> = runCatching {
     require(query.isNotBlank()) { "Query cannot be blank" }
 
-    val payload = mutableMapOf<String, Any>("query" to query.trim(), "searchType" to "displayName")
-    organizationId?.let { payload["organizationId"] = it }
-
-    val result = functions.getHttpsCallable(FN_SEARCH_USERS).call(payload).await()
-
-    @Suppress("UNCHECKED_CAST")
-    val data = result.data as? Map<String, Any?> ?: error("Unexpected response format")
-
-    @Suppress("UNCHECKED_CAST")
-    val usersList = data[KEY_USERS] as? List<Map<String, Any?>> ?: emptyList()
-
-    usersList.mapNotNull { userMap ->
-      try {
-        StaffSearchResult(
-            id = userMap[KEY_ID] as? String ?: return@mapNotNull null,
-            email = userMap[KEY_EMAIL] as? String ?: "",
-            displayName = userMap[KEY_DISPLAY_NAME] as? String ?: "",
-            avatarUrl = userMap[KEY_AVATAR_URL] as? String)
-      } catch (e: Exception) {
-        null
-      }
-    }
-  }
-
-  override suspend fun searchUsersByEmail(
-      query: String,
-      organizationId: String?
-  ): Result<List<StaffSearchResult>> = runCatching {
-    require(query.isNotBlank()) { "Query cannot be blank" }
-
-    val payload = mutableMapOf<String, Any>("query" to query.trim(), "searchType" to "email")
+    val payload =
+        mutableMapOf<String, Any>(
+            "query" to query.trim(), "searchType" to searchType.toSearchTypeString())
     organizationId?.let { payload["organizationId"] = it }
 
     val result = functions.getHttpsCallable(FN_SEARCH_USERS).call(payload).await()

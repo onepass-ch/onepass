@@ -10,26 +10,16 @@ interface UserRepository {
   suspend fun updateLastLogin(uid: String)
 
   /**
-   * Searches for users by display name.
+   * Searches for users by the specified search type.
    *
-   * @param query The search query (display name).
+   * @param query The search query.
+   * @param searchType The type of search to perform (display name or email).
    * @param organizationId The organization ID to filter results (optional).
    * @return A [Result] containing a list of [StaffSearchResult] on success, or an error.
    */
-  suspend fun searchUsersByDisplayName(
+  suspend fun searchUsers(
       query: String,
-      organizationId: String? = null
-  ): Result<List<StaffSearchResult>>
-
-  /**
-   * Searches for users by email address.
-   *
-   * @param query The search query (email address).
-   * @param organizationId The organization ID to filter results (optional).
-   * @return A [Result] containing a list of [StaffSearchResult] on success, or an error.
-   */
-  suspend fun searchUsersByEmail(
-      query: String,
+      searchType: UserSearchType,
       organizationId: String? = null
   ): Result<List<StaffSearchResult>>
 }

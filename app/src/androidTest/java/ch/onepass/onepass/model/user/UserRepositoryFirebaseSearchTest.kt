@@ -18,8 +18,8 @@ import org.junit.Test
  * Comprehensive unit tests for UserRepositoryFirebase search functions.
  *
  * These tests verify:
- * - searchUsersByDisplayName functionality
- * - searchUsersByEmail functionality
+ * - searchUsers functionality with DISPLAY_NAME search type
+ * - searchUsers functionality with EMAIL search type
  * - Query validation
  * - Payload construction
  * - Response parsing
@@ -47,10 +47,10 @@ class UserRepositoryFirebaseSearchTest {
     repository = UserRepositoryFirebase(auth = auth, db = db, functions = functions)
   }
 
-  // ========== searchUsersByDisplayName Tests ==========
+  // ========== searchUsers with DISPLAY_NAME Tests ==========
 
   @Test
-  fun searchUsersByDisplayName_withValidQuery_returnsSuccess() = runTest {
+  fun searchUsers_withDisplayName_withValidQuery_returnsSuccess() = runTest {
     val usersData =
         listOf(
             mapOf(
@@ -63,7 +63,7 @@ class UserRepositoryFirebaseSearchTest {
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByDisplayName("John", null)
+    val result = repository.searchUsers("John", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -76,13 +76,13 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByDisplayName_withOrganizationId_includesInPayload() = runTest {
+  fun searchUsers_withDisplayName_withOrganizationId_includesInPayload() = runTest {
     val responseData = mapOf("users" to emptyList<Map<String, Any?>>())
 
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByDisplayName("John", "org-123")
+    val result = repository.searchUsers("John", UserSearchType.DISPLAY_NAME, "org-123")
 
     assertTrue("Search should succeed", result.isSuccess)
 
@@ -91,13 +91,13 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByDisplayName_withoutOrganizationId_omitsFromPayload() = runTest {
+  fun searchUsers_withDisplayName_withoutOrganizationId_omitsFromPayload() = runTest {
     val responseData = mapOf("users" to emptyList<Map<String, Any?>>())
 
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByDisplayName("John", null)
+    val result = repository.searchUsers("John", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Search should succeed", result.isSuccess)
 
@@ -105,20 +105,20 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByDisplayName_trimsQueryString() = runTest {
+  fun searchUsers_withDisplayName_trimsQueryString() = runTest {
     val responseData = mapOf("users" to emptyList<Map<String, Any?>>())
 
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    repository.searchUsersByDisplayName("  John  ", null)
+    repository.searchUsers("  John  ", UserSearchType.DISPLAY_NAME, null)
 
     verify { callable.call(any()) }
   }
 
   @Test
-  fun searchUsersByDisplayName_withEmptyQuery_returnsFailure() = runTest {
-    val result = repository.searchUsersByDisplayName("", null)
+  fun searchUsers_withDisplayName_withEmptyQuery_returnsFailure() = runTest {
+    val result = repository.searchUsers("", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Should fail with empty query", result.isFailure)
     assertTrue(
@@ -127,20 +127,20 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByDisplayName_withBlankQuery_returnsFailure() = runTest {
-    val result = repository.searchUsersByDisplayName("   ", null)
+  fun searchUsers_withDisplayName_withBlankQuery_returnsFailure() = runTest {
+    val result = repository.searchUsers("   ", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Should fail with blank query", result.isFailure)
   }
 
   @Test
-  fun searchUsersByDisplayName_withEmptyResults_returnsEmptyList() = runTest {
+  fun searchUsers_withDisplayName_withEmptyResults_returnsEmptyList() = runTest {
     val responseData = mapOf("users" to emptyList<Map<String, Any?>>())
 
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByDisplayName("Nonexistent", null)
+    val result = repository.searchUsers("Nonexistent", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -149,7 +149,7 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByDisplayName_withMultipleUsers_returnsAllUsers() = runTest {
+  fun searchUsers_withDisplayName_withMultipleUsers_returnsAllUsers() = runTest {
     val usersData =
         listOf(
             mapOf(
@@ -168,7 +168,7 @@ class UserRepositoryFirebaseSearchTest {
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByDisplayName("John", null)
+    val result = repository.searchUsers("John", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -180,7 +180,7 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByDisplayName_withMissingAvatarUrl_handlesNull() = runTest {
+  fun searchUsers_withDisplayName_withMissingAvatarUrl_handlesNull() = runTest {
     val usersData =
         listOf(mapOf("id" to "user1", "email" to "john@example.com", "displayName" to "John Doe"))
 
@@ -189,7 +189,7 @@ class UserRepositoryFirebaseSearchTest {
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByDisplayName("John", null)
+    val result = repository.searchUsers("John", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -199,7 +199,7 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByDisplayName_withMissingId_filtersOutUser() = runTest {
+  fun searchUsers_withDisplayName_withMissingId_filtersOutUser() = runTest {
     val usersData =
         listOf(
             mapOf("email" to "john@example.com", "displayName" to "John Doe"),
@@ -210,7 +210,7 @@ class UserRepositoryFirebaseSearchTest {
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByDisplayName("John", null)
+    val result = repository.searchUsers("John", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -220,7 +220,7 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByDisplayName_withMissingEmail_usesEmptyString() = runTest {
+  fun searchUsers_withDisplayName_withMissingEmail_usesEmptyString() = runTest {
     val usersData = listOf(mapOf("id" to "user1", "displayName" to "John Doe"))
 
     val responseData = mapOf("users" to usersData)
@@ -228,7 +228,7 @@ class UserRepositoryFirebaseSearchTest {
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByDisplayName("John", null)
+    val result = repository.searchUsers("John", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -238,7 +238,7 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByDisplayName_withMissingDisplayName_usesEmptyString() = runTest {
+  fun searchUsers_withDisplayName_withMissingDisplayName_usesEmptyString() = runTest {
     val usersData = listOf(mapOf("id" to "user1", "email" to "john@example.com"))
 
     val responseData = mapOf("users" to usersData)
@@ -246,7 +246,7 @@ class UserRepositoryFirebaseSearchTest {
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByDisplayName("John", null)
+    val result = repository.searchUsers("John", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -256,22 +256,22 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByDisplayName_whenCloudFunctionThrows_returnsFailure() = runTest {
+  fun searchUsers_withDisplayName_whenCloudFunctionThrows_returnsFailure() = runTest {
     every { callable.call(any()) } returns
         Tasks.forException(RuntimeException("Cloud Function error"))
 
-    val result = repository.searchUsersByDisplayName("John", null)
+    val result = repository.searchUsers("John", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Should fail when Cloud Function throws", result.isFailure)
     assertNotNull("Exception should be present", result.exceptionOrNull())
   }
 
   @Test
-  fun searchUsersByDisplayName_withUnexpectedResponseFormat_returnsFailure() = runTest {
+  fun searchUsers_withDisplayName_withUnexpectedResponseFormat_returnsFailure() = runTest {
     every { result.data } returns "not a map"
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByDisplayName("John", null)
+    val result = repository.searchUsers("John", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Should fail with unexpected response format", result.isFailure)
     assertTrue(
@@ -280,23 +280,23 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByDisplayName_withNullResponseData_returnsFailure() = runTest {
+  fun searchUsers_withDisplayName_withNullResponseData_returnsFailure() = runTest {
     every { result.data } returns null
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByDisplayName("John", null)
+    val result = repository.searchUsers("John", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Should fail with null response data", result.isFailure)
   }
 
   @Test
-  fun searchUsersByDisplayName_withMissingUsersKey_returnsEmptyList() = runTest {
+  fun searchUsers_withDisplayName_withMissingUsersKey_returnsEmptyList() = runTest {
     val responseData = mapOf<String, Any?>("otherKey" to "value")
 
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByDisplayName("John", null)
+    val result = repository.searchUsers("John", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -305,13 +305,13 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByDisplayName_withUsersNotList_returnsEmptyList() = runTest {
+  fun searchUsers_withDisplayName_withUsersNotList_returnsEmptyList() = runTest {
     val responseData = mapOf("users" to "not a list")
 
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByDisplayName("John", null)
+    val result = repository.searchUsers("John", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -320,7 +320,7 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByDisplayName_withInvalidUserData_filtersOutInvalidUsers() = runTest {
+  fun searchUsers_withDisplayName_withInvalidUserData_filtersOutInvalidUsers() = runTest {
     val usersData =
         listOf(
             mapOf("id" to "user1", "email" to "john@example.com", "displayName" to "John Doe"),
@@ -332,7 +332,7 @@ class UserRepositoryFirebaseSearchTest {
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByDisplayName("John", null)
+    val result = repository.searchUsers("John", UserSearchType.DISPLAY_NAME, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -342,10 +342,10 @@ class UserRepositoryFirebaseSearchTest {
     assertEquals("user3", users[1].id)
   }
 
-  // ========== searchUsersByEmail Tests ==========
+  // ========== searchUsers with EMAIL Tests ==========
 
   @Test
-  fun searchUsersByEmail_withValidQuery_returnsSuccess() = runTest {
+  fun searchUsers_withEmail_withValidQuery_returnsSuccess() = runTest {
     val usersData =
         listOf(
             mapOf(
@@ -359,7 +359,7 @@ class UserRepositoryFirebaseSearchTest {
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByEmail("john@example.com", null)
+    val result = repository.searchUsers("john@example.com", UserSearchType.EMAIL, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -372,13 +372,13 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByEmail_withOrganizationId_includesInPayload() = runTest {
+  fun searchUsers_withEmail_withOrganizationId_includesInPayload() = runTest {
     val responseData = mapOf("users" to emptyList<Map<String, Any?>>())
 
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByEmail("john@example.com", "org-123")
+    val result = repository.searchUsers("john@example.com", UserSearchType.EMAIL, "org-123")
 
     assertTrue("Search should succeed", result.isSuccess)
 
@@ -386,13 +386,13 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByEmail_withoutOrganizationId_omitsFromPayload() = runTest {
+  fun searchUsers_withEmail_withoutOrganizationId_omitsFromPayload() = runTest {
     val responseData = mapOf("users" to emptyList<Map<String, Any?>>())
 
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByEmail("john@example.com", null)
+    val result = repository.searchUsers("john@example.com", UserSearchType.EMAIL, null)
 
     assertTrue("Search should succeed", result.isSuccess)
 
@@ -400,20 +400,20 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByEmail_trimsQueryString() = runTest {
+  fun searchUsers_withEmail_trimsQueryString() = runTest {
     val responseData = mapOf("users" to emptyList<Map<String, Any?>>())
 
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    repository.searchUsersByEmail("  john@example.com  ", null)
+    repository.searchUsers("  john@example.com  ", UserSearchType.EMAIL, null)
 
     verify { callable.call(any()) }
   }
 
   @Test
-  fun searchUsersByEmail_withEmptyQuery_returnsFailure() = runTest {
-    val result = repository.searchUsersByEmail("", null)
+  fun searchUsers_withEmail_withEmptyQuery_returnsFailure() = runTest {
+    val result = repository.searchUsers("", UserSearchType.EMAIL, null)
 
     assertTrue("Should fail with empty query", result.isFailure)
     assertTrue(
@@ -422,20 +422,20 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByEmail_withBlankQuery_returnsFailure() = runTest {
-    val result = repository.searchUsersByEmail("   ", null)
+  fun searchUsers_withEmail_withBlankQuery_returnsFailure() = runTest {
+    val result = repository.searchUsers("   ", UserSearchType.EMAIL, null)
 
     assertTrue("Should fail with blank query", result.isFailure)
   }
 
   @Test
-  fun searchUsersByEmail_withEmptyResults_returnsEmptyList() = runTest {
+  fun searchUsers_withEmail_withEmptyResults_returnsEmptyList() = runTest {
     val responseData = mapOf("users" to emptyList<Map<String, Any?>>())
 
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByEmail("nonexistent@example.com", null)
+    val result = repository.searchUsers("nonexistent@example.com", UserSearchType.EMAIL, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -444,7 +444,7 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByEmail_withMultipleUsers_returnsAllUsers() = runTest {
+  fun searchUsers_withEmail_withMultipleUsers_returnsAllUsers() = runTest {
     val usersData =
         listOf(
             mapOf(
@@ -463,7 +463,7 @@ class UserRepositoryFirebaseSearchTest {
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByEmail("example.com", null)
+    val result = repository.searchUsers("example.com", UserSearchType.EMAIL, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -474,22 +474,22 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByEmail_whenCloudFunctionThrows_returnsFailure() = runTest {
+  fun searchUsers_withEmail_whenCloudFunctionThrows_returnsFailure() = runTest {
     every { callable.call(any()) } returns
         Tasks.forException(RuntimeException("Cloud Function error"))
 
-    val result = repository.searchUsersByEmail("john@example.com", null)
+    val result = repository.searchUsers("john@example.com", UserSearchType.EMAIL, null)
 
     assertTrue("Should fail when Cloud Function throws", result.isFailure)
     assertNotNull("Exception should be present", result.exceptionOrNull())
   }
 
   @Test
-  fun searchUsersByEmail_withUnexpectedResponseFormat_returnsFailure() = runTest {
+  fun searchUsers_withEmail_withUnexpectedResponseFormat_returnsFailure() = runTest {
     every { result.data } returns "not a map"
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByEmail("john@example.com", null)
+    val result = repository.searchUsers("john@example.com", UserSearchType.EMAIL, null)
 
     assertTrue("Should fail with unexpected response format", result.isFailure)
     assertTrue(
@@ -498,23 +498,23 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByEmail_withNullResponseData_returnsFailure() = runTest {
+  fun searchUsers_withEmail_withNullResponseData_returnsFailure() = runTest {
     every { result.data } returns null
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByEmail("john@example.com", null)
+    val result = repository.searchUsers("john@example.com", UserSearchType.EMAIL, null)
 
     assertTrue("Should fail with null response data", result.isFailure)
   }
 
   @Test
-  fun searchUsersByEmail_withMissingUsersKey_returnsEmptyList() = runTest {
+  fun searchUsers_withEmail_withMissingUsersKey_returnsEmptyList() = runTest {
     val responseData = mapOf<String, Any?>("otherKey" to "value")
 
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByEmail("john@example.com", null)
+    val result = repository.searchUsers("john@example.com", UserSearchType.EMAIL, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -523,13 +523,13 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByEmail_withUsersNotList_returnsEmptyList() = runTest {
+  fun searchUsers_withEmail_withUsersNotList_returnsEmptyList() = runTest {
     val responseData = mapOf("users" to "not a list")
 
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByEmail("john@example.com", null)
+    val result = repository.searchUsers("john@example.com", UserSearchType.EMAIL, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -538,7 +538,7 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByEmail_withInvalidUserData_filtersOutInvalidUsers() = runTest {
+  fun searchUsers_withEmail_withInvalidUserData_filtersOutInvalidUsers() = runTest {
     val usersData =
         listOf(
             mapOf("id" to "user1", "email" to "john@example.com", "displayName" to "John Doe"),
@@ -550,7 +550,7 @@ class UserRepositoryFirebaseSearchTest {
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByEmail("example.com", null)
+    val result = repository.searchUsers("example.com", UserSearchType.EMAIL, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -561,31 +561,31 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByEmail_usesCorrectSearchType() = runTest {
+  fun searchUsers_withEmail_usesCorrectSearchType() = runTest {
     val responseData = mapOf("users" to emptyList<Map<String, Any?>>())
 
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    repository.searchUsersByEmail("john@example.com", null)
+    repository.searchUsers("john@example.com", UserSearchType.EMAIL, null)
 
     verify { callable.call(any()) }
   }
 
   @Test
-  fun searchUsersByDisplayName_usesCorrectSearchType() = runTest {
+  fun searchUsers_withDisplayName_usesCorrectSearchType() = runTest {
     val responseData = mapOf("users" to emptyList<Map<String, Any?>>())
 
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    repository.searchUsersByDisplayName("John", null)
+    repository.searchUsers("John", UserSearchType.DISPLAY_NAME, null)
 
     verify { callable.call(any()) }
   }
 
   @Test
-  fun searchUsersByEmail_withNullEmail_usesEmptyString() = runTest {
+  fun searchUsers_withEmail_withNullEmail_usesEmptyString() = runTest {
     val usersData = listOf(mapOf("id" to "user1", "displayName" to "John Doe"))
 
     val responseData = mapOf("users" to usersData)
@@ -593,7 +593,7 @@ class UserRepositoryFirebaseSearchTest {
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByEmail("john", null)
+    val result = repository.searchUsers("john", UserSearchType.EMAIL, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -603,7 +603,7 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByEmail_withNullDisplayName_usesEmptyString() = runTest {
+  fun searchUsers_withEmail_withNullDisplayName_usesEmptyString() = runTest {
     val usersData = listOf(mapOf("id" to "user1", "email" to "john@example.com"))
 
     val responseData = mapOf("users" to usersData)
@@ -611,7 +611,7 @@ class UserRepositoryFirebaseSearchTest {
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByEmail("john@example.com", null)
+    val result = repository.searchUsers("john@example.com", UserSearchType.EMAIL, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()
@@ -621,7 +621,7 @@ class UserRepositoryFirebaseSearchTest {
   }
 
   @Test
-  fun searchUsersByEmail_withNullId_filtersOutUser() = runTest {
+  fun searchUsers_withEmail_withNullId_filtersOutUser() = runTest {
     val usersData =
         listOf(
             mapOf("email" to "john@example.com", "displayName" to "John Doe"),
@@ -632,7 +632,7 @@ class UserRepositoryFirebaseSearchTest {
     every { result.data } returns responseData
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val result = repository.searchUsersByEmail("example.com", null)
+    val result = repository.searchUsers("example.com", UserSearchType.EMAIL, null)
 
     assertTrue("Search should succeed", result.isSuccess)
     val users = result.getOrNull()

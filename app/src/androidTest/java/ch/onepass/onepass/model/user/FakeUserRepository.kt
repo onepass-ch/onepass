@@ -28,15 +28,9 @@ class FakeUserRepository(
     /* no-op */
   }
 
-  override suspend fun searchUsersByDisplayName(
+  override suspend fun searchUsers(
       query: String,
-      organizationId: String?
-  ): Result<List<StaffSearchResult>> {
-    return Result.success(emptyList())
-  }
-
-  override suspend fun searchUsersByEmail(
-      query: String,
+      searchType: UserSearchType,
       organizationId: String?
   ): Result<List<StaffSearchResult>> {
     return Result.success(emptyList())
