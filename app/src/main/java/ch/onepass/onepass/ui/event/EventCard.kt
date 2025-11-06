@@ -142,7 +142,7 @@ fun EventCard(
     ) {
       // Title and Organizer section (Grid row 1)
       Column(
-          modifier = Modifier.fillMaxWidth().fillMaxWidth(),
+          modifier = Modifier.fillMaxWidth(),
           verticalArrangement = Arrangement.Top,
           horizontalAlignment = Alignment.Start,
       ) {
