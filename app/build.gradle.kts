@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.sonar)
   id("jacoco")
   id("com.google.gms.google-services")
+  alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -154,6 +155,7 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 }
 
 dependencies {
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
