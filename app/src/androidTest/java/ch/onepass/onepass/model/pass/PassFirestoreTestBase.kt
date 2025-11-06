@@ -79,7 +79,8 @@ open class PassFirestoreTestBase {
     val initial = docRef.get(Source.SERVER).await()
     if (!initial.exists() || !initial.contains("pass")) return
     docRef.update(mapOf("pass" to FieldValue.delete())).await()
-    repeat(10) { attempt -> // 8 → 10
+    // 10 times, could be a different number
+    repeat(10) { attempt ->
       val snap = docRef.get(Source.SERVER).await()
       if (!snap.contains("pass")) return
       delay(100L * (attempt + 1)) // 50ms → 100ms
