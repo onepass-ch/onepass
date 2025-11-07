@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
+import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
@@ -437,9 +438,9 @@ private fun EventCard(
                       Modifier.size(8.dp)
                           .background(
                               color =
-                                  when (event.status.name.lowercase()) {
-                                    "upcoming" -> EventDateColor
-                                    "published" -> EventDateColor
+                                  when (event.status) {
+                                    EventStatus.DRAFT -> EventDateColor
+                                    EventStatus.PUBLISHED -> EventDateColor
                                     else -> TextSecondary
                                   },
                               shape = RoundedCornerShape(2.dp)))
