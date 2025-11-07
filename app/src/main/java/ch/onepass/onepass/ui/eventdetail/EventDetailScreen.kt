@@ -30,6 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.annotation.VisibleForTesting
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventStatus
@@ -47,9 +48,7 @@ import ch.onepass.onepass.ui.theme.White
 import coil.compose.AsyncImage
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Locale
 
 object EventDetailTestTags {
   const val SCREEN = "eventDetailScreen"
@@ -97,6 +96,36 @@ fun EventDetailScreen(
   val likedEvents by eventCardViewModel.likedEvents.collectAsState()
   val isLiked = likedEvents.contains(eventId)
 
+  EventDetailScreenContent(
+      uiState = EventDetailUiState(
+          event = event,
+          organization = organization,
+          isLoading = isLoading,
+          errorMessage = error,
+          isLiked = isLiked),
+      onBack = onBack,
+      onLikeToggle = { eventCardViewModel.toggleLike(eventId) },
+      onNavigateToMap = { onNavigateToMap(eventId) },
+      onBuyTicket = { onBuyTicket(eventId) })
+}
+
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+internal data class EventDetailUiState(
+    val event: Event? = null,
+    val organization: Organization? = null,
+    val isLoading: Boolean = false,
+    val errorMessage: String? = null,
+    val isLiked: Boolean = false)
+
+@VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
+@Composable
+internal fun EventDetailScreenContent(
+    uiState: EventDetailUiState,
+    onBack: () -> Unit,
+    onLikeToggle: () -> Unit,
+    onNavigateToMap: () -> Unit,
+    onBuyTicket: () -> Unit
+) {
   Box(
       modifier =
           Modifier
@@ -104,7 +133,7 @@ fun EventDetailScreen(
               .background(DefaultBackground)
               .testTag(EventDetailTestTags.SCREEN)) {
         when {
-          isLoading -> {
+          uiState.isLoading -> {
             CircularProgressIndicator(
                 modifier =
                     Modifier
@@ -112,7 +141,7 @@ fun EventDetailScreen(
                         .testTag(EventDetailTestTags.LOADING),
                 color = MaterialTheme.colorScheme.primary)
           }
-          error != null -> {
+          uiState.errorMessage != null -> {
             Column(
                 modifier =
                     Modifier
@@ -121,24 +150,23 @@ fun EventDetailScreen(
                         .testTag(EventDetailTestTags.ERROR),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                  Text(text = error ?: "Error loading event", color = Color.White)
+                  Text(text = uiState.errorMessage ?: "Error loading event", color = Color.White)
                   Button(onClick = onBack) { Text("Go Back") }
                 }
           }
-          event != null -> {
+          uiState.event != null -> {
             EventDetailContent(
-                event = event!!,
-                organization = organization,
-                isLiked = isLiked,
-                onLikeToggle = { eventCardViewModel.toggleLike(eventId) },
-                onNavigateToMap = { onNavigateToMap(eventId) },
-                onBuyTicket = { onBuyTicket(eventId) },
+                event = uiState.event!!,
+                organization = uiState.organization,
+                isLiked = uiState.isLiked,
+                onLikeToggle = onLikeToggle,
+                onNavigateToMap = onNavigateToMap,
+                onBuyTicket = onBuyTicket,
                 onBack = onBack)
 
-            // Fixed button at bottom
             BuyButton(
-                onBuyTicket = { onBuyTicket(eventId) },
-                priceText = formatPrice(event!!),
+                onBuyTicket = onBuyTicket,
+                priceText = formatPrice(uiState.event!!),
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .fillMaxWidth()
@@ -221,6 +249,7 @@ private fun EventDetailContent(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
+            .testTag("eventDetailScrollableContent")
             .padding(bottom = 80.dp), // Add bottom padding so content isn't hidden behind fixed button
         verticalArrangement = Arrangement.spacedBy(30.dp)) {
         // Title placeholder (79px height as per Figma)
@@ -408,7 +437,6 @@ private fun AboutEventSection(description: String, modifier: Modifier = Modifier
       }
 }
 
-
 @Composable
 private fun EventDetailsSection(
     event: Event,
@@ -432,7 +460,7 @@ private fun EventDetailsSection(
                     modifier = Modifier.size(26.dp),
                     tint = Color(0xFFA3A3A3))
                 Text(
-                    text = formatEventDateTime(event),
+                    text = event.displayDateTime,
                     style =
                         MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
                     color = Color.White,
@@ -485,7 +513,7 @@ private fun EventDetailsSection(
 }
 
 @SuppressLint("DefaultLocale")
-internal fun formatFollowerCount(count: Int): String {
+internal fun formatFollowerCount(count: Int): String { // TODO duplicate with organizationProfile we need to make it into helper func
   return when {
     count < 1000 -> "$count followers"
     count < 1_000_000 -> {
@@ -499,15 +527,6 @@ internal fun formatFollowerCount(count: Int): String {
   }
 }
 
-private fun formatEventDateTime(event: Event): String {
-  val startTime = event.startTime?.toDate() ?: return "Date not set"
-  val dateFormatter = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault())
-  val timeFormatter = SimpleDateFormat("h:mm a", Locale.getDefault())
-  val formattedDate = dateFormatter.format(startTime)
-  val formattedTime = timeFormatter.format(startTime)
-  return "$formattedDate • $formattedTime"
-}
-
 internal fun formatPrice(event: Event): String {
   val lowestPrice = event.lowestPrice
   return if (lowestPrice == 0u) {
@@ -516,83 +535,3 @@ internal fun formatPrice(event: Event): String {
     "Buy ticket for ${lowestPrice}${event.currency.lowercase()}"
   }
 }
-
-// Preview functions
-@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
-@Composable
-private fun EventDetailScreenPreview() {
-  OnePassTheme {
-    val sampleEvent = createSampleEvent()
-    val sampleOrganization = createSampleOrganization()
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(DefaultBackground)
-    ) {
-      EventDetailContent(
-          event = sampleEvent,
-          organization = sampleOrganization,
-          isLiked = false,
-          onLikeToggle = {},
-          onNavigateToMap = {},
-          onBuyTicket = {},
-          onBack = {})
-
-      // Fixed button at bottom
-      BuyButton(
-          onBuyTicket = {},
-          priceText = formatPrice(sampleEvent),
-          modifier = Modifier
-              .align(Alignment.BottomCenter)
-              .fillMaxWidth()
-      )
-    }
-  }
-}
-
-private fun createSampleEvent(): Event {
-  val calendar = Calendar.getInstance()
-  calendar.set(2024, Calendar.DECEMBER, 15, 21, 0, 0) // Dec 15, 2024 at 9:00 PM
-  calendar.set(Calendar.MILLISECOND, 0)
-
-  return Event(
-      eventId = "preview-event-1",
-      title = "LAUSANNE BEST PARTY",
-      description =
-          "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vitae nisi nec magna consequat tincidunt. Curabitur suscipit sem vel.",
-      organizerId = "preview-organizer-1",
-      organizerName = "lausanne organizer",
-      status = EventStatus.PUBLISHED,
-      location =
-          Location(
-              coordinates = GeoPoint(46.5197, 6.6323),
-              name = "Lausanne, flon",
-              region = "Lausanne"),
-      startTime = Timestamp(calendar.time),
-      endTime = Timestamp(calendar.time),
-      capacity = 500,
-      ticketsRemaining = 350,
-      ticketsIssued = 150,
-      ticketsRedeemed = 0,
-      currency = "CHF",
-      pricingTiers = listOf(PricingTier("General", 35.0, 500, 350)),
-      images = listOf(),
-      tags = listOf("party", "music", "lausanne"))
-}
-
-private fun createSampleOrganization(): Organization {
-  return Organization(
-      id = "preview-organizer-1",
-      name = "lausanne organizer",
-      description = "Best party organizer in Lausanne",
-      ownerId = "owner-1",
-      status = OrganizationStatus.ACTIVE,
-      verified = false,
-      profileImageUrl = null,
-      followerCount = 1500, // 1.5K followers
-      averageRating = 4.5f,
-      createdAt = Timestamp.now(),
-      updatedAt = Timestamp.now())
-}
-
