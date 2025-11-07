@@ -129,6 +129,12 @@ class OrganizationDashboardScreenTest {
     composeTestRule
         .onNodeWithTag(OrganizationDashboardTestTags.MANAGE_STAFF_SECTION)
         .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.ADD_STAFF_BUTTON)
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
+        .assertIsDisplayed()
   }
 
   @Test
@@ -157,6 +163,43 @@ class OrganizationDashboardScreenTest {
   }
 
   @Test
+  fun organizationDashboardScreen_expandsStaffListDropdown() {
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository())
+    setScreen(viewModel = viewModel)
+
+    waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
+
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
+        .performScrollTo()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule
+        .onNode(
+            hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("owner-1")),
+            useUnmergedTree = true)
+        .performScrollTo()
+        .assertIsDisplayed()
+    composeTestRule
+        .onNode(
+            hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("member-1")),
+            useUnmergedTree = true)
+        .performScrollTo()
+        .assertIsDisplayed()
+    composeTestRule
+        .onNode(
+            hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("staff-1")),
+            useUnmergedTree = true)
+        .performScrollTo()
+        .assertIsDisplayed()
+  }
+
+  @Test
   fun organizationDashboardScreen_clicksCreateEventButton() {
     val viewModel =
         OrganizationDashboardViewModel(
@@ -168,6 +211,24 @@ class OrganizationDashboardScreenTest {
     waitForTag(OrganizationDashboardTestTags.CREATE_EVENT_BUTTON)
 
     composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.CREATE_EVENT_BUTTON).performClick()
+    assert(clicked)
+  }
+
+  @Test
+  fun organizationDashboardScreen_clicksAddStaffButton() {
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository())
+    var clicked = false
+    setScreen(viewModel = viewModel, onNavigateToAddStaff = { clicked = true })
+
+    waitForTag(OrganizationDashboardTestTags.ADD_STAFF_BUTTON)
+
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.ADD_STAFF_BUTTON)
+        .performScrollTo()
+        .performClick()
     assert(clicked)
   }
 
@@ -322,5 +383,22 @@ class OrganizationDashboardScreenTest {
     composeTestRule.waitForIdle()
 
     composeTestRule.onNodeWithText("No events created yet.").assertIsDisplayed()
+  }
+
+  @Test
+  fun organizationDashboardScreen_displaysNoStaffMessage() {
+    val emptyOrg = testOrg.copy(members = emptyMap())
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = emptyOrg),
+            eventRepository = MockEventRepository())
+    setScreen(viewModel = viewModel)
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithText("No staff members added yet.").assertIsDisplayed()
   }
 }
