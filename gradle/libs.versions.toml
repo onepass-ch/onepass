@@ -21,11 +21,12 @@ gms = "4.4.2"
 coroutines-test = "1.7.3"
 okhttp = "4.12.0"
 geofirestore = "1.5.0"
+kotlinx-serialization = "1.6.0"
 
 
 
 [libraries]
-kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version = "1.6.3" }
+kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 firebase-functions-ktx = { module = "com.google.firebase:firebase-functions-ktx" }
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version = "1.7.3" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "androidx-navigation" }
