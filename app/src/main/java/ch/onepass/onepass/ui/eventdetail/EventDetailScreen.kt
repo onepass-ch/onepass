@@ -1,7 +1,7 @@
 package ch.onepass.onepass.ui.eventdetail
 
 import android.annotation.SuppressLint
-import android.graphics.Paint
+import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -24,31 +24,19 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import androidx.annotation.VisibleForTesting
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
-import ch.onepass.onepass.model.event.EventStatus
-import ch.onepass.onepass.model.event.PricingTier
-import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.model.organization.Organization
-import ch.onepass.onepass.model.organization.OrganizationStatus
-import ch.onepass.onepass.repository.RepositoryProvider
 import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.event.LikeButton
 import ch.onepass.onepass.ui.theme.DefaultBackground
-import ch.onepass.onepass.ui.theme.OnePassTheme
-import ch.onepass.onepass.ui.theme.TextSecondary
 import ch.onepass.onepass.ui.theme.White
 import coil.compose.AsyncImage
-import com.google.firebase.Timestamp
-import com.google.firebase.firestore.GeoPoint
-import java.util.Calendar
 
 object EventDetailTestTags {
   const val SCREEN = "eventDetailScreen"
@@ -70,22 +58,16 @@ object EventDetailTestTags {
   const val ERROR = "eventDetailError"
 }
 
-/**
- * Event detail screen displaying full event information.
- */
+/** Event detail screen displaying full event information. */
 @Composable
 fun EventDetailScreen(
     eventId: String,
     onBack: () -> Unit,
     onNavigateToMap: (String) -> Unit = {},
     onBuyTicket: (String) -> Unit = {},
-    viewModel: EventDetailViewModel = viewModel(
-        factory = viewModelFactory {
-          initializer {
-            EventDetailViewModel(eventId = eventId)
-          }
-        }
-    )
+    viewModel: EventDetailViewModel =
+        viewModel(
+            factory = viewModelFactory { initializer { EventDetailViewModel(eventId = eventId) } })
 ) {
   val event by viewModel.event.collectAsState()
   val organization by viewModel.organization.collectAsState()
@@ -97,12 +79,13 @@ fun EventDetailScreen(
   val isLiked = likedEvents.contains(eventId)
 
   EventDetailScreenContent(
-      uiState = EventDetailUiState(
-          event = event,
-          organization = organization,
-          isLoading = isLoading,
-          errorMessage = error,
-          isLiked = isLiked),
+      uiState =
+          EventDetailUiState(
+              event = event,
+              organization = organization,
+              isLoading = isLoading,
+              errorMessage = error,
+              isLiked = isLiked),
       onBack = onBack,
       onLikeToggle = { eventCardViewModel.toggleLike(eventId) },
       onNavigateToMap = { onNavigateToMap(eventId) },
@@ -115,7 +98,8 @@ internal data class EventDetailUiState(
     val organization: Organization? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val isLiked: Boolean = false)
+    val isLiked: Boolean = false
+)
 
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
 @Composable
@@ -128,24 +112,19 @@ internal fun EventDetailScreenContent(
 ) {
   Box(
       modifier =
-          Modifier
-              .fillMaxSize()
+          Modifier.fillMaxSize()
               .background(DefaultBackground)
               .testTag(EventDetailTestTags.SCREEN)) {
         when {
           uiState.isLoading -> {
             CircularProgressIndicator(
-                modifier =
-                    Modifier
-                        .align(Alignment.Center)
-                        .testTag(EventDetailTestTags.LOADING),
+                modifier = Modifier.align(Alignment.Center).testTag(EventDetailTestTags.LOADING),
                 color = MaterialTheme.colorScheme.primary)
           }
           uiState.errorMessage != null -> {
             Column(
                 modifier =
-                    Modifier
-                        .align(Alignment.Center)
+                    Modifier.align(Alignment.Center)
                         .padding(16.dp)
                         .testTag(EventDetailTestTags.ERROR),
                 horizontalAlignment = Alignment.CenterHorizontally,
@@ -167,10 +146,7 @@ internal fun EventDetailScreenContent(
             BuyButton(
                 onBuyTicket = onBuyTicket,
                 priceText = formatPrice(uiState.event!!),
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-            )
+                modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth())
           }
         }
       }
@@ -182,58 +158,49 @@ private fun BuyButton(
     priceText: String = "text",
     modifier: Modifier = Modifier
 ) {
-    // Buy ticket button - fixed at bottom with padding
-    Surface(
-        modifier = modifier,
-        shadowElevation = 8.dp,
-        color = DefaultBackground
-    ) {
-      Box(
-        modifier = Modifier.padding(horizontal = 10.dp, vertical = 16.dp)
-      ) {
-        Button(
-            onClick = onBuyTicket,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .testTag(EventDetailTestTags.BUY_TICKET_BUTTON),
-            shape = RoundedCornerShape(5.dp),
-            colors =
-                ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF413857) // Purple from design
-                )) {
+  // Buy ticket button - fixed at bottom with padding
+  Surface(modifier = modifier, shadowElevation = 8.dp, color = DefaultBackground) {
+    Box(modifier = Modifier.padding(horizontal = 10.dp, vertical = 16.dp)) {
+      Button(
+          onClick = onBuyTicket,
+          modifier = Modifier.fillMaxWidth().testTag(EventDetailTestTags.BUY_TICKET_BUTTON),
+          shape = RoundedCornerShape(5.dp),
+          colors =
+              ButtonDefaults.buttonColors(
+                  containerColor = Color(0xFF413857) // Purple from design
+                  )) {
             Text(
                 text = priceText,
                 style =
-                    MaterialTheme.typography.titleLarge.copy(fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold),
+                    MaterialTheme.typography.titleLarge.copy(
+                        fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold),
                 color = Color.White,
                 modifier = Modifier.padding(horizontal = 63.dp, vertical = 14.dp))
-        }
-      }
+          }
     }
+  }
 }
+
 @Composable
 private fun BackSection(onBack: () -> Unit) {
   Row(
       modifier =
-          Modifier
-              .fillMaxWidth()
+          Modifier.fillMaxWidth()
               .background(Color(0xFF1A1A1A)) // Semi-transparent black
               .height(79.dp)
               .padding(start = 22.dp, top = 55.dp, end = 22.dp, bottom = 6.dp)
               .testTag(EventDetailTestTags.TITLE),
       verticalAlignment = Alignment.CenterVertically,
-      horizontalArrangement = Arrangement.spacedBy(40.dp, Alignment.Start)
-  ) {
+      horizontalArrangement = Arrangement.spacedBy(40.dp, Alignment.Start)) {
         IconButton(onClick = onBack) {
           Icon(
               painter = painterResource(R.drawable.go_back_vector),
               contentDescription = "Back",
-              tint = Color.White
-          )
+              tint = Color.White)
         }
       }
 }
+
 @Composable
 private fun EventDetailContent(
     event: Event,
@@ -246,79 +213,77 @@ private fun EventDetailContent(
 ) {
   Box(modifier = Modifier.fillMaxSize()) {
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .testTag("eventDetailScrollableContent")
-            .padding(bottom = 80.dp), // Add bottom padding so content isn't hidden behind fixed button
+        modifier =
+            Modifier.fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .testTag("eventDetailScrollableContent")
+                .padding(
+                    bottom =
+                        80.dp), // Add bottom padding so content isn't hidden behind fixed button
         verticalArrangement = Arrangement.spacedBy(30.dp)) {
-        // Title placeholder (79px height as per Figma)
-        Spacer(modifier = Modifier.height(79.dp))
+          // Title placeholder (79px height as per Figma)
+          Spacer(modifier = Modifier.height(79.dp))
 
-        // Image with heart button
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(261.dp)
-                    .padding(horizontal = 10.dp)
-                    .clip(RoundedCornerShape(10.dp)),
-            contentAlignment = Alignment.TopEnd) {
-              AsyncImage(
-                  model = event.imageUrl.ifEmpty { null }, // TODO this will be changed once we have storage
-                  contentDescription = "Event image",
-                  placeholder = painterResource(R.drawable.image_fallback),
-                  error = painterResource(id = R.drawable.image_fallback),
-                  modifier =
-                      Modifier
-                          .fillMaxSize()
-                          .testTag(EventDetailTestTags.EVENT_IMAGE),
-                  contentScale = ContentScale.Crop)
+          // Image with heart button
+          Box(
+              modifier =
+                  Modifier.fillMaxWidth()
+                      .height(261.dp)
+                      .padding(horizontal = 10.dp)
+                      .clip(RoundedCornerShape(10.dp)),
+              contentAlignment = Alignment.TopEnd) {
+                AsyncImage(
+                    model =
+                        event.imageUrl.ifEmpty {
+                          null
+                        }, // TODO this will be changed once we have storage
+                    contentDescription = "Event image",
+                    placeholder = painterResource(R.drawable.image_fallback),
+                    error = painterResource(id = R.drawable.image_fallback),
+                    modifier = Modifier.fillMaxSize().testTag(EventDetailTestTags.EVENT_IMAGE),
+                    contentScale = ContentScale.Crop)
 
-              // Heart button overlay
-              LikeButton(
-                  isLiked = isLiked,
-                  onLikeToggle = { onLikeToggle() },
-                  modifier =
-                      Modifier
-                          .padding(top = 11.dp, end = 11.dp)
-                          .testTag(EventDetailTestTags.LIKE_BUTTON))
-            }
+                // Heart button overlay
+                LikeButton(
+                    isLiked = isLiked,
+                    onLikeToggle = { onLikeToggle() },
+                    modifier =
+                        Modifier.padding(top = 11.dp, end = 11.dp)
+                            .testTag(EventDetailTestTags.LIKE_BUTTON))
+              }
 
-        // Event title
-        Text(
-            text = event.title.ifEmpty { "Event Title" },
-            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-            color = Color.White,
-            textAlign = TextAlign.Center,
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 10.dp)
-                    .testTag(EventDetailTestTags.EVENT_TITLE))
+          // Event title
+          Text(
+              text = event.title.ifEmpty { "Event Title" },
+              style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+              color = Color.White,
+              textAlign = TextAlign.Center,
+              modifier =
+                  Modifier.fillMaxWidth()
+                      .padding(horizontal = 10.dp)
+                      .testTag(EventDetailTestTags.EVENT_TITLE))
 
-        // Organizer section
-        OrganizerSection(
-            organization = organization,
-            organizerName = event.organizerName,
-            modifier = Modifier.padding(horizontal = 10.dp))
+          // Organizer section
+          OrganizerSection(
+              organization = organization,
+              organizerName = event.organizerName,
+              modifier = Modifier.padding(horizontal = 10.dp))
 
-        // About Event section
-        AboutEventSection(
-            description = event.description,
-            modifier = Modifier.padding(horizontal = 10.dp))
+          // About Event section
+          AboutEventSection(
+              description = event.description, modifier = Modifier.padding(horizontal = 10.dp))
 
-        // Event details (date, location, map button, buy ticket button)
-        EventDetailsSection(
-            event = event,
-            onNavigateToMap = onNavigateToMap,
-            onBuyTicket = onBuyTicket,
-            modifier = Modifier.padding(horizontal = 10.dp))
+          // Event details (date, location, map button, buy ticket button)
+          EventDetailsSection(
+              event = event,
+              onNavigateToMap = onNavigateToMap,
+              onBuyTicket = onBuyTicket,
+              modifier = Modifier.padding(horizontal = 10.dp))
 
-        // Extra spacing at the end
-        Spacer(modifier = Modifier.height(60.dp))
-      }
-    
+          // Extra spacing at the end
+          Spacer(modifier = Modifier.height(60.dp))
+        }
+
     // BackSection overlay at the top
     BackSection(onBack = onBack)
   }
@@ -341,12 +306,10 @@ private fun OrganizerSection(
 
         Row(
             modifier =
-                Modifier
-                    .fillMaxWidth()
+                Modifier.fillMaxWidth()
                     .background(
                         color = Color(0xFF1F1F1F), // neutral-800
-                        shape = RoundedCornerShape(10.dp)
-                    )
+                        shape = RoundedCornerShape(10.dp))
                     .padding(10.dp),
             horizontalArrangement = Arrangement.spacedBy(10.dp)) {
               // Organizer image
@@ -356,8 +319,7 @@ private fun OrganizerSection(
                   placeholder = rememberVectorPainter(Icons.Default.Person),
                   error = rememberVectorPainter(Icons.Default.Person),
                   modifier =
-                      Modifier
-                          .size(70.dp)
+                      Modifier.size(70.dp)
                           .clip(RoundedCornerShape(10.dp))
                           .background(Color.Black)
                           .testTag(EventDetailTestTags.ORGANIZER_IMAGE),
@@ -365,9 +327,7 @@ private fun OrganizerSection(
 
               // Organizer details
               Column(
-                  modifier = Modifier
-                      .weight(1f)
-                      .padding(10.dp),
+                  modifier = Modifier.weight(1f).padding(10.dp),
                   verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text(
                         text = organization?.name ?: organizerName,
@@ -384,7 +344,10 @@ private fun OrganizerSection(
                           Text(
                               text = formatFollowerCount(organization?.followerCount ?: 0),
                               style =
-                                  MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight(400), fontSize = 11.sp, lineHeight = 16.sp),
+                                  MaterialTheme.typography.titleLarge.copy(
+                                      fontWeight = FontWeight(400),
+                                      fontSize = 11.sp,
+                                      lineHeight = 16.sp),
                               color = Color.White,
                               modifier = Modifier.testTag(EventDetailTestTags.ORGANIZER_FOLLOWERS))
 
@@ -396,19 +359,19 @@ private fun OrganizerSection(
                                   Icon(
                                       imageVector = Icons.Default.Star,
                                       contentDescription = null,
-                                      modifier = Modifier
-                                          .size(14.dp)
-                                          .padding(1.dp),
+                                      modifier = Modifier.size(14.dp).padding(1.dp),
                                       tint = Color(0xFF683F88))
                                   Text(
-                                      text = String.format("%.1f", organization?.averageRating ?: 0f),
+                                      text =
+                                          String.format("%.1f", organization?.averageRating ?: 0f),
                                       style =
-                                          MaterialTheme.typography.titleLarge
-                                              .copy(
-                                              fontWeight = FontWeight.Bold, fontSize = 11.sp, lineHeight = 16.sp
-                                              ),
+                                          MaterialTheme.typography.titleLarge.copy(
+                                              fontWeight = FontWeight.Bold,
+                                              fontSize = 11.sp,
+                                              lineHeight = 16.sp),
                                       color = Color.White,
-                                      modifier = Modifier.testTag(EventDetailTestTags.ORGANIZER_RATING))
+                                      modifier =
+                                          Modifier.testTag(EventDetailTestTags.ORGANIZER_RATING))
                                 }
                           }
                         }
@@ -419,22 +382,19 @@ private fun OrganizerSection(
 
 @Composable
 private fun AboutEventSection(description: String, modifier: Modifier = Modifier) {
-  Column(
-      modifier = modifier,
-      verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Text(
-            text = "ABOUT EVENT",
-            style = MaterialTheme.typography.titleMedium,
-            color = Color.White,
-            modifier = Modifier.padding(vertical = 10.dp))
+  Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
+    Text(
+        text = "ABOUT EVENT",
+        style = MaterialTheme.typography.titleMedium,
+        color = Color.White,
+        modifier = Modifier.padding(vertical = 10.dp))
 
-        Text(
-            text = description.ifEmpty { "No description available." },
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color(0xFFC4C4C4),
-            modifier =
-                Modifier.testTag(EventDetailTestTags.ABOUT_EVENT))
-      }
+    Text(
+        text = description.ifEmpty { "No description available." },
+        style = MaterialTheme.typography.bodyMedium,
+        color = Color(0xFFC4C4C4),
+        modifier = Modifier.testTag(EventDetailTestTags.ABOUT_EVENT))
+  }
 }
 
 @Composable
@@ -444,76 +404,73 @@ private fun EventDetailsSection(
     onBuyTicket: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-  Column(
-      modifier = modifier,
-      verticalArrangement = Arrangement.spacedBy(15.dp)) {
-        // Date and Location
-        Column(verticalArrangement = Arrangement.spacedBy(15.dp)) {
-          // Date row
-          Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.spacedBy(20.dp),
-              verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.CalendarToday,
-                    contentDescription = null,
-                    modifier = Modifier.size(26.dp),
-                    tint = Color(0xFFA3A3A3))
-                Text(
-                    text = event.displayDateTime,
-                    style =
-                        MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                    color = Color.White,
-                    modifier = Modifier.testTag(EventDetailTestTags.EVENT_DATE))
-              }
+  Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(15.dp)) {
+    // Date and Location
+    Column(verticalArrangement = Arrangement.spacedBy(15.dp)) {
+      // Date row
+      Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(20.dp),
+          verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Default.CalendarToday,
+                contentDescription = null,
+                modifier = Modifier.size(26.dp),
+                tint = Color(0xFFA3A3A3))
+            Text(
+                text = event.displayDateTime,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                color = Color.White,
+                modifier = Modifier.testTag(EventDetailTestTags.EVENT_DATE))
+          }
 
-          // Location row
-          Row(
-              modifier = Modifier.fillMaxWidth(),
-              horizontalArrangement = Arrangement.spacedBy(20.dp),
-              verticalAlignment = Alignment.CenterVertically) {
-                Icon(
-                    imageVector = Icons.Default.LocationCity,
-                    contentDescription = null,
-                    modifier = Modifier.size(26.dp),
-                    tint = Color(0xFFA3A3A3))
-                Text(
-                    text = event.displayLocation,
-                    style =
-                        MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                    color = Color.White,
-                    modifier = Modifier.testTag(EventDetailTestTags.EVENT_LOCATION))
-              }
+      // Location row
+      Row(
+          modifier = Modifier.fillMaxWidth(),
+          horizontalArrangement = Arrangement.spacedBy(20.dp),
+          verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = Icons.Default.LocationCity,
+                contentDescription = null,
+                modifier = Modifier.size(26.dp),
+                tint = Color(0xFFA3A3A3))
+            Text(
+                text = event.displayLocation,
+                style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
+                color = Color.White,
+                modifier = Modifier.testTag(EventDetailTestTags.EVENT_LOCATION))
+          }
+    }
+
+    // See event on map button
+    Row(
+        modifier =
+            Modifier.fillMaxWidth()
+                .border(1.dp, Color(0xFF242424), RoundedCornerShape(0.dp))
+                .clickable(onClick = onNavigateToMap)
+                .padding(vertical = 14.dp, horizontal = 16.dp)
+                .testTag(EventDetailTestTags.MAP_BUTTON),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = Alignment.CenterVertically) {
+          Text(
+              text = "See event on map",
+              style = MaterialTheme.typography.titleMedium,
+              color = Color.White,
+              modifier = Modifier.padding(end = 30.dp))
+
+          Icon(
+              imageVector = Icons.Default.ArrowBack,
+              contentDescription = null,
+              modifier = Modifier.rotate(180f),
+              tint = Color.White)
         }
-
-        // See event on map button
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .border(1.dp, Color(0xFF242424), RoundedCornerShape(0.dp))
-                    .clickable(onClick = onNavigateToMap)
-                    .padding(vertical = 14.dp, horizontal = 16.dp)
-                    .testTag(EventDetailTestTags.MAP_BUTTON),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically) {
-              Text(
-                  text = "See event on map",
-                  style = MaterialTheme.typography.titleMedium,
-                  color = Color.White,
-                  modifier = Modifier.padding(end = 30.dp))
-
-              Icon(
-                  imageVector = Icons.Default.ArrowBack,
-                  contentDescription = null,
-                  modifier = Modifier.rotate(180f),
-                  tint = Color.White)
-            }
-      }
+  }
 }
 
 @SuppressLint("DefaultLocale")
-internal fun formatFollowerCount(count: Int): String { // TODO duplicate with organizationProfile we need to make it into helper func
+internal fun formatFollowerCount(
+    count: Int
+): String { // TODO duplicate with organizationProfile we need to make it into helper func
   return when {
     count < 1000 -> "$count followers"
     count < 1_000_000 -> {

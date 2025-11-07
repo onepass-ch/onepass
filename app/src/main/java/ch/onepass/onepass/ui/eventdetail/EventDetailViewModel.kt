@@ -12,9 +12,7 @@ import ch.onepass.onepass.repository.RepositoryProvider.eventRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
-/**
- * ViewModel for EventDetailScreen that manages event and organizer data.
- */
+/** ViewModel for EventDetailScreen that manages event and organizer data. */
 class EventDetailViewModel(
     private val eventId: String,
     eventRepository: EventRepository = RepositoryProvider.eventRepository,
@@ -39,7 +37,8 @@ class EventDetailViewModel(
 
   private fun loadEvent() {
     viewModelScope.launch {
-      eventRepository.getEventById(eventId)
+      eventRepository
+          .getEventById(eventId)
           .catch { e ->
             _error.value = e.message ?: "Failed to load event"
             _isLoading.value = false
@@ -62,7 +61,8 @@ class EventDetailViewModel(
     }
 
     viewModelScope.launch {
-      organizationRepository.getOrganizationById(organizerId)
+      organizationRepository
+          .getOrganizationById(organizerId)
           .catch { e ->
             // Don't set error for organization, just log it
             _isLoading.value = false
@@ -74,4 +74,3 @@ class EventDetailViewModel(
     }
   }
 }
-
