@@ -3,7 +3,6 @@ package ch.onepass.onepass.ui.organizer
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,6 +18,13 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.OnePassTheme
 
+/**
+ * Screen allowing users to become event organizers by submitting organization details.
+ *
+ * @param ownerId ID of the user becoming an organizer
+ * @param viewModel ViewModel managing the form state and submission logic
+ * @param onOrganizationCreated Callback invoked upon successful organization creation
+ */
 @Composable
 fun BecomeOrganizerScreen(
     ownerId: String,
@@ -27,9 +33,14 @@ fun BecomeOrganizerScreen(
 ) {
   val formState by viewModel.formState.collectAsState()
   val uiState by viewModel.uiState.collectAsState()
+  val countryList by viewModel.countryList.collectAsState()
+  val selectedCountryIndex by viewModel.selectedCountryIndex.collectAsState()
   val scrollState = rememberScrollState()
   val snackbarHostState = remember { SnackbarHostState() }
+  var prefixDropdownExpanded by remember { mutableStateOf(false) }
+  var prefixDisplayText by remember { mutableStateOf("Prefix*") }
 
+  // Handle side effects based on UI state changes
   LaunchedEffect(uiState) {
     when (val state = uiState) {
       is BecomeOrganizerUiState.Success -> onOrganizationCreated()
@@ -48,123 +59,93 @@ fun BecomeOrganizerScreen(
                 .background(colorResource(id = R.color.background))
                 .verticalScroll(scrollState)
                 .padding(16.dp)) {
+          // Screen title
           Text(
               text = "Become an Organizer",
               style = MaterialTheme.typography.headlineMedium,
               color = colorResource(id = R.color.on_background),
               modifier = Modifier.padding(vertical = 24.dp))
 
-          val nameState = formState.name
-          OutlinedTextField(
-              value = nameState.value,
+          // Organization name field
+          FormTextField(
+              value = formState.name.value,
               onValueChange = { viewModel.updateName(it) },
-              label = { Text("Organization Name*") },
-              modifier =
-                  Modifier.fillMaxWidth().onFocusChanged {
-                    viewModel.onFocusChangeName(it.isFocused)
-                  },
-              isError = nameState.error != null)
-          if (nameState.error != null)
-              Text(nameState.error, color = Color.Red, style = MaterialTheme.typography.bodySmall)
-          Spacer(Modifier.height(16.dp))
+              label = "Organization Name*",
+              isError = formState.name.error != null,
+              onFocusChanged = { viewModel.onFocusChangeName(it) },
+              errorMessage = formState.name.error)
 
-          val descState = formState.description
-          OutlinedTextField(
-              value = descState.value,
+          // Organization description field
+          FormTextField(
+              value = formState.description.value,
               onValueChange = { viewModel.updateDescription(it) },
-              label = { Text("Description*") },
-              modifier =
-                  Modifier.fillMaxWidth().height(120.dp).onFocusChanged {
-                    viewModel.onFocusChangeDescription(it.isFocused)
-                  },
-              isError = descState.error != null)
-          if (descState.error != null)
-              Text(descState.error, color = Color.Red, style = MaterialTheme.typography.bodySmall)
-          Spacer(Modifier.height(16.dp))
+              label = "Description*",
+              isError = formState.description.error != null,
+              onFocusChanged = { viewModel.onFocusChangeDescription(it) },
+              maxLines = 5,
+              errorMessage = formState.description.error)
 
-          val emailState = formState.contactEmail
-          OutlinedTextField(
-              value = emailState.value,
+          // Contact email field
+          FormTextField(
+              value = formState.contactEmail.value,
               onValueChange = { viewModel.updateContactEmail(it) },
-              label = { Text("Contact Email*") },
-              modifier =
-                  Modifier.fillMaxWidth().onFocusChanged {
-                    viewModel.onFocusChangeEmail(it.isFocused)
-                  },
-              isError = emailState.error != null,
-              keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email))
-          if (emailState.error != null)
-              Text(emailState.error, color = Color.Red, style = MaterialTheme.typography.bodySmall)
-          Spacer(Modifier.height(16.dp))
+              label = "Contact Email*",
+              isError = formState.contactEmail.error != null,
+              onFocusChanged = { viewModel.onFocusChangeEmail(it) },
+              keyboardType = KeyboardType.Email,
+              errorMessage = formState.contactEmail.error)
 
-          val phoneState = formState.contactPhone
-          OutlinedTextField(
-              value = phoneState.value,
-              onValueChange = { viewModel.updateContactPhone(it) },
-              label = { Text("Contact Phone") },
-              modifier =
-                  Modifier.fillMaxWidth().onFocusChanged {
-                    viewModel.onFocusChangePhone(it.isFocused)
-                  },
-              isError = phoneState.error != null,
-              keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
-          if (phoneState.error != null)
-              Text(phoneState.error, color = Color.Red, style = MaterialTheme.typography.bodySmall)
-          Spacer(Modifier.height(16.dp))
+          // Phone number with country prefix selection
+          PrefixPhoneRow(
+              selectedCountryIndex = selectedCountryIndex,
+              prefixDisplayText = prefixDisplayText,
+              prefixError = formState.contactPhone.error,
+              countryList = countryList,
+              dropdownExpanded = prefixDropdownExpanded,
+              onDropdownDismiss = { prefixDropdownExpanded = false },
+              onCountrySelected = { index ->
+                viewModel.updateCountryIndex(index)
+                prefixDisplayText = "+${countryList[index].second}"
+                prefixDropdownExpanded = false
+              },
+              phoneValue = formState.contactPhone.value,
+              onPhoneChange = { viewModel.updateContactPhone(it) },
+              onPhoneFocusChanged = { viewModel.onFocusChangePhone(it) },
+              onPrefixClick = { prefixDropdownExpanded = true })
 
-          val websiteState = formState.website
-          OutlinedTextField(
-              value = websiteState.value,
+          // Optional website field
+          FormTextField(
+              value = formState.website.value,
               onValueChange = { viewModel.updateWebsite(it) },
-              label = { Text("Website") },
-              modifier =
-                  Modifier.fillMaxWidth().onFocusChanged {
-                    viewModel.onFocusChangeWebsite(it.isFocused)
-                  },
-              isError = websiteState.error != null)
-          if (websiteState.error != null)
-              Text(
-                  websiteState.error, color = Color.Red, style = MaterialTheme.typography.bodySmall)
-          Spacer(Modifier.height(16.dp))
+              label = "Website",
+              isError = formState.website.error != null,
+              onFocusChanged = { viewModel.onFocusChangeWebsite(it) },
+              errorMessage = formState.website.error)
 
-          OutlinedTextField(
+          // Social media fields
+          FormTextField(
               value = formState.instagram.value,
               onValueChange = { viewModel.updateInstagram(it) },
-              label = { Text("Instagram") },
-              modifier = Modifier.fillMaxWidth())
-          Spacer(Modifier.height(16.dp))
-
-          OutlinedTextField(
+              label = "Instagram")
+          FormTextField(
               value = formState.facebook.value,
               onValueChange = { viewModel.updateFacebook(it) },
-              label = { Text("Facebook") },
-              modifier = Modifier.fillMaxWidth())
-          Spacer(Modifier.height(16.dp))
-
-          OutlinedTextField(
+              label = "Facebook")
+          FormTextField(
               value = formState.tiktok.value,
               onValueChange = { viewModel.updateTiktok(it) },
-              label = { Text("TikTok") },
-              modifier = Modifier.fillMaxWidth())
-          Spacer(Modifier.height(16.dp))
-
-          OutlinedTextField(
+              label = "TikTok")
+          FormTextField(
               value = formState.address.value,
               onValueChange = { viewModel.updateAddress(it) },
-              label = { Text("Address") },
-              modifier = Modifier.fillMaxWidth())
+              label = "Address")
+
           Spacer(Modifier.height(32.dp))
 
-          Button(
-              onClick = { viewModel.createOrganization(ownerId) },
-              modifier = Modifier.fillMaxWidth().height(48.dp),
-              colors =
-                  ButtonDefaults.buttonColors(
-                      containerColor = colorResource(id = R.color.primary))) {
-                Text("Submit")
-              }
+          SubmitButton(onClick = { viewModel.createOrganization(ownerId) }, text = "Submit")
         }
 
+    // Loading indicator overlay
     if (uiState is BecomeOrganizerUiState.Loading) {
       Box(
           modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)),
@@ -173,10 +154,12 @@ fun BecomeOrganizerScreen(
           }
     }
 
+    // SnackBar for errors
     SnackbarHost(snackbarHostState, Modifier.align(Alignment.BottomCenter))
   }
 }
 
+/** Preview of the BecomeOrganizerScreen composable. */
 @Preview(showBackground = true)
 @Composable
 fun BecomeOrganizerScreenPreview() {
