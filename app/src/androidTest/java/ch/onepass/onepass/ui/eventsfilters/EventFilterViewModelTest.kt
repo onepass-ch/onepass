@@ -156,6 +156,24 @@ class EventFilterViewModelTest {
   }
 
   @Test
+  fun confirmDateRange_updatesLocalFilters_andHidesDatePicker_whenValidRange() = runTest {
+    val viewModel = EventFilterViewModel()
+    val start = 1000L
+    val end = 5000L
+
+    viewModel.toggleDatePicker(true)
+    assertTrue(viewModel.uiState.value.showDatePicker)
+
+    viewModel.confirmDateRange(start, end)
+
+    val updatedRange = viewModel.uiState.value.localFilters.dateRange
+    assertNotNull(updatedRange)
+    assertEquals(start, updatedRange!!.start)
+    assertEquals(end, updatedRange.endInclusive)
+    assertFalse(viewModel.uiState.value.showDatePicker)
+  }
+
+  @Test
   fun confirmDateRangeRejectsWhenStartGreaterThanEnd() = runTest {
     val vm = EventFilterViewModel()
     val start = 2000L
