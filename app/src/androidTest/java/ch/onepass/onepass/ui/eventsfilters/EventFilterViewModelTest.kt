@@ -154,4 +154,75 @@ class EventFilterViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
     assertTrue("All filters should return true", viewModel.currentFilters.value.hasActiveFilters)
   }
+
+  @Test
+  fun confirmDateRange_updatesLocalFilters_andHidesDatePicker_whenValidRange() = runTest {
+    val viewModel = EventFilterViewModel()
+    val start = 1000L
+    val end = 5000L
+
+    viewModel.toggleDatePicker(true)
+    assertTrue(viewModel.uiState.value.showDatePicker)
+
+    viewModel.confirmDateRange(start, end)
+
+    val updatedRange = viewModel.uiState.value.localFilters.dateRange
+    assertNotNull(updatedRange)
+    assertEquals(start, updatedRange!!.start)
+    assertEquals(end, updatedRange.endInclusive)
+    assertFalse(viewModel.uiState.value.showDatePicker)
+  }
+
+  @Test
+  fun confirmDateRangeRejectsWhenStartGreaterThanEnd() = runTest {
+    val vm = EventFilterViewModel()
+    val start = 2000L
+    val end = 1000L
+
+    vm.confirmDateRange(start, end)
+
+    // Expect range to still be the default (no update) since start > end
+    assertNull(vm.uiState.value.localFilters.dateRange)
+  }
+
+  @Test
+  fun confirmDateRangeDoesNotUpdateWhenEndIsBeforeStart() = runTest {
+    val viewModel = EventFilterViewModel()
+    val start = 2000L
+    val end = 1000L
+
+    val initialState = viewModel.uiState.value
+    viewModel.confirmDateRange(start, end)
+
+    val newState = viewModel.uiState.value
+    // should not have changed
+    assertEquals(initialState.localFilters, newState.localFilters)
+    assertEquals(initialState.showDatePicker, newState.showDatePicker)
+  }
+
+  @Test
+  fun cancelingDatePickerClearsTemporarySelection() = runTest {
+    val vm = EventFilterViewModel()
+    vm.toggleDatePicker(true)
+    assertTrue(vm.uiState.value.showDatePicker)
+
+    // simulate cancel (dismiss)
+    vm.toggleDatePicker(false)
+    assertFalse(vm.uiState.value.showDatePicker)
+
+    assertNull(vm.uiState.value.localFilters.dateRange)
+  }
+
+  @Test
+  fun regionDropdown_dismissMenuWithoutSelection() {
+    val viewModel = EventFilterViewModel()
+
+    assertFalse(viewModel.uiState.value.expandedRegion)
+
+    viewModel.toggleRegionDropdown(true)
+    assertTrue(viewModel.uiState.value.expandedRegion)
+
+    viewModel.toggleRegionDropdown(false)
+    assertFalse(viewModel.uiState.value.expandedRegion)
+  }
 }
