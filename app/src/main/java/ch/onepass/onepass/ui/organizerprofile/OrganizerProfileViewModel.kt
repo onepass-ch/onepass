@@ -168,8 +168,7 @@ open class OrganizerProfileViewModel(
             currentState.copy(
                 isFollowing = !currentState.isFollowing,
                 followersCount =
-                    if (currentState.isFollowing)
-                        maxOf(0, currentState.followersCount - 1)
+                    if (currentState.isFollowing) maxOf(0, currentState.followersCount - 1)
                     else currentState.followersCount + 1)
       } catch (e: Exception) {
         _effects.tryEmit(

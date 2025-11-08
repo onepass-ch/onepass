@@ -322,13 +322,13 @@ class OrganizerProfileViewModelTest {
             organizerId = "org-with-events",
             startTime = EventTestData.createPastTimestamp(daysAgo = 5),
             endTime = EventTestData.createPastTimestamp(daysAgo = 5, addHours = 1))
-  val currentEvent1 = EventTestData.createTestEvent(
-      eventId = "event-current-1",
-      title = "Current Event 1",
-      organizerId = "org-with-events",
-      startTime = EventTestData.createPastTimestamp(daysAgo = 5),
-      endTime = EventTestData.createFutureTimestamp(daysFromNow = 1)
-  )
+    val currentEvent1 =
+        EventTestData.createTestEvent(
+            eventId = "event-current-1",
+            title = "Current Event 1",
+            organizerId = "org-with-events",
+            startTime = EventTestData.createPastTimestamp(daysAgo = 5),
+            endTime = EventTestData.createFutureTimestamp(daysFromNow = 1))
 
     val allEvents = listOf(upcomingEvent1, upcomingEvent2, pastEvent1, pastEvent2, currentEvent1)
 
@@ -400,10 +400,10 @@ class OrganizerProfileViewModelTest {
 
     assertTrue("Should emit error effect", effects.any { it is OrganizerProfileEffect.ShowError })
 
-      val errorEffect = effects.find { it is OrganizerProfileEffect.ShowError }
-              as OrganizerProfileEffect.ShowError
-      assertTrue(errorEffect.message.contains("Test error"))
-      assertFalse(viewModel.state.value.loading)
+    val errorEffect =
+        effects.find { it is OrganizerProfileEffect.ShowError } as OrganizerProfileEffect.ShowError
+    assertTrue(errorEffect.message.contains("Test error"))
+    assertFalse(viewModel.state.value.loading)
   }
 
   // ========================================
