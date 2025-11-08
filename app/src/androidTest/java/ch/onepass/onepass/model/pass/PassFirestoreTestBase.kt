@@ -19,6 +19,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Before
+import java.util.UUID
 
 open class PassFirestoreTestBase {
 
@@ -27,7 +28,14 @@ open class PassFirestoreTestBase {
 
   protected val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
 
-  @OptIn(ExperimentalCoroutinesApi::class) private val testDispatcher = UnconfinedTestDispatcher()
+  @OptIn(ExperimentalCoroutinesApi::class)
+  private val testDispatcher = UnconfinedTestDispatcher()
+
+  private val testRunId = UUID.randomUUID().toString().take(8)
+
+  protected fun getTestUserId(suffix: String = "default"): String {
+    return "test_${testRunId}_$suffix"
+  }
 
   @Before
   open fun setUp() {
@@ -46,9 +54,9 @@ open class PassFirestoreTestBase {
     auth.useEmulator(host, 9099)
     firestore.useEmulator(host, 8080)
     firestore.firestoreSettings =
-        FirebaseFirestoreSettings.Builder()
-            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
-            .build()
+      FirebaseFirestoreSettings.Builder()
+        .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+        .build()
     functions.useEmulator(host, 5001)
 
     repository = PassRepositoryFirebase(db = firestore, functions = functions)
@@ -65,7 +73,9 @@ open class PassFirestoreTestBase {
 
   @After
   open fun tearDown() {
-    runBlocking(testDispatcher) { auth.currentUser?.let { clearUserPass(it.uid) } }
+    runBlocking(testDispatcher) {
+      auth.currentUser?.let { clearUserPass(it.uid) }
+    }
     FirebaseEmulator.clearFirestoreEmulator()
   }
 
@@ -79,11 +89,10 @@ open class PassFirestoreTestBase {
     val initial = docRef.get(Source.SERVER).await()
     if (!initial.exists() || !initial.contains("pass")) return
     docRef.update(mapOf("pass" to FieldValue.delete())).await()
-    // 10 times, could be a different number
     repeat(10) { attempt ->
+      delay(100L * (attempt + 1))
       val snap = docRef.get(Source.SERVER).await()
       if (!snap.contains("pass")) return
-      delay(100L * (attempt + 1)) // 50ms → 100ms
     }
     val left = docRef.get(Source.SERVER).await()
     if (left.contains("pass")) {
