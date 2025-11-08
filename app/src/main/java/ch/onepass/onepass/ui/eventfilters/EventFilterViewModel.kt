@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
+/** UI state for the filter dialog, including temporary selections. */
 data class FilterUIState(
     val localFilters: EventFilters = EventFilters(),
     val expandedRegion: Boolean = false,
@@ -14,14 +15,17 @@ data class FilterUIState(
     val showDatePicker: Boolean = false,
 )
 
-/** Shared ViewModel for managing event filters across multiple screens. */
+/**
+ * Shared [ViewModel] to manage event filters both locally in the dialog and globally across
+ * screens.
+ */
 class EventFilterViewModel : ViewModel() {
 
-  // --- UI state ---
+  /** Current UI state inside the filter dialog. */
   private val _uiState = MutableStateFlow(FilterUIState())
   val uiState: StateFlow<FilterUIState> = _uiState
 
-  // --- Business-level filters (used across screens) ---
+  /** Global filters applied across the app. */
   private val _currentFilters = MutableStateFlow(EventFilters())
   val currentFilters: StateFlow<EventFilters> = _currentFilters
 
@@ -38,6 +42,14 @@ class EventFilterViewModel : ViewModel() {
   /** Toggle date picker visibility. */
   fun toggleDatePicker(visible: Boolean) {
     _uiState.value = _uiState.value.copy(showDatePicker = visible)
+  }
+
+  /** Confirms selected date range and updates the local filters. */
+  fun confirmDateRange(start: Long, end: Long) {
+    if (start != null && end != null && end >= start) {
+      updateLocalFilters(_uiState.value.localFilters.copy(dateRange = start..end))
+      toggleDatePicker(false)
+    }
   }
 
   /** Reset the local filters (inside the dialog). */

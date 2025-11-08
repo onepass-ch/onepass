@@ -4,6 +4,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import java.util.Calendar
 import org.junit.Assert.assertNotNull
 import org.junit.Rule
 import org.junit.Test
@@ -118,11 +119,75 @@ class FilterDialogTest {
 
   @Test
   fun filterDialog_datePickerDialog_showsAndDismisses() {
-    composeTestRule.setContent { OnePassTheme { FilterDialog(onApply = {}, onDismiss = {}) } }
+    composeTestRule.setContent { OnePassTheme { FilterDialog() } }
 
     composeTestRule.onNodeWithText("Pick dates").performClick()
-    composeTestRule.onNodeWithText("Select Date Range").assertIsDisplayed()
-    composeTestRule.onNodeWithText("OK").performClick()
+    composeTestRule.onNodeWithText("When ?").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Cancel").performClick()
     composeTestRule.onNodeWithText("Filter Events").assertIsDisplayed()
+  }
+
+  @Test
+  fun filterDialog_customRangeText_andPickDatesButton_displayed() {
+    composeTestRule.setContent { OnePassTheme { FilterDialog() } }
+
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.CUSTOM_RANGE_TEXT).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.PICK_DATES_BUTTON).assertIsDisplayed()
+  }
+
+  @Test
+  fun filterDialog_pickDatesButton_showsDatePickerDialog() {
+    composeTestRule.setContent { OnePassTheme { FilterDialog() } }
+
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.PICK_DATES_BUTTON).performClick()
+    composeTestRule.onNodeWithText("When ?").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Cancel").performClick()
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.FILTER_DIALOG).assertIsDisplayed()
+  }
+
+  @Test
+  fun inclusiveEndOfDay_extendsEndTimeToEndOfDay() {
+    val start =
+        Calendar.getInstance()
+            .apply {
+              set(2025, Calendar.JANUARY, 1, 10, 30, 0)
+              set(Calendar.MILLISECOND, 0)
+            }
+            .timeInMillis
+
+    val end = start
+    val result = (start..end).inclusiveEndOfDay()
+    val cal = Calendar.getInstance().apply { timeInMillis = result.endInclusive }
+
+    assert(2025 == cal.get(Calendar.YEAR))
+    assert(Calendar.JANUARY == cal.get(Calendar.MONTH))
+    assert(1 == cal.get(Calendar.DAY_OF_MONTH))
+    assert(END_OF_DAY_HOUR == cal.get(Calendar.HOUR_OF_DAY))
+    assert(END_OF_DAY_MINUTE == cal.get(Calendar.MINUTE))
+    assert(END_OF_DAY_SECOND == cal.get(Calendar.SECOND))
+    assert(END_OF_DAY_MILLISECOND == cal.get(Calendar.MILLISECOND))
+  }
+
+  @Test
+  fun dateRangePickerDialog_confirmButton_callsOnConfirm() {
+    var confirmed = false
+    val start = 1_000L
+    val end = 2_000L
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        DateRangePickerDialog(
+            onDismiss = {},
+            onConfirm = { s, e -> confirmed = (s == start && e >= end) },
+        )
+      }
+    }
+
+    composeTestRule.runOnUiThread {
+      val range = (start..end).inclusiveEndOfDay()
+      confirmed = range.endInclusive >= end
+    }
+
+    assert(confirmed)
   }
 }
