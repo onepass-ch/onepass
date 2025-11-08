@@ -4,6 +4,7 @@ import android.util.Log
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
@@ -76,16 +77,26 @@ open class FirestoreTestBase {
    */
   private suspend fun clearTestCollection() {
     val user = FirebaseEmulator.auth.currentUser ?: return
-    val events =
-        FirebaseEmulator.firestore
-            .collection(EVENTS_COLLECTION_PATH)
-            .whereEqualTo("organizerId", user.uid)
-            .get()
-            .await()
 
-    val batch = FirebaseEmulator.firestore.batch()
-    events.documents.forEach { batch.delete(it.reference) }
-    batch.commit().await()
+    repeat(5) { attempt ->
+      val events =
+          FirebaseEmulator.firestore
+              .collection(EVENTS_COLLECTION_PATH)
+              .whereEqualTo("organizerId", user.uid)
+              .get()
+              .await()
+
+      val batch = FirebaseEmulator.firestore.batch()
+      events.documents.forEach { batch.delete(it.reference) }
+      batch.commit().await()
+
+      delay(100L * (attempt + 1))
+
+      val remainingCount = getEventsCount()
+      if (remainingCount == 0) {
+        return
+      }
+    }
 
     val remainingCount = getEventsCount()
     assert(remainingCount == 0) {
