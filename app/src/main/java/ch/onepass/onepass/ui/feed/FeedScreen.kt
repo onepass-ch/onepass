@@ -5,7 +5,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -19,6 +18,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.ui.event.EventCard
+import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
 import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
 import ch.onepass.onepass.ui.eventfilters.FilterDialog
@@ -64,7 +64,6 @@ fun FeedScreen(
   val uiState by viewModel.uiState.collectAsState()
   val currentFilters by filterViewModel.currentFilters.collectAsState()
 
-  var showFilterDialog by rememberSaveable { mutableStateOf(false) }
   // Load events when screen is first displayed
   LaunchedEffect(Unit) { viewModel.loadEvents() }
   // Apply filters when they change OR when events are loaded
@@ -82,7 +81,7 @@ fun FeedScreen(
               currentLocation = uiState.location,
               currentDateRange = "WELCOME",
               onCalendarClick = onNavigateToCalendar,
-              onFilterClick = { showFilterDialog = true },
+              onFilterClick = { viewModel.setShowFilterDialog(true) },
           )
           if (currentFilters.hasActiveFilters) {
             ActiveFiltersBar(
@@ -121,14 +120,17 @@ fun FeedScreen(
         }
       }
       // Filter Dialog
-      if (showFilterDialog) {
+      if (uiState.showFilterDialog) {
+        // Sync localFilters to current global filters on dialog open
+        LaunchedEffect(Unit) { filterViewModel.updateLocalFilters(currentFilters) }
+
         FilterDialog(
-            currentFilters = currentFilters,
+            viewModel = filterViewModel,
             onApply = { newFilters ->
               filterViewModel.applyFilters(newFilters)
-              showFilterDialog = false
+              viewModel.setShowFilterDialog(false)
             },
-            onDismiss = { showFilterDialog = false },
+            onDismiss = { viewModel.setShowFilterDialog(false) },
         )
       }
     }
@@ -211,29 +213,31 @@ private fun EventListContent(
     isLoadingMore: Boolean,
     onEventClick: (String) -> Unit,
 ) {
+  val eventCardViewModel = EventCardViewModel.getInstance()
+  val likedEvents by eventCardViewModel.likedEvents.collectAsState()
+
   LazyColumn(
       modifier = Modifier.fillMaxSize().testTag(FeedScreenTestTags.EVENT_LIST),
       contentPadding = PaddingValues(16.dp),
-      verticalArrangement = Arrangement.spacedBy(24.dp),
-  ) {
-    items(items = events, key = { it.eventId }) { event ->
-      EventCard(
-          event = event,
-          modifier = Modifier.testTag(FeedScreenTestTags.getTestTagForEventItem(event.eventId)),
-          onCardClick = { onEventClick(event.eventId) },
-      )
-    }
-    if (isLoadingMore && events.isNotEmpty()) {
-      item {
-        Box(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            contentAlignment = Alignment.Center,
-        ) {
-          LoadingState()
+      verticalArrangement = Arrangement.spacedBy(24.dp)) {
+        items(items = events, key = { it.eventId }) { event ->
+          EventCard(
+              event = event,
+              modifier = Modifier.testTag(FeedScreenTestTags.getTestTagForEventItem(event.eventId)),
+              isLiked = likedEvents.contains(event.eventId),
+              onLikeToggle = { eventId -> eventCardViewModel.toggleLike(eventId) },
+              onCardClick = { onEventClick(event.eventId) })
+        }
+        if (isLoadingMore && events.isNotEmpty()) {
+          item {
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                contentAlignment = Alignment.Center) {
+                  LoadingState()
+                }
+          }
         }
       }
-    }
-  }
 }
 
 /** Loading state indicator. */

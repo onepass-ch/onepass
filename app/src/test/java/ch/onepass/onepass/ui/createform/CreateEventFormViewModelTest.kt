@@ -1,6 +1,7 @@
 package ch.onepass.onepass.ui.createform
 
 import ch.onepass.onepass.model.event.EventRepository
+import ch.onepass.onepass.ui.createform.CreateEventFormViewModel.ValidationError
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -131,9 +132,9 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue((uiState as CreateEventUiState.Error).message.contains("Title is required"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey(ValidationError.TITLE.key))
+        assertEquals(ValidationError.TITLE.message, fieldErrors[ValidationError.TITLE.key])
       }
 
   @Test
@@ -149,10 +150,10 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue(
-            (uiState as CreateEventUiState.Error).message.contains("Description is required"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey(ValidationError.DESCRIPTION.key))
+        assertEquals(
+            ValidationError.DESCRIPTION.message, fieldErrors[ValidationError.DESCRIPTION.key])
       }
 
   @Test
@@ -168,9 +169,9 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue((uiState as CreateEventUiState.Error).message.contains("Date is required"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey(ValidationError.DATE.key))
+        assertEquals(ValidationError.DATE.message, fieldErrors[ValidationError.DATE.key])
       }
 
   @Test
@@ -186,9 +187,10 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue((uiState as CreateEventUiState.Error).message.contains("Start time is required"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey(ValidationError.START_TIME.key))
+        assertEquals(
+            ValidationError.START_TIME.message, fieldErrors[ValidationError.START_TIME.key])
       }
 
   @Test
@@ -204,9 +206,9 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue((uiState as CreateEventUiState.Error).message.contains("End time is required"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey(ValidationError.END_TIME.key))
+        assertEquals(ValidationError.END_TIME.message, fieldErrors[ValidationError.END_TIME.key])
       }
 
   @Test
@@ -222,9 +224,9 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue((uiState as CreateEventUiState.Error).message.contains("Location is required"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey(ValidationError.LOCATION.key))
+        assertEquals(ValidationError.LOCATION.message, fieldErrors[ValidationError.LOCATION.key])
       }
 
   @Test
@@ -241,10 +243,10 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue(
-            (uiState as CreateEventUiState.Error).message.contains("Price must be a valid number"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey(ValidationError.PRICE_INVALID.key))
+        assertEquals(
+            ValidationError.PRICE_INVALID.message, fieldErrors[ValidationError.PRICE_INVALID.key])
       }
 
   @Test
@@ -261,12 +263,11 @@ class CreateEventFormViewModelTest {
 
         viewModel.createEvent("org-id", "Organizer")
 
-        val uiState = viewModel.uiState.value
-        assertTrue(uiState is CreateEventUiState.Error)
-        assertTrue(
-            (uiState as CreateEventUiState.Error)
-                .message
-                .contains("Capacity must be a valid number"))
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.containsKey(ValidationError.CAPACITY_INVALID.key))
+        assertEquals(
+            ValidationError.CAPACITY_INVALID.message,
+            fieldErrors[ValidationError.CAPACITY_INVALID.key])
       }
 
   @Test
@@ -291,8 +292,9 @@ class CreateEventFormViewModelTest {
         coVerify(timeout = 2000) { mockRepository.createEvent(any()) }
 
         // Verify UI state is Success (form is reset after success)
-        val formState = viewModel.formState.value
-        assertEquals("", formState.title)
+        val uiState = viewModel.uiState.value
+        assertTrue(uiState is CreateEventUiState.Success)
+        assertEquals("new-event-id", (uiState as CreateEventUiState.Success).eventId)
       }
 
   @Test
@@ -432,9 +434,14 @@ class CreateEventFormViewModelTest {
         advanceUntilIdle()
 
         // After successful creation, form should be reset
+        viewModel.resetForm()
+
         val formState = viewModel.formState.value
         assertEquals("", formState.title)
         assertEquals("", formState.description)
+
+        val fieldErrors = viewModel.fieldErrors.value
+        assertTrue(fieldErrors.isEmpty())
       }
 
   @Test

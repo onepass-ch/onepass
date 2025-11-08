@@ -1,6 +1,9 @@
 package ch.onepass.onepass.ui.event
 
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
@@ -91,10 +94,15 @@ class EventCardTest {
 
   @Test
   fun eventCard_likeButtonToggleWorks() {
+    var isLiked by mutableStateOf(false)
+
     // When
     composeTestRule.setContent {
       MaterialTheme {
-        EventCard(event = createEvent(25u, "Event", "Dec 22, 2024", "Location", "Organizer"))
+        EventCard(
+            event = createEvent(25u, "Event", "Dec 22, 2024", "Location", "Organizer"),
+            isLiked = isLiked,
+            onLikeToggle = { isLiked = !isLiked })
       }
     }
 

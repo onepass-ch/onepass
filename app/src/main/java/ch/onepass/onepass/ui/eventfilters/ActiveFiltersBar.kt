@@ -15,6 +15,13 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+/**
+ * Displays the currently active event filters as chips with an option to clear all.
+ *
+ * @param filters The current [EventFilters] applied.
+ * @param onClearFilters Callback invoked when "Clear All" is pressed.
+ * @param modifier Optional [Modifier] for styling.
+ */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ActiveFiltersBar(
@@ -92,6 +99,7 @@ fun ActiveFiltersBar(
   }
 }
 
+/** Formats a date range as a human-readable string. */
 internal fun formatDateRange(dateRange: ClosedRange<Long>?): String? {
   return dateRange?.let {
     val startDate =
@@ -105,6 +113,7 @@ internal fun formatDateRange(dateRange: ClosedRange<Long>?): String? {
   }
 }
 
+/** Returns a display text for common date ranges like "Today" or "Next 7 Days". */
 private fun getDateRangeDisplayText(dateRange: ClosedRange<Long>): String {
   val todayRange = DateRangePresets.getTodayRange()
   val next7Days = DateRangePresets.getNext7DaysRange()

@@ -176,6 +176,19 @@ class FeedViewModelFirestoreTest : FirestoreTestBase() {
   }
 
   @Test
+  fun viewModel_setShowFilterDialog_updatesVisibility() = runTest {
+    assertFalse(viewModel.uiState.value.showFilterDialog)
+
+    viewModel.setShowFilterDialog(true)
+    var state = viewModel.uiState.value
+    assertTrue(state.showFilterDialog)
+
+    viewModel.setShowFilterDialog(false)
+    state = viewModel.uiState.value
+    assertFalse(state.showFilterDialog)
+  }
+
+  @Test
   fun viewModel_clearError_removesErrorState() = runTest {
     val mockRepository =
         object : ch.onepass.onepass.model.event.EventRepository {

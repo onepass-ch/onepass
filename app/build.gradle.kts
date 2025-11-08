@@ -64,7 +64,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.2"
+        kotlinCompilerExtensionVersion = "1.5.3"
     }
 
     compileOptions {
@@ -215,6 +215,9 @@ dependencies {
     // --------- MockK for Mocking (unified version) ---------
     testImplementation("io.mockk:mockk:1.13.10")
     androidTestImplementation("io.mockk:mockk-android:1.13.10")
+
+    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("androidx.compose.material:material-icons-extended:1.5.4")
 
     // --------- JUnit ---------
     testImplementation(libs.junit)
