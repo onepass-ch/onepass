@@ -21,15 +21,31 @@ import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.eventfilters.SwissRegions
 import java.util.*
 
+/** Test tags for UI elements in the filter dialog. */
 object FeedScreenTestTags {
   const val FILTER_DIALOG = "filterDialog"
   const val REGION_DROPDOWN = "regionDropdown"
   const val DATE_RANGE_PRESETS = "dateRangePresets"
+  const val CUSTOM_RANGE_TEXT = "customRangeText"
+  const val PICK_DATES_BUTTON = "pickDatesButton"
   const val HIDE_SOLD_OUT_CHECKBOX = "hideSoldOutCheckbox"
   const val APPLY_FILTERS_BUTTON = "applyFiltersButton"
   const val RESET_FILTERS_BUTTON = "resetFiltersButton"
 }
 
+/** Constants for inclusiveEndOfDay function */
+const val END_OF_DAY_HOUR = 23
+const val END_OF_DAY_MINUTE = 59
+const val END_OF_DAY_SECOND = 59
+const val END_OF_DAY_MILLISECOND = 999
+
+/**
+ * Full-screen dialog allowing users to select filters for events.
+ *
+ * @param viewModel [EventFilterViewModel] providing filter state.
+ * @param onApply Callback invoked with updated [EventFilters].
+ * @param onDismiss Callback invoked when the dialog is dismissed.
+ */
 @Composable
 fun FilterDialog(
     viewModel: EventFilterViewModel = viewModel(),
@@ -55,7 +71,11 @@ fun FilterDialog(
         Column(Modifier.verticalScroll(rememberScrollState()).weight(1f, false)) {
           RegionFilter(uiState, viewModel::updateLocalFilters, viewModel::toggleRegionDropdown)
           Spacer(Modifier.height(24.dp))
-          DateRangeFilter(uiState, viewModel::updateLocalFilters, viewModel::toggleDatePicker)
+          DateRangeFilter(
+              uiState = uiState,
+              onFiltersChanged = viewModel::updateLocalFilters,
+              onShowDatePickerChange = viewModel::toggleDatePicker,
+          )
           Spacer(Modifier.height(24.dp))
           AvailabilityFilter(uiState.localFilters, viewModel::updateLocalFilters)
         }
@@ -81,6 +101,7 @@ fun FilterDialog(
   }
 }
 
+/** Displays a dropdown menu for selecting the event region. */
 @Composable
 private fun RegionFilter(
     uiState: FilterUIState = FilterUIState(),
@@ -123,11 +144,12 @@ private fun RegionFilter(
   }
 }
 
+/** Displays chips for selecting a date range or custom range via date picker. */
 @Composable
 private fun DateRangeFilter(
-    uiState: FilterUIState,
-    onFiltersChanged: (EventFilters) -> Unit,
-    onShowDatePickerChange: (Boolean) -> Unit,
+    uiState: FilterUIState = FilterUIState(),
+    onFiltersChanged: (EventFilters) -> Unit = {},
+    onShowDatePickerChange: (Boolean) -> Unit = {},
 ) {
   val datePresets =
       listOf(
@@ -166,26 +188,27 @@ private fun DateRangeFilter(
               formatDateRange(uiState.localFilters.dateRange) ?: "Not set",
               style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
-          )
+              modifier = Modifier.testTag(FeedScreenTestTags.CUSTOM_RANGE_TEXT))
         }
-        Button(onClick = { onShowDatePickerChange(true) }, Modifier.height(36.dp)) {
-          Text("Pick dates")
-        }
+        Button(
+            onClick = { onShowDatePickerChange(true) },
+            Modifier.height(36.dp).testTag(FeedScreenTestTags.PICK_DATES_BUTTON)) {
+              Text("Pick dates")
+            }
       }
       if (uiState.showDatePicker) {
-        SimpleDateRangePickerDialog(
-            currentRange = uiState.localFilters.dateRange,
+        DateRangePickerDialog(
             onDismiss = { onShowDatePickerChange(false) },
-            onConfirm = { range ->
-              onFiltersChanged(uiState.localFilters.copy(dateRange = range))
+            onConfirm = { start, end ->
+              onFiltersChanged(uiState.localFilters.copy(dateRange = start..end))
               onShowDatePickerChange(false)
-            },
-        )
+            })
       }
     }
   }
 }
 
+/** Shows a checkbox to hide sold out events. */
 @Composable
 private fun AvailabilityFilter(filters: EventFilters, onFiltersChanged: (EventFilters) -> Unit) {
   FilterSection("Availability") {
@@ -203,6 +226,7 @@ private fun AvailabilityFilter(filters: EventFilters, onFiltersChanged: (EventFi
   }
 }
 
+/** Section wrapper with a title and content. */
 @Composable
 private fun FilterSection(title: String, content: @Composable () -> Unit) {
   Column(Modifier.fillMaxWidth()) {
@@ -215,19 +239,66 @@ private fun FilterSection(title: String, content: @Composable () -> Unit) {
   }
 }
 
+/** Dialog to pick a custom start and end date for filtering events. */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun SimpleDateRangePickerDialog(
-    currentRange: ClosedRange<Long>?,
-    onDismiss: () -> Unit,
-    onConfirm: (ClosedRange<Long>) -> Unit,
+fun DateRangePickerDialog(
+    onDismiss: () -> Unit = {},
+    onConfirm: (Long, Long) -> Unit = { _, _ -> },
 ) {
+  val state = rememberDateRangePickerState()
+
   AlertDialog(
       onDismissRequest = onDismiss,
-      title = { Text("Select Date Range") },
+      properties = DialogProperties(usePlatformDefaultWidth = false),
+      title = { Text("When ?") },
       text = {
-        Text(
-            "For now, use the preset chips above for quick date ranges.\n\nA full calendar date range picker can be implemented here later.")
+        Column {
+          DateRangePicker(
+              title = {},
+              headline = {
+                val start = state.selectedStartDateMillis
+                val end = state.selectedEndDateMillis
+
+                val headlineText =
+                    when {
+                      start == null -> "Select start date"
+                      end == null -> "Select end date"
+                      else -> formatDateRange(start..end)
+                    }
+
+                Text(
+                    text = headlineText!!,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(vertical = 8.dp))
+              },
+              state = state,
+          )
+        }
       },
-      confirmButton = { Button(onClick = onDismiss) { Text("OK") } },
-  )
+      confirmButton = {
+        if (state.selectedStartDateMillis != null && state.selectedEndDateMillis != null) {
+          Button(
+              onClick = {
+                val range =
+                    (state.selectedStartDateMillis!!..state.selectedEndDateMillis!!)
+                        .inclusiveEndOfDay()
+                onConfirm(range.start, range.endInclusive)
+              }) {
+                Text("Confirm")
+              }
+        }
+      },
+      dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
+}
+
+/** Extends a [ClosedRange] to include the full end-of-day time for the end date. */
+fun ClosedRange<Long>.inclusiveEndOfDay(): ClosedRange<Long> {
+  val cal = Calendar.getInstance().apply { timeInMillis = this@inclusiveEndOfDay.endInclusive }
+  cal.set(Calendar.HOUR_OF_DAY, END_OF_DAY_HOUR)
+  cal.set(Calendar.MINUTE, END_OF_DAY_MINUTE)
+  cal.set(Calendar.SECOND, END_OF_DAY_SECOND)
+  cal.set(Calendar.MILLISECOND, END_OF_DAY_MILLISECOND)
+  return this.start..cal.timeInMillis
 }

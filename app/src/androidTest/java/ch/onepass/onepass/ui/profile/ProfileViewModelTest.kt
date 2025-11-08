@@ -1,7 +1,7 @@
 package ch.onepass.onepass.ui.profile
 
+import ch.onepass.onepass.model.user.FakeUserRepository
 import ch.onepass.onepass.model.user.User
-import ch.onepass.onepass.model.user.UserRepository
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -10,28 +10,6 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class ProfileViewModelTest {
-
-  // ---------- Simple fake repository ----------
-  private class FakeUserRepository(
-      private val currentUser: User? = null,
-      private val createdUser: User? = null,
-      private val throwOnLoad: Boolean = false
-  ) : UserRepository {
-
-    override suspend fun getCurrentUser(): User? {
-      if (throwOnLoad) throw RuntimeException("boom")
-      return currentUser
-    }
-
-    override suspend fun getOrCreateUser(): User? {
-      if (throwOnLoad) throw RuntimeException("boom")
-      return createdUser
-    }
-
-    override suspend fun updateLastLogin(uid: String) {
-      /* no-op */
-    }
-  }
 
   private fun makeUser(
       uid: String = "u1",
