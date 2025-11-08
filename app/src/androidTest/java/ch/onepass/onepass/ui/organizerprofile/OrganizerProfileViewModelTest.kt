@@ -322,8 +322,15 @@ class OrganizerProfileViewModelTest {
             organizerId = "org-with-events",
             startTime = EventTestData.createPastTimestamp(daysAgo = 5),
             endTime = EventTestData.createPastTimestamp(daysAgo = 5, addHours = 1))
+  val currentEvent1 = EventTestData.createTestEvent(
+      eventId = "event-current-1",
+      title = "Current Event 1",
+      organizerId = "org-with-events",
+      startTime = EventTestData.createPastTimestamp(daysAgo = 5),
+      endTime = EventTestData.createFutureTimestamp(daysFromNow = 1)
+  )
 
-    val allEvents = listOf(upcomingEvent1, upcomingEvent2, pastEvent1, pastEvent2)
+    val allEvents = listOf(upcomingEvent1, upcomingEvent2, pastEvent1, pastEvent2, currentEvent1)
 
     val orgRepository = MockOrganizationRepository(mapOf("org-with-events" to testOrg))
     val eventRepository = MockEventRepository(mapOf("org-with-events" to allEvents))
@@ -334,14 +341,15 @@ class OrganizerProfileViewModelTest {
 
     val state = viewModel.state.value
 
-    assertEquals(4, state.eventCount)
-    assertEquals(2, state.upcomingEvents.size)
+    assertEquals(5, state.eventCount)
+    assertEquals(3, state.upcomingEvents.size)
     assertEquals(2, state.pastEvents.size)
 
     // Verify upcoming events
     val upcomingTitles = state.upcomingEvents.map { it.title }
     assertTrue(upcomingTitles.contains("Future Event 1"))
     assertTrue(upcomingTitles.contains("Future Event 2"))
+    assertTrue(upcomingTitles.contains("Current Event 1"))
 
     // Verify past events
     val pastTitles = state.pastEvents.map { it.title }
