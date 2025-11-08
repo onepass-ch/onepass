@@ -399,6 +399,11 @@ class OrganizerProfileViewModelTest {
     job.cancel()
 
     assertTrue("Should emit error effect", effects.any { it is OrganizerProfileEffect.ShowError })
+
+      val errorEffect = effects.find { it is OrganizerProfileEffect.ShowError }
+              as OrganizerProfileEffect.ShowError
+      assertTrue(errorEffect.message.contains("Test error"))
+      assertFalse(viewModel.state.value.loading)
   }
 
   // ========================================
