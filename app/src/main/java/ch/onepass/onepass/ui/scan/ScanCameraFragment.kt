@@ -1,4 +1,3 @@
-// app/src/main/java/ch/onepass/onepass/ui/scan/ScanCameraFragment.kt
 package ch.onepass.onepass.ui.scan
 
 import android.Manifest
@@ -29,14 +28,13 @@ import com.google.mlkit.vision.barcode.Barcode
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.common.InputImage
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /**
- * Fragment responsible for camera preview and QR code scanning using ML Kit.
+ * Fragment responsible for displaying the camera preview and scanning QR codes using ML Kit.
  *
  * Requirements:
  * - CameraX dependencies: camera-core, camera-camera2, camera-lifecycle, camera-view
@@ -62,7 +60,9 @@ class ScanCameraFragment : Fragment() {
     private var camera: Camera? = null
     private var analysis: ImageAnalysis? = null
     private var cameraExecutor: ExecutorService? = null
-    private var analyzerJob: Job? = null
+
+    // Keep an analyzer instance so we can reset debounce from the ViewModel
+    private lateinit var analyzer: QrAnalyzer
 
     private val viewModel: ScannerViewModel by viewModels {
         val eventId = requireArguments().getString(ARG_EVENT_ID).orEmpty()
@@ -115,33 +115,56 @@ class ScanCameraFragment : Fragment() {
     private fun startCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(requireContext())
         cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
-            val preview = Preview.Builder().build().also {
-                it.setSurfaceProvider(previewView.surfaceProvider)
-            }
+            try {
+                val cameraProvider = cameraProviderFuture.get()
 
-            analysis = ImageAnalysis.Builder()
-                .setTargetResolution(Size(1280, 720))
-                .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
-                .build()
-                .apply {
-                    setAnalyzer(cameraExecutor!!, QrAnalyzer { qr ->
-                        viewModel.onQrScanned(qr)
-                    })
+                val preview = Preview.Builder().build().also {
+                    it.setSurfaceProvider(previewView.surfaceProvider)
                 }
 
-            val selector = CameraSelector.DEFAULT_BACK_CAMERA
-            cameraProvider.unbindAll()
-            camera = cameraProvider.bindToLifecycle(
-                this, selector, preview, analysis
-            )
+                analyzer = QrAnalyzer(
+                    onQrDetected = { qr -> viewModel.onQrScanned(qr) }
+                )
+
+                analysis = ImageAnalysis.Builder()
+                    // Prefer aspect ratio for better device compatibility
+                    .setTargetAspectRatio(AspectRatio.RATIO_16_9)
+                    .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
+                    .build()
+                    .apply { setAnalyzer(cameraExecutor!!, analyzer) }
+
+                val selector = CameraSelector.DEFAULT_BACK_CAMERA
+                cameraProvider.unbindAll()
+                camera = cameraProvider.bindToLifecycle(
+                    this, selector, preview, analysis
+                )
+
+                // Robust torch handling: hide if no flash, and observe state
+                camera?.cameraInfo?.let { info ->
+                    if (!info.hasFlashUnit()) {
+                        torchButton.isVisible = false
+                    } else {
+                        info.torchState.observe(viewLifecycleOwner) { state ->
+                            torchButton.setImageResource(
+                                if (state == TorchState.ON) R.drawable.ic_flash_on
+                                else R.drawable.ic_flash_off
+                            )
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                messageText.text = getString(R.string.camera_error_generic)
+                // Log.e("ScanCameraFragment", "Camera error", e)
+            }
         }, ContextCompat.getMainExecutor(requireContext()))
     }
 
     private fun toggleTorch() {
         camera?.let {
-            val newState = !it.cameraInfo.torchState.value!!.equals(TorchState.ON)
-            it.cameraControl.enableTorch(newState)
+            val info = it.cameraInfo
+            if (!info.hasFlashUnit()) return
+            val isOn = info.torchState.value == TorchState.ON
+            it.cameraControl.enableTorch(!isOn)
         }
     }
 
@@ -152,15 +175,17 @@ class ScanCameraFragment : Fragment() {
                     viewModel.state.collectLatest { state ->
                         messageText.text = state.message
                         progressBar.isVisible = state.isProcessing
+
+                        // When returning to IDLE, allow rescanning the same code
+                        if (state.status == ScannerUiState.Status.IDLE && ::analyzer.isInitialized) {
+                            analyzer.resetDebounce()
+                        }
                     }
                 }
                 launch {
                     viewModel.effects.collectLatest { effect ->
-                        when (effect) {
-                            is ScannerEffect.Accepted -> vibrate()
-                            is ScannerEffect.Rejected -> vibrate()
-                            is ScannerEffect.Error -> vibrate()
-                        }
+                        // Light haptic feedback for all effects
+                        vibrate()
                     }
                 }
             }
@@ -169,19 +194,24 @@ class ScanCameraFragment : Fragment() {
 
     private fun vibrate() {
         val vibrator = requireContext().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-        vibrator.vibrate(VibrationEffect.createOneShot(120, VibrationEffect.DEFAULT_AMPLITUDE))
+        if (vibrator.hasVibrator()) {
+            vibrator.vibrate(VibrationEffect.createOneShot(120, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            // Haptic fallback if device has no vibrator
+            view?.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+        }
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         analysis?.clearAnalyzer()
         cameraExecutor?.shutdown()
-        analyzerJob?.cancel()
     }
 }
 
 /**
  * Analyzer that decodes QR codes from camera frames using ML Kit BarcodeScanning.
+ * Includes anti-spam (busy) and cooldown logic to prevent repeated triggers.
  */
 private class QrAnalyzer(
     private val onQrDetected: (String) -> Unit
@@ -192,23 +222,41 @@ private class QrAnalyzer(
         .build()
 
     private val scanner = BarcodeScanning.getClient(options)
+
+    @Volatile private var busy = false
     private var lastDetected: String? = null
+    private var lastTime: Long = 0
+    private val coolDownMs = 1200L
 
     @OptIn(ExperimentalGetImage::class)
     override fun analyze(imageProxy: ImageProxy) {
-        val mediaImage = imageProxy.image ?: return imageProxy.close()
+        if (busy) { imageProxy.close(); return }
+        val mediaImage = imageProxy.image ?: run { imageProxy.close(); return }
         val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
 
+        busy = true
         scanner.process(image)
             .addOnSuccessListener { barcodes ->
-                for (barcode in barcodes) {
-                    val raw = barcode.rawValue ?: continue
-                    if (raw != lastDetected) {
+                // Process only the first QR code from the frame
+                val raw = barcodes.firstOrNull()?.rawValue
+                if (raw != null) {
+                    val now = System.currentTimeMillis()
+                    val notTooSoon = now - lastTime > coolDownMs
+                    if (notTooSoon || raw != lastDetected) {
                         lastDetected = raw
+                        lastTime = now
                         onQrDetected(raw)
                     }
                 }
             }
-            .addOnCompleteListener { imageProxy.close() }
+            .addOnCompleteListener {
+                busy = false
+                imageProxy.close()
+            }
+    }
+
+    fun resetDebounce() {
+        lastDetected = null
+        lastTime = 0
     }
 }
