@@ -25,6 +25,7 @@ open class PassFirestoreTestBase {
 
   protected lateinit var repository: PassRepository
   protected lateinit var firestore: FirebaseFirestore
+  protected lateinit var functions: FirebaseFunctions
 
   protected val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
 
@@ -47,15 +48,15 @@ open class PassFirestoreTestBase {
     }
 
     firestore = FirebaseFirestore.getInstance()
-    val functions = FirebaseFunctions.getInstance()
+    functions = FirebaseFunctions.getInstance()
 
     val host = FirebaseEmulator.HOST
     auth.useEmulator(host, 9099)
     firestore.useEmulator(host, 8080)
     firestore.firestoreSettings =
-        FirebaseFirestoreSettings.Builder()
-            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
-            .build()
+      FirebaseFirestoreSettings.Builder()
+        .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+        .build()
     functions.useEmulator(host, 5001)
 
     repository = PassRepositoryFirebase(db = firestore, functions = functions)
