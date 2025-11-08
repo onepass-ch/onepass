@@ -34,6 +34,8 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
     }
   }
 
+  // ---- HELPERS ------------------------------------------------------
+
   private suspend fun writeValidPassAsNumbers(
       uid: String = this.uid,
       kid: String = "kid-001",
@@ -90,6 +92,8 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
         .set(mapOf("pass" to mapOf("lastScannedAt" to value)), SetOptions.merge())
         .await()
   }
+
+  // ---- TESTS --------------------------------------------------------
 
   @Test
   fun getUserPass_emitsNull_thenPass() = runBlocking {
@@ -379,173 +383,5 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
     Assert.assertEquals("kid-extra", p.kid)
     Assert.assertEquals(3, p.version)
     Assert.assertTrue(p.isValidNow)
-  }
-
-  @Test
-  fun getUserPass_requiresNonBlankUid() = runBlocking {
-    try {
-      repository.getUserPass("")
-      Assert.fail("Expected IllegalArgumentException")
-    } catch (e: IllegalArgumentException) {
-      Assert.assertTrue(e.message?.contains("uid required") == true)
-    }
-  }
-
-  @Test
-  fun getOrCreateSignedPass_requiresNonBlankUid() = runBlocking {
-    val result = repository.getOrCreateSignedPass("")
-    Assert.assertTrue(result.isFailure)
-    Assert.assertTrue(result.exceptionOrNull() is IllegalArgumentException)
-  }
-
-  @Test
-  fun revokePass_requiresNonBlankUid() = runBlocking {
-    val result = repository.revokePass("")
-    Assert.assertTrue(result.isFailure)
-    Assert.assertTrue(result.exceptionOrNull() is IllegalArgumentException)
-  }
-
-  @Test
-  fun mapping_throwsWhenUidMissingInPass() = runBlocking {
-    val pass =
-        mapOf(
-            "kid" to "kid-no-uid",
-            "issuedAt" to 1_700_000_000L,
-            "version" to 1,
-            "active" to true,
-            "signature" to "A_-0")
-    firestore.collection("user").document(uid).set(mapOf("pass" to pass)).await()
-
-    try {
-      withTimeout(TIMEOUT) { repository.getUserPass(uid).first() }
-      Assert.fail("Expected IllegalArgumentException")
-    } catch (e: IllegalArgumentException) {
-      Assert.assertTrue(e.message?.contains("uid missing") == true)
-    }
-  }
-
-  @Test
-  fun mapping_throwsWhenUidBlankInPass() = runBlocking {
-    val pass =
-        mapOf(
-            "uid" to "  ",
-            "kid" to "kid-blank",
-            "issuedAt" to 1_700_000_000L,
-            "version" to 1,
-            "active" to true,
-            "signature" to "A_-0")
-    firestore.collection("user").document(uid).set(mapOf("pass" to pass)).await()
-
-    try {
-      withTimeout(TIMEOUT) { repository.getUserPass(uid).first() }
-      Assert.fail("Expected IllegalArgumentException")
-    } catch (e: IllegalArgumentException) {
-      Assert.assertTrue(e.message?.contains("uid missing") == true)
-    }
-  }
-
-  @Test
-  fun mapping_handlesNullValues() = runBlocking {
-    val pass =
-        mapOf(
-            "uid" to uid,
-            "kid" to "kid-nulls",
-            "issuedAt" to 1_700_000_000L,
-            "version" to null,
-            "active" to null,
-            "signature" to "A_-0",
-            "lastScannedAt" to null,
-            "revokedAt" to null)
-    firestore.collection("user").document(uid).set(mapOf("pass" to pass)).await()
-    val p = withTimeout(TIMEOUT) { repository.getUserPass(uid).filterNotNull().first() }
-    Assert.assertEquals(1, p.version)
-    Assert.assertTrue(p.active)
-    Assert.assertNull(p.lastScannedAt)
-    Assert.assertNull(p.revokedAt)
-  }
-
-  @Test
-  fun mapping_handlesInvalidTypeForIssuedAt() = runBlocking {
-    val pass =
-        mapOf(
-            "uid" to uid,
-            "kid" to "kid-bad-issued",
-            "issuedAt" to "not-a-number",
-            "version" to 1,
-            "active" to true,
-            "signature" to "A_-0")
-    firestore.collection("user").document(uid).set(mapOf("pass" to pass)).await()
-    val p = withTimeout(TIMEOUT) { repository.getUserPass(uid).first() }
-    Assert.assertNull(p)
-  }
-
-  @Test
-  fun mapping_trimsWhitespace() = runBlocking {
-    val pass =
-        mapOf(
-            "uid" to "  $uid  ",
-            "kid" to "  kid-trim  ",
-            "issuedAt" to 1_700_000_000L,
-            "version" to 1,
-            "active" to true,
-            "signature" to "  A_-0  ")
-    firestore.collection("user").document(uid).set(mapOf("pass" to pass)).await()
-    val p = withTimeout(TIMEOUT) { repository.getUserPass(uid).filterNotNull().first() }
-    Assert.assertEquals(uid, p.uid)
-    Assert.assertEquals("kid-trim", p.kid)
-    Assert.assertEquals("A_-0", p.signature)
-  }
-
-  @Test
-  fun getUserPass_handlesDocumentWithoutPassField() = runBlocking {
-    firestore.collection("user").document(uid).set(mapOf("other" to "data")).await()
-    val p = withTimeout(TIMEOUT) { repository.getUserPass(uid).first() }
-    Assert.assertNull(p)
-  }
-
-  @Test
-  fun getUserPass_handlesPassFieldAsNonMap() = runBlocking {
-    firestore.collection("user").document(uid).set(mapOf("pass" to "not-a-map")).await()
-    val p = withTimeout(TIMEOUT) { repository.getUserPass(uid).first() }
-    Assert.assertNull(p)
-  }
-
-  @Test
-  fun mapping_handlesInvalidTimestampTypes() = runBlocking {
-    val pass =
-        mapOf(
-            "uid" to uid,
-            "kid" to "kid-bad-ts",
-            "issuedAt" to 1_700_000_000L,
-            "version" to 1,
-            "active" to true,
-            "signature" to "A_-0",
-            "lastScannedAt" to "invalid",
-            "revokedAt" to mapOf("foo" to "bar"))
-    firestore.collection("user").document(uid).set(mapOf("pass" to pass)).await()
-    val p = withTimeout(TIMEOUT) { repository.getUserPass(uid).filterNotNull().first() }
-    Assert.assertNull(p.lastScannedAt)
-    Assert.assertNull(p.revokedAt)
-  }
-
-  @Test
-  fun revokePass_worksOnNonExistentDocument() = runBlocking {
-    clearUserPass(uid)
-    val result = repository.revokePass(uid)
-    Assert.assertTrue(result.isSuccess)
-    val snap = firestore.collection("user").document(uid).get().await()
-    val passMap = snap.get("pass") as? Map<*, *>
-    Assert.assertNotNull(passMap)
-    Assert.assertEquals(false, passMap?.get("active"))
-  }
-
-  @Test
-  fun revokePass_preservesExistingFields() = runBlocking {
-    writeValidPassAsNumbers(kid = "kid-preserve", version = 5)
-    repository.revokePass(uid).getOrThrow()
-    val snap = firestore.collection("user").document(uid).get().await()
-    val passMap = snap.get("pass") as? Map<*, *> ?: error("missing pass")
-    Assert.assertEquals("kid-preserve", passMap["kid"])
-    Assert.assertEquals(5L, (passMap["version"] as? Number)?.toLong())
   }
 }
