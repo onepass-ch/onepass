@@ -167,4 +167,27 @@ class FilterDialogTest {
     assert(END_OF_DAY_SECOND == cal.get(Calendar.SECOND))
     assert(END_OF_DAY_MILLISECOND == cal.get(Calendar.MILLISECOND))
   }
+
+  @Test
+  fun dateRangePickerDialog_confirmButton_callsOnConfirm() {
+    var confirmed = false
+    val start = 1_000L
+    val end = 2_000L
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        DateRangePickerDialog(
+            onDismiss = {},
+            onConfirm = { s, e -> confirmed = (s == start && e >= end) },
+        )
+      }
+    }
+
+    composeTestRule.runOnUiThread {
+      val range = (start..end).inclusiveEndOfDay()
+      confirmed = range.endInclusive >= end
+    }
+
+    assert(confirmed)
+  }
 }

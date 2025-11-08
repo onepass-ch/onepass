@@ -242,7 +242,7 @@ private fun FilterSection(title: String, content: @Composable () -> Unit) {
 /** Dialog to pick a custom start and end date for filtering events. */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun DateRangePickerDialog(
+fun DateRangePickerDialog(
     onDismiss: () -> Unit = {},
     onConfirm: (Long, Long) -> Unit = { _, _ -> },
 ) {

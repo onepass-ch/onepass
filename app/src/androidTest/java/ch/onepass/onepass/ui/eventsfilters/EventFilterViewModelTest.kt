@@ -168,6 +168,21 @@ class EventFilterViewModelTest {
   }
 
   @Test
+  fun confirmDateRangeDoesNotUpdateWhenEndIsBeforeStart() = runTest {
+    val viewModel = EventFilterViewModel()
+    val start = 2000L
+    val end = 1000L
+
+    val initialState = viewModel.uiState.value
+    viewModel.confirmDateRange(start, end)
+
+    val newState = viewModel.uiState.value
+    // should not have changed
+    assertEquals(initialState.localFilters, newState.localFilters)
+    assertEquals(initialState.showDatePicker, newState.showDatePicker)
+  }
+
+  @Test
   fun cancelingDatePickerClearsTemporarySelection() = runTest {
     val vm = EventFilterViewModel()
     vm.toggleDatePicker(true)
@@ -178,5 +193,18 @@ class EventFilterViewModelTest {
     assertFalse(vm.uiState.value.showDatePicker)
 
     assertNull(vm.uiState.value.localFilters.dateRange)
+  }
+
+  @Test
+  fun regionDropdown_dismissMenuWithoutSelection() {
+    val viewModel = EventFilterViewModel()
+
+    assertFalse(viewModel.uiState.value.expandedRegion)
+
+    viewModel.toggleRegionDropdown(true)
+    assertTrue(viewModel.uiState.value.expandedRegion)
+
+    viewModel.toggleRegionDropdown(false)
+    assertFalse(viewModel.uiState.value.expandedRegion)
   }
 }
