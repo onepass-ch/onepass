@@ -12,6 +12,7 @@ import com.google.firebase.firestore.FirebaseFirestoreSettings
 import com.google.firebase.firestore.MemoryCacheSettings
 import com.google.firebase.firestore.Source
 import com.google.firebase.functions.FirebaseFunctions
+import java.util.UUID
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -19,7 +20,6 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Before
-import java.util.UUID
 
 open class PassFirestoreTestBase {
 
@@ -28,8 +28,7 @@ open class PassFirestoreTestBase {
 
   protected val auth: FirebaseAuth by lazy { FirebaseAuth.getInstance() }
 
-  @OptIn(ExperimentalCoroutinesApi::class)
-  private val testDispatcher = UnconfinedTestDispatcher()
+  @OptIn(ExperimentalCoroutinesApi::class) private val testDispatcher = UnconfinedTestDispatcher()
 
   private val testRunId = UUID.randomUUID().toString().take(8)
 
@@ -54,9 +53,9 @@ open class PassFirestoreTestBase {
     auth.useEmulator(host, 9099)
     firestore.useEmulator(host, 8080)
     firestore.firestoreSettings =
-      FirebaseFirestoreSettings.Builder()
-        .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
-        .build()
+        FirebaseFirestoreSettings.Builder()
+            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+            .build()
     functions.useEmulator(host, 5001)
 
     repository = PassRepositoryFirebase(db = firestore, functions = functions)
@@ -73,9 +72,7 @@ open class PassFirestoreTestBase {
 
   @After
   open fun tearDown() {
-    runBlocking(testDispatcher) {
-      auth.currentUser?.let { clearUserPass(it.uid) }
-    }
+    runBlocking(testDispatcher) { auth.currentUser?.let { clearUserPass(it.uid) } }
     FirebaseEmulator.clearFirestoreEmulator()
   }
 
