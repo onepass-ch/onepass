@@ -54,9 +54,9 @@ open class PassFirestoreTestBase {
     auth.useEmulator(host, 9099)
     firestore.useEmulator(host, 8080)
     firestore.firestoreSettings =
-      FirebaseFirestoreSettings.Builder()
-        .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
-        .build()
+        FirebaseFirestoreSettings.Builder()
+            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+            .build()
     functions.useEmulator(host, 5001)
 
     repository = PassRepositoryFirebase(db = firestore, functions = functions)
