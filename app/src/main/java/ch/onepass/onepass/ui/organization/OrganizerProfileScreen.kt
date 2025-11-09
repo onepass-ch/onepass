@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -61,6 +63,7 @@ object OrganizerProfileTestTags {
   const val FOLLOW_BUTTON = "organizer_follow_button"
   const val FOLLOW_BUTTON_TEXT = "organizer_follow_button_text"
   const val FOLLOWERS_TEXT = "organizer_followers_text"
+  const val EDIT_ORGANIZATION_BUTTON = "organizer_edit_organization_button"
   const val TAB_SECTION = "organizer_tab_section"
   const val TAB_POSTS = "organizer_tab_posts"
   const val TAB_UPCOMING = "organizer_tab_upcoming"
@@ -223,45 +226,71 @@ fun FollowSection(
     modifier: Modifier = Modifier,
     followersCount: String,
     isFollowing: Boolean,
+    isOwner: Boolean,
     onFollowClick: () -> Unit = {},
+    onEditClick: () -> Unit = {},
 ) {
-  Row(
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically,
+  Column(
+      verticalArrangement = Arrangement.spacedBy(12.dp),
+      horizontalAlignment = Alignment.CenterHorizontally,
       modifier =
           modifier
               .fillMaxWidth()
               .wrapContentHeight()
               .padding(horizontal = 20.dp)
               .testTag(OrganizerProfileTestTags.FOLLOW_SECTION)) {
-        // Follow Button
+        // Follow Button Row
         Row(
-            horizontalArrangement = Arrangement.Center,
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
-            modifier =
-                Modifier.width(182.dp)
-                    .height(42.dp)
-                    .background(color = Color(0xFF4A3857), shape = RoundedCornerShape(size = 5.dp))
-                    .border(
-                        width = 1.dp,
-                        color = Color(0xFF242424),
-                        shape = RoundedCornerShape(size = 5.dp))
-                    .clickable { onFollowClick() }
-                    .testTag(OrganizerProfileTestTags.FOLLOW_BUTTON)) {
+            modifier = Modifier.fillMaxWidth()) {
+              // Follow Button
+              Row(
+                  horizontalArrangement = Arrangement.Center,
+                  verticalAlignment = Alignment.CenterVertically,
+                  modifier =
+                      Modifier.width(182.dp)
+                          .height(42.dp)
+                          .background(
+                              color = Color(0xFF4A3857), shape = RoundedCornerShape(size = 5.dp))
+                          .border(
+                              width = 1.dp,
+                              color = Color(0xFF242424),
+                              shape = RoundedCornerShape(size = 5.dp))
+                          .clickable { onFollowClick() }
+                          .testTag(OrganizerProfileTestTags.FOLLOW_BUTTON)) {
+                    Text(
+                        text = if (isFollowing) "FOLLOWING" else "FOLLOW",
+                        style = Typography.titleMedium.copy(color = White),
+                        modifier = Modifier.testTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT))
+                  }
+              // Community Count
               Text(
-                  text = if (isFollowing) "FOLLOWING" else "FOLLOW",
-                  style = Typography.titleMedium.copy(color = White),
-                  modifier = Modifier.testTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT))
+                  text = "join $followersCount community",
+                  style =
+                      Typography.titleMedium.copy(
+                          color = White, fontSize = 12.sp, lineHeight = 20.sp),
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .wrapContentWidth(Alignment.CenterHorizontally)
+                          .testTag(OrganizerProfileTestTags.FOLLOWERS_TEXT))
             }
-        // Community Count
-        Text(
-            text = "join $followersCount community",
-            style =
-                Typography.titleMedium.copy(color = White, fontSize = 12.sp, lineHeight = 20.sp),
-            modifier =
-                Modifier.fillMaxWidth()
-                    .wrapContentWidth(Alignment.CenterHorizontally)
-                    .testTag(OrganizerProfileTestTags.FOLLOWERS_TEXT))
+
+        // Edit Organization Button (only for owners)
+        if (isOwner) {
+          Button(
+              onClick = onEditClick,
+              modifier =
+                  Modifier.fillMaxWidth()
+                      .height(42.dp)
+                      .testTag(OrganizerProfileTestTags.EDIT_ORGANIZATION_BUTTON),
+              colors =
+                  ButtonDefaults.buttonColors(
+                      containerColor = Color(0xFF4A3857), contentColor = White),
+              shape = RoundedCornerShape(5.dp)) {
+                Text(text = "EDIT ORGANIZATION", style = Typography.titleMedium)
+              }
+        }
       }
 }
 
@@ -355,6 +384,7 @@ fun OrganizerProfileScreen(
       facebookUrl = state.facebookUrl,
       followersCount = state.followersCountFormatted,
       isFollowing = state.isFollowing,
+      isOwner = state.isOwner,
       selectedTab = state.selectedTab,
       upcomingEvents = state.upcomingEvents,
       pastEvents = state.pastEvents,
@@ -363,6 +393,7 @@ fun OrganizerProfileScreen(
       onInstagramClick = { viewModel.onSocialMediaClicked("instagram") },
       onTiktokClick = { viewModel.onSocialMediaClicked("tiktok") },
       onFacebookClick = { viewModel.onSocialMediaClicked("facebook") },
+      onEditOrganizationClick = { viewModel.onEditOrganizationClicked() },
       onTabSelected = { viewModel.onTabSelected(it) },
       onEventClick = { viewModel.onEventClicked(it) })
 }
@@ -385,6 +416,7 @@ fun OrganizerProfileContent(
     facebookUrl: String? = "facebook",
     followersCount: String = "2.4K",
     isFollowing: Boolean = false,
+    isOwner: Boolean = false,
     selectedTab: OrganizerProfileTab = OrganizerProfileTab.UPCOMING,
     upcomingEvents: List<Event> = emptyList(),
     pastEvents: List<Event> = emptyList(),
@@ -393,6 +425,7 @@ fun OrganizerProfileContent(
     onInstagramClick: () -> Unit = {},
     onTiktokClick: () -> Unit = {},
     onFacebookClick: () -> Unit = {},
+    onEditOrganizationClick: () -> Unit = {},
     onTabSelected: (OrganizerProfileTab) -> Unit = {},
     onEventClick: (String) -> Unit = {}
 ) {
@@ -426,7 +459,9 @@ fun OrganizerProfileContent(
         FollowSection(
             followersCount = followersCount,
             isFollowing = isFollowing,
-            onFollowClick = onFollowClick)
+            isOwner = isOwner,
+            onFollowClick = onFollowClick,
+            onEditClick = onEditOrganizationClick)
 
         // Section separator
         Spacer(modifier = Modifier.height(50.dp))
