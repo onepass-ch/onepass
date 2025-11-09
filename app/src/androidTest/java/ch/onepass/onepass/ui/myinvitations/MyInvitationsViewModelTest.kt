@@ -3,10 +3,9 @@ package ch.onepass.onepass.ui.myinvitations
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.OrganizationInvitation
-import ch.onepass.onepass.model.organization.OrganizationRepository
-import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.user.FakeUserRepository
 import ch.onepass.onepass.model.user.User
+import ch.onepass.onepass.ui.organization.MockOrganizationRepository
 import ch.onepass.onepass.utils.OrganizationTestData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -15,7 +14,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
@@ -43,14 +41,14 @@ class MyInvitationsViewModelTest {
 
   private val testDispatcher = StandardTestDispatcher()
 
-  /** Mock implementation of OrganizationRepository for testing. */
-  private open class MockOrganizationRepository(
+  /** Extended MockOrganizationRepository with specific implementations for invitation testing. */
+  private class TestMockOrganizationRepository(
       private val invitationsByEmail: Map<String, List<OrganizationInvitation>> = emptyMap(),
       private val updateInvitationStatusResult: Result<Unit> = Result.success(Unit),
       private val shouldThrowOnGetInvitations: Boolean = false,
       private val shouldThrowOnUpdateStatus: Boolean = false,
       private val exceptionMessage: String? = "Test error"
-  ) : OrganizationRepository {
+  ) : MockOrganizationRepository() {
     private val _invitationsFlowsByEmail =
         mutableMapOf<String, MutableStateFlow<List<OrganizationInvitation>>>()
 
@@ -60,61 +58,6 @@ class MyInvitationsViewModelTest {
         _invitationsFlowsByEmail[email] = MutableStateFlow(invitations)
       }
     }
-
-    override suspend fun createOrganization(
-        organization: ch.onepass.onepass.model.organization.Organization
-    ): Result<String> = Result.success("org-id")
-
-    override suspend fun updateOrganization(
-        organization: ch.onepass.onepass.model.organization.Organization
-    ): Result<Unit> = Result.success(Unit)
-
-    override suspend fun deleteOrganization(organizationId: String): Result<Unit> =
-        Result.success(Unit)
-
-    override fun getOrganizationById(
-        organizationId: String
-    ): Flow<ch.onepass.onepass.model.organization.Organization?> = flowOf(null)
-
-    override fun getOrganizationsByOwner(
-        ownerId: String
-    ): Flow<List<ch.onepass.onepass.model.organization.Organization>> = flowOf(emptyList())
-
-    override fun getOrganizationsByMember(
-        userId: String
-    ): Flow<List<ch.onepass.onepass.model.organization.Organization>> = flowOf(emptyList())
-
-    override fun getOrganizationsByStatus(
-        status: ch.onepass.onepass.model.organization.OrganizationStatus
-    ): Flow<List<ch.onepass.onepass.model.organization.Organization>> = flowOf(emptyList())
-
-    override fun searchOrganizations(
-        query: String
-    ): Flow<List<ch.onepass.onepass.model.organization.Organization>> = flowOf(emptyList())
-
-    override fun getVerifiedOrganizations():
-        Flow<List<ch.onepass.onepass.model.organization.Organization>> = flowOf(emptyList())
-
-    override suspend fun addMember(
-        organizationId: String,
-        userId: String,
-        role: ch.onepass.onepass.model.organization.OrganizationRole
-    ): Result<Unit> = Result.success(Unit)
-
-    override suspend fun removeMember(organizationId: String, userId: String): Result<Unit> =
-        Result.success(Unit)
-
-    override suspend fun updateMemberRole(
-        organizationId: String,
-        userId: String,
-        newRole: ch.onepass.onepass.model.organization.OrganizationRole
-    ): Result<Unit> = Result.success(Unit)
-
-    override suspend fun createInvitation(invitation: OrganizationInvitation): Result<String> =
-        Result.success("invite-id")
-
-    override fun getPendingInvitations(organizationId: String): Flow<List<OrganizationInvitation>> =
-        flowOf(emptyList())
 
     override fun getInvitationsByEmail(email: String): Flow<List<OrganizationInvitation>> {
       if (shouldThrowOnGetInvitations) {
@@ -153,8 +96,6 @@ class MyInvitationsViewModelTest {
       return updateInvitationStatusResult
     }
 
-    override suspend fun deleteInvitation(invitationId: String): Result<Unit> = Result.success(Unit)
-
     /**
      * Sets the invitations to be returned for a specific email. This is used to simulate the
      * repository state.
@@ -182,7 +123,7 @@ class MyInvitationsViewModelTest {
   @Test
   fun initialState_hasCorrectDefaults() = runTest {
     val userRepository = FakeUserRepository(currentUser = null)
-    val orgRepository = MockOrganizationRepository()
+    val orgRepository = TestMockOrganizationRepository()
     val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
 
     val state = viewModel.state.value
@@ -229,7 +170,8 @@ class MyInvitationsViewModelTest {
     val allInvitations =
         listOf(pendingInvitation1, pendingInvitation2, acceptedInvitation, rejectedInvitation)
     val orgRepository =
-        MockOrganizationRepository(invitationsByEmail = mapOf("test@example.com" to allInvitations))
+        TestMockOrganizationRepository(
+            invitationsByEmail = mapOf("test@example.com" to allInvitations))
 
     val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
     testDispatcher.scheduler.advanceUntilIdle()
@@ -258,7 +200,7 @@ class MyInvitationsViewModelTest {
             status = InvitationStatus.ACCEPTED)
 
     val orgRepository =
-        MockOrganizationRepository(
+        TestMockOrganizationRepository(
             invitationsByEmail = mapOf("test@example.com" to listOf(acceptedInvitation)))
 
     val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
@@ -274,7 +216,7 @@ class MyInvitationsViewModelTest {
   @Test
   fun loadPendingInvitations_userNotFound_setsErrorMessage() = runTest {
     val userRepository = FakeUserRepository(currentUser = null, createdUser = null)
-    val orgRepository = MockOrganizationRepository()
+    val orgRepository = TestMockOrganizationRepository()
     val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
 
     testDispatcher.scheduler.advanceUntilIdle()
@@ -291,7 +233,7 @@ class MyInvitationsViewModelTest {
   fun loadPendingInvitations_repositoryError_setsErrorMessage() = runTest {
     val testUser = User(uid = "user-1", email = "test@example.com", displayName = "Test User")
     val userRepository = FakeUserRepository(currentUser = testUser)
-    val orgRepository = MockOrganizationRepository(shouldThrowOnGetInvitations = true)
+    val orgRepository = TestMockOrganizationRepository(shouldThrowOnGetInvitations = true)
     val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
 
     testDispatcher.scheduler.advanceUntilIdle()
@@ -318,7 +260,7 @@ class MyInvitationsViewModelTest {
             status = InvitationStatus.PENDING)
 
     val orgRepository =
-        MockOrganizationRepository(
+        TestMockOrganizationRepository(
             invitationsByEmail = mapOf("test@example.com" to listOf(pendingInvitation)))
 
     val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
@@ -352,7 +294,7 @@ class MyInvitationsViewModelTest {
             status = InvitationStatus.PENDING)
 
     val orgRepository =
-        MockOrganizationRepository(
+        TestMockOrganizationRepository(
             invitationsByEmail = mapOf("test@example.com" to listOf(pendingInvitation)),
             updateInvitationStatusResult = Result.failure(Exception("Failed to update")))
 
@@ -372,7 +314,7 @@ class MyInvitationsViewModelTest {
     val testUser = User(uid = "user-1", email = "test@example.com", displayName = "Test User")
     val userRepository = FakeUserRepository(currentUser = testUser)
 
-    val orgRepository = MockOrganizationRepository()
+    val orgRepository = TestMockOrganizationRepository()
     val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
     testDispatcher.scheduler.advanceUntilIdle()
 
@@ -401,7 +343,7 @@ class MyInvitationsViewModelTest {
             status = InvitationStatus.PENDING)
 
     val orgRepository =
-        MockOrganizationRepository(
+        TestMockOrganizationRepository(
             invitationsByEmail = mapOf("test@example.com" to listOf(pendingInvitation)))
 
     val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
@@ -435,7 +377,7 @@ class MyInvitationsViewModelTest {
             status = InvitationStatus.PENDING)
 
     val orgRepository =
-        MockOrganizationRepository(
+        TestMockOrganizationRepository(
             invitationsByEmail = mapOf("test@example.com" to listOf(pendingInvitation)),
             updateInvitationStatusResult = Result.failure(Exception("Failed to update")))
 
@@ -455,7 +397,7 @@ class MyInvitationsViewModelTest {
     val testUser = User(uid = "user-1", email = "test@example.com", displayName = "Test User")
     val userRepository = FakeUserRepository(currentUser = testUser)
 
-    val orgRepository = MockOrganizationRepository()
+    val orgRepository = TestMockOrganizationRepository()
     val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
     testDispatcher.scheduler.advanceUntilIdle()
 
@@ -490,7 +432,7 @@ class MyInvitationsViewModelTest {
             status = InvitationStatus.PENDING)
 
     val orgRepository =
-        MockOrganizationRepository(
+        TestMockOrganizationRepository(
             invitationsByEmail = mapOf("test@example.com" to listOf(invitation1, invitation2)))
 
     val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
@@ -529,7 +471,7 @@ class MyInvitationsViewModelTest {
             status = InvitationStatus.PENDING)
 
     val orgRepository =
-        MockOrganizationRepository(
+        TestMockOrganizationRepository(
             invitationsByEmail = mapOf("test@example.com" to listOf(invitation1, invitation2)))
 
     val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
@@ -566,7 +508,7 @@ class MyInvitationsViewModelTest {
             status = InvitationStatus.PENDING)
 
     val orgRepository =
-        MockOrganizationRepository(
+        TestMockOrganizationRepository(
             invitationsByEmail = mapOf("test@example.com" to listOf(pendingInvitation)),
             updateInvitationStatusResult = Result.failure(Exception("First error")))
 
@@ -596,7 +538,7 @@ class MyInvitationsViewModelTest {
             status = InvitationStatus.PENDING)
 
     val orgRepository =
-        MockOrganizationRepository(
+        TestMockOrganizationRepository(
             invitationsByEmail = mapOf("test@example.com" to listOf(pendingInvitation)),
             updateInvitationStatusResult = Result.failure(Exception("First error")))
 
@@ -634,7 +576,7 @@ class MyInvitationsViewModelTest {
             status = InvitationStatus.ACCEPTED)
 
     val orgRepository =
-        MockOrganizationRepository(
+        TestMockOrganizationRepository(
             invitationsByEmail =
                 mapOf("test@example.com" to listOf(pendingInvitation, acceptedInvitation)))
 
@@ -652,7 +594,7 @@ class MyInvitationsViewModelTest {
   @Test
   fun invitationsStateFlow_emptyEmail_returnsEmptyList() = runTest {
     val userRepository = FakeUserRepository(currentUser = null, createdUser = null)
-    val orgRepository = MockOrganizationRepository()
+    val orgRepository = TestMockOrganizationRepository()
     val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
 
     testDispatcher.scheduler.advanceUntilIdle()
@@ -670,7 +612,7 @@ class MyInvitationsViewModelTest {
   @Test
   fun loadUserEmail_throwsException_setsErrorMessage() = runTest {
     val userRepository = FakeUserRepository(throwOnLoad = true)
-    val orgRepository = MockOrganizationRepository()
+    val orgRepository = TestMockOrganizationRepository()
     val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
 
     testDispatcher.scheduler.advanceUntilIdle()
@@ -696,7 +638,7 @@ class MyInvitationsViewModelTest {
             status = InvitationStatus.PENDING)
 
     val orgRepository =
-        MockOrganizationRepository(
+        TestMockOrganizationRepository(
             invitationsByEmail = mapOf("test@example.com" to listOf(pendingInvitation)),
             shouldThrowOnUpdateStatus = true)
 
@@ -726,7 +668,7 @@ class MyInvitationsViewModelTest {
             status = InvitationStatus.PENDING)
 
     val orgRepository =
-        MockOrganizationRepository(
+        TestMockOrganizationRepository(
             invitationsByEmail = mapOf("test@example.com" to listOf(pendingInvitation)),
             shouldThrowOnUpdateStatus = true)
 
@@ -750,7 +692,7 @@ class MyInvitationsViewModelTest {
 
     // Create a repository that throws an exception with null message
     val orgRepository =
-        MockOrganizationRepository(shouldThrowOnGetInvitations = true, exceptionMessage = null)
+        TestMockOrganizationRepository(shouldThrowOnGetInvitations = true, exceptionMessage = null)
 
     val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
     testDispatcher.scheduler.advanceUntilIdle()
@@ -765,7 +707,7 @@ class MyInvitationsViewModelTest {
   fun loadUserEmail_userWithBlankEmail_setsErrorMessage() = runTest {
     val testUser = User(uid = "user-1", email = "", displayName = "Test User")
     val userRepository = FakeUserRepository(currentUser = testUser)
-    val orgRepository = MockOrganizationRepository()
+    val orgRepository = TestMockOrganizationRepository()
     val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
 
     testDispatcher.scheduler.advanceUntilIdle()
@@ -792,7 +734,7 @@ class MyInvitationsViewModelTest {
 
     // Create a failure result with exception that has null message
     val orgRepository =
-        MockOrganizationRepository(
+        TestMockOrganizationRepository(
             invitationsByEmail = mapOf("test@example.com" to listOf(pendingInvitation)),
             updateInvitationStatusResult = Result.failure(Exception()))
 
@@ -821,7 +763,7 @@ class MyInvitationsViewModelTest {
 
     // Create a failure result with exception that has null message
     val orgRepository =
-        MockOrganizationRepository(
+        TestMockOrganizationRepository(
             invitationsByEmail = mapOf("test@example.com" to listOf(pendingInvitation)),
             updateInvitationStatusResult = Result.failure(Exception()))
 
