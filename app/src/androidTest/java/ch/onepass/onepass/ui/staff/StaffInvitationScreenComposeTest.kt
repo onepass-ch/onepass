@@ -4,7 +4,6 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
@@ -119,7 +118,7 @@ class StaffInvitationScreenComposeTest {
     composeRule.onNodeWithText("Boom!").assertIsDisplayed()
 
     // With error message, list should not be shown if there are no results
-    composeRule.onNodeWithTag(StaffInvitationTestTags.RESULTS_LIST).assertIsNotDisplayed()
+    composeRule.onNodeWithTag(StaffInvitationTestTags.RESULTS_LIST).assertDoesNotExist()
   }
 
   @Test
