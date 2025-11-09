@@ -44,10 +44,12 @@ class MyInvitationsViewModelTest {
   private val testDispatcher = StandardTestDispatcher()
 
   /** Mock implementation of OrganizationRepository for testing. */
-  private class MockOrganizationRepository(
+  private open class MockOrganizationRepository(
       private val invitationsByEmail: Map<String, List<OrganizationInvitation>> = emptyMap(),
       private val updateInvitationStatusResult: Result<Unit> = Result.success(Unit),
-      private val shouldThrowOnGetInvitations: Boolean = false
+      private val shouldThrowOnGetInvitations: Boolean = false,
+      private val shouldThrowOnUpdateStatus: Boolean = false,
+      private val exceptionMessage: String? = "Test error"
   ) : OrganizationRepository {
     private val _invitationsFlowsByEmail =
         mutableMapOf<String, MutableStateFlow<List<OrganizationInvitation>>>()
@@ -116,7 +118,13 @@ class MyInvitationsViewModelTest {
 
     override fun getInvitationsByEmail(email: String): Flow<List<OrganizationInvitation>> {
       if (shouldThrowOnGetInvitations) {
-        return flow { throw Exception("Test error") }
+        return flow {
+          if (exceptionMessage != null) {
+            throw Exception(exceptionMessage)
+          } else {
+            throw Exception()
+          }
+        }
       }
       // Get or create a StateFlow for this email
       val flow =
@@ -130,6 +138,9 @@ class MyInvitationsViewModelTest {
         invitationId: String,
         newStatus: InvitationStatus
     ): Result<Unit> {
+      if (shouldThrowOnUpdateStatus) {
+        throw Exception("Update invitation status failed")
+      }
       // Update the mock state to reflect the status change for all email flows
       _invitationsFlowsByEmail.values.forEach { flow ->
         val currentInvitations = flow.value.toMutableList()
@@ -598,5 +609,230 @@ class MyInvitationsViewModelTest {
 
     val state = viewModel.state.value
     assertNotNull("Expected an error message", state.errorMessage)
+  }
+
+  // ========================================
+  // Tests for invitations StateFlow direct access
+  // ========================================
+
+  @Test
+  fun invitationsStateFlow_directAccess_returnsPendingInvitations() = runTest {
+    val testUser = User(uid = "user-1", email = "test@example.com", displayName = "Test User")
+    val userRepository = FakeUserRepository(currentUser = testUser)
+
+    val pendingInvitation =
+        OrganizationTestData.createTestInvitation(
+            id = "invite-1",
+            orgId = "org-1",
+            inviteeEmail = "test@example.com",
+            status = InvitationStatus.PENDING)
+    val acceptedInvitation =
+        OrganizationTestData.createTestInvitation(
+            id = "invite-2",
+            orgId = "org-2",
+            inviteeEmail = "test@example.com",
+            status = InvitationStatus.ACCEPTED)
+
+    val orgRepository =
+        MockOrganizationRepository(
+            invitationsByEmail =
+                mapOf("test@example.com" to listOf(pendingInvitation, acceptedInvitation)))
+
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Directly access invitations StateFlow
+    val invitations = viewModel.invitations.value
+
+    assertEquals(1, invitations.size)
+    assertEquals("invite-1", invitations.first().id)
+    assertEquals(InvitationStatus.PENDING, invitations.first().status)
+  }
+
+  @Test
+  fun invitationsStateFlow_emptyEmail_returnsEmptyList() = runTest {
+    val userRepository = FakeUserRepository(currentUser = null, createdUser = null)
+    val orgRepository = MockOrganizationRepository()
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Directly access invitations StateFlow when email is null
+    val invitations = viewModel.invitations.value
+
+    assertTrue(invitations.isEmpty())
+  }
+
+  // ========================================
+  // Tests for Error Handling in catch blocks
+  // ========================================
+
+  @Test
+  fun loadUserEmail_throwsException_setsErrorMessage() = runTest {
+    val userRepository = FakeUserRepository(throwOnLoad = true)
+    val orgRepository = MockOrganizationRepository()
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.state.value
+
+    assertNotNull("Expected an error message when exception is thrown", state.errorMessage)
+    assertTrue(
+        state.errorMessage!!.contains("Failed to load user information") ||
+            state.errorMessage!!.contains("boom"))
+  }
+
+  @Test
+  fun acceptInvitation_throwsException_setsErrorMessage() = runTest {
+    val testUser = User(uid = "user-1", email = "test@example.com", displayName = "Test User")
+    val userRepository = FakeUserRepository(currentUser = testUser)
+
+    val pendingInvitation =
+        OrganizationTestData.createTestInvitation(
+            id = "invite-1",
+            orgId = "org-1",
+            inviteeEmail = "test@example.com",
+            status = InvitationStatus.PENDING)
+
+    val orgRepository =
+        MockOrganizationRepository(
+            invitationsByEmail = mapOf("test@example.com" to listOf(pendingInvitation)),
+            shouldThrowOnUpdateStatus = true)
+
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.acceptInvitation("invite-1")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.state.value
+    assertNotNull("Expected an error message when exception is thrown", state.errorMessage)
+    assertTrue(
+        state.errorMessage!!.contains("Failed to accept invitation") ||
+            state.errorMessage!!.contains("Update invitation status failed"))
+  }
+
+  @Test
+  fun rejectInvitation_throwsException_setsErrorMessage() = runTest {
+    val testUser = User(uid = "user-1", email = "test@example.com", displayName = "Test User")
+    val userRepository = FakeUserRepository(currentUser = testUser)
+
+    val pendingInvitation =
+        OrganizationTestData.createTestInvitation(
+            id = "invite-1",
+            orgId = "org-1",
+            inviteeEmail = "test@example.com",
+            status = InvitationStatus.PENDING)
+
+    val orgRepository =
+        MockOrganizationRepository(
+            invitationsByEmail = mapOf("test@example.com" to listOf(pendingInvitation)),
+            shouldThrowOnUpdateStatus = true)
+
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.rejectInvitation("invite-1")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.state.value
+    assertNotNull("Expected an error message when exception is thrown", state.errorMessage)
+    assertTrue(
+        state.errorMessage!!.contains("Failed to reject invitation") ||
+            state.errorMessage!!.contains("Update invitation status failed"))
+  }
+
+  @Test
+  fun invitationsFlow_repositoryErrorWithNullMessage_handlesGracefully() = runTest {
+    val testUser = User(uid = "user-1", email = "test@example.com", displayName = "Test User")
+    val userRepository = FakeUserRepository(currentUser = testUser)
+
+    // Create a repository that throws an exception with null message
+    val orgRepository =
+        MockOrganizationRepository(shouldThrowOnGetInvitations = true, exceptionMessage = null)
+
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.state.value
+
+    assertNotNull("Expected an error message", state.errorMessage)
+    assertEquals("Failed to load invitations", state.errorMessage)
+  }
+
+  @Test
+  fun loadUserEmail_userWithBlankEmail_setsErrorMessage() = runTest {
+    val testUser = User(uid = "user-1", email = "", displayName = "Test User")
+    val userRepository = FakeUserRepository(currentUser = testUser)
+    val orgRepository = MockOrganizationRepository()
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.state.value
+
+    assertNotNull("Expected an error message for blank email", state.errorMessage)
+    assertTrue(
+        state.errorMessage!!.contains("User not found") ||
+            state.errorMessage!!.contains("not logged in"))
+  }
+
+  @Test
+  fun acceptInvitation_resultFailureWithNullMessage_usesDefaultMessage() = runTest {
+    val testUser = User(uid = "user-1", email = "test@example.com", displayName = "Test User")
+    val userRepository = FakeUserRepository(currentUser = testUser)
+
+    val pendingInvitation =
+        OrganizationTestData.createTestInvitation(
+            id = "invite-1",
+            orgId = "org-1",
+            inviteeEmail = "test@example.com",
+            status = InvitationStatus.PENDING)
+
+    // Create a failure result with exception that has null message
+    val orgRepository =
+        MockOrganizationRepository(
+            invitationsByEmail = mapOf("test@example.com" to listOf(pendingInvitation)),
+            updateInvitationStatusResult = Result.failure(Exception()))
+
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.acceptInvitation("invite-1")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.state.value
+    assertNotNull("Expected an error message", state.errorMessage)
+    assertEquals("Failed to accept invitation", state.errorMessage)
+  }
+
+  @Test
+  fun rejectInvitation_resultFailureWithNullMessage_usesDefaultMessage() = runTest {
+    val testUser = User(uid = "user-1", email = "test@example.com", displayName = "Test User")
+    val userRepository = FakeUserRepository(currentUser = testUser)
+
+    val pendingInvitation =
+        OrganizationTestData.createTestInvitation(
+            id = "invite-1",
+            orgId = "org-1",
+            inviteeEmail = "test@example.com",
+            status = InvitationStatus.PENDING)
+
+    // Create a failure result with exception that has null message
+    val orgRepository =
+        MockOrganizationRepository(
+            invitationsByEmail = mapOf("test@example.com" to listOf(pendingInvitation)),
+            updateInvitationStatusResult = Result.failure(Exception()))
+
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.rejectInvitation("invite-1")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.state.value
+    assertNotNull("Expected an error message", state.errorMessage)
+    assertEquals("Failed to reject invitation", state.errorMessage)
   }
 }
