@@ -1,4 +1,4 @@
-package ch.onepass.onepass.ui.organizerprofile
+package ch.onepass.onepass.ui.organization
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope

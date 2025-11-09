@@ -1,8 +1,11 @@
-package ch.onepass.onepass.ui.organizerprofile
+package ch.onepass.onepass.ui.organization
 
 import androidx.activity.ComponentActivity
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.OnePassTheme
@@ -17,24 +20,26 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class OrganizerProfileScreenComposeTest {
 
-  @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+  @get:Rule
+  val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
   @Test
   fun organizerProfileContent_displaysCorrectly() {
     composeTestRule.setContent {
-      OnePassTheme {
-        OrganizerProfileContent(
-            name = "Test Organizer",
-            description = "Test description for organizer",
-            bannerImageRes = R.drawable.image_fallback,
-            profileImageRes = R.drawable.ic_launcher_foreground,
-            websiteUrl = "https://example.com",
-            instagramUrl = "instagram",
-            tiktokUrl = "tiktok",
-            facebookUrl = "facebook",
-            followersCount = "2.4k",
-            isFollowing = false)
-      }
+        OnePassTheme {
+            OrganizerProfileContent(
+                name = "Test Organizer",
+                description = "Test description for organizer",
+                bannerImageRes = R.drawable.image_fallback,
+                profileImageRes = R.drawable.ic_launcher_foreground,
+                websiteUrl = "https://example.com",
+                instagramUrl = "instagram",
+                tiktokUrl = "tiktok",
+                facebookUrl = "facebook",
+                followersCount = "2.4k",
+                isFollowing = false
+            )
+        }
     }
 
     // Verify main screen is displayed
@@ -44,11 +49,12 @@ class OrganizerProfileScreenComposeTest {
   @Test
   fun headerSection_displaysImages() {
     composeTestRule.setContent {
-      OnePassTheme {
-        OrganizerHeaderSection(
-            bannerImageRes = R.drawable.image_fallback,
-            profileImageRes = R.drawable.ic_launcher_foreground)
-      }
+        OnePassTheme {
+            OrganizerHeaderSection(
+                bannerImageRes = R.drawable.image_fallback,
+                profileImageRes = R.drawable.ic_launcher_foreground
+            )
+        }
     }
 
     // Verify header section and images are displayed
@@ -63,7 +69,7 @@ class OrganizerProfileScreenComposeTest {
     val testDescription = "This is a test description for the organizer"
 
     composeTestRule.setContent {
-      OnePassTheme { OrganizerInfoSection(name = testName, description = testDescription) }
+        OnePassTheme { OrganizerInfoSection(name = testName, description = testDescription) }
     }
 
     // Verify info section is displayed
@@ -85,13 +91,14 @@ class OrganizerProfileScreenComposeTest {
   @Test
   fun socialMediaSection_displaysAllSocialMediaIcons() {
     composeTestRule.setContent {
-      OnePassTheme {
-        SocialMediaSection(
-            websiteUrl = "https://example.com",
-            instagramUrl = "instagram",
-            tiktokUrl = "tiktok",
-            facebookUrl = "facebook")
-      }
+        OnePassTheme {
+            SocialMediaSection(
+                websiteUrl = "https://example.com",
+                instagramUrl = "instagram",
+                tiktokUrl = "tiktok",
+                facebookUrl = "facebook"
+            )
+        }
     }
 
     // Wait for layout to complete
@@ -116,10 +123,11 @@ class OrganizerProfileScreenComposeTest {
   @Test
   fun socialMediaSection_hidesNullSocialMedia() {
     composeTestRule.setContent {
-      OnePassTheme {
-        SocialMediaSection(
-            websiteUrl = null, instagramUrl = null, tiktokUrl = "tiktok", facebookUrl = null)
-      }
+        OnePassTheme {
+            SocialMediaSection(
+                websiteUrl = null, instagramUrl = null, tiktokUrl = "tiktok", facebookUrl = null
+            )
+        }
     }
 
     composeTestRule.waitForIdle()
@@ -139,10 +147,11 @@ class OrganizerProfileScreenComposeTest {
   @Test
   fun socialMediaSection_allNullSocialMedia_displaysSection() {
     composeTestRule.setContent {
-      OnePassTheme {
-        SocialMediaSection(
-            websiteUrl = null, instagramUrl = null, tiktokUrl = null, facebookUrl = null)
-      }
+        OnePassTheme {
+            SocialMediaSection(
+                websiteUrl = null, instagramUrl = null, tiktokUrl = null, facebookUrl = null
+            )
+        }
     }
 
     // Verify social media section STILL EXISTS even when all are null
@@ -158,13 +167,14 @@ class OrganizerProfileScreenComposeTest {
   @Test
   fun socialMediaSection_websiteOnly_displaysWebsite() {
     composeTestRule.setContent {
-      OnePassTheme {
-        SocialMediaSection(
-            websiteUrl = "https://example.com",
-            instagramUrl = null,
-            tiktokUrl = null,
-            facebookUrl = null)
-      }
+        OnePassTheme {
+            SocialMediaSection(
+                websiteUrl = "https://example.com",
+                instagramUrl = null,
+                tiktokUrl = null,
+                facebookUrl = null
+            )
+        }
     }
 
     composeTestRule.waitForIdle()
@@ -180,10 +190,11 @@ class OrganizerProfileScreenComposeTest {
   @Test
   fun socialMediaSection_instagramOnly_displaysInstagram() {
     composeTestRule.setContent {
-      OnePassTheme {
-        SocialMediaSection(
-            websiteUrl = null, instagramUrl = "instagram", tiktokUrl = null, facebookUrl = null)
-      }
+        OnePassTheme {
+            SocialMediaSection(
+                websiteUrl = null, instagramUrl = "instagram", tiktokUrl = null, facebookUrl = null
+            )
+        }
     }
 
     composeTestRule.waitForIdle()
@@ -199,10 +210,11 @@ class OrganizerProfileScreenComposeTest {
   @Test
   fun socialMediaSection_tiktokOnly_displaysTiktok() {
     composeTestRule.setContent {
-      OnePassTheme {
-        SocialMediaSection(
-            websiteUrl = null, instagramUrl = null, tiktokUrl = "tiktok", facebookUrl = null)
-      }
+        OnePassTheme {
+            SocialMediaSection(
+                websiteUrl = null, instagramUrl = null, tiktokUrl = "tiktok", facebookUrl = null
+            )
+        }
     }
 
     composeTestRule.waitForIdle()
@@ -218,10 +230,11 @@ class OrganizerProfileScreenComposeTest {
   @Test
   fun socialMediaSection_facebookOnly_displaysFacebook() {
     composeTestRule.setContent {
-      OnePassTheme {
-        SocialMediaSection(
-            websiteUrl = null, instagramUrl = null, tiktokUrl = null, facebookUrl = "facebook")
-      }
+        OnePassTheme {
+            SocialMediaSection(
+                websiteUrl = null, instagramUrl = null, tiktokUrl = null, facebookUrl = "facebook"
+            )
+        }
     }
 
     composeTestRule.waitForIdle()
@@ -237,13 +250,14 @@ class OrganizerProfileScreenComposeTest {
   @Test
   fun socialMediaSection_websiteNull_othersNonNull_websiteHidden() {
     composeTestRule.setContent {
-      OnePassTheme {
-        SocialMediaSection(
-            websiteUrl = null,
-            instagramUrl = "instagram",
-            tiktokUrl = "tiktok",
-            facebookUrl = "facebook")
-      }
+        OnePassTheme {
+            SocialMediaSection(
+                websiteUrl = null,
+                instagramUrl = "instagram",
+                tiktokUrl = "tiktok",
+                facebookUrl = "facebook"
+            )
+        }
     }
 
     composeTestRule.waitForIdle()
@@ -261,7 +275,7 @@ class OrganizerProfileScreenComposeTest {
     val followersCount = "1.5k"
 
     composeTestRule.setContent {
-      OnePassTheme { FollowSection(followersCount = followersCount, isFollowing = false) }
+        OnePassTheme { FollowSection(followersCount = followersCount, isFollowing = false) }
     }
 
     // Verify follow section is displayed
@@ -288,7 +302,7 @@ class OrganizerProfileScreenComposeTest {
     val followersCount = "3.2k"
 
     composeTestRule.setContent {
-      OnePassTheme { FollowSection(followersCount = followersCount, isFollowing = true) }
+        OnePassTheme { FollowSection(followersCount = followersCount, isFollowing = true) }
     }
 
     // Verify follow button text shows "FOLLOWING"
@@ -307,7 +321,7 @@ class OrganizerProfileScreenComposeTest {
   @Test
   fun tabSection_displaysAllTabs() {
     composeTestRule.setContent {
-      OnePassTheme { TabSection(selectedTab = OrganizerProfileTab.UPCOMING) }
+        OnePassTheme { TabSection(selectedTab = OrganizerProfileTab.UPCOMING) }
     }
 
     // Verify tab section is displayed
@@ -333,7 +347,7 @@ class OrganizerProfileScreenComposeTest {
   @Test
   fun tabSection_postsTabSelected_displaysCorrectly() {
     composeTestRule.setContent {
-      OnePassTheme { TabSection(selectedTab = OrganizerProfileTab.POSTS) }
+        OnePassTheme { TabSection(selectedTab = OrganizerProfileTab.POSTS) }
     }
 
     // Verify Posts tab is displayed
@@ -343,7 +357,7 @@ class OrganizerProfileScreenComposeTest {
   @Test
   fun tabSection_pastTabSelected_displaysCorrectly() {
     composeTestRule.setContent {
-      OnePassTheme { TabSection(selectedTab = OrganizerProfileTab.PAST) }
+        OnePassTheme { TabSection(selectedTab = OrganizerProfileTab.PAST) }
     }
 
     // Verify Past tab is displayed
@@ -357,20 +371,21 @@ class OrganizerProfileScreenComposeTest {
     val followersCount = "5.7k"
 
     composeTestRule.setContent {
-      OnePassTheme {
-        OrganizerProfileContent(
-            name = testName,
-            description = testDescription,
-            bannerImageRes = R.drawable.image_fallback,
-            profileImageRes = R.drawable.ic_launcher_foreground,
-            websiteUrl = "https://example.com",
-            instagramUrl = "instagram",
-            tiktokUrl = "tiktok",
-            facebookUrl = "facebook",
-            followersCount = followersCount,
-            isFollowing = false,
-            selectedTab = OrganizerProfileTab.UPCOMING)
-      }
+        OnePassTheme {
+            OrganizerProfileContent(
+                name = testName,
+                description = testDescription,
+                bannerImageRes = R.drawable.image_fallback,
+                profileImageRes = R.drawable.ic_launcher_foreground,
+                websiteUrl = "https://example.com",
+                instagramUrl = "instagram",
+                tiktokUrl = "tiktok",
+                facebookUrl = "facebook",
+                followersCount = followersCount,
+                isFollowing = false,
+                selectedTab = OrganizerProfileTab.UPCOMING
+            )
+        }
     }
 
     // Verify main screen
@@ -418,14 +433,15 @@ class OrganizerProfileScreenComposeTest {
   @Test
   fun organizerProfileContent_displaysCorrectTextContent() {
     composeTestRule.setContent {
-      OnePassTheme {
-        OrganizerProfileContent(
-            name = "Lausanne - best organizer",
-            description = "Test organizer description",
-            followersCount = "2.4k",
-            isFollowing = false,
-            selectedTab = OrganizerProfileTab.UPCOMING)
-      }
+        OnePassTheme {
+            OrganizerProfileContent(
+                name = "Lausanne - best organizer",
+                description = "Test organizer description",
+                followersCount = "2.4k",
+                isFollowing = false,
+                selectedTab = OrganizerProfileTab.UPCOMING
+            )
+        }
     }
 
     // Verify text content is displayed
@@ -442,18 +458,19 @@ class OrganizerProfileScreenComposeTest {
   @Test
   fun organizerProfileContent_minimalData_displaysCorrectly() {
     composeTestRule.setContent {
-      OnePassTheme {
-        OrganizerProfileContent(
-            name = "Minimal Organizer",
-            description = "Short desc",
-            websiteUrl = null,
-            instagramUrl = null,
-            tiktokUrl = null,
-            facebookUrl = null,
-            followersCount = "0",
-            isFollowing = false,
-            selectedTab = OrganizerProfileTab.UPCOMING)
-      }
+        OnePassTheme {
+            OrganizerProfileContent(
+                name = "Minimal Organizer",
+                description = "Short desc",
+                websiteUrl = null,
+                instagramUrl = null,
+                tiktokUrl = null,
+                facebookUrl = null,
+                followersCount = "0",
+                isFollowing = false,
+                selectedTab = OrganizerProfileTab.UPCOMING
+            )
+        }
     }
 
     // Verify main screen is displayed
