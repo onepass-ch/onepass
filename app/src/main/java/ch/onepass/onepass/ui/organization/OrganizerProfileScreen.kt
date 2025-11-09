@@ -1,4 +1,4 @@
-package ch.onepass.onepass.ui.organizerprofile
+package ch.onepass.onepass.ui.organization
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background

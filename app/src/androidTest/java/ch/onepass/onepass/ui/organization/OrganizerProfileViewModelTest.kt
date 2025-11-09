@@ -1,11 +1,15 @@
-package ch.onepass.onepass.ui.organizerprofile
+package ch.onepass.onepass.ui.organization
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
+import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.Organization
+import ch.onepass.onepass.model.organization.OrganizationInvitation
 import ch.onepass.onepass.model.organization.OrganizationRepository
+import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.organization.OrganizationStatus
 import ch.onepass.onepass.utils.EventTestData
 import ch.onepass.onepass.utils.OrganizationTestData
@@ -15,12 +19,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -75,7 +78,7 @@ class OrganizerProfileViewModelTest {
     override suspend fun addMember(
         organizationId: String,
         userId: String,
-        role: ch.onepass.onepass.model.organization.OrganizationRole
+        role: OrganizationRole
     ): Result<Unit> = Result.success(Unit)
 
     override suspend fun removeMember(organizationId: String, userId: String): Result<Unit> =
@@ -84,26 +87,21 @@ class OrganizerProfileViewModelTest {
     override suspend fun updateMemberRole(
         organizationId: String,
         userId: String,
-        newRole: ch.onepass.onepass.model.organization.OrganizationRole
+        newRole: OrganizationRole
     ): Result<Unit> = Result.success(Unit)
 
-    override suspend fun createInvitation(
-        invitation: ch.onepass.onepass.model.organization.OrganizationInvitation
-    ): Result<String> = Result.success("invite-id")
+    override suspend fun createInvitation(invitation: OrganizationInvitation): Result<String> =
+        Result.success("invite-id")
 
-    override fun getPendingInvitations(
-        organizationId: String
-    ): Flow<List<ch.onepass.onepass.model.organization.OrganizationInvitation>> =
+    override fun getPendingInvitations(organizationId: String): Flow<List<OrganizationInvitation>> =
         flowOf(emptyList())
 
-    override fun getInvitationsByEmail(
-        email: String
-    ): Flow<List<ch.onepass.onepass.model.organization.OrganizationInvitation>> =
+    override fun getInvitationsByEmail(email: String): Flow<List<OrganizationInvitation>> =
         flowOf(emptyList())
 
     override suspend fun updateInvitationStatus(
         invitationId: String,
-        newStatus: ch.onepass.onepass.model.organization.InvitationStatus
+        newStatus: InvitationStatus
     ): Result<Unit> = Result.success(Unit)
 
     override suspend fun deleteInvitation(invitationId: String): Result<Unit> = Result.success(Unit)
@@ -127,10 +125,8 @@ class OrganizerProfileViewModelTest {
       return flowOf(eventsByOrg[orgId] ?: emptyList())
     }
 
-    override fun getEventsByLocation(
-        center: ch.onepass.onepass.model.map.Location,
-        radiusKm: Double
-    ): Flow<List<Event>> = flowOf(emptyList())
+    override fun getEventsByLocation(center: Location, radiusKm: Double): Flow<List<Event>> =
+        flowOf(emptyList())
 
     override fun getEventsByTag(tag: String): Flow<List<Event>> = flowOf(emptyList())
 
@@ -167,23 +163,23 @@ class OrganizerProfileViewModelTest {
 
     val state = viewModel.state.value
 
-    assertEquals("", state.organizationId)
-    assertEquals("", state.name)
-    assertEquals("", state.description)
-    assertNull(state.profileImageUrl)
-    assertNull(state.websiteUrl)
-    assertNull(state.instagramUrl)
-    assertNull(state.tiktokUrl)
-    assertNull(state.facebookUrl)
-    assertEquals(0, state.followersCount)
-    assertFalse(state.isFollowing)
-    assertFalse(state.isVerified)
-    assertEquals(0, state.eventCount)
-    assertEquals(OrganizerProfileTab.UPCOMING, state.selectedTab)
-    assertTrue(state.upcomingEvents.isEmpty())
-    assertTrue(state.pastEvents.isEmpty())
-    assertTrue(state.loading)
-    assertNull(state.errorMessage)
+    Assert.assertEquals("", state.organizationId)
+    Assert.assertEquals("", state.name)
+    Assert.assertEquals("", state.description)
+    Assert.assertNull(state.profileImageUrl)
+    Assert.assertNull(state.websiteUrl)
+    Assert.assertNull(state.instagramUrl)
+    Assert.assertNull(state.tiktokUrl)
+    Assert.assertNull(state.facebookUrl)
+    Assert.assertEquals(0, state.followersCount)
+    Assert.assertFalse(state.isFollowing)
+    Assert.assertFalse(state.isVerified)
+    Assert.assertEquals(0, state.eventCount)
+    Assert.assertEquals(OrganizerProfileTab.UPCOMING, state.selectedTab)
+    Assert.assertTrue(state.upcomingEvents.isEmpty())
+    Assert.assertTrue(state.pastEvents.isEmpty())
+    Assert.assertTrue(state.loading)
+    Assert.assertNull(state.errorMessage)
   }
 
   // ========================================
@@ -215,18 +211,18 @@ class OrganizerProfileViewModelTest {
 
     val state = viewModel.state.value
 
-    assertEquals("org-valid", state.organizationId)
-    assertEquals("Test Organizer", state.name)
-    assertEquals("A test organization", state.description)
-    assertEquals(2500, state.followersCount)
-    assertTrue(state.isVerified)
-    assertEquals("https://test.com", state.websiteUrl)
-    assertEquals("https://instagram.com/test", state.instagramUrl)
-    assertEquals("https://tiktok.com/@test", state.tiktokUrl)
-    assertEquals("https://facebook.com/test", state.facebookUrl)
-    assertEquals("https://example.com/profile.jpg", state.profileImageUrl)
-    assertFalse(state.loading)
-    assertNull(state.errorMessage)
+    Assert.assertEquals("org-valid", state.organizationId)
+    Assert.assertEquals("Test Organizer", state.name)
+    Assert.assertEquals("A test organization", state.description)
+    Assert.assertEquals(2500, state.followersCount)
+    Assert.assertTrue(state.isVerified)
+    Assert.assertEquals("https://test.com", state.websiteUrl)
+    Assert.assertEquals("https://instagram.com/test", state.instagramUrl)
+    Assert.assertEquals("https://tiktok.com/@test", state.tiktokUrl)
+    Assert.assertEquals("https://facebook.com/test", state.facebookUrl)
+    Assert.assertEquals("https://example.com/profile.jpg", state.profileImageUrl)
+    Assert.assertFalse(state.loading)
+    Assert.assertNull(state.errorMessage)
   }
 
   @Test
@@ -240,8 +236,8 @@ class OrganizerProfileViewModelTest {
 
     val state = viewModel.state.value
 
-    assertFalse(state.loading)
-    assertEquals("Organization not found", state.errorMessage)
+    Assert.assertFalse(state.loading)
+    Assert.assertEquals("Organization not found", state.errorMessage)
   }
 
   @Test
@@ -257,12 +253,12 @@ class OrganizerProfileViewModelTest {
     viewModel.loadOrganizationProfile("org-loading")
 
     // Check that loading is true immediately (before advanceUntilIdle)
-    assertTrue(viewModel.state.value.loading)
-    assertNull(viewModel.state.value.errorMessage)
+    Assert.assertTrue(viewModel.state.value.loading)
+    Assert.assertNull(viewModel.state.value.errorMessage)
 
     testDispatcher.scheduler.advanceUntilIdle()
 
-    assertFalse(viewModel.state.value.loading)
+    Assert.assertFalse(viewModel.state.value.loading)
   }
 
   @Test
@@ -276,9 +272,9 @@ class OrganizerProfileViewModelTest {
 
     val state = viewModel.state.value
 
-    assertFalse(state.loading)
-    assertNotNull(state.errorMessage)
-    assertTrue(state.errorMessage!!.contains("Test error"))
+    Assert.assertFalse(state.loading)
+    Assert.assertNotNull(state.errorMessage)
+    Assert.assertTrue(state.errorMessage!!.contains("Test error"))
   }
 
   // ========================================
@@ -341,20 +337,20 @@ class OrganizerProfileViewModelTest {
 
     val state = viewModel.state.value
 
-    assertEquals(5, state.eventCount)
-    assertEquals(3, state.upcomingEvents.size)
-    assertEquals(2, state.pastEvents.size)
+    Assert.assertEquals(5, state.eventCount)
+    Assert.assertEquals(3, state.upcomingEvents.size)
+    Assert.assertEquals(2, state.pastEvents.size)
 
     // Verify upcoming events
     val upcomingTitles = state.upcomingEvents.map { it.title }
-    assertTrue(upcomingTitles.contains("Future Event 1"))
-    assertTrue(upcomingTitles.contains("Future Event 2"))
-    assertTrue(upcomingTitles.contains("Current Event 1"))
+    Assert.assertTrue(upcomingTitles.contains("Future Event 1"))
+    Assert.assertTrue(upcomingTitles.contains("Future Event 2"))
+    Assert.assertTrue(upcomingTitles.contains("Current Event 1"))
 
     // Verify past events
     val pastTitles = state.pastEvents.map { it.title }
-    assertTrue(pastTitles.contains("Past Event 1"))
-    assertTrue(pastTitles.contains("Past Event 2"))
+    Assert.assertTrue(pastTitles.contains("Past Event 1"))
+    Assert.assertTrue(pastTitles.contains("Past Event 2"))
   }
 
   @Test
@@ -372,11 +368,11 @@ class OrganizerProfileViewModelTest {
 
     val state = viewModel.state.value
 
-    assertEquals("org-no-events", state.organizationId)
-    assertEquals("No Events Org", state.name)
-    assertEquals(0, state.eventCount)
-    assertTrue(state.upcomingEvents.isEmpty())
-    assertTrue(state.pastEvents.isEmpty())
+    Assert.assertEquals("org-no-events", state.organizationId)
+    Assert.assertEquals("No Events Org", state.name)
+    Assert.assertEquals(0, state.eventCount)
+    Assert.assertTrue(state.upcomingEvents.isEmpty())
+    Assert.assertTrue(state.pastEvents.isEmpty())
   }
 
   @Test
@@ -398,12 +394,13 @@ class OrganizerProfileViewModelTest {
 
     job.cancel()
 
-    assertTrue("Should emit error effect", effects.any { it is OrganizerProfileEffect.ShowError })
+    Assert.assertTrue(
+        "Should emit error effect", effects.any { it is OrganizerProfileEffect.ShowError })
 
     val errorEffect =
         effects.find { it is OrganizerProfileEffect.ShowError } as OrganizerProfileEffect.ShowError
-    assertTrue(errorEffect.message.contains("Test error"))
-    assertFalse(viewModel.state.value.loading)
+    Assert.assertTrue(errorEffect.message.contains("Test error"))
+    Assert.assertFalse(viewModel.state.value.loading)
   }
 
   // ========================================
@@ -424,14 +421,14 @@ class OrganizerProfileViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val initialState = viewModel.state.value
-    assertEquals(1000, initialState.followersCount)
-    assertFalse(initialState.isFollowing)
+    Assert.assertEquals(1000, initialState.followersCount)
+    Assert.assertFalse(initialState.isFollowing)
 
     viewModel.onFollowClicked()
     testDispatcher.scheduler.advanceUntilIdle()
 
-    assertTrue("Should be following after click", viewModel.state.value.isFollowing)
-    assertEquals(1001, viewModel.state.value.followersCount)
+    Assert.assertTrue("Should be following after click", viewModel.state.value.isFollowing)
+    Assert.assertEquals(1001, viewModel.state.value.followersCount)
   }
 
   @Test
@@ -453,14 +450,15 @@ class OrganizerProfileViewModelTest {
     // First click to follow
     viewModel.onFollowClicked()
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(viewModel.state.value.isFollowing)
-    assertEquals(501, viewModel.state.value.followersCount)
+    Assert.assertTrue(viewModel.state.value.isFollowing)
+    Assert.assertEquals(501, viewModel.state.value.followersCount)
 
     // Second click to unfollow
     viewModel.onFollowClicked()
     testDispatcher.scheduler.advanceUntilIdle()
-    assertFalse("Should be unfollowing after second click", viewModel.state.value.isFollowing)
-    assertEquals(500, viewModel.state.value.followersCount)
+    Assert.assertFalse(
+        "Should be unfollowing after second click", viewModel.state.value.isFollowing)
+    Assert.assertEquals(500, viewModel.state.value.followersCount)
   }
 
   @Test
@@ -482,20 +480,20 @@ class OrganizerProfileViewModelTest {
     // Click 1: Follow
     viewModel.onFollowClicked()
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(viewModel.state.value.isFollowing)
-    assertEquals(101, viewModel.state.value.followersCount)
+    Assert.assertTrue(viewModel.state.value.isFollowing)
+    Assert.assertEquals(101, viewModel.state.value.followersCount)
 
     // Click 2: Unfollow
     viewModel.onFollowClicked()
     testDispatcher.scheduler.advanceUntilIdle()
-    assertFalse(viewModel.state.value.isFollowing)
-    assertEquals(100, viewModel.state.value.followersCount)
+    Assert.assertFalse(viewModel.state.value.isFollowing)
+    Assert.assertEquals(100, viewModel.state.value.followersCount)
 
     // Click 3: Follow again
     viewModel.onFollowClicked()
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(viewModel.state.value.isFollowing)
-    assertEquals(101, viewModel.state.value.followersCount)
+    Assert.assertTrue(viewModel.state.value.isFollowing)
+    Assert.assertEquals(101, viewModel.state.value.followersCount)
   }
 
   // ========================================
@@ -508,16 +506,16 @@ class OrganizerProfileViewModelTest {
     val eventRepository = MockEventRepository()
     val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
 
-    assertEquals(OrganizerProfileTab.UPCOMING, viewModel.state.value.selectedTab)
+    Assert.assertEquals(OrganizerProfileTab.UPCOMING, viewModel.state.value.selectedTab)
 
     viewModel.onTabSelected(OrganizerProfileTab.POSTS)
-    assertEquals(OrganizerProfileTab.POSTS, viewModel.state.value.selectedTab)
+    Assert.assertEquals(OrganizerProfileTab.POSTS, viewModel.state.value.selectedTab)
 
     viewModel.onTabSelected(OrganizerProfileTab.PAST)
-    assertEquals(OrganizerProfileTab.PAST, viewModel.state.value.selectedTab)
+    Assert.assertEquals(OrganizerProfileTab.PAST, viewModel.state.value.selectedTab)
 
     viewModel.onTabSelected(OrganizerProfileTab.UPCOMING)
-    assertEquals(OrganizerProfileTab.UPCOMING, viewModel.state.value.selectedTab)
+    Assert.assertEquals(OrganizerProfileTab.UPCOMING, viewModel.state.value.selectedTab)
   }
 
   @Test
@@ -526,13 +524,13 @@ class OrganizerProfileViewModelTest {
     val eventRepository = MockEventRepository()
     val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
 
-    assertEquals(OrganizerProfileTab.UPCOMING, viewModel.state.value.selectedTab)
+    Assert.assertEquals(OrganizerProfileTab.UPCOMING, viewModel.state.value.selectedTab)
 
     viewModel.onTabSelected(OrganizerProfileTab.UPCOMING)
-    assertEquals(OrganizerProfileTab.UPCOMING, viewModel.state.value.selectedTab)
+    Assert.assertEquals(OrganizerProfileTab.UPCOMING, viewModel.state.value.selectedTab)
 
     viewModel.onTabSelected(OrganizerProfileTab.UPCOMING)
-    assertEquals(OrganizerProfileTab.UPCOMING, viewModel.state.value.selectedTab)
+    Assert.assertEquals(OrganizerProfileTab.UPCOMING, viewModel.state.value.selectedTab)
   }
 
   // ========================================
@@ -553,13 +551,13 @@ class OrganizerProfileViewModelTest {
 
     collectJob.cancel()
 
-    assertTrue(
+    Assert.assertTrue(
         "Should emit NavigateToEvent effect",
         effects.any { it is OrganizerProfileEffect.NavigateToEvent })
     val effect =
         effects.find { it is OrganizerProfileEffect.NavigateToEvent }
             as OrganizerProfileEffect.NavigateToEvent
-    assertEquals("event-123", effect.eventId)
+    Assert.assertEquals("event-123", effect.eventId)
   }
 
   @Test
@@ -576,13 +574,13 @@ class OrganizerProfileViewModelTest {
 
     collectJob.cancel()
 
-    assertTrue(
+    Assert.assertTrue(
         "Should emit NavigateToEvent effect",
         effects.any { it is OrganizerProfileEffect.NavigateToEvent })
     val effect1 =
         effects.find { it is OrganizerProfileEffect.NavigateToEvent }
             as OrganizerProfileEffect.NavigateToEvent
-    assertEquals("event-001", effect1.eventId)
+    Assert.assertEquals("event-001", effect1.eventId)
   }
 
   // ========================================
@@ -613,12 +611,12 @@ class OrganizerProfileViewModelTest {
 
     collectJob.cancel()
 
-    assertTrue(
+    Assert.assertTrue(
         "Should emit OpenWebsite effect", effects.any { it is OrganizerProfileEffect.OpenWebsite })
     val effect =
         effects.find { it is OrganizerProfileEffect.OpenWebsite }
             as OrganizerProfileEffect.OpenWebsite
-    assertEquals("https://example.com", effect.url)
+    Assert.assertEquals("https://example.com", effect.url)
   }
 
   @Test
@@ -644,7 +642,7 @@ class OrganizerProfileViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
     job.cancel()
 
-    assertFalse(
+    Assert.assertFalse(
         "Should not emit effect when website URL is null",
         effects.any { it is OrganizerProfileEffect.OpenWebsite })
   }
@@ -677,14 +675,14 @@ class OrganizerProfileViewModelTest {
 
     collectJob.cancel()
 
-    assertTrue(
+    Assert.assertTrue(
         "Should emit OpenSocialMedia effect",
         effects.any { it is OrganizerProfileEffect.OpenSocialMedia })
     val socialEffect =
         effects.find { it is OrganizerProfileEffect.OpenSocialMedia }
             as OrganizerProfileEffect.OpenSocialMedia
-    assertEquals("instagram", socialEffect.platform)
-    assertEquals("https://instagram.com/testorg", socialEffect.url)
+    Assert.assertEquals("instagram", socialEffect.platform)
+    Assert.assertEquals("https://instagram.com/testorg", socialEffect.url)
   }
 
   @Test
@@ -711,14 +709,14 @@ class OrganizerProfileViewModelTest {
 
     collectJob.cancel()
 
-    assertTrue(
+    Assert.assertTrue(
         "Should emit OpenSocialMedia effect",
         effects.any { it is OrganizerProfileEffect.OpenSocialMedia })
     val socialEffect =
         effects.find { it is OrganizerProfileEffect.OpenSocialMedia }
             as OrganizerProfileEffect.OpenSocialMedia
-    assertEquals("tiktok", socialEffect.platform)
-    assertEquals("https://tiktok.com/@testorg", socialEffect.url)
+    Assert.assertEquals("tiktok", socialEffect.platform)
+    Assert.assertEquals("https://tiktok.com/@testorg", socialEffect.url)
   }
 
   @Test
@@ -745,14 +743,14 @@ class OrganizerProfileViewModelTest {
 
     collectJob.cancel()
 
-    assertTrue(
+    Assert.assertTrue(
         "Should emit OpenSocialMedia effect",
         effects.any { it is OrganizerProfileEffect.OpenSocialMedia })
     val socialEffect =
         effects.find { it is OrganizerProfileEffect.OpenSocialMedia }
             as OrganizerProfileEffect.OpenSocialMedia
-    assertEquals("facebook", socialEffect.platform)
-    assertEquals("https://facebook.com/testorg", socialEffect.url)
+    Assert.assertEquals("facebook", socialEffect.platform)
+    Assert.assertEquals("https://facebook.com/testorg", socialEffect.url)
   }
 
   @Test
@@ -779,7 +777,7 @@ class OrganizerProfileViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
     job.cancel()
 
-    assertFalse(
+    Assert.assertFalse(
         "Should not emit effect when Instagram URL is null",
         effects.any { it is OrganizerProfileEffect.OpenSocialMedia })
   }
@@ -810,14 +808,14 @@ class OrganizerProfileViewModelTest {
 
     collectJob.cancel()
 
-    assertTrue(
+    Assert.assertTrue(
         "Should emit OpenSocialMedia effect",
         effects.any { it is OrganizerProfileEffect.OpenSocialMedia })
     val socialEffect =
         effects.find { it is OrganizerProfileEffect.OpenSocialMedia }
             as OrganizerProfileEffect.OpenSocialMedia
-    assertEquals("INSTAGRAM", socialEffect.platform)
-    assertEquals("https://instagram.com/testorg", socialEffect.url)
+    Assert.assertEquals("INSTAGRAM", socialEffect.platform)
+    Assert.assertEquals("https://instagram.com/testorg", socialEffect.url)
   }
 
   @Test
@@ -841,7 +839,7 @@ class OrganizerProfileViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
     job.cancel()
 
-    assertFalse(
+    Assert.assertFalse(
         "Should not emit effect for unknown platform",
         effects.any { it is OrganizerProfileEffect.OpenSocialMedia })
   }
@@ -864,7 +862,7 @@ class OrganizerProfileViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertEquals("999", state.followersCountFormatted)
+    Assert.assertEquals("999", state.followersCountFormatted)
   }
 
   @Test
@@ -881,7 +879,7 @@ class OrganizerProfileViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertEquals("1K", state.followersCountFormatted)
+    Assert.assertEquals("1K", state.followersCountFormatted)
   }
 
   @Test
@@ -898,7 +896,7 @@ class OrganizerProfileViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertEquals("2.5K", state.followersCountFormatted)
+    Assert.assertEquals("2.5K", state.followersCountFormatted)
   }
 
   @Test
@@ -918,7 +916,7 @@ class OrganizerProfileViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertEquals("999.9K", state.followersCountFormatted)
+    Assert.assertEquals("999.9K", state.followersCountFormatted)
   }
 
   @Test
@@ -938,7 +936,7 @@ class OrganizerProfileViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertEquals("1M", state.followersCountFormatted)
+    Assert.assertEquals("1M", state.followersCountFormatted)
   }
 
   @Test
@@ -958,7 +956,7 @@ class OrganizerProfileViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertEquals("2.5M", state.followersCountFormatted)
+    Assert.assertEquals("2.5M", state.followersCountFormatted)
   }
 
   @Test
@@ -975,7 +973,7 @@ class OrganizerProfileViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertEquals("0", state.followersCountFormatted)
+    Assert.assertEquals("0", state.followersCountFormatted)
   }
 
   @Test
@@ -992,7 +990,7 @@ class OrganizerProfileViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertEquals("5.4K", state.followersCountFormatted)
+    Assert.assertEquals("5.4K", state.followersCountFormatted)
   }
 
   // ========================================
@@ -1010,7 +1008,7 @@ class OrganizerProfileViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val stateWithError = viewModel.state.value
-    assertNotNull(stateWithError.errorMessage)
+    Assert.assertNotNull(stateWithError.errorMessage)
 
     // Now load a valid organization
     val validOrg =
@@ -1024,13 +1022,13 @@ class OrganizerProfileViewModelTest {
 
     // Check that error is cleared immediately when loading starts
     val loadingState = viewModel2.state.value
-    assertTrue(loadingState.loading)
-    assertNull(loadingState.errorMessage)
+    Assert.assertTrue(loadingState.loading)
+    Assert.assertNull(loadingState.errorMessage)
 
     testDispatcher.scheduler.advanceUntilIdle()
 
     val finalState = viewModel2.state.value
-    assertFalse(finalState.loading)
-    assertNull(finalState.errorMessage)
+    Assert.assertFalse(finalState.loading)
+    Assert.assertNull(finalState.errorMessage)
   }
 }
