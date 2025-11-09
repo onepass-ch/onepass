@@ -188,11 +188,12 @@ class MyInvitationsViewModel(
   }
 
   /**
-   * Accepts an invitation by updating its status to ACCEPTED.
+   * Accepts an invitation by updating its status to ACCEPTED and adding the user as a member to the
+   * organization.
    *
-   * After successfully updating the invitation status, the UI state will automatically update
-   * because the Flow from getInvitationsByEmail will emit the updated list, and the invitation will
-   * be filtered out since it's no longer PENDING.
+   * After successfully updating the invitation status and adding the member, the UI state will
+   * automatically update because the Flow from getInvitationsByEmail will emit the updated list,
+   * and the invitation will be filtered out since it's no longer PENDING.
    *
    * @param invitationId The ID of the invitation to accept.
    */
@@ -201,17 +202,55 @@ class MyInvitationsViewModel(
       try {
         _uiState.value = _uiState.value.copy(errorMessage = null, successMessage = null)
 
-        val result =
+        // Get current user first - we need userId to add as member
+        val user = userRepository.getCurrentUser() ?: userRepository.getOrCreateUser()
+        if (user == null) {
+          _uiState.value =
+              _uiState.value.copy(errorMessage = "User not found. Please log in and try again.")
+          return@launch
+        }
+
+        // Find the invitation from the current list to get orgId and role
+        val invitation =
+            invitations.value.find { it.id == invitationId }
+                ?: run {
+                  _uiState.value =
+                      _uiState.value.copy(
+                          errorMessage = "Invitation not found. It may have been removed.")
+                  return@launch
+                }
+
+        // Step 1: Update invitation status to ACCEPTED
+        val updateStatusResult =
             organizationRepository.updateInvitationStatus(
                 invitationId = invitationId, newStatus = InvitationStatus.ACCEPTED)
 
-        result
+        updateStatusResult
             .onSuccess {
-              // Provide success feedback to the user
-              _uiState.value =
-                  _uiState.value.copy(successMessage = "Invitation accepted successfully")
-              // Clear success message after a delay (UI can handle this with a timeout)
-              // The invitation will automatically disappear from the list via the Flow update
+              // Step 2: Add user as a member to the organization
+              val addMemberResult =
+                  organizationRepository.addMember(
+                      organizationId = invitation.orgId, userId = user.uid, role = invitation.role)
+
+              addMemberResult
+                  .onSuccess {
+                    // Both operations succeeded - provide success feedback
+                    _uiState.value =
+                        _uiState.value.copy(
+                            successMessage =
+                                "Invitation accepted successfully. You are now a member.")
+                    // The invitation will automatically disappear from the list via the Flow update
+                  }
+                  .onFailure { error ->
+                    // Invitation status was updated but adding member failed
+                    // This is a critical error - the invitation is accepted but user is not a
+                    // member
+                    _uiState.value =
+                        _uiState.value.copy(
+                            errorMessage =
+                                "Invitation accepted but failed to add you as a member: ${error.message
+                                    ?: "Unknown error"}. Please contact support.")
+                  }
             }
             .onFailure { error ->
               _uiState.value =
