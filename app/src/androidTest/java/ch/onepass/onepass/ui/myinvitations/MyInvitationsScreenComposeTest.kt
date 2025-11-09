@@ -151,6 +151,7 @@ class MyInvitationsScreenComposeTest {
       state: MyInvitationsUiState,
       onAcceptInvitation: (String) -> Unit = {},
       onRejectInvitation: (String) -> Unit = {},
+      onNavigateBack: () -> Unit = {},
       organizationRepository: OrganizationRepository = MockOrganizationRepository()
   ) {
     composeTestRule.setContent {
@@ -159,6 +160,7 @@ class MyInvitationsScreenComposeTest {
             state = state,
             onAcceptInvitation = onAcceptInvitation,
             onRejectInvitation = onRejectInvitation,
+            onNavigateBack = onNavigateBack,
             organizationRepository = organizationRepository)
       }
     }
