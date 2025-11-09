@@ -3,6 +3,7 @@ package ch.onepass.onepass.ui.organizerprofile
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,9 +14,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -27,11 +34,14 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
+import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.ui.myevents.TicketComponent
 import ch.onepass.onepass.ui.myevents.TicketStatus
 import ch.onepass.onepass.ui.theme.Typography
 import ch.onepass.onepass.ui.theme.White
+import com.google.firebase.Timestamp
 
 object OrganizerProfileTestTags {
   const val SCREEN = "organizer_profile_screen"
@@ -121,14 +131,14 @@ fun OrganizerInfoSection(name: String, description: String, modifier: Modifier =
 fun SocialMediaIcon(
     iconRes: Int,
     contentDescription: String,
-    // onClick: () -> Unit = {},
+    onClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
   Image(
       painter = painterResource(id = iconRes),
       contentDescription = contentDescription,
       contentScale = ContentScale.None,
-      modifier = modifier.width(30.dp).height(30.dp))
+      modifier = modifier.width(30.dp).height(30.dp).clickable { onClick() })
 }
 
 @Composable
@@ -137,6 +147,10 @@ fun SocialMediaSection(
     instagramUrl: String?,
     tiktokUrl: String?,
     facebookUrl: String?,
+    onWebsiteClick: () -> Unit = {},
+    onInstagramClick: () -> Unit = {},
+    onTiktokClick: () -> Unit = {},
+    onFacebookClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
   Row(
@@ -153,7 +167,10 @@ fun SocialMediaSection(
           Row(
               horizontalArrangement = Arrangement.spacedBy(8.dp),
               verticalAlignment = Alignment.CenterVertically,
-              modifier = Modifier.testTag(OrganizerProfileTestTags.WEBSITE_LINK)) {
+              modifier =
+                  Modifier.testTag(OrganizerProfileTestTags.WEBSITE_LINK).clickable {
+                    onWebsiteClick()
+                  }) {
                 Image(
                     painter = painterResource(id = R.drawable.internet_logo),
                     contentDescription = "Website icon",
@@ -180,18 +197,21 @@ fun SocialMediaSection(
                 SocialMediaIcon(
                     iconRes = R.drawable.instagram_logo,
                     contentDescription = "Instagram",
+                    onClick = onInstagramClick,
                     modifier = Modifier.testTag(OrganizerProfileTestTags.INSTAGRAM_ICON))
               }
               if (tiktokUrl != null) {
                 SocialMediaIcon(
                     iconRes = R.drawable.tiktok_logo,
                     contentDescription = "TikTok",
+                    onClick = onTiktokClick,
                     modifier = Modifier.testTag(OrganizerProfileTestTags.TIKTOK_ICON))
               }
               if (facebookUrl != null) {
                 SocialMediaIcon(
                     iconRes = R.drawable.facebook_logo,
                     contentDescription = "Facebook",
+                    onClick = onFacebookClick,
                     modifier = Modifier.testTag(OrganizerProfileTestTags.FACEBOOK_ICON))
               }
             }
@@ -203,10 +223,10 @@ fun FollowSection(
     modifier: Modifier = Modifier,
     followersCount: String,
     isFollowing: Boolean,
-    // onFollowClick: () -> Unit = {},
+    onFollowClick: () -> Unit = {},
 ) {
   Row(
-      horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally),
+      horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically,
       modifier =
           modifier
@@ -226,6 +246,7 @@ fun FollowSection(
                         width = 1.dp,
                         color = Color(0xFF242424),
                         shape = RoundedCornerShape(size = 5.dp))
+                    .clickable { onFollowClick() }
                     .testTag(OrganizerProfileTestTags.FOLLOW_BUTTON)) {
               Text(
                   text = if (isFollowing) "FOLLOWING" else "FOLLOW",
@@ -237,12 +258,48 @@ fun FollowSection(
             text = "join $followersCount community",
             style =
                 Typography.titleMedium.copy(color = White, fontSize = 12.sp, lineHeight = 20.sp),
-            modifier = Modifier.testTag(OrganizerProfileTestTags.FOLLOWERS_TEXT))
+            modifier =
+                Modifier.fillMaxWidth()
+                    .wrapContentWidth(Alignment.CenterHorizontally)
+                    .testTag(OrganizerProfileTestTags.FOLLOWERS_TEXT))
       }
 }
 
 @Composable
-fun TabSection(modifier: Modifier = Modifier) {
+fun Tab(
+    text: String,
+    tab: OrganizerProfileTab,
+    selectedTab: OrganizerProfileTab,
+    indicatorWidth: Int,
+    onTabSelected: (OrganizerProfileTab) -> Unit,
+    testTag: String,
+    modifier: Modifier = Modifier
+) {
+  val selectedColor = Color(0xFF8F60A0)
+  val unselectedColor = Color(0xFF808080)
+  val isSelected = selectedTab == tab
+
+  Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
+    Text(
+        text = text,
+        style =
+            Typography.titleMedium.copy(color = if (isSelected) selectedColor else unselectedColor),
+        modifier =
+            Modifier.testTag(testTag).clickable { onTabSelected(tab) }.padding(bottom = 4.dp))
+    if (isSelected) {
+      Spacer(
+          modifier =
+              Modifier.width(indicatorWidth.dp).height(2.dp).background(color = selectedColor))
+    }
+  }
+}
+
+@Composable
+fun TabSection(
+    selectedTab: OrganizerProfileTab = OrganizerProfileTab.UPCOMING,
+    onTabSelected: (OrganizerProfileTab) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
   Row(
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically,
@@ -252,25 +309,72 @@ fun TabSection(modifier: Modifier = Modifier) {
               .wrapContentHeight()
               .padding(horizontal = 20.dp)
               .testTag(OrganizerProfileTestTags.TAB_SECTION)) {
-        Text(
+        Tab(
             text = "Posts",
-            style = Typography.titleMedium.copy(color = White),
-            modifier = Modifier.testTag(OrganizerProfileTestTags.TAB_POSTS))
-        Text(
+            tab = OrganizerProfileTab.POSTS,
+            selectedTab = selectedTab,
+            indicatorWidth = 50,
+            onTabSelected = onTabSelected,
+            testTag = OrganizerProfileTestTags.TAB_POSTS)
+        Tab(
             text = "UPCOMING",
-            style = Typography.titleMedium.copy(color = White),
-            modifier = Modifier.testTag(OrganizerProfileTestTags.TAB_UPCOMING))
-        Text(
+            tab = OrganizerProfileTab.UPCOMING,
+            selectedTab = selectedTab,
+            indicatorWidth = 80,
+            onTabSelected = onTabSelected,
+            testTag = OrganizerProfileTestTags.TAB_UPCOMING)
+        Tab(
             text = "PAST",
-            style = Typography.titleMedium.copy(color = White),
-            modifier = Modifier.testTag(OrganizerProfileTestTags.TAB_PAST))
+            tab = OrganizerProfileTab.PAST,
+            selectedTab = selectedTab,
+            indicatorWidth = 40,
+            onTabSelected = onTabSelected,
+            testTag = OrganizerProfileTestTags.TAB_PAST)
       }
 }
 
-@Preview
+/**
+ * Main OrganizerProfileScreen that integrates with ViewModel. This is the entry point for the
+ * organizer profile feature.
+ */
 @Composable
 fun OrganizerProfileScreen(
-    name: String = "Lausanne - best organizer",
+    organizationId: String,
+    viewModel: OrganizerProfileViewModel = viewModel()
+) {
+  val state by viewModel.state.collectAsState()
+
+  LaunchedEffect(organizationId) { viewModel.loadOrganizationProfile(organizationId) }
+
+  OrganizerProfileContent(
+      name = state.name,
+      description = state.description,
+      websiteUrl = state.websiteUrl,
+      instagramUrl = state.instagramUrl,
+      tiktokUrl = state.tiktokUrl,
+      facebookUrl = state.facebookUrl,
+      followersCount = state.followersCountFormatted,
+      isFollowing = state.isFollowing,
+      selectedTab = state.selectedTab,
+      upcomingEvents = state.upcomingEvents,
+      pastEvents = state.pastEvents,
+      onFollowClick = { viewModel.onFollowClicked() },
+      onWebsiteClick = { viewModel.onWebsiteClicked() },
+      onInstagramClick = { viewModel.onSocialMediaClicked("instagram") },
+      onTiktokClick = { viewModel.onSocialMediaClicked("tiktok") },
+      onFacebookClick = { viewModel.onSocialMediaClicked("facebook") },
+      onTabSelected = { viewModel.onTabSelected(it) },
+      onEventClick = { viewModel.onEventClicked(it) })
+}
+
+/**
+ * This is just the preview of the OrganizerProfileContent composable independant of the viewModel
+ * for easier UI testing.
+ */
+@Preview
+@Composable
+fun OrganizerProfileContent(
+    name: String = "No Title",
     description: String =
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vitae nisi nec magna consequat tincidunt. Curabitur suscipit sem vel.",
     bannerImageRes: Int = R.drawable.image_fallback,
@@ -279,9 +383,18 @@ fun OrganizerProfileScreen(
     instagramUrl: String? = "instagram",
     tiktokUrl: String? = "tiktok",
     facebookUrl: String? = "facebook",
-    followersCount: String = "2.4k",
+    followersCount: String = "2.4K",
     isFollowing: Boolean = false,
-    // onFollowClick: () -> Unit = {}
+    selectedTab: OrganizerProfileTab = OrganizerProfileTab.UPCOMING,
+    upcomingEvents: List<Event> = emptyList(),
+    pastEvents: List<Event> = emptyList(),
+    onFollowClick: () -> Unit = {},
+    onWebsiteClick: () -> Unit = {},
+    onInstagramClick: () -> Unit = {},
+    onTiktokClick: () -> Unit = {},
+    onFacebookClick: () -> Unit = {},
+    onTabSelected: (OrganizerProfileTab) -> Unit = {},
+    onEventClick: (String) -> Unit = {}
 ) {
   Column(
       verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Top),
@@ -289,6 +402,7 @@ fun OrganizerProfileScreen(
       modifier =
           Modifier.fillMaxSize()
               .background(color = Color(0xFF1A1A1A)) // TODO change to theme
+              .verticalScroll(rememberScrollState())
               .padding(start = 10.dp, top = 20.dp, end = 10.dp, bottom = 12.dp)
               .testTag(OrganizerProfileTestTags.SCREEN)) {
         // Header with banner and profile picture
@@ -302,33 +416,142 @@ fun OrganizerProfileScreen(
             websiteUrl = websiteUrl,
             instagramUrl = instagramUrl,
             tiktokUrl = tiktokUrl,
-            facebookUrl = facebookUrl)
+            facebookUrl = facebookUrl,
+            onWebsiteClick = onWebsiteClick,
+            onInstagramClick = onInstagramClick,
+            onTiktokClick = onTiktokClick,
+            onFacebookClick = onFacebookClick)
 
         // Follow button and community count
         FollowSection(
             followersCount = followersCount,
             isFollowing = isFollowing,
-            // onFollowClick = onFollowClick
-        )
+            onFollowClick = onFollowClick)
 
         // Section separator
         Spacer(modifier = Modifier.height(50.dp))
 
         // Tab section
-        TabSection()
+        TabSection(selectedTab = selectedTab, onTabSelected = onTabSelected)
 
-        // Event list
-        Column(
-            verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Top),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            modifier =
-                Modifier.padding(top = 8.dp, bottom = 8.dp)
-                    .testTag(OrganizerProfileTestTags.EVENT_LIST)) {
-              TicketComponent(
-                  title = "Lausanne Party",
-                  status = TicketStatus.CURRENTLY,
-                  dateTime = "Dec 15, 2024 • 9:00 PM",
-                  location = "Lausanne, Flon")
-            }
+        // Tab content based on selection
+        when (selectedTab) {
+          OrganizerProfileTab.POSTS -> PostsTabContent()
+          OrganizerProfileTab.UPCOMING ->
+              UpcomingTabContent(events = upcomingEvents, onEventClick = onEventClick)
+          OrganizerProfileTab.PAST ->
+              PastTabContent(events = pastEvents, onEventClick = onEventClick)
+        }
       }
+}
+
+/** Content for the Posts tab. Currently empty, to be implemented in the future. */
+@Composable
+fun PostsTabContent(modifier: Modifier = Modifier) {
+  // TODO: Implement posts content
+  Column(
+      modifier =
+          modifier.fillMaxWidth().padding(top = 8.dp).testTag(OrganizerProfileTestTags.EVENT_LIST),
+      verticalArrangement = Arrangement.Center,
+      horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = "No posts yet",
+            style = Typography.bodyMedium.copy(color = Color(0xFF808080)),
+            modifier = Modifier.padding(32.dp))
+      }
+}
+
+/**
+ * Content for the Upcoming tab. Shows events that are currently happening or will happen in the
+ * future.
+ */
+@Composable
+fun UpcomingTabContent(
+    events: List<Event>,
+    onEventClick: (String) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+  Column(
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .padding(top = 8.dp, bottom = 8.dp)
+              .testTag(OrganizerProfileTestTags.EVENT_LIST),
+      verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Top),
+      horizontalAlignment = Alignment.CenterHorizontally) {
+        if (events.isEmpty()) {
+          Text(
+              text = "No upcoming events",
+              style = Typography.bodyMedium.copy(color = Color(0xFF808080)),
+              modifier = Modifier.padding(32.dp))
+        } else {
+          events
+              .filter { event -> determineTicketStatus(event) != TicketStatus.EXPIRED }
+              .forEach { event ->
+                TicketComponent(
+                    title = event.title,
+                    status = determineTicketStatus(event),
+                    dateTime = event.displayDateTime,
+                    location = event.displayLocation,
+                    modifier = Modifier.clickable { onEventClick(event.eventId) })
+              }
+        }
+      }
+}
+
+/** Content for the Past tab. Shows events that have already ended. */
+@Composable
+fun PastTabContent(
+    events: List<Event>,
+    onEventClick: (String) -> Unit = {},
+    modifier: Modifier = Modifier
+) {
+  Column(
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .padding(top = 8.dp, bottom = 8.dp)
+              .testTag(OrganizerProfileTestTags.EVENT_LIST),
+      verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Top),
+      horizontalAlignment = Alignment.CenterHorizontally) {
+        if (events.isEmpty()) {
+          Text(
+              text = "No past events",
+              style = Typography.bodyMedium.copy(color = Color(0xFF808080)),
+              modifier = Modifier.padding(32.dp))
+        } else {
+          events
+              .filter { event -> determineTicketStatus(event) == TicketStatus.EXPIRED }
+              .forEach { event ->
+                TicketComponent(
+                    title = event.title,
+                    status = TicketStatus.EXPIRED,
+                    dateTime = event.displayDateTime,
+                    location = event.displayLocation,
+                    modifier = Modifier.clickable { onEventClick(event.eventId) })
+              }
+        }
+      }
+}
+
+/**
+ * Determines the ticket status for an event based on current time.
+ * - CURRENTLY: Event is happening now (between start and end time)
+ * - UPCOMING: Event hasn't started yet
+ */
+private fun determineTicketStatus(event: Event): TicketStatus {
+  val now = Timestamp.now()
+  val startTime = event.startTime
+  val endTime = event.endTime
+
+  return when {
+    startTime != null && endTime != null -> {
+      when {
+        now.seconds < startTime.seconds -> TicketStatus.UPCOMING
+        now.seconds in startTime.seconds..endTime.seconds -> TicketStatus.CURRENTLY
+        else -> TicketStatus.EXPIRED // Fallback for edge cases
+      }
+    }
+    else -> TicketStatus.UPCOMING
+  }
 }

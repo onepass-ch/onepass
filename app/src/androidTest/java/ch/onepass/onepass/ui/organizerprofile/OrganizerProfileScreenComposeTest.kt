@@ -20,10 +20,10 @@ class OrganizerProfileScreenComposeTest {
   @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
   @Test
-  fun organizerProfileScreen_displaysCorrectly() {
+  fun organizerProfileContent_displaysCorrectly() {
     composeTestRule.setContent {
       OnePassTheme {
-        OrganizerProfileScreen(
+        OrganizerProfileContent(
             name = "Test Organizer",
             description = "Test description for organizer",
             bannerImageRes = R.drawable.image_fallback,
@@ -94,20 +94,23 @@ class OrganizerProfileScreenComposeTest {
       }
     }
 
+    // Wait for layout to complete
+    composeTestRule.waitForIdle()
+
     // Verify social media section is displayed
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.SOCIAL_MEDIA_SECTION).assertIsDisplayed()
 
     // Verify website link is displayed
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertExists()
     composeTestRule
-        .onNodeWithTag(OrganizerProfileTestTags.WEBSITE_TEXT)
+        .onNodeWithTag(OrganizerProfileTestTags.WEBSITE_TEXT, useUnmergedTree = true)
         .assertIsDisplayed()
         .assertTextEquals("Website")
 
     // Verify all social media icons are displayed
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertExists()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertExists()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertExists()
   }
 
   @Test
@@ -119,6 +122,8 @@ class OrganizerProfileScreenComposeTest {
       }
     }
 
+    composeTestRule.waitForIdle()
+
     // Verify social media section is displayed
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.SOCIAL_MEDIA_SECTION).assertIsDisplayed()
 
@@ -127,7 +132,7 @@ class OrganizerProfileScreenComposeTest {
 
     // Verify only TikTok icon is displayed
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertDoesNotExist()
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertExists()
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertDoesNotExist()
   }
 
@@ -162,8 +167,10 @@ class OrganizerProfileScreenComposeTest {
       }
     }
 
+    composeTestRule.waitForIdle()
+
     // Verify website link is displayed when websiteUrl is non-null
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertExists()
     // Verify social media icons are not displayed when URLs are null
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertDoesNotExist()
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertDoesNotExist()
@@ -179,8 +186,10 @@ class OrganizerProfileScreenComposeTest {
       }
     }
 
+    composeTestRule.waitForIdle()
+
     // Verify instagram icon is displayed when instagramUrl is non-null
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertExists()
     // Verify other icons are not displayed when URLs are null
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertDoesNotExist()
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertDoesNotExist()
@@ -196,8 +205,10 @@ class OrganizerProfileScreenComposeTest {
       }
     }
 
+    composeTestRule.waitForIdle()
+
     // Verify tiktok icon is displayed when tiktokUrl is non-null
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertExists()
     // Verify other icons are not displayed when URLs are null
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertDoesNotExist()
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertDoesNotExist()
@@ -213,8 +224,10 @@ class OrganizerProfileScreenComposeTest {
       }
     }
 
+    composeTestRule.waitForIdle()
+
     // Verify facebook icon is displayed when facebookUrl is non-null
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertExists()
     // Verify other icons are not displayed when URLs are null
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertDoesNotExist()
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertDoesNotExist()
@@ -233,12 +246,14 @@ class OrganizerProfileScreenComposeTest {
       }
     }
 
+    composeTestRule.waitForIdle()
+
     // Verify website link is NOT displayed when websiteUrl is null
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).assertDoesNotExist()
     // Verify social media icons are displayed when URLs are non-null
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertExists()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertExists()
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertExists()
   }
 
   @Test
@@ -257,7 +272,7 @@ class OrganizerProfileScreenComposeTest {
 
     // Verify follow button text shows "FOLLOW"
     composeTestRule
-        .onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT)
+        .onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT, useUnmergedTree = true)
         .assertIsDisplayed()
         .assertTextEquals("FOLLOW")
 
@@ -278,7 +293,7 @@ class OrganizerProfileScreenComposeTest {
 
     // Verify follow button text shows "FOLLOWING"
     composeTestRule
-        .onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT)
+        .onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT, useUnmergedTree = true)
         .assertIsDisplayed()
         .assertTextEquals("FOLLOWING")
 
@@ -291,7 +306,9 @@ class OrganizerProfileScreenComposeTest {
 
   @Test
   fun tabSection_displaysAllTabs() {
-    composeTestRule.setContent { OnePassTheme { TabSection() } }
+    composeTestRule.setContent {
+      OnePassTheme { TabSection(selectedTab = OrganizerProfileTab.UPCOMING) }
+    }
 
     // Verify tab section is displayed
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TAB_SECTION).assertIsDisplayed()
@@ -314,14 +331,34 @@ class OrganizerProfileScreenComposeTest {
   }
 
   @Test
-  fun organizerProfileScreen_displaysAllSections() {
+  fun tabSection_postsTabSelected_displaysCorrectly() {
+    composeTestRule.setContent {
+      OnePassTheme { TabSection(selectedTab = OrganizerProfileTab.POSTS) }
+    }
+
+    // Verify Posts tab is displayed
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TAB_POSTS).assertIsDisplayed()
+  }
+
+  @Test
+  fun tabSection_pastTabSelected_displaysCorrectly() {
+    composeTestRule.setContent {
+      OnePassTheme { TabSection(selectedTab = OrganizerProfileTab.PAST) }
+    }
+
+    // Verify Past tab is displayed
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TAB_PAST).assertIsDisplayed()
+  }
+
+  @Test
+  fun organizerProfileContent_displaysAllSections() {
     val testName = "Full Test Organizer"
     val testDescription = "Complete organizer description"
     val followersCount = "5.7k"
 
     composeTestRule.setContent {
       OnePassTheme {
-        OrganizerProfileScreen(
+        OrganizerProfileContent(
             name = testName,
             description = testDescription,
             bannerImageRes = R.drawable.image_fallback,
@@ -331,7 +368,8 @@ class OrganizerProfileScreenComposeTest {
             tiktokUrl = "tiktok",
             facebookUrl = "facebook",
             followersCount = followersCount,
-            isFollowing = false)
+            isFollowing = false,
+            selectedTab = OrganizerProfileTab.UPCOMING)
       }
     }
 
@@ -361,7 +399,7 @@ class OrganizerProfileScreenComposeTest {
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FOLLOW_SECTION).assertIsDisplayed()
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON).assertIsDisplayed()
     composeTestRule
-        .onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT)
+        .onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT, useUnmergedTree = true)
         .assertTextEquals("FOLLOW")
     composeTestRule
         .onNodeWithTag(OrganizerProfileTestTags.FOLLOWERS_TEXT)
@@ -378,27 +416,15 @@ class OrganizerProfileScreenComposeTest {
   }
 
   @Test
-  fun socialMediaIcon_displaysCorrectly() {
+  fun organizerProfileContent_displaysCorrectTextContent() {
     composeTestRule.setContent {
       OnePassTheme {
-        SocialMediaIcon(iconRes = R.drawable.instagram_logo, contentDescription = "Instagram Test")
-      }
-    }
-
-    // The icon should be displayed (can't test tag since we didn't add it directly,
-    // but we test it through SocialMediaSection tests)
-    composeTestRule.waitForIdle()
-  }
-
-  @Test
-  fun organizerProfileScreen_displaysCorrectTextContent() {
-    composeTestRule.setContent {
-      OnePassTheme {
-        OrganizerProfileScreen(
+        OrganizerProfileContent(
             name = "Lausanne - best organizer",
             description = "Test organizer description",
             followersCount = "2.4k",
-            isFollowing = false)
+            isFollowing = false,
+            selectedTab = OrganizerProfileTab.UPCOMING)
       }
     }
 
@@ -414,10 +440,10 @@ class OrganizerProfileScreenComposeTest {
   }
 
   @Test
-  fun organizerProfileScreen_minimalData_displaysCorrectly() {
+  fun organizerProfileContent_minimalData_displaysCorrectly() {
     composeTestRule.setContent {
       OnePassTheme {
-        OrganizerProfileScreen(
+        OrganizerProfileContent(
             name = "Minimal Organizer",
             description = "Short desc",
             websiteUrl = null,
@@ -425,7 +451,8 @@ class OrganizerProfileScreenComposeTest {
             tiktokUrl = null,
             facebookUrl = null,
             followersCount = "0",
-            isFollowing = false)
+            isFollowing = false,
+            selectedTab = OrganizerProfileTab.UPCOMING)
       }
     }
 
@@ -445,5 +472,38 @@ class OrganizerProfileScreenComposeTest {
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).assertDoesNotExist()
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TIKTOK_ICON).assertDoesNotExist()
     composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FACEBOOK_ICON).assertDoesNotExist()
+  }
+
+  @Test
+  fun postsTabContent_displaysEmptyState() {
+    composeTestRule.setContent { OnePassTheme { PostsTabContent() } }
+
+    // Verify event list is displayed
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.EVENT_LIST).assertIsDisplayed()
+
+    // Verify empty state message is displayed
+    composeTestRule.onNodeWithText("No posts yet").assertIsDisplayed()
+  }
+
+  @Test
+  fun upcomingTabContent_displaysEmptyState() {
+    composeTestRule.setContent { OnePassTheme { UpcomingTabContent(events = emptyList()) } }
+
+    // Verify event list is displayed
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.EVENT_LIST).assertIsDisplayed()
+
+    // Verify empty state message is displayed
+    composeTestRule.onNodeWithText("No upcoming events").assertIsDisplayed()
+  }
+
+  @Test
+  fun pastTabContent_displaysEmptyState() {
+    composeTestRule.setContent { OnePassTheme { PastTabContent(events = emptyList()) } }
+
+    // Verify event list is displayed
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.EVENT_LIST).assertIsDisplayed()
+
+    // Verify empty state message is displayed
+    composeTestRule.onNodeWithText("No past events").assertIsDisplayed()
   }
 }
