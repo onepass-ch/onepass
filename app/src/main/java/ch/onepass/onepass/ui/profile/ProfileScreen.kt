@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
@@ -57,6 +58,7 @@ object ProfileTestTags {
   const val ORG_CTA = "profile_org_cta"
   const val SETTINGS_ACCOUNT = "profile_settings_account"
   const val SETTINGS_PAYMENTS = "profile_settings_payments"
+  const val SETTINGS_INVITATIONS = "profile_settings_invitations"
   const val SETTINGS_HELP = "profile_settings_help"
   const val SETTINGS_SIGN_OUT = "profile_settings_sign_out"
 }
@@ -81,6 +83,7 @@ fun ProfileScreen(viewModel: ProfileViewModel, onEffect: (ProfileEffect) -> Unit
       onCreateEvent = viewModel::onCreateEventClicked,
       onAccountSettings = viewModel::onAccountSettings,
       onPaymentMethods = viewModel::onPaymentMethods,
+      onMyInvitations = viewModel::onMyInvitations,
       onHelp = viewModel::onHelp,
       onSignOut = viewModel::onSignOut)
 }
@@ -91,6 +94,7 @@ private fun DarkProfileContent(
     onCreateEvent: () -> Unit,
     onAccountSettings: () -> Unit,
     onPaymentMethods: () -> Unit,
+    onMyInvitations: () -> Unit,
     onHelp: () -> Unit,
     onSignOut: () -> Unit
 ) {
@@ -151,6 +155,12 @@ private fun DarkProfileContent(
               titleColor = ProfileColors.TextPrimary,
               onClick = onPaymentMethods,
               testTag = ProfileTestTags.SETTINGS_PAYMENTS)
+          SettingsItemDark(
+              icon = Icons.Outlined.Email,
+              title = "Invitations",
+              titleColor = ProfileColors.TextPrimary,
+              onClick = onMyInvitations,
+              testTag = ProfileTestTags.SETTINGS_INVITATIONS)
           SettingsItemDark(
               icon = Icons.Outlined.Info,
               title = "Help & Support",

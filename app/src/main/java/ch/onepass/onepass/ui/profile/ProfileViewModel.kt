@@ -36,6 +36,9 @@ sealed interface ProfileEffect {
 
   object NavigateToPaymentMethods : ProfileEffect
 
+  /** Navigates to the My Invitations screen to view and manage organization invitations. */
+  object NavigateToMyInvitations : ProfileEffect
+
   object NavigateToHelp : ProfileEffect
 
   // Keep this one active (only supported flow for now)
@@ -111,6 +114,15 @@ open class ProfileViewModel(private val userRepository: UserRepository = UserRep
         // TODO: enable when Payment Methods screen exists
         // _effects.emit(ProfileEffect.NavigateToPaymentMethods)
       }
+
+  /**
+   * Handles the click on the Invitations settings item.
+   *
+   * Emits a navigation effect to navigate to the My Invitations screen where users can view and
+   * manage their organization invitations.
+   */
+  fun onMyInvitations() =
+      viewModelScope.launch { _effects.tryEmit(ProfileEffect.NavigateToMyInvitations) }
 
   fun onHelp() =
       viewModelScope.launch {
