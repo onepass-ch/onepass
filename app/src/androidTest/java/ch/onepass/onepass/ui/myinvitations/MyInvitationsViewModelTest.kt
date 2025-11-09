@@ -126,15 +126,6 @@ class MyInvitationsViewModelTest {
       }
       return updateInvitationStatusResult
     }
-
-    /**
-     * Sets the invitations to be returned for a specific email. This is used to simulate the
-     * repository state.
-     */
-    fun setInvitationsForEmail(email: String, invitations: List<OrganizationInvitation>) {
-      val flow = _invitationsFlowsByEmail.getOrPut(email) { MutableStateFlow(emptyList()) }
-      flow.value = invitations
-    }
   }
 
   @Before
