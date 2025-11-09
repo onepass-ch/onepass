@@ -194,7 +194,8 @@ class CreateEventFormViewModel(
       fieldErrorsMap["capacity"] = "Capacity is required"
     } else if (state.capacity.toIntOrNull() == null) {
       errors.add(ValidationError.CAPACITY_INVALID.message)
-      fieldErrorsMap[ValidationError.CAPACITY_INVALID.key] = ValidationError.CAPACITY_INVALID.message
+      fieldErrorsMap[ValidationError.CAPACITY_INVALID.key] =
+          ValidationError.CAPACITY_INVALID.message
     }
 
     // Update field errors state
@@ -228,11 +229,13 @@ class CreateEventFormViewModel(
       // Calculate tickets already sold
       val ticketsSold = baseEvent.capacity - baseEvent.ticketsRemaining
       val newTicketsRemaining = capacity - ticketsSold
-      
+
       baseEvent.copy(
           title = state.title,
           description = state.description,
-          location = if (state.location.isNotBlank()) Location(name = state.location) else baseEvent.location,
+          location =
+              if (state.location.isNotBlank()) Location(name = state.location)
+              else baseEvent.location,
           startTime = startTimestamp,
           endTime = endTimestamp,
           capacity = capacity,
@@ -240,7 +243,10 @@ class CreateEventFormViewModel(
           pricingTiers =
               listOf(
                   PricingTier(
-                      name = "General", price = price, quantity = capacity, remaining = newTicketsRemaining)))
+                      name = "General",
+                      price = price,
+                      quantity = capacity,
+                      remaining = newTicketsRemaining)))
     } else {
       // Create new event
       Event(
@@ -315,7 +321,7 @@ class CreateEventFormViewModel(
         _uiState.value = CreateEventUiState.Error(errors.joinToString("\n"))
         return@launch
       }
-      
+
       // Clear field errors if validation passes
       _fieldErrors.value = emptyMap()
 

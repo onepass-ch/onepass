@@ -315,14 +315,12 @@ fun CreateEventForm(
                 .verticalScroll(scrollState)
                 .padding(start = 22.dp, end = 22.dp, bottom = 48.dp)) {
           // Back button
-          IconButton(
-              onClick = onNavigateBack,
-              modifier = Modifier.padding(top = 8.dp)) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White)
-              }
+          IconButton(onClick = onNavigateBack, modifier = Modifier.padding(top = 8.dp)) {
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                contentDescription = "Back",
+                tint = Color.White)
+          }
 
           // Title Header - Responsive
           Column(

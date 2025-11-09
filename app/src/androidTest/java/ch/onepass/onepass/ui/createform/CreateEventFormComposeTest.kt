@@ -315,7 +315,9 @@ class CreateEventFormComposeTest {
 
     // Error message is shown in a Snackbar at the bottom
     // The message will contain the TITLE error among others
-    composeTestRule.onNodeWithText(ValidationError.TITLE.message, substring = true).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(ValidationError.TITLE.message, substring = true)
+        .assertIsDisplayed()
   }
 
   @Test
@@ -337,11 +339,9 @@ class CreateEventFormComposeTest {
     composeTestRule.onNodeWithText("Create Event").performScrollTo().performClick()
 
     composeTestRule.waitForIdle()
-    
+
     // Error message is shown in a Snackbar, which doesn't need scrolling
-    composeTestRule
-        .onNodeWithText(ValidationError.PRICE_INVALID.message)
-        .assertIsDisplayed()
+    composeTestRule.onNodeWithText(ValidationError.PRICE_INVALID.message).assertIsDisplayed()
   }
 
   @Test
