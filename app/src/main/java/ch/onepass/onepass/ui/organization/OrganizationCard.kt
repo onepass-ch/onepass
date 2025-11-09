@@ -209,29 +209,28 @@ private fun formatDate(timestamp: Timestamp): String {
 
 @SuppressLint("DefaultLocale")
 private fun formatFollowerCount(count: Int): String {
+  fun format(value: Double, suffix: String, precision: Int): String {
+    val formatted = String.format("%.${precision}f%s", value, suffix)
+    return formatted.replace(Regex("\\.?0+$suffix$"), suffix)
+  }
+
   return when {
-    count < 1000 -> count.toString()
-    count < 10_000 -> {
-      val k = count / 1000.0
-      if (k % 1.0 == 0.0) "${k.toInt()}k"
-      else String.format("%.2fk", k).replace(Regex("\\.?0+k$"), "k")
+    count < 1_000 -> count.toString()
+    count < 1_000_000 -> {
+      val k = count / 1_000.0
+      when {
+        count < 10_000 -> format(k, "k", 2)
+        count < 100_000 -> format(k, "k", 1)
+        else -> "${k.toInt()}k"
+      }
     }
-    count < 100_000 -> {
-      val k = count / 1000.0
-      if (k % 1.0 == 0.0) "${k.toInt()}k"
-      else String.format("%.1fk", k).replace(Regex("\\.?0+k$"), "k")
-    }
-    count < 1_000_000 -> String.format("%dk", count / 1000)
-    count < 10_000_000 -> {
+    else -> {
       val m = count / 1_000_000.0
-      if (m % 1.0 == 0.0) "${m.toInt()}M"
-      else String.format("%.2fM", m).replace(Regex("\\.?0+M$"), "M")
+      when {
+        count < 10_000_000 -> format(m, "M", 2)
+        count < 100_000_000 -> format(m, "M", 1)
+        else -> "${m.toInt()}M"
+      }
     }
-    count < 100_000_000 -> {
-      val m = count / 1_000_000.0
-      if (m % 1.0 == 0.0) "${m.toInt()}M"
-      else String.format("%.1fM", m).replace(Regex("\\.?0+M$"), "M")
-    }
-    else -> String.format("%dM", count / 1_000_000)
   }
 }
