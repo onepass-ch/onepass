@@ -46,13 +46,13 @@ class StaffListItemTest {
 
   @Test
   fun staffListItem_whenClicked_invokesCallbackWithUser() {
-    var clickedUser: StaffSearchResult? = null
+    var clicked: Boolean = false
 
-    composeRule.setContent { StaffListItem(user = baseUser) { clickedUser = it } }
+    composeRule.setContent { StaffListItem(user = baseUser, onClick = { clicked = true }) }
 
     composeRule.onNodeWithTag(StaffTestTags.Item.LIST_ITEM, useUnmergedTree = true).performClick()
 
-    org.junit.Assert.assertEquals(baseUser, clickedUser)
+    org.junit.Assert.assertTrue(clicked)
   }
 
   @Test
@@ -112,6 +112,39 @@ class StaffListItemTest {
         .onNodeWithTag(StaffTestTags.Avatar.Error.TEXT, useUnmergedTree = true)
         .assertIsDisplayed()
         .assertTextEquals("J")
+  }
+
+  @Test
+  fun staffListItem_whenDisabled_hasNoClickAction() {
+    composeRule.setContent { StaffListItem(user = baseUser, onClick = null, enabled = false) }
+
+    composeRule
+        .onNodeWithTag(StaffTestTags.Item.LIST_ITEM, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertHasNoClickAction()
+  }
+
+  @Test
+  fun staffListItem_whenOnClickIsNull_hasNoClickAction() {
+    composeRule.setContent { StaffListItem(user = baseUser, onClick = null) }
+
+    composeRule
+        .onNodeWithTag(StaffTestTags.Item.LIST_ITEM, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertHasNoClickAction()
+  }
+
+  @Test
+  fun staffListItem_whenDisabled_doesNotInvokeCallback() {
+    var clicked: Boolean = false
+
+    composeRule.setContent {
+      StaffListItem(user = baseUser, onClick = { clicked = true }, enabled = false)
+    }
+
+    composeRule.onNodeWithTag(StaffTestTags.Item.LIST_ITEM, useUnmergedTree = true).performClick()
+
+    org.junit.Assert.assertFalse(clicked)
   }
 
   private fun resourceUri(context: Context, @DrawableRes resId: Int): String {

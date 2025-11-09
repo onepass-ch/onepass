@@ -1,10 +1,13 @@
 package ch.onepass.onepass.ui.staff
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertHasClickAction
+import androidx.compose.ui.test.assertHasNoClickAction
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import ch.onepass.onepass.model.staff.StaffSearchResult
@@ -117,5 +120,67 @@ class StaffInvitationScreenComposeTest {
 
     // With error message, list should not be shown if there are no results
     composeRule.onNodeWithTag(StaffInvitationTestTags.RESULTS_LIST).assertIsNotDisplayed()
+  }
+
+  @Test
+  fun disabledListItem_whenUserIsInvited() {
+    val vm = StaffInvitationViewModel(organizationId = "org_test")
+    setContent(vm)
+
+    val invitedUser = StaffSearchResult("1", "alice@onepass.ch", "Alice Keller", null)
+    val normalUser = StaffSearchResult("2", "bob@onepass.ch", "Bob Smith", null)
+
+    setUiState(
+        vm,
+        StaffInvitationUiState(
+            searchQuery = "a",
+            searchResults = listOf(invitedUser, normalUser),
+            invitedUserIds = setOf("1")))
+
+    composeRule.onNodeWithTag(StaffInvitationTestTags.RESULTS_LIST).assertIsDisplayed()
+
+    // Find all list items - the first one should be "Alice Keller" (invited), second is "Bob Smith" (normal)
+    val allListItems =
+        composeRule.onAllNodesWithTag(StaffTestTags.Item.LIST_ITEM, useUnmergedTree = true)
+    
+    // Verify we have 2 items
+    org.junit.Assert.assertEquals(2, allListItems.fetchSemanticsNodes().size)
+    
+    // First item (Alice Keller - invited) should not have click action
+    allListItems[0].assertHasNoClickAction()
+    
+    // Second item (Bob Smith - normal) should have click action
+    allListItems[1].assertHasClickAction()
+  }
+
+  @Test
+  fun disabledListItem_whenUserIsAlreadyInvited() {
+    val vm = StaffInvitationViewModel(organizationId = "org_test")
+    setContent(vm)
+
+    val alreadyInvitedUser = StaffSearchResult("1", "alice@onepass.ch", "Alice Keller", null)
+    val normalUser = StaffSearchResult("2", "bob@onepass.ch", "Bob Smith", null)
+
+    setUiState(
+        vm,
+        StaffInvitationUiState(
+            searchQuery = "a",
+            searchResults = listOf(alreadyInvitedUser, normalUser),
+            alreadyInvitedUserIds = setOf("1")))
+
+    composeRule.onNodeWithTag(StaffInvitationTestTags.RESULTS_LIST).assertIsDisplayed()
+
+    // Find all list items - the first one should be "Alice Keller" (already invited), second is "Bob Smith" (normal)
+    val allListItems =
+        composeRule.onAllNodesWithTag(StaffTestTags.Item.LIST_ITEM, useUnmergedTree = true)
+    
+    // Verify we have 2 items
+    org.junit.Assert.assertEquals(2, allListItems.fetchSemanticsNodes().size)
+    
+    // First item (Alice Keller - already invited) should not have click action
+    allListItems[0].assertHasNoClickAction()
+    
+    // Second item (Bob Smith - normal) should have click action
+    allListItems[1].assertHasClickAction()
   }
 }
