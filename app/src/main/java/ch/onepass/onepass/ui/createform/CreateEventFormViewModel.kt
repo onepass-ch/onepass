@@ -213,7 +213,7 @@ class CreateEventFormViewModel(
           organizerId = organizerId,
           organizerName = organizerName,
           status = EventStatus.DRAFT,
-          location = null, // TODO: Create Location object from location string (requires geocoding)
+          location = null,
           startTime = startTimestamp,
           endTime = endTimestamp,
           capacity = capacity,
