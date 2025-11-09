@@ -73,6 +73,8 @@ fun StaffInvitationScreen(
     modifier: Modifier = Modifier
 ) {
   val uiState by viewModel.uiState.collectAsState()
+  val selectedTabIndex =
+      if (uiState.selectedTab == UserSearchType.DISPLAY_NAME) 0 else 1
 
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(StaffInvitationTestTags.SCREEN),
@@ -104,17 +106,13 @@ fun StaffInvitationScreen(
               // Tab Row
               TabRow(
                   modifier = Modifier.fillMaxWidth().testTag(StaffInvitationTestTags.TAB_ROW),
-                  selectedTabIndex =
-                      if (uiState.selectedTab == UserSearchType.DISPLAY_NAME) 0 else 1,
+                  selectedTabIndex = selectedTabIndex,
                   containerColor = colorResource(id = R.color.surface),
                   contentColor = colorResource(id = R.color.on_surface),
                   indicator = { tabPositions ->
                     TabRowDefaults.Indicator(
                         modifier =
-                            Modifier.tabIndicatorOffset(
-                                tabPositions[
-                                    if (uiState.selectedTab == UserSearchType.DISPLAY_NAME) 0
-                                    else 1]),
+                            Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
                         height = 4.dp,
                         color = colorResource(id = R.color.tab_indicator))
                   }) {
