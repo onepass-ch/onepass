@@ -15,7 +15,6 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -223,7 +222,7 @@ class MyInvitationsViewModelTest {
     assertNotNull("Expected an error message", state.errorMessage)
     assertTrue(
         state.errorMessage!!.contains("User not found") ||
-            state.errorMessage!!.contains("not logged in"))
+            state.errorMessage.contains("not logged in"))
   }
 
   @Test
@@ -447,7 +446,7 @@ class MyInvitationsViewModelTest {
     viewModel.acceptInvitation("invite-1")
     testDispatcher.scheduler.advanceUntilIdle()
 
-    var state = viewModel.state.value
+    val state = viewModel.state.value
     assertNotNull("Expected an error message", state.errorMessage)
     // Note: In a real scenario, we'd need to recreate the ViewModel with a new repository
     // to test error clearing, but for this test we're just verifying that error is set
@@ -528,7 +527,7 @@ class MyInvitationsViewModelTest {
     assertNotNull("Expected an error message when exception is thrown", state.errorMessage)
     assertTrue(
         state.errorMessage!!.contains("Failed to load user information") ||
-            state.errorMessage!!.contains("boom"))
+            state.errorMessage.contains("boom"))
   }
 
   @Test
@@ -550,7 +549,7 @@ class MyInvitationsViewModelTest {
     assertNotNull("Expected an error message when exception is thrown", state.errorMessage)
     assertTrue(
         state.errorMessage!!.contains("Failed to accept invitation") ||
-            state.errorMessage!!.contains("Update invitation status failed"))
+            state.errorMessage.contains("Update invitation status failed"))
   }
 
   @Test
@@ -572,7 +571,7 @@ class MyInvitationsViewModelTest {
     assertNotNull("Expected an error message when exception is thrown", state.errorMessage)
     assertTrue(
         state.errorMessage!!.contains("Failed to reject invitation") ||
-            state.errorMessage!!.contains("Update invitation status failed"))
+            state.errorMessage.contains("Update invitation status failed"))
   }
 
   @Test
@@ -605,8 +604,8 @@ class MyInvitationsViewModelTest {
 
     assertNotNull("Expected an error message for blank email", state.errorMessage)
     assertTrue(
-        state.errorMessage!!.contains("User not found") ||
-            state.errorMessage!!.contains("not logged in"))
+        /* condition = */ state.errorMessage!!.contains("User not found") ||
+            state.errorMessage.contains("not logged in"))
   }
 
   @Test
