@@ -151,6 +151,7 @@ class MyInvitationsScreenComposeTest {
       state: MyInvitationsUiState,
       onAcceptInvitation: (String) -> Unit = {},
       onRejectInvitation: (String) -> Unit = {},
+      onRetry: () -> Unit = {},
       onNavigateBack: () -> Unit = {},
       organizationRepository: OrganizationRepository = MockOrganizationRepository()
   ) {
@@ -160,6 +161,7 @@ class MyInvitationsScreenComposeTest {
             state = state,
             onAcceptInvitation = onAcceptInvitation,
             onRejectInvitation = onRejectInvitation,
+            onRetry = onRetry,
             onNavigateBack = onNavigateBack,
             organizationRepository = organizationRepository)
       }
@@ -208,11 +210,14 @@ class MyInvitationsScreenComposeTest {
         MyInvitationsUiState(
             loading = false, errorMessage = "Test error", invitations = emptyList())
 
-    setContent(state = state)
+    var retryCalled = false
+    setContent(state = state, onRetry = { retryCalled = true })
 
     composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.RETRY_BUTTON).assertIsDisplayed()
     composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.RETRY_BUTTON).performClick()
     composeTestRule.waitForIdle()
+
+    assert(retryCalled) { "Retry callback should be called" }
   }
 
   // ========================================

@@ -149,6 +149,16 @@ class MyInvitationsViewModel(
   }
 
   /**
+   * Retries loading user information and invitations.
+   *
+   * This method can be called when an error occurs to retry loading the user's email and
+   * subsequently their invitations.
+   */
+  fun retry() {
+    loadUserEmail()
+  }
+
+  /**
    * Loads the current user's email address.
    *
    * This method retrieves the current user and extracts their email, which is then used to fetch

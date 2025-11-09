@@ -48,6 +48,7 @@ object MyInvitationsScreenTestTags {
   const val INVITATION_ROLE = "my_invitations_role"
   const val ACCEPT_BUTTON = "my_invitations_accept"
   const val REJECT_BUTTON = "my_invitations_reject"
+  const val SUCCESS_MESSAGE = "my_invitations_success"
 
   /**
    * Generates a test tag for a specific invitation card.
@@ -100,6 +101,7 @@ fun MyInvitationsScreen(
       state = state,
       onAcceptInvitation = viewModel::acceptInvitation,
       onRejectInvitation = viewModel::rejectInvitation,
+      onRetry = viewModel::retry,
       onNavigateBack = onNavigateBack,
       organizationRepository = organizationRepository,
       modifier = modifier)
@@ -110,9 +112,10 @@ fun MyInvitationsScreen(
  *
  * This composable handles the different UI states: loading, error, empty, and content.
  *
- * @param state Current UI state containing invitations, loading status, and error messages.
+ * @param state Current UI state containing invitations, loading status, error messages, and success messages.
  * @param onAcceptInvitation Callback invoked when an invitation is accepted.
  * @param onRejectInvitation Callback invoked when an invitation is rejected.
+ * @param onRetry Callback invoked when retry button is clicked to reload data.
  * @param onNavigateBack Callback invoked when the back button is clicked.
  * @param organizationRepository Repository for fetching organization details.
  * @param modifier Optional modifier for layout adjustments.
@@ -123,13 +126,37 @@ internal fun MyInvitationsContent(
     state: MyInvitationsUiState,
     onAcceptInvitation: (String) -> Unit,
     onRejectInvitation: (String) -> Unit,
+    onRetry: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
     organizationRepository: OrganizationRepository,
     modifier: Modifier = Modifier
 ) {
+  val snackbarHostState = remember { SnackbarHostState() }
+
+  // Show success message as snackbar
+  LaunchedEffect(state.successMessage) {
+    state.successMessage?.let { message ->
+      snackbarHostState.showSnackbar(
+          message = message,
+          duration = SnackbarDuration.Short,
+          withDismissAction = true)
+    }
+  }
+
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(MyInvitationsScreenTestTags.SCREEN),
       containerColor = Color(0xFF0A0A0A),
+      snackbarHost = {
+        SnackbarHost(
+            hostState = snackbarHostState,
+            snackbar = { snackbarData ->
+              Snackbar(
+                  snackbarData = snackbarData,
+                  modifier = Modifier.testTag(MyInvitationsScreenTestTags.SUCCESS_MESSAGE),
+                  containerColor = Color(0xFF4CAF50),
+                  contentColor = Color.White)
+            })
+      },
       topBar = {
         TopAppBar(
             title = {
@@ -158,8 +185,7 @@ internal fun MyInvitationsContent(
                 }
                 state.errorMessage != null && state.invitations.isEmpty() -> {
                   val errorMsg = state.errorMessage
-                  ErrorState(
-                      error = errorMsg, onRetry = { /* Retry logic can be added if needed */})
+                  ErrorState(error = errorMsg, onRetry = onRetry)
                 }
                 state.invitations.isEmpty() -> {
                   EmptyState()
@@ -505,7 +531,8 @@ fun MyInvitationsScreenPreview() {
         MyInvitationsUiState(
             invitations = listOf(invitation1, invitation2, invitation3),
             loading = false,
-            errorMessage = null)
+            errorMessage = null,
+            successMessage = null)
 
     MyInvitationsContent(
         state = state,
@@ -515,6 +542,7 @@ fun MyInvitationsScreenPreview() {
         onRejectInvitation = { _ ->
           // Preview callback - can add logging or other actions here
         },
+        onRetry = { /* Preview callback */},
         onNavigateBack = { /* Preview callback */},
         organizationRepository = orgRepository)
   }
@@ -530,12 +558,17 @@ fun MyInvitationsScreenPreview() {
 fun MyInvitationsScreenEmptyPreview() {
   OnePassTheme {
     val state =
-        MyInvitationsUiState(invitations = emptyList(), loading = false, errorMessage = null)
+        MyInvitationsUiState(
+            invitations = emptyList(),
+            loading = false,
+            errorMessage = null,
+            successMessage = null)
 
     MyInvitationsContent(
         state = state,
         onAcceptInvitation = {},
         onRejectInvitation = {},
+        onRetry = {},
         onNavigateBack = { /* Preview callback */},
         organizationRepository = PreviewOrganizationRepository())
   }
@@ -550,13 +583,91 @@ fun MyInvitationsScreenEmptyPreview() {
 @Composable
 fun MyInvitationsScreenLoadingPreview() {
   OnePassTheme {
-    val state = MyInvitationsUiState(invitations = emptyList(), loading = true, errorMessage = null)
+    val state =
+        MyInvitationsUiState(
+            invitations = emptyList(),
+            loading = true,
+            errorMessage = null,
+            successMessage = null)
 
     MyInvitationsContent(
         state = state,
         onAcceptInvitation = {},
         onRejectInvitation = {},
+        onRetry = {},
         onNavigateBack = { /* Preview callback */},
         organizationRepository = PreviewOrganizationRepository())
+  }
+}
+
+/**
+ * Preview composable for error state.
+ *
+ * This preview shows the screen when there's an error loading invitations.
+ */
+@Preview(showBackground = true)
+@Composable
+fun MyInvitationsScreenErrorPreview() {
+  OnePassTheme {
+    val state =
+        MyInvitationsUiState(
+            invitations = emptyList(),
+            loading = false,
+            errorMessage = "Failed to load invitations. Please check your connection and try again.",
+            successMessage = null)
+
+    MyInvitationsContent(
+        state = state,
+        onAcceptInvitation = {},
+        onRejectInvitation = {},
+        onRetry = {},
+        onNavigateBack = { /* Preview callback */},
+        organizationRepository = PreviewOrganizationRepository())
+  }
+}
+
+/**
+ * Preview composable for success message state.
+ *
+ * This preview shows the screen with a success message displayed.
+ */
+@Preview(showBackground = true)
+@Composable
+fun MyInvitationsScreenSuccessPreview() {
+  OnePassTheme {
+    // Create test data
+    val org1 =
+        Organization(
+            id = "org-1",
+            name = "Tech Events Lausanne",
+            description = "Organizing tech events in Lausanne",
+            ownerId = "owner-1",
+            status = OrganizationStatus.ACTIVE)
+
+    val invitation1 =
+        OrganizationInvitation(
+            id = "invite-1",
+            orgId = "org-1",
+            inviteeEmail = "user@example.com",
+            role = OrganizationRole.MEMBER,
+            invitedBy = "owner-1",
+            status = InvitationStatus.PENDING)
+
+    val orgRepository = PreviewOrganizationRepository(organizations = mapOf("org-1" to org1))
+
+    val state =
+        MyInvitationsUiState(
+            invitations = listOf(invitation1),
+            loading = false,
+            errorMessage = null,
+            successMessage = "Invitation accepted successfully. You are now a member.")
+
+    MyInvitationsContent(
+        state = state,
+        onAcceptInvitation = {},
+        onRejectInvitation = {},
+        onRetry = {},
+        onNavigateBack = { /* Preview callback */},
+        organizationRepository = orgRepository)
   }
 }
