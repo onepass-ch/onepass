@@ -14,17 +14,20 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import ch.onepass.onepass.ui.navigation.BottomNavigationBar
+import ch.onepass.onepass.ui.navigation.NavigationDestinations
 import org.junit.Rule
 import org.junit.Test
 
 /**
- * UI tests for the [BottomNavigationMenu] component.
+ * UI tests for the [ch.onepass.onepass.ui.navigation.BottomNavigationBar] component.
  *
  * These tests verify:
  * - All four tabs (Events, Tickets, Map, Profile) are visible.
  * - Clicking each tab updates the `currentRoute` via the `onNavigate` callback.
  * - The bottom bar remains usable even when the initial route is unknown.
- * - The functional order of tabs matches [NavigationDestinations.tabs].
+ * - The functional order of tabs matches
+ *   [ch.onepass.onepass.ui.navigation.NavigationDestinations.tabs].
  * - Re-clicking the currently selected tab is idempotent (does not change state).
  *
  * The test scene exposes the current route through a small [Text] node with a testTag, so
@@ -42,9 +45,9 @@ class BottomNavigationBarTest {
   private val CURRENT_ROUTE_TAG = "current_route"
 
   /**
-   * Sets up a minimal scene containing [BottomNavigationMenu] and a text field exposing the current
-   * route through [CURRENT_ROUTE_TAG]. The [onNavigate] callback updates the local state, mimicking
-   * how a NavController would change routes.
+   * Sets up a minimal scene containing [ch.onepass.onepass.ui.navigation.BottomNavigationBar] and a
+   * text field exposing the current route through [CURRENT_ROUTE_TAG]. The [onNavigate] callback
+   * updates the local state, mimicking how a NavController would change routes.
    *
    * @param initialRoute The starting route for the bottom navigation; defaults to Events.
    */
@@ -54,7 +57,7 @@ class BottomNavigationBarTest {
     composeTestRule.setContent {
       var currentRoute by remember { mutableStateOf(initialRoute) }
 
-      BottomNavigationMenu(
+      BottomNavigationBar(
           currentRoute = currentRoute, onNavigate = { screen -> currentRoute = screen.route })
 
       // Expose the current route for assertions.

@@ -20,7 +20,7 @@ class MyEventsScreenTest {
   private fun setContent() {
     composeTestRule.setContent {
       OnePassTheme {
-        MyEventsScreen(
+        MyEventsContent(
             userQrData = "USER-QR-DATA",
             currentTickets = currentTickets,
             expiredTickets = expiredTickets)

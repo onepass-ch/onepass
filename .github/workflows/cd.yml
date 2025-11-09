@@ -1,0 +1,181 @@
+name: Build & Release APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  MODULE_DIR: app
+  BASE_TAG_START: v1.0.0
+
+jobs:
+  build-release:
+    runs-on: ubuntu-latest
+
+    # Plain-text RELEASE_* variables you requested
+    env:
+      RELEASE_STORE_FILE: ${{ github.workspace }}/apk/keystore.jks
+      RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
+      RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+      RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+      RELEASE_STORE_TYPE: ${{ secrets.RELEASE_STORE_TYPE }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          fetch-tags: true
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Gradle cache
+        uses: gradle/actions/setup-gradle@v3
+
+      # Decode google-services.json from a base64 secret (optional)
+      - name: Decode google-services.json
+        env:
+          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
+        run: |
+          mkdir -p "$MODULE_DIR"
+          if [ -z "$GOOGLE_SERVICES" ]; then
+            echo "GOOGLE_SERVICES secret not set!" && exit 1
+          fi
+          echo "$GOOGLE_SERVICES" | base64 --decode > "$MODULE_DIR/google-services.json"
+          ls -la "$MODULE_DIR/google-services.json" || true
+
+      # Decode local.properties from a secret (optional)
+      - name: Decode local.properties
+        env:
+          LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
+        run: |
+          if [ -n "$LOCAL_PROPERTIES" ]; then
+            echo "$LOCAL_PROPERTIES" | base64 --decode > ./local.properties
+          else
+            echo "::warning::LOCAL_PROPERTIES secret is not set. local.properties will not be created."
+          fi
+
+      # 1) Decode the keystore from KEYSTORE_B64 into apk/keystore.jks
+      - name: Decode keystore from KEYSTORE_B64
+        env:
+          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
+        run: |
+          set -e
+          mkdir -p apk
+          if [ -z "$KEYSTORE_B64" ]; then
+            echo "KEYSTORE_B64 secret not set!" && exit 1
+          fi
+          echo "$KEYSTORE_B64" | base64 -d > "$RELEASE_STORE_FILE"
+          ls -l "$RELEASE_STORE_FILE"
+
+      # 2) Verify the keystore can be opened as PKCS12
+      - name: Verify keystore open (PKCS12)
+        run: |
+          set -e
+          keytool -list -keystore "$RELEASE_STORE_FILE" \
+            -storepass "$RELEASE_STORE_PASSWORD" \
+            -storetype "$RELEASE_STORE_TYPE" > /dev/null
+          echo "Keystore opened as $RELEASE_STORE_TYPE."
+
+      # 3) Verify that the alias exists in the keystore
+      - name: Verify alias exists
+        run: |
+          set -e
+          keytool -list -v -keystore "$RELEASE_STORE_FILE" \
+            -storepass "$RELEASE_STORE_PASSWORD" \
+            -storetype "$RELEASE_STORE_TYPE" \
+            | grep -q "Alias name: $RELEASE_KEY_ALIAS" \
+            || { echo "Alias '$RELEASE_KEY_ALIAS' not found"; exit 1; }
+          echo "Alias '$RELEASE_KEY_ALIAS' found."
+
+      # 4) Verify that the private key password works
+      - name: Verify key password works (private key)
+        run: |
+          set -e
+          keytool -importkeystore \
+            -srckeystore "$RELEASE_STORE_FILE" -srcstoretype "$RELEASE_STORE_TYPE" -srcstorepass "$RELEASE_STORE_PASSWORD" \
+            -srcalias "$RELEASE_KEY_ALIAS" -srckeypass "$RELEASE_KEY_PASSWORD" \
+            -destkeystore /tmp/test.p12 -deststoretype PKCS12 -deststorepass testpass -destalias testalias >/dev/null
+          echo "Private key decryption succeeded with provided key password."
+
+      # 5) Build a signed release APK using -P RELEASE_* Gradle properties
+      - name: Build signed release APK
+        run: |
+          set -e
+          chmod +x ./gradlew
+          ./gradlew clean :$MODULE_DIR:assembleRelease \
+            -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
+            -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
+            -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS" \
+            -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
+            -PRELEASE_STORE_TYPE="$RELEASE_STORE_TYPE" \
+            --stacktrace
+
+      # 6) Locate generated APK files
+      - name: Locate generated APKs
+        id: apk
+        run: |
+          APK_DIR="$MODULE_DIR/build/outputs/apk/release"
+          echo "Searching for APKs in $APK_DIR"
+          find "$APK_DIR" -maxdepth 1 -type f -name "*.apk" | sort > apk_list.txt
+          cat apk_list.txt || echo "No APKs found!"
+          echo "apk_list<<EOF" >> $GITHUB_OUTPUT
+          cat apk_list.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # 7) Generate SHA256 checksums for all APKs
+      - name: Generate SHA256 checksums
+        run: |
+          rm -f SHA256SUMS.txt
+          while IFS= read -r f; do
+            shasum -a 256 "$f" >> SHA256SUMS.txt
+          done < apk_list.txt
+          echo "SHA256SUMS:"
+          cat SHA256SUMS.txt
+
+      # 8) Determine the next semantic version tag automatically (increment patch)
+      - name: Determine next version tag
+        id: tag
+        shell: bash
+        run: |
+          latest_tag=$(git tag --list 'v*' --sort=-v:refname | head -n 1)
+          if [ -z "$latest_tag" ]; then
+            latest_tag="${{ env.BASE_TAG_START }}"
+            echo "No existing v* tags. Using base: $latest_tag"
+          else
+            echo "Latest tag: $latest_tag"
+          fi
+          base="${latest_tag#v}"
+          IFS='.' read -r major minor patch <<< "$base"
+          major=${major:-1}
+          minor=${minor:-0}
+          patch=${patch:-0}
+          next_patch=$((patch + 1))
+          next_tag="v${major}.${minor}.${next_patch}"
+          echo "Next tag: $next_tag"
+          echo "tag_name=$next_tag" >> "$GITHUB_OUTPUT"
+
+      # 9) Create a GitHub Release and attach APKs and checksums
+      - name: Create Release with auto-bumped tag
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.tag.outputs.tag_name }}
+          name: ${{ steps.tag.outputs.tag_name }}
+          commit: ${{ github.sha }}
+          allowUpdates: false
+          draft: false
+          prerelease: false
+          generateReleaseNotes: true
+          artifacts: |
+            ${{ steps.apk.outputs.apk_list }}
+            SHA256SUMS.txt
+          artifactErrorsFailBuild: true

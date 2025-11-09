@@ -6,6 +6,8 @@ import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.event.EventStatus
+import ch.onepass.onepass.model.eventfilters.EventFilters
+import kotlin.collections.filter
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -21,7 +23,8 @@ data class FeedUIState(
     val events: List<Event> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null,
-    val location: String = "LAUSANNE"
+    val location: String = "SWITZERLAND",
+    val showFilterDialog: Boolean = false,
 )
 
 /**
@@ -29,8 +32,9 @@ data class FeedUIState(
  *
  * @property repository The event repository for data operations.
  */
-class FeedViewModel(private val repository: EventRepository = EventRepositoryFirebase()) :
-    ViewModel() {
+class FeedViewModel(
+    private val repository: EventRepository = EventRepositoryFirebase(),
+) : ViewModel() {
 
   companion object {
     /** Maximum number of loaded events to return */
@@ -39,6 +43,7 @@ class FeedViewModel(private val repository: EventRepository = EventRepositoryFir
 
   private val _uiState = MutableStateFlow(FeedUIState())
   val uiState: StateFlow<FeedUIState> = _uiState.asStateFlow()
+  private val _allEvents = MutableStateFlow<List<Event>>(emptyList())
 
   /** Loads events from the repository, filtering for PUBLISHED status. */
   fun loadEvents() {
@@ -48,11 +53,38 @@ class FeedViewModel(private val repository: EventRepository = EventRepositoryFir
       try {
         repository.getEventsByStatus(EventStatus.PUBLISHED).take(LOADED_EVENTS_LIMIT).collect {
             events ->
+          _allEvents.value = events
           _uiState.update { it.copy(events = events, isLoading = false, error = null) }
         }
       } catch (e: Exception) {
         _uiState.update { it.copy(isLoading = false, error = e.message ?: "Failed to load events") }
       }
+    }
+  }
+
+  /** Apply current filters to the loaded events */
+  fun applyFiltersToCurrentEvents(filters: EventFilters) {
+    val filteredEvents = applyFiltersLocally(_allEvents.value, filters)
+    _uiState.update { it.copy(events = filteredEvents) }
+  }
+
+  /** Apply filters locally to the given events */
+  private fun applyFiltersLocally(
+      events: List<Event>,
+      filters: EventFilters,
+  ): List<Event> {
+    return events.filter { event ->
+      val regionMatch =
+          filters.region?.let { region ->
+            event.location?.region.equals(region, ignoreCase = true) ||
+                event.location?.name?.contains(region, ignoreCase = true) == true
+          } ?: true
+      val dateMatch =
+          filters.dateRange?.let { range ->
+            event.startTime?.toDate()?.time?.let { eventTime -> eventTime in range } ?: false
+          } ?: true
+      val availabilityMatch = !filters.hideSoldOut || !event.isSoldOut
+      regionMatch && dateMatch && availabilityMatch
     }
   }
 
@@ -73,5 +105,9 @@ class FeedViewModel(private val repository: EventRepository = EventRepositoryFir
    */
   fun setLocation(location: String) {
     _uiState.update { it.copy(location = location) }
+  }
+
+  fun setShowFilterDialog(show: Boolean) {
+    _uiState.update { it.copy(showFilterDialog = show) }
   }
 }

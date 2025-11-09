@@ -1,0 +1,62 @@
+package ch.onepass.onepass.model.user
+
+import ch.onepass.onepass.model.staff.StaffSearchResult
+
+/**
+ * Fake implementation of UserRepository for testing purposes.
+ *
+ * This class provides a simple implementation that can be used in tests where you don't need the
+ * full Firebase functionality.
+ */
+class FakeUserRepository(
+    private val currentUser: User? = null,
+    private val createdUser: User? = null,
+    private val throwOnLoad: Boolean = false
+) : UserRepository {
+
+  override suspend fun getCurrentUser(): User? {
+    if (throwOnLoad) throw RuntimeException("boom")
+    return currentUser
+  }
+
+  override suspend fun getOrCreateUser(): User? {
+    if (throwOnLoad) throw RuntimeException("boom")
+    return createdUser
+  }
+
+  override suspend fun updateLastLogin(uid: String) {
+    /* no-op */
+  }
+
+  /** Configurable search results for testing. Set this to customize search behavior in tests. */
+  private var searchResultsFunction:
+      (String, UserSearchType, String?) -> Result<List<StaffSearchResult>> =
+      { _, _, _ ->
+        Result.success(emptyList())
+      }
+
+  override suspend fun searchUsers(
+      query: String,
+      searchType: UserSearchType,
+      organizationId: String?
+  ): Result<List<StaffSearchResult>> {
+    return searchResultsFunction(query, searchType, organizationId)
+  }
+
+  /** Override searchUsers to return specific results. */
+  fun setSearchResults(results: List<StaffSearchResult>) {
+    searchResultsFunction = { _, _, _ -> Result.success(results) }
+  }
+
+  /** Override searchUsers to return an error. */
+  fun setSearchError(error: Throwable) {
+    searchResultsFunction = { _, _, _ -> Result.failure(error) }
+  }
+
+  /** Set a custom search function for more complex test scenarios. */
+  fun setSearchFunction(
+      function: (String, UserSearchType, String?) -> Result<List<StaffSearchResult>>
+  ) {
+    searchResultsFunction = function
+  }
+}

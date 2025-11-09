@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.ui.event.EventCard
+import ch.onepass.onepass.ui.event.EventCardViewModel
 import com.google.gson.JsonPrimitive
 import com.mapbox.geojson.Point
 import com.mapbox.maps.MapView
@@ -49,6 +50,8 @@ object MapScreenTestTags {
 fun MapScreen(mapViewModel: MapViewModel = viewModel(), isLocationPermissionGranted: Boolean) {
   val uiState by mapViewModel.uiState.collectAsState()
   val events = uiState.events
+  val eventCardViewModel = EventCardViewModel.getInstance()
+  val likedEvents by eventCardViewModel.likedEvents.collectAsState()
 
   Box(modifier = Modifier.fillMaxSize()) {
 
@@ -83,7 +86,8 @@ fun MapScreen(mapViewModel: MapViewModel = viewModel(), isLocationPermissionGran
             onCardClick = { /* TODO: Navigate to full event page */},
             onDismiss = { mapViewModel.clearSelectedEvent() },
             modifier = Modifier.align(Alignment.TopCenter).padding(16.dp),
-        )
+            isLiked = likedEvents.contains(event.eventId),
+            onLikeToggle = { eventId -> eventCardViewModel.toggleLike(eventId) })
       }
     }
   }

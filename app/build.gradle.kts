@@ -8,6 +8,7 @@ plugins {
   alias(libs.plugins.sonar)
   id("jacoco")
   id("com.google.gms.google-services")
+  alias(libs.plugins.kotlin.serialization)
 }
 
 android {
@@ -64,7 +65,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.4.2"
+        kotlinCompilerExtensionVersion = "1.5.3"
     }
 
     compileOptions {
@@ -108,6 +109,22 @@ android {
         res.setSrcDirs(emptyList<File>())
         resources.setSrcDirs(emptyList<File>())
     }
+
+  signingConfigs {
+    create("release") {
+      storeFile = file((project.findProperty("RELEASE_STORE_FILE") as String?) ?: "keystore.jks")
+      storePassword = project.findProperty("RELEASE_STORE_PASSWORD") as String?
+      keyAlias      = project.findProperty("RELEASE_KEY_ALIAS") as String?
+      keyPassword   = project.findProperty("RELEASE_KEY_PASSWORD") as String?
+      storeType     = (project.findProperty("RELEASE_STORE_TYPE") as String?) ?: "pkcs12"
+    }
+  }
+
+  buildTypes {
+    getByName("release") {
+      signingConfig = signingConfigs.getByName("release")
+    }
+  }
 }
 
 sonar {
@@ -138,12 +155,15 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 }
 
 dependencies {
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
     // ------------- Firebase ------------------
+    implementation(libs.firebase.functions.ktx)
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth.ktx)
     implementation(libs.firebase.firestore.ktx)
@@ -187,7 +207,7 @@ dependencies {
     // ---------- MapBox ------------
     implementation("com.mapbox.maps:android-ndk27:11.15.2")
     implementation("com.mapbox.extension:maps-compose-ndk27:11.15.2")
-    
+
     // ---------- Navigation --------
     implementation("androidx.navigation:navigation-compose:2.6.0")
 
@@ -197,6 +217,9 @@ dependencies {
     // --------- MockK for Mocking (unified version) ---------
     testImplementation("io.mockk:mockk:1.13.10")
     androidTestImplementation("io.mockk:mockk-android:1.13.10")
+
+    implementation("io.coil-kt:coil-compose:2.6.0")
+    implementation("androidx.compose.material:material-icons-extended:1.5.4")
 
     // --------- JUnit ---------
     testImplementation(libs.junit)

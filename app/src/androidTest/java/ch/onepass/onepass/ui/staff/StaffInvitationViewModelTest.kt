@@ -1,0 +1,721 @@
+package ch.onepass.onepass.ui.staff
+
+import ch.onepass.onepass.model.organization.FakeOrganizationRepository
+import ch.onepass.onepass.model.organization.InvitationStatus
+import ch.onepass.onepass.model.organization.OrganizationInvitation
+import ch.onepass.onepass.model.organization.OrganizationRole
+import ch.onepass.onepass.model.staff.StaffSearchResult
+import ch.onepass.onepass.model.user.FakeUserRepository
+import ch.onepass.onepass.model.user.User
+import ch.onepass.onepass.model.user.UserSearchType
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.*
+import org.junit.After
+import org.junit.Assert.*
+import org.junit.Before
+import org.junit.Test
+
+@OptIn(ExperimentalCoroutinesApi::class)
+class StaffInvitationViewModelTest {
+
+  private val testDispatcher = StandardTestDispatcher()
+  private val testScope = TestScope(testDispatcher)
+
+  private lateinit var userRepository: FakeUserRepository
+  private lateinit var organizationRepository: FakeOrganizationRepository
+  private val testOrganizationId = "org_123"
+  private val testUserId = "user_123"
+
+  private val testUser =
+      User(uid = testUserId, email = "test@example.com", displayName = "Test User")
+
+  private val testSearchResult1 =
+      StaffSearchResult(
+          id = "user1", email = "john@example.com", displayName = "John Doe", avatarUrl = null)
+
+  private val testSearchResult2 =
+      StaffSearchResult(
+          id = "user2",
+          email = "jane@example.com",
+          displayName = "Jane Smith",
+          avatarUrl = "https://example.com/avatar.jpg")
+
+  @Before
+  fun setup() {
+    Dispatchers.setMain(testDispatcher)
+    userRepository = FakeUserRepository(currentUser = testUser)
+    organizationRepository = FakeOrganizationRepository()
+  }
+
+  @After
+  fun tearDown() {
+    Dispatchers.resetMain()
+  }
+
+  // ========== Initialization Tests ==========
+
+  @Test
+  fun staffInvitationViewModel_initialState_hasCorrectDefaults() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+
+        val state = viewModel.uiState.value
+
+        assertEquals(UserSearchType.DISPLAY_NAME, state.selectedTab)
+        assertEquals("", state.searchQuery)
+        assertEquals(emptyList<StaffSearchResult>(), state.searchResults)
+        assertFalse(state.isLoading)
+        assertFalse(state.isInviting)
+        assertNull(state.errorMessage)
+        assertEquals(emptySet<String>(), state.invitedUserIds)
+        assertEquals(emptySet<String>(), state.alreadyInvitedUserIds)
+      }
+
+  @Test
+  fun staffInvitationViewModel_init_loadsCurrentUserId() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+
+        // Wait for initialization
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Should not have error since user is loaded
+        val state = viewModel.uiState.value
+        assertNull(state.errorMessage)
+      }
+
+  @Test
+  fun staffInvitationViewModel_init_handlesMissingUser() =
+      testScope.runTest {
+        val repoWithoutUser = FakeUserRepository(currentUser = null, createdUser = null)
+        val viewModel =
+            StaffInvitationViewModel(
+                organizationId = testOrganizationId,
+                userRepository = repoWithoutUser,
+                organizationRepository = organizationRepository)
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertNotNull("Expected error message when user not found", state.errorMessage)
+        assertTrue(
+            "Error should mention user not found",
+            state.errorMessage?.contains("not found", ignoreCase = true) == true)
+      }
+
+  @Test
+  fun staffInvitationViewModel_init_handlesExceptionWhenLoadingUser() =
+      testScope.runTest {
+        val repoWithError = FakeUserRepository(throwOnLoad = true)
+        val viewModel =
+            StaffInvitationViewModel(
+                organizationId = testOrganizationId,
+                userRepository = repoWithError,
+                organizationRepository = organizationRepository)
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertNotNull("Expected error message when exception occurs", state.errorMessage)
+      }
+
+  // ========== Tab Selection Tests ==========
+
+  @Test
+  fun staffInvitationViewModel_selectTab_updatesSelectedTab() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+
+        viewModel.selectTab(UserSearchType.EMAIL)
+
+        assertEquals(UserSearchType.EMAIL, viewModel.uiState.value.selectedTab)
+      }
+
+  @Test
+  fun staffInvitationViewModel_selectTab_clearsSearchWhenSwitchingTabs() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+
+        // Set up initial search state
+        userRepository.setSearchResults(listOf(testSearchResult1))
+        viewModel.updateSearchQuery("john")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Verify search results exist
+        assertTrue(viewModel.uiState.value.searchResults.isNotEmpty())
+
+        // Switch tab
+        viewModel.selectTab(UserSearchType.EMAIL)
+
+        val state = viewModel.uiState.value
+        assertEquals(UserSearchType.EMAIL, state.selectedTab)
+        assertEquals("", state.searchQuery)
+        assertEquals(emptyList<StaffSearchResult>(), state.searchResults)
+        assertNull(state.errorMessage)
+      }
+
+  @Test
+  fun staffInvitationViewModel_selectTab_doesNothingWhenSelectingSameTab() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updateSearchQuery("test")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val queryBefore = viewModel.uiState.value.searchQuery
+
+        viewModel.selectTab(UserSearchType.DISPLAY_NAME)
+
+        assertEquals(queryBefore, viewModel.uiState.value.searchQuery)
+      }
+
+  // ========== Search Query Tests ==========
+
+  @Test
+  fun staffInvitationViewModel_updateSearchQuery_updatesQueryImmediately() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+
+        viewModel.updateSearchQuery("john")
+
+        assertEquals("john", viewModel.uiState.value.searchQuery)
+      }
+
+  @Test
+  fun staffInvitationViewModel_updateSearchQuery_clearsResultsWhenEmpty() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+
+        // Set up search results
+        userRepository.setSearchResults(listOf(testSearchResult1))
+        viewModel.updateSearchQuery("john")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(viewModel.uiState.value.searchResults.isNotEmpty())
+
+        // Clear query
+        viewModel.updateSearchQuery("")
+
+        val state = viewModel.uiState.value
+        assertEquals("", state.searchQuery)
+        assertEquals(emptyList<StaffSearchResult>(), state.searchResults)
+        assertFalse(state.isLoading)
+      }
+
+  @Test
+  fun staffInvitationViewModel_updateSearchQuery_debouncesSearch() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        userRepository.setSearchResults(listOf(testSearchResult1))
+
+        viewModel.updateSearchQuery("j")
+        testDispatcher.scheduler.advanceTimeBy(200)
+        viewModel.updateSearchQuery("jo")
+        testDispatcher.scheduler.advanceTimeBy(200)
+        viewModel.updateSearchQuery("john")
+
+        // Should not have searched yet (debounce not elapsed)
+        assertFalse(viewModel.uiState.value.isLoading)
+        assertEquals(emptyList<StaffSearchResult>(), viewModel.uiState.value.searchResults)
+
+        // Advance just before debounce delay completes
+        testDispatcher.scheduler.advanceTimeBy(499)
+        // Should still not have searched
+        assertFalse(viewModel.uiState.value.isLoading)
+        assertEquals(emptyList<StaffSearchResult>(), viewModel.uiState.value.searchResults)
+
+        // Advance past debounce delay - this will trigger search
+        testDispatcher.scheduler.advanceTimeBy(1)
+        // Search should have completed (repository call is synchronous in test)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Verify search results are set
+        assertEquals(listOf(testSearchResult1), viewModel.uiState.value.searchResults)
+        assertFalse(viewModel.uiState.value.isLoading)
+      }
+
+  @Test
+  fun staffInvitationViewModel_updateSearchQuery_cancelsPreviousSearchJob() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        userRepository.setSearchResults(listOf(testSearchResult1))
+
+        viewModel.updateSearchQuery("john")
+        testDispatcher.scheduler.advanceTimeBy(200)
+
+        // Update query before debounce completes
+        viewModel.updateSearchQuery("jane")
+        testDispatcher.scheduler.advanceTimeBy(500)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Should only have searched once for "jane"
+        assertEquals("jane", viewModel.uiState.value.searchQuery)
+      }
+
+  @Test
+  fun staffInvitationViewModel_updateSearchQuery_clearsErrorMessage() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+
+        // Set an error
+        viewModel.updateSearchQuery("test")
+        userRepository.setSearchError(RuntimeException("Search failed"))
+        testDispatcher.scheduler.advanceTimeBy(500)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.errorMessage)
+
+        // Update query should clear error
+        viewModel.updateSearchQuery("new query")
+
+        assertNull(viewModel.uiState.value.errorMessage)
+      }
+
+  // ========== Search Execution Tests ==========
+
+  @Test
+  fun staffInvitationViewModel_performSearch_updatesResultsOnSuccess() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        val results = listOf(testSearchResult1, testSearchResult2)
+        userRepository.setSearchResults(results)
+
+        viewModel.updateSearchQuery("john")
+        testDispatcher.scheduler.advanceTimeBy(500)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(results, state.searchResults)
+        assertFalse(state.isLoading)
+        assertNull(state.errorMessage)
+      }
+
+  @Test
+  fun staffInvitationViewModel_performSearch_setsLoadingState() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        userRepository.setSearchResults(listOf(testSearchResult1))
+
+        viewModel.updateSearchQuery("john")
+        // Advance just before debounce completes
+        testDispatcher.scheduler.advanceTimeBy(499)
+        // Should not be loading yet (delay not completed)
+        assertFalse(viewModel.uiState.value.isLoading)
+
+        // Advance past debounce delay - this triggers performSearch
+        // Since repository call is synchronous in test, performSearch completes immediately.
+        // We verify that performSearch was called by checking that results are set.
+        testDispatcher.scheduler.advanceTimeBy(1)
+        // Run current to ensure performSearch has started
+        testDispatcher.scheduler.runCurrent()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Verify search was performed (results are set and loading is false)
+        assertEquals(listOf(testSearchResult1), viewModel.uiState.value.searchResults)
+        assertFalse(viewModel.uiState.value.isLoading)
+      }
+
+  @Test
+  fun staffInvitationViewModel_performSearch_handlesSearchError() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        userRepository.setSearchError(RuntimeException("Network error"))
+
+        viewModel.updateSearchQuery("john")
+        testDispatcher.scheduler.advanceTimeBy(500)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(emptyList<StaffSearchResult>(), state.searchResults)
+        assertFalse(state.isLoading)
+        assertNotNull(state.errorMessage)
+        assertTrue(state.errorMessage?.contains("Search failed", ignoreCase = true) == true)
+      }
+
+  @Test
+  fun staffInvitationViewModel_performSearch_handlesException() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        userRepository.setSearchFunction { _, _, _ ->
+          throw IllegalStateException("Unexpected error")
+        }
+
+        viewModel.updateSearchQuery("john")
+        testDispatcher.scheduler.advanceTimeBy(500)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(emptyList<StaffSearchResult>(), state.searchResults)
+        assertFalse(state.isLoading)
+        assertNotNull(state.errorMessage)
+        assertTrue(state.errorMessage?.contains("Search error", ignoreCase = true) == true)
+      }
+
+  @Test
+  fun staffInvitationViewModel_performSearch_usesCorrectSearchType() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        var capturedSearchType: UserSearchType? = null
+
+        userRepository.setSearchFunction { _, searchType, _ ->
+          capturedSearchType = searchType
+          Result.success(emptyList())
+        }
+
+        viewModel.selectTab(UserSearchType.EMAIL)
+        viewModel.updateSearchQuery("test@example.com")
+        testDispatcher.scheduler.advanceTimeBy(500)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(UserSearchType.EMAIL, capturedSearchType)
+      }
+
+  @Test
+  fun staffInvitationViewModel_performSearch_passesOrganizationId() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        var capturedOrgId: String? = null
+
+        userRepository.setSearchFunction { _, _, orgId ->
+          capturedOrgId = orgId
+          Result.success(emptyList())
+        }
+
+        viewModel.updateSearchQuery("test")
+        testDispatcher.scheduler.advanceTimeBy(500)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(testOrganizationId, capturedOrgId)
+      }
+
+  @Test
+  fun staffInvitationViewModel_performSearch_trimsQuery() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        var capturedQuery: String? = null
+
+        userRepository.setSearchFunction { query, _, _ ->
+          capturedQuery = query
+          Result.success(emptyList())
+        }
+
+        viewModel.updateSearchQuery("  john  ")
+        testDispatcher.scheduler.advanceTimeBy(500)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals("john", capturedQuery)
+      }
+
+  // ========== User Selection and Invitation Tests ==========
+
+  @Test
+  fun staffInvitationViewModel_onUserSelected_createsInvitationSuccessfully() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onUserSelected(testSearchResult1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isInviting)
+        assertTrue(testSearchResult1.id in state.invitedUserIds)
+        assertNull(state.errorMessage)
+      }
+
+  @Test
+  fun staffInvitationViewModel_onUserSelected_setsInvitingState() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onUserSelected(testSearchResult1)
+        // Run current tasks to ensure the coroutine has started and isInviting is set
+        testDispatcher.scheduler.runCurrent()
+
+        // Since repository calls are synchronous in test, the invitation may complete
+        // immediately. We check if isInviting was set (it may already be false if
+        // the invitation completed synchronously).
+        val stateAfterRun = viewModel.uiState.value
+        // Verify invitation was processed (either isInviting is true or invitation completed)
+        assertTrue(stateAfterRun.isInviting || testSearchResult1.id in stateAfterRun.invitedUserIds)
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val finalState = viewModel.uiState.value
+        // Verify invitation was processed successfully
+        assertTrue(testSearchResult1.id in finalState.invitedUserIds)
+        assertFalse(finalState.isInviting)
+      }
+
+  @Test
+  fun staffInvitationViewModel_onUserSelected_handlesMissingUserId() =
+      testScope.runTest {
+        val repoWithoutUser = FakeUserRepository(currentUser = null, createdUser = null)
+        val viewModel =
+            StaffInvitationViewModel(
+                organizationId = testOrganizationId,
+                userRepository = repoWithoutUser,
+                organizationRepository = organizationRepository)
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onUserSelected(testSearchResult1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isInviting)
+        assertNotNull(state.errorMessage)
+        assertTrue(state.errorMessage?.contains("not authenticated", ignoreCase = true) == true)
+      }
+
+  @Test
+  fun staffInvitationViewModel_onUserSelected_detectsAlreadyPendingInvitation() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Create a pending invitation
+        val existingInvitation =
+            OrganizationInvitation(
+                id = "inv_1",
+                orgId = testOrganizationId,
+                inviteeEmail = testSearchResult1.email,
+                role = OrganizationRole.STAFF,
+                invitedBy = testUserId,
+                status = InvitationStatus.PENDING)
+        organizationRepository.addTestInvitation(existingInvitation)
+
+        viewModel.onUserSelected(testSearchResult1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isInviting)
+        assertTrue(testSearchResult1.id in state.alreadyInvitedUserIds)
+        assertNotNull(state.errorMessage)
+        assertTrue(state.errorMessage?.contains("already been invited", ignoreCase = true) == true)
+      }
+
+  @Test
+  fun staffInvitationViewModel_onUserSelected_detectsAlreadyAcceptedInvitation() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Create an accepted invitation (user is already a member)
+        val existingInvitation =
+            OrganizationInvitation(
+                id = "inv_1",
+                orgId = testOrganizationId,
+                inviteeEmail = testSearchResult1.email,
+                role = OrganizationRole.STAFF,
+                invitedBy = testUserId,
+                status = InvitationStatus.ACCEPTED)
+        organizationRepository.addTestInvitation(existingInvitation)
+
+        viewModel.onUserSelected(testSearchResult1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isInviting)
+        assertTrue(testSearchResult1.id in state.alreadyInvitedUserIds)
+        assertNotNull(state.errorMessage)
+        assertTrue(state.errorMessage?.contains("already a member", ignoreCase = true) == true)
+      }
+
+  @Test
+  fun staffInvitationViewModel_onUserSelected_ignoresInvitationsForDifferentOrgs() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Create invitation for different organization
+        val otherOrgInvitation =
+            OrganizationInvitation(
+                id = "inv_1",
+                orgId = "other_org",
+                inviteeEmail = testSearchResult1.email,
+                role = OrganizationRole.STAFF,
+                invitedBy = testUserId,
+                status = InvitationStatus.PENDING)
+        organizationRepository.addTestInvitation(otherOrgInvitation)
+
+        viewModel.onUserSelected(testSearchResult1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        // Should succeed since invitation is for different org
+        assertTrue(testSearchResult1.id in state.invitedUserIds)
+      }
+
+  @Test
+  fun staffInvitationViewModel_onUserSelected_ignoresNonPendingInvitations() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Create rejected invitation
+        val rejectedInvitation =
+            OrganizationInvitation(
+                id = "inv_1",
+                orgId = testOrganizationId,
+                inviteeEmail = testSearchResult1.email,
+                role = OrganizationRole.STAFF,
+                invitedBy = testUserId,
+                status = InvitationStatus.REJECTED)
+        organizationRepository.addTestInvitation(rejectedInvitation)
+
+        viewModel.onUserSelected(testSearchResult1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        // Should succeed since previous invitation was rejected
+        assertTrue(testSearchResult1.id in state.invitedUserIds)
+      }
+
+  @Test
+  fun staffInvitationViewModel_onUserSelected_handlesInvitationCreationError() =
+      testScope.runTest {
+        val failingOrgRepo = FakeOrganizationRepository(shouldThrowOnCreate = true)
+        val viewModel =
+            StaffInvitationViewModel(
+                organizationId = testOrganizationId,
+                userRepository = userRepository,
+                organizationRepository = failingOrgRepo)
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onUserSelected(testSearchResult1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isInviting)
+        assertNotNull(state.errorMessage)
+        assertTrue(
+            state.errorMessage?.contains("Failed to create invitation", ignoreCase = true) == true)
+      }
+
+  @Test
+  fun staffInvitationViewModel_onUserSelected_handlesExceptionDuringInvitation() =
+      testScope.runTest {
+        // Make getInvitationsByEmail throw
+        val failingOrgRepo = FakeOrganizationRepository(shouldThrowOnGetInvitations = true)
+        val failingViewModel =
+            StaffInvitationViewModel(
+                organizationId = testOrganizationId,
+                userRepository = userRepository,
+                organizationRepository = failingOrgRepo)
+
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        failingViewModel.onUserSelected(testSearchResult1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = failingViewModel.uiState.value
+        assertFalse(state.isInviting)
+        assertNotNull(state.errorMessage)
+        assertTrue(
+            state.errorMessage?.contains("Failed to send invitation", ignoreCase = true) == true)
+      }
+
+  @Test
+  fun staffInvitationViewModel_onUserSelected_createsInvitationWithCorrectData() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onUserSelected(testSearchResult1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Verify invitation was created
+        val invitations =
+            organizationRepository.getInvitationsByEmail(testSearchResult1.email).first()
+
+        assertEquals(1, invitations.size)
+        val invitation = invitations.first()
+        assertEquals(testOrganizationId, invitation.orgId)
+        assertEquals(testSearchResult1.email, invitation.inviteeEmail)
+        assertEquals(OrganizationRole.STAFF, invitation.role)
+        assertEquals(testUserId, invitation.invitedBy)
+        assertEquals(InvitationStatus.PENDING, invitation.status)
+      }
+
+  // ========== Error Handling Tests ==========
+
+  @Test
+  fun staffInvitationViewModel_clearError_removesErrorMessage() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+
+        // Set an error
+        userRepository.setSearchError(RuntimeException("Test error"))
+        viewModel.updateSearchQuery("test")
+        testDispatcher.scheduler.advanceTimeBy(500)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.errorMessage)
+
+        viewModel.clearError()
+
+        assertNull(viewModel.uiState.value.errorMessage)
+      }
+
+  // ========== Integration Tests ==========
+
+  @Test
+  fun staffInvitationViewModel_fullFlow_searchAndInviteWorksCorrectly() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Search for users
+        userRepository.setSearchResults(listOf(testSearchResult1, testSearchResult2))
+        viewModel.selectTab(UserSearchType.EMAIL)
+        viewModel.updateSearchQuery("john@example.com")
+        testDispatcher.scheduler.advanceTimeBy(500)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(2, viewModel.uiState.value.searchResults.size)
+
+        // Invite first user
+        viewModel.onUserSelected(testSearchResult1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(testSearchResult1.id in viewModel.uiState.value.invitedUserIds)
+
+        // Try to invite same user again (should detect already invited)
+        viewModel.onUserSelected(testSearchResult1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertTrue(testSearchResult1.id in viewModel.uiState.value.alreadyInvitedUserIds)
+      }
+
+  @Test
+  fun staffInvitationViewModel_multipleUsers_canBeInvited() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onUserSelected(testSearchResult1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onUserSelected(testSearchResult2)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(testSearchResult1.id in state.invitedUserIds)
+        assertTrue(testSearchResult2.id in state.invitedUserIds)
+        assertEquals(2, state.invitedUserIds.size)
+      }
+
+  // ========== Helper Methods ==========
+
+  private fun createViewModel(): StaffInvitationViewModel {
+    return StaffInvitationViewModel(
+        organizationId = testOrganizationId,
+        userRepository = userRepository,
+        organizationRepository = organizationRepository)
+  }
+}

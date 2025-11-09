@@ -23,7 +23,8 @@ import kotlinx.coroutines.tasks.await
  */
 class AuthRepositoryFirebase(
     private val auth: FirebaseAuth = Firebase.auth,
-    private val helper: GoogleSignInHelper = DefaultGoogleSignInHelper()
+    private val helper: GoogleSignInHelper = DefaultGoogleSignInHelper(),
+    private val userRepositoryProvider: () -> UserRepositoryFirebase = { UserRepositoryFirebase() }
 ) : AuthRepository {
 
   fun getGoogleSignInOption(serverClientId: String) =
@@ -44,7 +45,7 @@ class AuthRepositoryFirebase(
         }
 
         // Get user or create user if not exists
-        val userRepo = UserRepositoryFirebase()
+        val userRepo = userRepositoryProvider()
         userRepo.getOrCreateUser()
 
         return Result.success(user)
