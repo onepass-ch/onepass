@@ -73,7 +73,7 @@ class BecomeOrganizerViewModel(
     private val repository: OrganizationRepository = OrganizationRepositoryFirebase()
 ) : ViewModel() {
 
-  private val _formState =g MutableStateFlow(BecomeOrganizerFormState())
+  private val _formState = MutableStateFlow(BecomeOrganizerFormState())
   /** Public form state */
   val formState: StateFlow<BecomeOrganizerFormState> = _formState.asStateFlow()
   /** Public UI state */
