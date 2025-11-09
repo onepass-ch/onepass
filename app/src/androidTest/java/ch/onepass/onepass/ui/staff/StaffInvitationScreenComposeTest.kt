@@ -139,16 +139,17 @@ class StaffInvitationScreenComposeTest {
 
     composeRule.onNodeWithTag(StaffInvitationTestTags.RESULTS_LIST).assertIsDisplayed()
 
-    // Find all list items - the first one should be "Alice Keller" (invited), second is "Bob Smith" (normal)
+    // Find all list items - the first one should be "Alice Keller" (invited), second is "Bob Smith"
+    // (normal)
     val allListItems =
         composeRule.onAllNodesWithTag(StaffTestTags.Item.LIST_ITEM, useUnmergedTree = true)
-    
+
     // Verify we have 2 items
     org.junit.Assert.assertEquals(2, allListItems.fetchSemanticsNodes().size)
-    
+
     // First item (Alice Keller - invited) should not have click action
     allListItems[0].assertHasNoClickAction()
-    
+
     // Second item (Bob Smith - normal) should have click action
     allListItems[1].assertHasClickAction()
   }
@@ -170,16 +171,17 @@ class StaffInvitationScreenComposeTest {
 
     composeRule.onNodeWithTag(StaffInvitationTestTags.RESULTS_LIST).assertIsDisplayed()
 
-    // Find all list items - the first one should be "Alice Keller" (already invited), second is "Bob Smith" (normal)
+    // Find all list items - the first one should be "Alice Keller" (already invited), second is
+    // "Bob Smith" (normal)
     val allListItems =
         composeRule.onAllNodesWithTag(StaffTestTags.Item.LIST_ITEM, useUnmergedTree = true)
-    
+
     // Verify we have 2 items
     org.junit.Assert.assertEquals(2, allListItems.fetchSemanticsNodes().size)
-    
+
     // First item (Alice Keller - already invited) should not have click action
     allListItems[0].assertHasNoClickAction()
-    
+
     // Second item (Bob Smith - normal) should have click action
     allListItems[1].assertHasClickAction()
   }
