@@ -37,7 +37,7 @@ class TicketScanRepositoryFirebaseTest {
   @Test
   fun returnsAcceptedDecision() = runTest {
     val data =
-      mapOf("status" to "accepted", "ticketId" to "T123", "scannedAt" to 111L, "remaining" to 2)
+        mapOf("status" to "accepted", "ticketId" to "T123", "scannedAt" to 111L, "remaining" to 2)
     every { result.data } returns data
     every { callable.call(any()) } returns Tasks.forResult(result)
 
@@ -54,12 +54,12 @@ class TicketScanRepositoryFirebaseTest {
   fun acceptedDecisionHandlesIntNumbersAndNullRemaining() = runTest {
     // scannedAt as Int, remaining absent
     val data =
-      mapOf(
-        "status" to "ACCEPTED", // uppercase to test lowercase() path
-        "ticketId" to "T999",
-        "scannedAt" to 321, // Int instead of Long
-        // no remaining
-      )
+        mapOf(
+            "status" to "ACCEPTED", // uppercase to test lowercase() path
+            "ticketId" to "T999",
+            "scannedAt" to 321, // Int instead of Long
+            // no remaining
+        )
     every { result.data } returns data
     every { callable.call(any()) } returns Tasks.forResult(result)
 
@@ -115,8 +115,8 @@ class TicketScanRepositoryFirebaseTest {
   @Test
   fun failsWhenMissingStatusInResponse() = runTest {
     val data =
-      mapOf( // deliberately no "status"
-        "ticketId" to "T123")
+        mapOf( // deliberately no "status"
+            "ticketId" to "T123")
     every { result.data } returns data
     every { callable.call(any()) } returns Tasks.forResult(result)
 

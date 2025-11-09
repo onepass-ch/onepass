@@ -12,12 +12,10 @@ import kotlinx.coroutines.tasks.await
  */
 class TicketScanRepositoryFirebase : TicketScanRepository {
 
-    private val functions = Firebase.functions
+  private val functions = Firebase.functions
 
-    override suspend fun validateByPass(
-        qrText: String,
-        eventId: String
-    ): Result<ScanDecision> = runCatching {
+  override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> =
+      runCatching {
 
         // Basic client-side guardrails — prevents useless requests
         require(qrText.isNotBlank()) { "QR empty" }
@@ -38,10 +36,10 @@ class TicketScanRepositoryFirebase : TicketScanRepository {
 
         // Accepted flow: backend confirms first scan + updates database
         if (status == "accepted") {
-            return@runCatching ScanDecision.Accepted(
-                ticketId = data[KEY_TICKET_ID] as? String,
-                scannedAtSeconds = (data[KEY_SCANNED_AT] as? Number)?.toLong(),
-                remaining = (data[KEY_REMAINING] as? Number)?.toInt())
+          return@runCatching ScanDecision.Accepted(
+              ticketId = data[KEY_TICKET_ID] as? String,
+              scannedAtSeconds = (data[KEY_SCANNED_AT] as? Number)?.toLong(),
+              remaining = (data[KEY_REMAINING] as? Number)?.toInt())
         }
 
         // Rejected flow: backend explains reason (unregistered / already scanned / etc.)
@@ -52,15 +50,15 @@ class TicketScanRepositoryFirebase : TicketScanRepository {
 
         ScanDecision.Rejected(
             reason = reason, scannedAtSeconds = (data[KEY_SCANNED_AT] as? Number)?.toLong())
-    }
+      }
 
-    private companion object {
-        const val FN_VALIDATE = "validateEntryByPass"
+  private companion object {
+    const val FN_VALIDATE = "validateEntryByPass"
 
-        const val KEY_STATUS = "status"
-        const val KEY_REASON = "reason"
-        const val KEY_TICKET_ID = "ticketId"
-        const val KEY_SCANNED_AT = "scannedAt"
-        const val KEY_REMAINING = "remaining"
-    }
+    const val KEY_STATUS = "status"
+    const val KEY_REASON = "reason"
+    const val KEY_TICKET_ID = "ticketId"
+    const val KEY_SCANNED_AT = "scannedAt"
+    const val KEY_REMAINING = "remaining"
+  }
 }
