@@ -128,7 +128,7 @@ class ScannerViewModelTest {
         val slowRepo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 kotlinx.coroutines.delay(500)
@@ -171,7 +171,7 @@ class ScannerViewModelTest {
         val slowRepo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 kotlinx.coroutines.delay(500)
@@ -240,15 +240,13 @@ class ScannerViewModelTest {
         assertEquals("Invalid QR format", state.message)
       }
 
-  // ==================== NEW TESTS WITH REAL REPOSITORY ====================
-
   @Test
   fun acceptedDecisionShouldUpdateState() =
       runTest(testDispatcher) {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.success(
@@ -277,7 +275,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.success(ScanDecision.Accepted(ticketId = "ticket-789"))
@@ -302,7 +300,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.success(
@@ -324,7 +322,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.success(
@@ -346,7 +344,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.success(
@@ -368,7 +366,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.success(ScanDecision.Rejected(reason = ScanDecision.Reason.REVOKED))
@@ -389,7 +387,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.success(ScanDecision.Rejected(reason = ScanDecision.Reason.UNKNOWN))
@@ -410,7 +408,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.success(
@@ -436,7 +434,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.failure(RuntimeException("Network timeout"))
@@ -457,7 +455,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.failure(RuntimeException())
@@ -478,7 +476,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.failure(RuntimeException("Connection failed"))
@@ -503,7 +501,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.success(
@@ -529,7 +527,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.success(ScanDecision.Accepted(ticketId = "test-789"))
@@ -558,7 +556,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 kotlinx.coroutines.delay(100)
@@ -581,7 +579,7 @@ class ScannerViewModelTest {
         advanceUntilIdle()
 
         assertTrue(wasProcessing)
-        assertFalse(viewModel.state.value.isProcessing) // Should be false after completion
+        assertFalse(viewModel.state.value.isProcessing)
         job.cancel()
       }
 
@@ -592,7 +590,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 callCount++
@@ -617,7 +615,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.success(ScanDecision.Accepted(ticketId = "test"))
@@ -676,7 +674,7 @@ class ScannerViewModelTest {
               private var counter = 0
 
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 counter++
@@ -704,7 +702,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.failure(RuntimeException("Error"))
@@ -724,7 +722,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.success(ScanDecision.Rejected(reason = ScanDecision.Reason.REVOKED))
@@ -744,7 +742,7 @@ class ScannerViewModelTest {
         val repo =
             object : TicketScanRepository {
               override suspend fun validateByPass(
-                  passQr: String,
+                  qrText: String,
                   eventId: String
               ): Result<ScanDecision> {
                 return Result.success(
