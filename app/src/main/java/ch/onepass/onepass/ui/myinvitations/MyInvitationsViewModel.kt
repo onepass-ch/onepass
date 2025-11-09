@@ -27,12 +27,15 @@ import kotlinx.coroutines.launch
  * @property invitations List of pending invitations for the current user.
  * @property loading Whether the invitations are currently being loaded.
  * @property errorMessage Error message to display if an operation fails, null if no error.
+ * @property successMessage Success message to display after a successful operation, null if no
+ *   success message.
  * @property userEmail Email address of the current user, null if not loaded or not logged in.
  */
 data class MyInvitationsUiState(
     val invitations: List<OrganizationInvitation> = emptyList(),
     val loading: Boolean = true,
     val errorMessage: String? = null,
+    val successMessage: String? = null,
     val userEmail: String? = null
 )
 
@@ -109,15 +112,23 @@ class MyInvitationsViewModel(
    * 1. User not logged in or still loading:
    *     - `loading = true`
    *     - `userEmail = null`
+   *     - `errorMessage = null`
    *     - `invitations = emptyList()` (initial state, never updated from repository)
    * 2. User logged in but has no pending invitations:
    *     - `loading = false`
    *     - `userEmail != null` (e.g., "user@example.com")
+   *     - `errorMessage = null`
    *     - `invitations = emptyList()` (updated from repository after query)
    * 3. User logged in with pending invitations:
    *     - `loading = false`
    *     - `userEmail != null`
+   *     - `errorMessage = null`
    *     - `invitations = [list of pending invitations]`
+   * 4. Error state (loading failed):
+   *     - `loading = false`
+   *     - `userEmail = null` (or may be set if error occurred after login)
+   *     - `errorMessage != null`
+   *     - `invitations = emptyList()`
    *
    * The key distinction: In case 1, invitations never gets updated (stays at initial emptyList()).
    * In case 2, invitations is explicitly updated to emptyList() after a successful repository
@@ -125,8 +136,11 @@ class MyInvitationsViewModel(
    */
   val state: StateFlow<MyInvitationsUiState> =
       combine(invitations, _uiState) { invs, currentState ->
-            // loading is true when userEmail is null (user not loaded or not logged in)
-            currentState.copy(invitations = invs, loading = currentState.userEmail == null)
+            // loading is true only when userEmail is null AND there's no error
+            // If there's an error, we should stop loading and show the error message
+            currentState.copy(
+                invitations = invs,
+                loading = currentState.userEmail == null && currentState.errorMessage == null)
           }
           .stateIn(viewModelScope, SharingStarted.Eagerly, MyInvitationsUiState(loading = true))
 
@@ -139,6 +153,11 @@ class MyInvitationsViewModel(
    *
    * This method retrieves the current user and extracts their email, which is then used to fetch
    * their invitations.
+   *
+   * Note: When an error occurs, we set both errorMessage and userEmail to null. The loading state
+   * is calculated as `userEmail == null && errorMessage == null`, so when there's an error, loading
+   * will be false (not true), preventing the loading spinner from showing alongside the error
+   * message.
    */
   private fun loadUserEmail() {
     viewModelScope.launch {
@@ -147,14 +166,23 @@ class MyInvitationsViewModel(
         if (user == null || user.email.isBlank()) {
           _uiState.value =
               _uiState.value.copy(
-                  errorMessage = "User not found or not logged in", userEmail = null)
+                  errorMessage = "User not found or not logged in",
+                  userEmail = null,
+                  successMessage = null)
         } else {
-          _uiState.value = _uiState.value.copy(userEmail = user.email, errorMessage = null)
+          _uiState.value =
+              _uiState.value.copy(
+                  userEmail = user.email, errorMessage = null, successMessage = null)
         }
       } catch (e: Exception) {
+        // When error occurs, set errorMessage and userEmail to null.
+        // This ensures loading = false (since errorMessage != null),
+        // so users won't see loading spinner and error message simultaneously.
         _uiState.value =
             _uiState.value.copy(
-                errorMessage = e.message ?: "Failed to load user information", userEmail = null)
+                errorMessage = e.message ?: "Failed to load user information",
+                userEmail = null,
+                successMessage = null)
       }
     }
   }
@@ -171,17 +199,24 @@ class MyInvitationsViewModel(
   fun acceptInvitation(invitationId: String) {
     viewModelScope.launch {
       try {
-        _uiState.value = _uiState.value.copy(errorMessage = null)
+        _uiState.value = _uiState.value.copy(errorMessage = null, successMessage = null)
 
         val result =
             organizationRepository.updateInvitationStatus(
                 invitationId = invitationId, newStatus = InvitationStatus.ACCEPTED)
 
-        result.onFailure { error ->
-          _uiState.value =
-              _uiState.value.copy(errorMessage = error.message ?: "Failed to accept invitation")
-        }
-        // On success, the Flow will automatically update the state
+        result
+            .onSuccess {
+              // Provide success feedback to the user
+              _uiState.value =
+                  _uiState.value.copy(successMessage = "Invitation accepted successfully")
+              // Clear success message after a delay (UI can handle this with a timeout)
+              // The invitation will automatically disappear from the list via the Flow update
+            }
+            .onFailure { error ->
+              _uiState.value =
+                  _uiState.value.copy(errorMessage = error.message ?: "Failed to accept invitation")
+            }
       } catch (e: Exception) {
         _uiState.value =
             _uiState.value.copy(errorMessage = e.message ?: "Failed to accept invitation")
@@ -201,17 +236,24 @@ class MyInvitationsViewModel(
   fun rejectInvitation(invitationId: String) {
     viewModelScope.launch {
       try {
-        _uiState.value = _uiState.value.copy(errorMessage = null)
+        _uiState.value = _uiState.value.copy(errorMessage = null, successMessage = null)
 
         val result =
             organizationRepository.updateInvitationStatus(
                 invitationId = invitationId, newStatus = InvitationStatus.REJECTED)
 
-        result.onFailure { error ->
-          _uiState.value =
-              _uiState.value.copy(errorMessage = error.message ?: "Failed to reject invitation")
-        }
-        // On success, the Flow will automatically update the state
+        result
+            .onSuccess {
+              // Provide success feedback to the user
+              _uiState.value =
+                  _uiState.value.copy(successMessage = "Invitation rejected successfully")
+              // Clear success message after a delay (UI can handle this with a timeout)
+              // The invitation will automatically disappear from the list via the Flow update
+            }
+            .onFailure { error ->
+              _uiState.value =
+                  _uiState.value.copy(errorMessage = error.message ?: "Failed to reject invitation")
+            }
       } catch (e: Exception) {
         _uiState.value =
             _uiState.value.copy(errorMessage = e.message ?: "Failed to reject invitation")
