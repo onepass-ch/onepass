@@ -105,7 +105,7 @@ fun StaffInvitationScreen(
               TabRow(
                   modifier = Modifier.fillMaxWidth().testTag(StaffInvitationTestTags.TAB_ROW),
                   selectedTabIndex = selectedTabIndex,
-                  containerColor = colorResource(id = R.color.surface),
+                  containerColor = colorResource(id = R.color.screen_surface),
                   contentColor = colorResource(id = R.color.on_surface),
                   indicator = { tabPositions ->
                     TabRowDefaults.Indicator(

@@ -41,4 +41,11 @@
     <color name="surface">#1E1E1E</color>
     <color name="on_surface">#FFFFFF</color>
     <color name="primary">#BB86FC</color>
+
+    <!-- Screen Background Colors (Figma: #1A1A1A) -->
+    <color name="screen_background">#1A1A1A</color>
+    <color name="screen_surface">#1A1A1A</color>
+
+    <!-- Staff List Item Background Color (Figma: #262626) -->
+    <color name="staff_list_item_background">#262626</color>
 </resources>

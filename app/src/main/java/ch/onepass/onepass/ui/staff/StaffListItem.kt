@@ -22,6 +22,8 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.colorResource
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.staff.StaffSearchResult
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
@@ -75,6 +77,7 @@ fun StaffListItem(
       modifier =
           modifier
               .fillMaxWidth()
+              .background(colorResource(id = R.color.staff_list_item_background))
               .then(
                   if (enabled && onClick != null) {
                     Modifier.clickable(role = Role.Button) { onClick() }
