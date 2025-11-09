@@ -2,7 +2,6 @@ package ch.onepass.onepass.ui.organization
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertCountEquals
-
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
@@ -560,7 +559,9 @@ class OrganizerProfileScreenComposeTest {
     val viewModel = MockOrganizerProfileViewModel(organization = organization, events = events)
 
     composeTestRule.setContent {
-      OnePassTheme { OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel) }
+      OnePassTheme {
+        OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel)
+      }
     }
 
     composeTestRule.waitUntil(timeoutMillis = 5_000) { !viewModel.state.value.loading }
@@ -588,11 +589,16 @@ class OrganizerProfileScreenComposeTest {
     val organizationId = "org-follow"
     val organization =
         createTestOrganization(
-            id = organizationId, name = "Follow Org", description = "Follow description", followerCount = 9)
+            id = organizationId,
+            name = "Follow Org",
+            description = "Follow description",
+            followerCount = 9)
     val viewModel = MockOrganizerProfileViewModel(organization = organization, events = emptyList())
 
     composeTestRule.setContent {
-      OnePassTheme { OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel) }
+      OnePassTheme {
+        OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel)
+      }
     }
 
     composeTestRule.waitUntil(timeoutMillis = 5_000) { !viewModel.state.value.loading }
@@ -620,7 +626,10 @@ class OrganizerProfileScreenComposeTest {
     val organizationId = "org-tabs"
     val organization =
         createTestOrganization(
-            id = organizationId, name = "Tabs Org", description = "Tabs description", followerCount = 42)
+            id = organizationId,
+            name = "Tabs Org",
+            description = "Tabs description",
+            followerCount = 42)
     val events =
         listOf(
             createEvent(
@@ -638,7 +647,9 @@ class OrganizerProfileScreenComposeTest {
     val viewModel = MockOrganizerProfileViewModel(organization = organization, events = events)
 
     composeTestRule.setContent {
-      OnePassTheme { OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel) }
+      OnePassTheme {
+        OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel)
+      }
     }
 
     composeTestRule.waitUntil(timeoutMillis = 5_000) { !viewModel.state.value.loading }
@@ -667,7 +678,9 @@ class OrganizerProfileScreenComposeTest {
     val viewModel = MockOrganizerProfileViewModel(organization = organization, events = emptyList())
 
     composeTestRule.setContent {
-      OnePassTheme { OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel) }
+      OnePassTheme {
+        OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel)
+      }
     }
 
     composeTestRule.waitUntil(timeoutMillis = 5_000) { !viewModel.state.value.loading }
@@ -678,8 +691,7 @@ class OrganizerProfileScreenComposeTest {
       viewModel.recordedEffects.any { it is OrganizerProfileEffect.OpenWebsite }
     }
 
-    val effect =
-        viewModel.recordedEffects.last() as OrganizerProfileEffect.OpenWebsite
+    val effect = viewModel.recordedEffects.last() as OrganizerProfileEffect.OpenWebsite
     assertEquals(organization.website, effect.url)
   }
 
@@ -696,7 +708,9 @@ class OrganizerProfileScreenComposeTest {
     val viewModel = MockOrganizerProfileViewModel(organization = organization, events = emptyList())
 
     composeTestRule.setContent {
-      OnePassTheme { OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel) }
+      OnePassTheme {
+        OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel)
+      }
     }
 
     composeTestRule.waitUntil(timeoutMillis = 5_000) { !viewModel.state.value.loading }
@@ -709,8 +723,7 @@ class OrganizerProfileScreenComposeTest {
       }
     }
 
-    val effect =
-        viewModel.recordedEffects.last() as OrganizerProfileEffect.OpenSocialMedia
+    val effect = viewModel.recordedEffects.last() as OrganizerProfileEffect.OpenSocialMedia
     assertEquals("instagram", effect.platform)
     assertEquals(organization.instagram, effect.url)
   }
@@ -720,7 +733,10 @@ class OrganizerProfileScreenComposeTest {
     val organizationId = "org-events"
     val organization =
         createTestOrganization(
-            id = organizationId, name = "Events Org", description = "Events description", followerCount = 15)
+            id = organizationId,
+            name = "Events Org",
+            description = "Events description",
+            followerCount = 15)
     val events =
         listOf(
             createEvent(
@@ -732,7 +748,9 @@ class OrganizerProfileScreenComposeTest {
     val viewModel = MockOrganizerProfileViewModel(organization = organization, events = events)
 
     composeTestRule.setContent {
-      OnePassTheme { OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel) }
+      OnePassTheme {
+        OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel)
+      }
     }
 
     composeTestRule.waitUntil(timeoutMillis = 5_000) { !viewModel.state.value.loading }
@@ -743,8 +761,7 @@ class OrganizerProfileScreenComposeTest {
       viewModel.recordedEffects.any { it is OrganizerProfileEffect.NavigateToEvent }
     }
 
-    val effect =
-        viewModel.recordedEffects.last() as OrganizerProfileEffect.NavigateToEvent
+    val effect = viewModel.recordedEffects.last() as OrganizerProfileEffect.NavigateToEvent
     assertEquals("event-navigate", effect.eventId)
   }
 
