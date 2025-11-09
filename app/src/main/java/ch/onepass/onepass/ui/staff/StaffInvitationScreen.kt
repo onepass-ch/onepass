@@ -1,6 +1,5 @@
 package ch.onepass.onepass.ui.staff
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -73,8 +72,7 @@ fun StaffInvitationScreen(
     modifier: Modifier = Modifier
 ) {
   val uiState by viewModel.uiState.collectAsState()
-  val selectedTabIndex =
-      if (uiState.selectedTab == UserSearchType.DISPLAY_NAME) 0 else 1
+  val selectedTabIndex = if (uiState.selectedTab == UserSearchType.DISPLAY_NAME) 0 else 1
 
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(StaffInvitationTestTags.SCREEN),
@@ -111,8 +109,7 @@ fun StaffInvitationScreen(
                   contentColor = colorResource(id = R.color.on_surface),
                   indicator = { tabPositions ->
                     TabRowDefaults.Indicator(
-                        modifier =
-                            Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+                        modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
                         height = 4.dp,
                         color = colorResource(id = R.color.tab_indicator))
                   }) {
@@ -198,16 +195,13 @@ fun StaffInvitationScreen(
 
                             StaffListItem(
                                 user = user,
-                                onClick = { viewModel.onUserSelected(user) },
-                                modifier =
-                                    Modifier.fillMaxWidth()
-                                        .then(
-                                            if (isInvited || isAlreadyInvited) {
-                                              Modifier.background(
-                                                  color = Color(0xFF1C1C1C).copy(alpha = 0.5f))
-                                            } else {
-                                              Modifier
-                                            }))
+                                onClick =
+                                    if (isInvited || isAlreadyInvited) null
+                                    else {
+                                      { viewModel.onUserSelected(user) }
+                                    },
+                                enabled = !(isInvited || isAlreadyInvited),
+                                modifier = Modifier.fillMaxWidth())
                           }
                         }
                   }

@@ -68,13 +68,19 @@ object StaffTestTags {
 fun StaffListItem(
     user: StaffSearchResult,
     modifier: Modifier = Modifier,
-    onClick: (StaffSearchResult) -> Unit
+    onClick: (() -> Unit)?,
+    enabled: Boolean = true
 ) {
   ListItem(
       modifier =
           modifier
               .fillMaxWidth()
-              .clickable(role = Role.Button) { onClick(user) }
+              .then(
+                  if (enabled && onClick != null) {
+                    Modifier.clickable(role = Role.Button) { onClick() }
+                  } else {
+                    Modifier
+                  })
               .testTag(StaffTestTags.Item.LIST_ITEM),
       leadingContent = {
         Avatar(
