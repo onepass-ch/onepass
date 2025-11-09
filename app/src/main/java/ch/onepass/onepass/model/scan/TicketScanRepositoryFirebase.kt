@@ -58,7 +58,6 @@ class TicketScanRepositoryFirebase : TicketScanRepository {
 
   private companion object {
     const val FN_VALIDATE = "validateEntryByPass"
-
     const val KEY_STATUS = "status"
     const val KEY_REASON = "reason"
     const val KEY_TICKET_ID = "ticketId"
