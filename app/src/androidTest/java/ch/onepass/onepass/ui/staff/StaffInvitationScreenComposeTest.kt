@@ -18,7 +18,9 @@ class StaffInvitationScreenComposeTest {
   @get:Rule val composeRule = createAndroidComposeRule<ComponentActivity>()
 
   private fun setContent(viewModel: StaffInvitationViewModel) {
-    composeRule.setContent { OnePassTheme { StaffInvitationScreen(viewModel, onNavigateBack = {}) } }
+    composeRule.setContent {
+      OnePassTheme { StaffInvitationScreen(viewModel, onNavigateBack = {}) }
+    }
   }
 
   private fun setUiState(viewModel: StaffInvitationViewModel, state: StaffInvitationUiState) {
@@ -68,7 +70,9 @@ class StaffInvitationScreenComposeTest {
     setUiState(
         vm,
         StaffInvitationUiState(
-            selectedTab = UserSearchType.DISPLAY_NAME, searchQuery = "", searchResults = emptyList()))
+            selectedTab = UserSearchType.DISPLAY_NAME,
+            searchQuery = "",
+            searchResults = emptyList()))
 
     composeRule.onNodeWithTag(StaffInvitationTestTags.EMPTY_STATE).assertIsDisplayed()
   }
@@ -115,4 +119,3 @@ class StaffInvitationScreenComposeTest {
     composeRule.onNodeWithTag(StaffInvitationTestTags.RESULTS_LIST).assertIsNotDisplayed()
   }
 }
-
