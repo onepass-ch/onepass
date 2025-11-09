@@ -89,12 +89,12 @@ fun PrefixPhoneRow(
                 onValueChange = {},
                 readOnly = true,
                 isError = prefixError != null,
-                label = { Text("Country") },
+                placeholder = { Text("Country") },
                 singleLine = true,
                 trailingIcon = {
                   ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
                 },
-                modifier = Modifier.menuAnchor())
+                modifier = Modifier.menuAnchor().fillMaxWidth().height(56.dp))
 
             // Dropdown Menu Items
             ExposedDropdownMenu(
@@ -122,6 +122,8 @@ fun PrefixPhoneRow(
           onValueChange = { onPhoneChange(it.filter(Char::isDigit)) },
           modifier =
               Modifier.weight(0.55f)
+                  .fillMaxWidth()
+                  .height(56.dp)
                   .onFocusChanged { onPhoneFocusChanged(it.isFocused) }
                   .then(if (phoneTestTag != null) Modifier.testTag(phoneTestTag) else Modifier),
           placeholder = { Text("Phone") },
@@ -133,6 +135,7 @@ fun PrefixPhoneRow(
     prefixError?.let {
       Text(it, color = colorScheme.error, style = MaterialTheme.typography.bodySmall)
     }
+
     Spacer(Modifier.height(16.dp))
   }
 }
