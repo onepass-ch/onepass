@@ -15,8 +15,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -64,14 +64,27 @@ class MyInvitationsViewModel(
    *
    * This Flow automatically updates when invitations change in the repository. It filters to only
    * include invitations with PENDING status.
+   *
+   * When userEmail is null (user not logged in or still loading), this flow does not emit values,
+   * preserving the initial empty list. This allows proper distinction between:
+   * - Not logged in: invitations remains at initial emptyList() (never updated)
+   * - Logged in but no invitations: invitations is updated to emptyList() after query
+   *
+   * The `state` property combines this with `loading` and `userEmail` for complete state
+   * management.
    */
   val invitations: StateFlow<List<OrganizationInvitation>> =
       _uiState
           .map { it.userEmail }
           .flatMapLatest { email ->
             if (email.isNullOrBlank()) {
-              flowOf(emptyList<OrganizationInvitation>())
+              // When email is null, don't emit any values. This preserves the initial state
+              // and allows distinction between "not loaded" and "loaded but empty".
+              // The StateFlow will maintain its initial value (emptyList()) until email is
+              // available.
+              emptyFlow()
             } else {
+              // When email is available, fetch invitations from repository
               organizationRepository
                   .getInvitationsByEmail(email)
                   .map { allInvitations ->
@@ -89,9 +102,30 @@ class MyInvitationsViewModel(
           }
           .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
 
-  /** Combined UI state that includes invitations, loading state, and error messages. */
+  /**
+   * Combined UI state that includes invitations, loading state, error messages, and user email.
+   *
+   * This is the primary state that UI should observe. It properly distinguishes between:
+   * 1. User not logged in or still loading:
+   *     - `loading = true`
+   *     - `userEmail = null`
+   *     - `invitations = emptyList()` (initial state, never updated from repository)
+   * 2. User logged in but has no pending invitations:
+   *     - `loading = false`
+   *     - `userEmail != null` (e.g., "user@example.com")
+   *     - `invitations = emptyList()` (updated from repository after query)
+   * 3. User logged in with pending invitations:
+   *     - `loading = false`
+   *     - `userEmail != null`
+   *     - `invitations = [list of pending invitations]`
+   *
+   * The key distinction: In case 1, invitations never gets updated (stays at initial emptyList()).
+   * In case 2, invitations is explicitly updated to emptyList() after a successful repository
+   * query.
+   */
   val state: StateFlow<MyInvitationsUiState> =
       combine(invitations, _uiState) { invs, currentState ->
+            // loading is true when userEmail is null (user not loaded or not logged in)
             currentState.copy(invitations = invs, loading = currentState.userEmail == null)
           }
           .stateIn(viewModelScope, SharingStarted.Eagerly, MyInvitationsUiState(loading = true))
