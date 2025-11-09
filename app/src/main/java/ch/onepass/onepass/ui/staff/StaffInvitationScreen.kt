@@ -31,25 +31,18 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
-import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.model.user.UserSearchType
 import ch.onepass.onepass.ui.theme.DefaultBackground
-import ch.onepass.onepass.ui.theme.OnePassTheme
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
 
 object StaffInvitationTestTags {
   const val SCREEN = "staffInvitation_screen"
@@ -274,132 +267,4 @@ private fun EmptyState(message: String, modifier: Modifier = Modifier) {
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(horizontal = 32.dp))
       }
-}
-
-/** Creates a StaffInvitationViewModel with a custom initial state for preview purposes. */
-@Suppress("UNCHECKED_CAST")
-private fun createPreviewViewModel(initialState: StaffInvitationUiState): StaffInvitationViewModel {
-  val viewModel = StaffInvitationViewModel(organizationId = "preview-org-id")
-
-  // Use reflection to set the private _uiState field
-  try {
-    val field = StaffInvitationViewModel::class.java.getDeclaredField("_uiState")
-    field.isAccessible = true
-    val currentStateFlow = field.get(viewModel) as? MutableStateFlow<StaffInvitationUiState>
-    currentStateFlow?.value = initialState
-  } catch (e: Exception) {
-    // If reflection fails, the preview will use default state
-    // This is acceptable for preview purposes
-  }
-
-  return viewModel
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun StaffInvitationScreenPreview() {
-  OnePassTheme {
-    val initialState =
-        StaffInvitationUiState(
-            selectedTab = UserSearchType.DISPLAY_NAME,
-            searchQuery = "Alice",
-            searchResults =
-                listOf(
-                    StaffSearchResult(
-                        id = "1",
-                        email = "alice@onepass.ch",
-                        displayName = "Alice Keller",
-                        avatarUrl = null),
-                    StaffSearchResult(
-                        id = "2",
-                        email = "bob@onepass.ch",
-                        displayName = "Bob Smith",
-                        avatarUrl = "https://picsum.photos/200"),
-                    StaffSearchResult(
-                        id = "3",
-                        email = "charlie@onepass.ch",
-                        displayName = "Charlie Brown",
-                        avatarUrl = null)),
-            isLoading = false,
-            isInviting = false,
-            errorMessage = null,
-            invitedUserIds = setOf("1"),
-            alreadyInvitedUserIds = emptySet())
-
-    val mockViewModel = remember { createPreviewViewModel(initialState) }
-
-    // Ensure the state is set after ViewModel initialization
-    LaunchedEffect(Unit) {
-      // Give the ViewModel a moment to initialize, then set our preview state
-      delay(100)
-      try {
-        val field = StaffInvitationViewModel::class.java.getDeclaredField("_uiState")
-        field.isAccessible = true
-        val stateFlow = field.get(mockViewModel) as? MutableStateFlow<StaffInvitationUiState>
-        stateFlow?.value = initialState
-      } catch (e: Exception) {
-        // Reflection may fail in preview, but that's okay
-      }
-    }
-
-    StaffInvitationScreen(viewModel = mockViewModel, onNavigateBack = {})
-  }
-}
-
-@Preview(showBackground = true, name = "Empty State")
-@Composable
-private fun StaffInvitationScreenEmptyPreview() {
-  OnePassTheme {
-    val initialState =
-        StaffInvitationUiState(
-            selectedTab = UserSearchType.EMAIL,
-            searchQuery = "",
-            searchResults = emptyList(),
-            isLoading = false)
-
-    val mockViewModel = remember { createPreviewViewModel(initialState) }
-
-    LaunchedEffect(Unit) {
-      delay(100)
-      try {
-        val field = StaffInvitationViewModel::class.java.getDeclaredField("_uiState")
-        field.isAccessible = true
-        val stateFlow = field.get(mockViewModel) as? MutableStateFlow<StaffInvitationUiState>
-        stateFlow?.value = initialState
-      } catch (e: Exception) {
-        // Reflection may fail in preview, but that's okay
-      }
-    }
-
-    StaffInvitationScreen(viewModel = mockViewModel, onNavigateBack = {})
-  }
-}
-
-@Preview(showBackground = true, name = "Loading")
-@Composable
-private fun StaffInvitationScreenLoadingPreview() {
-  OnePassTheme {
-    val initialState =
-        StaffInvitationUiState(
-            selectedTab = UserSearchType.DISPLAY_NAME,
-            searchQuery = "test",
-            searchResults = emptyList(),
-            isLoading = true)
-
-    val mockViewModel = remember { createPreviewViewModel(initialState) }
-
-    LaunchedEffect(Unit) {
-      delay(100)
-      try {
-        val field = StaffInvitationViewModel::class.java.getDeclaredField("_uiState")
-        field.isAccessible = true
-        val stateFlow = field.get(mockViewModel) as? MutableStateFlow<StaffInvitationUiState>
-        stateFlow?.value = initialState
-      } catch (e: Exception) {
-        // Reflection may fail in preview, but that's okay
-      }
-    }
-
-    StaffInvitationScreen(viewModel = mockViewModel, onNavigateBack = {})
-  }
 }
