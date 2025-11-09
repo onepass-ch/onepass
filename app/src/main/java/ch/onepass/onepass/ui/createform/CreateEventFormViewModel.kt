@@ -7,6 +7,7 @@ import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.event.PricingTier
+import ch.onepass.onepass.model.map.Location
 import com.google.firebase.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -35,9 +36,25 @@ class CreateEventFormViewModel(
   private val _uiState = MutableStateFlow<CreateEventUiState>(CreateEventUiState.Idle)
   val uiState: StateFlow<CreateEventUiState> = _uiState.asStateFlow()
 
+  // Field-specific validation errors
+  private val _fieldErrors = MutableStateFlow<Map<String, String>>(emptyMap())
+  val fieldErrors: StateFlow<Map<String, String>> = _fieldErrors.asStateFlow()
+
   // Track if we're in edit mode
   private var editingEventId: String? = null
   private var originalEvent: Event? = null
+
+  /** Enum defining validation errors with their keys and messages */
+  enum class ValidationError(val key: String, val message: String) {
+    TITLE("title", "Title is required"),
+    DESCRIPTION("description", "Description is required"),
+    DATE("date", "Date is required"),
+    START_TIME("startTime", "Start time is required"),
+    END_TIME("endTime", "End time is required"),
+    LOCATION("location", "Location is required"),
+    PRICE_INVALID("price", "Price must be a valid number"),
+    CAPACITY_INVALID("capacity", "Capacity must be a valid number")
+  }
 
   /** Updates the event title */
   fun updateTitle(title: String) {
@@ -138,36 +155,50 @@ class CreateEventFormViewModel(
    */
   private fun validateForm(): List<String> {
     val errors = mutableListOf<String>()
+    val fieldErrorsMap = mutableMapOf<String, String>()
     val state = _formState.value
 
     if (state.title.isBlank()) {
-      errors.add("Title is required")
+      errors.add(ValidationError.TITLE.message)
+      fieldErrorsMap[ValidationError.TITLE.key] = ValidationError.TITLE.message
     }
     if (state.description.isBlank()) {
-      errors.add("Description is required")
+      errors.add(ValidationError.DESCRIPTION.message)
+      fieldErrorsMap[ValidationError.DESCRIPTION.key] = ValidationError.DESCRIPTION.message
     }
     if (state.date.isBlank()) {
-      errors.add("Date is required")
+      errors.add(ValidationError.DATE.message)
+      fieldErrorsMap[ValidationError.DATE.key] = ValidationError.DATE.message
     }
     if (state.startTime.isBlank()) {
-      errors.add("Start time is required")
+      errors.add(ValidationError.START_TIME.message)
+      fieldErrorsMap[ValidationError.START_TIME.key] = ValidationError.START_TIME.message
     }
     if (state.endTime.isBlank()) {
-      errors.add("End time is required")
+      errors.add(ValidationError.END_TIME.message)
+      fieldErrorsMap[ValidationError.END_TIME.key] = ValidationError.END_TIME.message
     }
     if (state.location.isBlank()) {
-      errors.add("Location is required")
+      errors.add(ValidationError.LOCATION.message)
+      fieldErrorsMap[ValidationError.LOCATION.key] = ValidationError.LOCATION.message
     }
     if (state.price.isBlank()) {
       errors.add("Price is required")
-    } else {
-      state.price.toDoubleOrNull() ?: errors.add("Price must be a valid number")
+      fieldErrorsMap["price"] = "Price is required"
+    } else if (state.price.toDoubleOrNull() == null) {
+      errors.add(ValidationError.PRICE_INVALID.message)
+      fieldErrorsMap[ValidationError.PRICE_INVALID.key] = ValidationError.PRICE_INVALID.message
     }
     if (state.capacity.isBlank()) {
       errors.add("Capacity is required")
-    } else {
-      state.capacity.toIntOrNull() ?: errors.add("Capacity must be a valid number")
+      fieldErrorsMap["capacity"] = "Capacity is required"
+    } else if (state.capacity.toIntOrNull() == null) {
+      errors.add(ValidationError.CAPACITY_INVALID.message)
+      fieldErrorsMap[ValidationError.CAPACITY_INVALID.key] = ValidationError.CAPACITY_INVALID.message
     }
+
+    // Update field errors state
+    _fieldErrors.value = fieldErrorsMap
 
     return errors
   }
@@ -194,17 +225,22 @@ class CreateEventFormViewModel(
 
     return if (baseEvent != null) {
       // Update existing event
+      // Calculate tickets already sold
+      val ticketsSold = baseEvent.capacity - baseEvent.ticketsRemaining
+      val newTicketsRemaining = capacity - ticketsSold
+      
       baseEvent.copy(
           title = state.title,
           description = state.description,
+          location = if (state.location.isNotBlank()) Location(name = state.location) else baseEvent.location,
           startTime = startTimestamp,
           endTime = endTimestamp,
           capacity = capacity,
-          ticketsRemaining = capacity - (baseEvent.ticketsIssued - baseEvent.ticketsRemaining),
+          ticketsRemaining = newTicketsRemaining,
           pricingTiers =
               listOf(
                   PricingTier(
-                      name = "General", price = price, quantity = capacity, remaining = capacity)))
+                      name = "General", price = price, quantity = capacity, remaining = newTicketsRemaining)))
     } else {
       // Create new event
       Event(
@@ -213,7 +249,7 @@ class CreateEventFormViewModel(
           organizerId = organizerId,
           organizerName = organizerName,
           status = EventStatus.DRAFT,
-          location = null,
+          location = if (state.location.isNotBlank()) Location(name = state.location) else null,
           startTime = startTimestamp,
           endTime = endTimestamp,
           capacity = capacity,
@@ -279,6 +315,9 @@ class CreateEventFormViewModel(
         _uiState.value = CreateEventUiState.Error(errors.joinToString("\n"))
         return@launch
       }
+      
+      // Clear field errors if validation passes
+      _fieldErrors.value = emptyMap()
 
       // Convert form to event
       val event = formStateToEvent(organizerId, organizerName)
@@ -303,7 +342,8 @@ class CreateEventFormViewModel(
       result.fold(
           onSuccess = { eventId ->
             _uiState.value = CreateEventUiState.Success(eventId)
-            resetForm()
+            // Reset form fields but keep UI state as Success for navigation
+            resetFormFields()
           },
           onFailure = { error ->
             val action = if (editingEventId != null) "update" else "create"
@@ -312,10 +352,19 @@ class CreateEventFormViewModel(
     }
   }
 
-  /** Resets the form to initial state */
+  /** Resets only the form fields, not the UI state */
+  private fun resetFormFields() {
+    _formState.value = CreateEventFormState()
+    _fieldErrors.value = emptyMap()
+    editingEventId = null
+    originalEvent = null
+  }
+
+  /** Resets the form to initial state including UI state */
   fun resetForm() {
     _formState.value = CreateEventFormState()
     _uiState.value = CreateEventUiState.Idle
+    _fieldErrors.value = emptyMap()
     editingEventId = null
     originalEvent = null
   }

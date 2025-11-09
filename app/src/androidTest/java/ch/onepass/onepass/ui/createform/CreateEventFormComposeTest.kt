@@ -5,10 +5,18 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
+import ch.onepass.onepass.model.event.EventStatus
+import ch.onepass.onepass.model.event.PricingTier
+import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.ui.createform.CreateEventFormViewModel.ValidationError
+import com.google.firebase.Timestamp
+import io.mockk.coEvery
 import io.mockk.mockk
 import java.util.Calendar
+import java.util.Date
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -38,7 +46,7 @@ class CreateEventFormComposeTest {
   fun createEventForm_displaysTitle() {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
-    composeTestRule.onNodeWithText("Create your Event").assertIsDisplayed()
+    composeTestRule.onNodeWithText("CREATE YOUR EVENT").assertIsDisplayed()
   }
 
   @Test
@@ -104,26 +112,26 @@ class CreateEventFormComposeTest {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Find capacity field by placeholder (scroll to it first)
-    composeTestRule.onNodeWithText("ex: 100").performScrollTo().performTextInput("100")
+    composeTestRule.onNodeWithText("ex: 250").performScrollTo().performTextInput("100")
 
     // Verify the input was accepted
     composeTestRule.onNodeWithText("100").performScrollTo().assertIsDisplayed()
   }
 
   @Test
-  fun createTicketButton_isDisplayed() {
+  fun createEventButton_isDisplayed() {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Button is at the bottom, so scroll to it first
-    composeTestRule.onNodeWithText("Create event").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Create Event").performScrollTo().assertIsDisplayed()
   }
 
   @Test
-  fun createTicketButton_isClickable() {
+  fun createEventButton_isClickable() {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Button is at the bottom, so scroll to it first
-    composeTestRule.onNodeWithText("Create event").performScrollTo().assertHasClickAction()
+    composeTestRule.onNodeWithText("Create Event").performScrollTo().assertHasClickAction()
   }
 
   @Test
@@ -142,7 +150,7 @@ class CreateEventFormComposeTest {
 
     composeTestRule.onNodeWithText("ex: 12").performScrollTo().performTextInput("20")
 
-    composeTestRule.onNodeWithText("ex: 100").performScrollTo().performTextInput("50")
+    composeTestRule.onNodeWithText("ex: 250").performScrollTo().performTextInput("50")
 
     // Wait for state to update
     composeTestRule.waitForIdle()
@@ -186,7 +194,7 @@ class CreateEventFormComposeTest {
     composeTestRule.onNodeWithText("Title*").assertIsDisplayed()
 
     // The form should be scrollable to see the button at the bottom
-    composeTestRule.onNodeWithText("Create event").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Create Event").performScrollTo().assertIsDisplayed()
 
     // Verify we can scroll back to top
     composeTestRule.onNodeWithText("Title*").performScrollTo().assertIsDisplayed()
@@ -216,7 +224,7 @@ class CreateEventFormComposeTest {
     composeTestRule.waitForIdle()
 
     // Trigger recomposition by scrolling to bottom
-    composeTestRule.onNodeWithText("Create event").performScrollTo()
+    composeTestRule.onNodeWithText("Create Event").performScrollTo()
 
     // Scroll back to top to verify data is still there
     composeTestRule.onNodeWithText("Title*").performScrollTo()
@@ -301,14 +309,13 @@ class CreateEventFormComposeTest {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Click create button without filling fields
-    composeTestRule.onNodeWithText("Create event").performScrollTo().performClick()
+    composeTestRule.onNodeWithText("Create Event").performScrollTo().performClick()
 
     composeTestRule.waitForIdle()
 
-    // Scroll to top to see error messages
-    composeTestRule.onNodeWithText("Title*").performScrollTo()
-
-    composeTestRule.onNodeWithText(ValidationError.TITLE.message).assertIsDisplayed()
+    // Error message is shown in a Snackbar at the bottom
+    // The message will contain the TITLE error among others
+    composeTestRule.onNodeWithText(ValidationError.TITLE.message, substring = true).assertIsDisplayed()
   }
 
   @Test
@@ -327,13 +334,126 @@ class CreateEventFormComposeTest {
     composeTestRule.onNodeWithText("ex: 12").performScrollTo().performTextInput("abc")
 
     // Try to create
-    composeTestRule.onNodeWithText("Create event").performScrollTo().performClick()
+    composeTestRule.onNodeWithText("Create Event").performScrollTo().performClick()
 
     composeTestRule.waitForIdle()
+    
+    // Error message is shown in a Snackbar, which doesn't need scrolling
     composeTestRule
         .onNodeWithText(ValidationError.PRICE_INVALID.message)
-        .performScrollTo()
         .assertIsDisplayed()
+  }
+
+  @Test
+  fun editMode_displaysEditTitle() = runTest {
+    // Create a test event
+    val testEvent =
+        Event(
+            eventId = "test-event-id",
+            title = "Existing Event",
+            description = "Existing Description",
+            organizerId = "org-123",
+            organizerName = "Test Organizer",
+            status = EventStatus.PUBLISHED,
+            location = Location(name = "EPFL"),
+            startTime = Timestamp(Date(2025, 11, 15, 14, 30)),
+            endTime = Timestamp(Date(2025, 11, 15, 16, 30)),
+            capacity = 100,
+            ticketsRemaining = 80,
+            pricingTiers =
+                listOf(PricingTier(name = "General", price = 25.0, quantity = 100, remaining = 80)))
+
+    // Mock the repository to return the test event
+    coEvery { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+
+    // Create ViewModel with mocked repository
+    val testViewModel = CreateEventFormViewModel(mockRepository)
+
+    composeTestRule.setContent {
+      CreateEventForm(eventId = "test-event-id", viewModel = testViewModel)
+    }
+
+    // Wait for the event to load
+    composeTestRule.waitForIdle()
+
+    // Verify the title shows "EDIT YOUR EVENT"
+    composeTestRule.onNodeWithText("EDIT YOUR EVENT").assertIsDisplayed()
+  }
+
+  @Test
+  fun editMode_displaysUpdateEventButton() = runTest {
+    // Create a test event
+    val testEvent =
+        Event(
+            eventId = "test-event-id",
+            title = "Existing Event",
+            description = "Existing Description",
+            organizerId = "org-123",
+            organizerName = "Test Organizer",
+            status = EventStatus.PUBLISHED,
+            location = Location(name = "EPFL"),
+            startTime = Timestamp(Date(2025, 11, 15, 14, 30)),
+            endTime = Timestamp(Date(2025, 11, 15, 16, 30)),
+            capacity = 100,
+            ticketsRemaining = 80,
+            pricingTiers =
+                listOf(PricingTier(name = "General", price = 25.0, quantity = 100, remaining = 80)))
+
+    // Mock the repository to return the test event
+    coEvery { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+
+    // Create ViewModel with mocked repository
+    val testViewModel = CreateEventFormViewModel(mockRepository)
+
+    composeTestRule.setContent {
+      CreateEventForm(eventId = "test-event-id", viewModel = testViewModel)
+    }
+
+    // Wait for the event to load
+    composeTestRule.waitForIdle()
+
+    // Scroll to button and verify it shows "Update Event"
+    composeTestRule.onNodeWithText("Update Event").performScrollTo().assertIsDisplayed()
+  }
+
+  @Test
+  fun editMode_populatesFormFields() = runTest {
+    // Create a test event
+    val testEvent =
+        Event(
+            eventId = "test-event-id",
+            title = "Existing Event",
+            description = "Existing Description",
+            organizerId = "org-123",
+            organizerName = "Test Organizer",
+            status = EventStatus.PUBLISHED,
+            location = Location(name = "EPFL"),
+            startTime = Timestamp(Date(2025, 11, 15, 14, 30)),
+            endTime = Timestamp(Date(2025, 11, 15, 16, 30)),
+            capacity = 100,
+            ticketsRemaining = 80,
+            pricingTiers =
+                listOf(PricingTier(name = "General", price = 25.0, quantity = 100, remaining = 80)))
+
+    // Mock the repository to return the test event
+    coEvery { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+
+    // Create ViewModel with mocked repository
+    val testViewModel = CreateEventFormViewModel(mockRepository)
+
+    composeTestRule.setContent {
+      CreateEventForm(eventId = "test-event-id", viewModel = testViewModel)
+    }
+
+    // Wait for the event to load
+    composeTestRule.waitForIdle()
+
+    // Verify form fields are populated
+    composeTestRule.onNodeWithText("Existing Event").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Existing Description").assertIsDisplayed()
+    composeTestRule.onNodeWithText("EPFL").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("25.0").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("100").performScrollTo().assertIsDisplayed()
   }
 }
 // Fixed Helper function - moved outside test class
@@ -342,7 +462,7 @@ private fun AndroidComposeTestRule<*, *>.fillAllFields(viewModel: CreateEventFor
   onNodeWithText("This is amazing..").performTextInput("Description")
   onNodeWithText("Type a location").performScrollTo().performTextInput("Location")
   onNodeWithText("ex: 12").performScrollTo().performTextInput("10")
-  onNodeWithText("ex: 100").performScrollTo().performTextInput("50")
+  onNodeWithText("ex: 250").performScrollTo().performTextInput("50")
 
   // Set date
   onNodeWithText("Select date").performScrollTo().performClick()

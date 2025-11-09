@@ -8,6 +8,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -313,6 +314,16 @@ fun CreateEventForm(
                 .background(color = DefaultBackground)
                 .verticalScroll(scrollState)
                 .padding(start = 22.dp, end = 22.dp, bottom = 48.dp)) {
+          // Back button
+          IconButton(
+              onClick = onNavigateBack,
+              modifier = Modifier.padding(top = 8.dp)) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = Color.White)
+              }
+
           // Title Header - Responsive
           Column(
               verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterVertically),
@@ -320,7 +331,7 @@ fun CreateEventForm(
               modifier =
                   Modifier.fillMaxWidth()
                       .background(color = DefaultBackground)
-                      .padding(top = 47.dp, bottom = 6.dp)) {
+                      .padding(top = 8.dp, bottom = 6.dp)) {
                 Text(
                     text = if (viewModel.isEditMode()) "EDIT YOUR EVENT" else "CREATE YOUR EVENT",
                     style = MaterialTheme.typography.displaySmall.copy(color = Color(0xFFFFFFFF)),
@@ -636,7 +647,7 @@ fun CreateEventForm(
                           modifier = Modifier.size(16.dp))
                       Spacer(Modifier.width(8.dp))
                       Text(
-                          text = if (viewModel.isEditMode()) "Update ticket" else "Create ticket",
+                          text = if (viewModel.isEditMode()) "Update Event" else "Create Event",
                           style = MaterialTheme.typography.labelLarge)
                     }
               }
