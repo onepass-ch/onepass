@@ -4,16 +4,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -369,8 +369,8 @@ private fun InvitationCard(
 /**
  * Mock OrganizationRepository implementation for Preview purposes.
  *
- * This repository provides test data for previewing the My Invitations screen without
- * requiring actual Firebase connections.
+ * This repository provides test data for previewing the My Invitations screen without requiring
+ * actual Firebase connections.
  */
 private class PreviewOrganizationRepository(
     private val organizations: Map<String, Organization> = emptyMap()
@@ -429,15 +429,14 @@ private class PreviewOrganizationRepository(
       newStatus: InvitationStatus
   ): Result<Unit> = Result.success(Unit)
 
-  override suspend fun deleteInvitation(invitationId: String): Result<Unit> =
-      Result.success(Unit)
+  override suspend fun deleteInvitation(invitationId: String): Result<Unit> = Result.success(Unit)
 }
 
 /**
  * Preview composable for My Invitations screen with sample data.
  *
- * This preview displays the screen with multiple invitations to test the UI layout,
- * organization name display, role information, and accept/reject buttons.
+ * This preview displays the screen with multiple invitations to test the UI layout, organization
+ * name display, role information, and accept/reject buttons.
  */
 @Preview(showBackground = true)
 @Composable
@@ -516,7 +515,7 @@ fun MyInvitationsScreenPreview() {
         onRejectInvitation = { _ ->
           // Preview callback - can add logging or other actions here
         },
-        onNavigateBack = { /* Preview callback */ },
+        onNavigateBack = { /* Preview callback */},
         organizationRepository = orgRepository)
   }
 }
@@ -530,13 +529,14 @@ fun MyInvitationsScreenPreview() {
 @Composable
 fun MyInvitationsScreenEmptyPreview() {
   OnePassTheme {
-    val state = MyInvitationsUiState(invitations = emptyList(), loading = false, errorMessage = null)
+    val state =
+        MyInvitationsUiState(invitations = emptyList(), loading = false, errorMessage = null)
 
     MyInvitationsContent(
         state = state,
         onAcceptInvitation = {},
         onRejectInvitation = {},
-        onNavigateBack = { /* Preview callback */ },
+        onNavigateBack = { /* Preview callback */},
         organizationRepository = PreviewOrganizationRepository())
   }
 }
@@ -556,7 +556,7 @@ fun MyInvitationsScreenLoadingPreview() {
         state = state,
         onAcceptInvitation = {},
         onRejectInvitation = {},
-        onNavigateBack = { /* Preview callback */ },
+        onNavigateBack = { /* Preview callback */},
         organizationRepository = PreviewOrganizationRepository())
   }
 }
