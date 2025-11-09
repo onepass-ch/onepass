@@ -37,6 +37,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
+import ch.onepass.onepass.ui.myevents.MyEventsTestTags
 import ch.onepass.onepass.ui.myevents.TicketComponent
 import ch.onepass.onepass.ui.myevents.TicketStatus
 import ch.onepass.onepass.ui.theme.Typography
@@ -485,16 +486,16 @@ fun UpcomingTabContent(
               style = Typography.bodyMedium.copy(color = Color(0xFF808080)),
               modifier = Modifier.padding(32.dp))
         } else {
-          events
-              .filter { event -> determineTicketStatus(event) != TicketStatus.EXPIRED }
-              .forEach { event ->
-                TicketComponent(
-                    title = event.title,
-                    status = determineTicketStatus(event),
-                    dateTime = event.displayDateTime,
-                    location = event.displayLocation,
-                    modifier = Modifier.clickable { onEventClick(event.eventId) })
-              }
+            events
+                .filter { event -> determineTicketStatus(event) != TicketStatus.EXPIRED }
+                .forEach { event ->
+                  TicketComponent(
+                      title = event.title,
+                      status = determineTicketStatus(event),
+                      dateTime = event.displayDateTime,
+                      location = event.displayLocation,
+                      onCardClick = { onEventClick(event.eventId) })
+                }
         }
       }
 }
@@ -520,16 +521,16 @@ fun PastTabContent(
               style = Typography.bodyMedium.copy(color = Color(0xFF808080)),
               modifier = Modifier.padding(32.dp))
         } else {
-          events
-              .filter { event -> determineTicketStatus(event) == TicketStatus.EXPIRED }
-              .forEach { event ->
-                TicketComponent(
-                    title = event.title,
-                    status = TicketStatus.EXPIRED,
-                    dateTime = event.displayDateTime,
-                    location = event.displayLocation,
-                    modifier = Modifier.clickable { onEventClick(event.eventId) })
-              }
+            events
+                .filter { event -> determineTicketStatus(event) == TicketStatus.EXPIRED }
+                .forEach { event ->
+                  TicketComponent(
+                      title = event.title,
+                      status = TicketStatus.EXPIRED,
+                      dateTime = event.displayDateTime,
+                      location = event.displayLocation,
+                      onCardClick = { onEventClick(event.eventId) })
+                }
         }
       }
 }
