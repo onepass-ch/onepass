@@ -220,9 +220,8 @@ class MyInvitationsViewModelTest {
     val state = viewModel.state.value
 
     assertNotNull("Expected an error message", state.errorMessage)
-    assertTrue(
-        state.errorMessage!!.contains("User not found") ||
-            state.errorMessage.contains("not logged in"))
+    val errorMessage = state.errorMessage!!
+    assertTrue(errorMessage.contains("User not found") || errorMessage.contains("not logged in"))
   }
 
   @Test
@@ -525,9 +524,9 @@ class MyInvitationsViewModelTest {
     val state = viewModel.state.value
 
     assertNotNull("Expected an error message when exception is thrown", state.errorMessage)
+    val errorMessage = state.errorMessage!!
     assertTrue(
-        state.errorMessage!!.contains("Failed to load user information") ||
-            state.errorMessage.contains("boom"))
+        errorMessage.contains("Failed to load user information") || errorMessage.contains("boom"))
   }
 
   @Test
@@ -547,9 +546,10 @@ class MyInvitationsViewModelTest {
 
     val state = viewModel.state.value
     assertNotNull("Expected an error message when exception is thrown", state.errorMessage)
+    val errorMessage = state.errorMessage!!
     assertTrue(
-        state.errorMessage!!.contains("Failed to accept invitation") ||
-            state.errorMessage.contains("Update invitation status failed"))
+        errorMessage.contains("Failed to accept invitation") ||
+            errorMessage.contains("Update invitation status failed"))
   }
 
   @Test
@@ -569,9 +569,10 @@ class MyInvitationsViewModelTest {
 
     val state = viewModel.state.value
     assertNotNull("Expected an error message when exception is thrown", state.errorMessage)
+    val errorMessage = state.errorMessage!!
     assertTrue(
-        state.errorMessage!!.contains("Failed to reject invitation") ||
-            state.errorMessage.contains("Update invitation status failed"))
+        errorMessage.contains("Failed to reject invitation") ||
+            errorMessage.contains("Update invitation status failed"))
   }
 
   @Test
@@ -588,7 +589,7 @@ class MyInvitationsViewModelTest {
     val state = viewModel.state.value
 
     assertNotNull("Expected an error message", state.errorMessage)
-    assertEquals("Failed to load invitations", state.errorMessage)
+    assertEquals("Failed to load invitations", state.errorMessage!!)
   }
 
   @Test
@@ -603,9 +604,8 @@ class MyInvitationsViewModelTest {
     val state = viewModel.state.value
 
     assertNotNull("Expected an error message for blank email", state.errorMessage)
-    assertTrue(
-        /* condition = */ state.errorMessage!!.contains("User not found") ||
-            state.errorMessage.contains("not logged in"))
+    val errorMessage = state.errorMessage!!
+    assertTrue(errorMessage.contains("User not found") || errorMessage.contains("not logged in"))
   }
 
   @Test
@@ -626,7 +626,7 @@ class MyInvitationsViewModelTest {
 
     val state = viewModel.state.value
     assertNotNull("Expected an error message", state.errorMessage)
-    assertEquals("Failed to accept invitation", state.errorMessage)
+    assertEquals("Failed to accept invitation", state.errorMessage!!)
   }
 
   @Test
@@ -647,6 +647,6 @@ class MyInvitationsViewModelTest {
 
     val state = viewModel.state.value
     assertNotNull("Expected an error message", state.errorMessage)
-    assertEquals("Failed to reject invitation", state.errorMessage)
+    assertEquals("Failed to reject invitation", state.errorMessage!!)
   }
 }

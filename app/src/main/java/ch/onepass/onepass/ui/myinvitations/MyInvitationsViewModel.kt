@@ -12,6 +12,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
@@ -26,11 +27,13 @@ import kotlinx.coroutines.launch
  * @property invitations List of pending invitations for the current user.
  * @property loading Whether the invitations are currently being loaded.
  * @property errorMessage Error message to display if an operation fails, null if no error.
+ * @property userEmail Email address of the current user, null if not loaded or not logged in.
  */
 data class MyInvitationsUiState(
     val invitations: List<OrganizationInvitation> = emptyList(),
     val loading: Boolean = true,
-    val errorMessage: String? = null
+    val errorMessage: String? = null,
+    val userEmail: String? = null
 )
 
 /**
@@ -51,8 +54,10 @@ class MyInvitationsViewModel(
     private val userRepository: UserRepository = UserRepositoryFirebase()
 ) : ViewModel() {
 
-  private val _userEmail = MutableStateFlow<String?>(null)
-  private val _errorMessage = MutableStateFlow<String?>(null)
+  private val _uiState = MutableStateFlow(MyInvitationsUiState())
+
+  /** Combined UI state that includes invitations, loading state, error messages, and user email. */
+  val uiState: StateFlow<MyInvitationsUiState> = _uiState.asStateFlow()
 
   /**
    * StateFlow of pending invitations for the current user.
@@ -61,7 +66,8 @@ class MyInvitationsViewModel(
    * include invitations with PENDING status.
    */
   val invitations: StateFlow<List<OrganizationInvitation>> =
-      _userEmail
+      _uiState
+          .map { it.userEmail }
           .flatMapLatest { email ->
             if (email.isNullOrBlank()) {
               flowOf(emptyList<OrganizationInvitation>())
@@ -74,7 +80,9 @@ class MyInvitationsViewModel(
                   }
                   .catch { e ->
                     // If there's an error loading invitations, update error message
-                    _errorMessage.value = e.message ?: "Failed to load invitations"
+                    _uiState.value =
+                        _uiState.value.copy(
+                            errorMessage = e.message ?: "Failed to load invitations")
                     emit(emptyList())
                   }
             }
@@ -83,8 +91,8 @@ class MyInvitationsViewModel(
 
   /** Combined UI state that includes invitations, loading state, and error messages. */
   val state: StateFlow<MyInvitationsUiState> =
-      combine(invitations, _userEmail, _errorMessage) { invs, email, error ->
-            MyInvitationsUiState(invitations = invs, loading = email == null, errorMessage = error)
+      combine(invitations, _uiState) { invs, currentState ->
+            currentState.copy(invitations = invs, loading = currentState.userEmail == null)
           }
           .stateIn(viewModelScope, SharingStarted.Eagerly, MyInvitationsUiState(loading = true))
 
@@ -103,15 +111,16 @@ class MyInvitationsViewModel(
       try {
         val user = userRepository.getCurrentUser() ?: userRepository.getOrCreateUser()
         if (user == null || user.email.isBlank()) {
-          _errorMessage.value = "User not found or not logged in"
-          _userEmail.value = null
+          _uiState.value =
+              _uiState.value.copy(
+                  errorMessage = "User not found or not logged in", userEmail = null)
         } else {
-          _userEmail.value = user.email
-          _errorMessage.value = null
+          _uiState.value = _uiState.value.copy(userEmail = user.email, errorMessage = null)
         }
       } catch (e: Exception) {
-        _errorMessage.value = e.message ?: "Failed to load user information"
-        _userEmail.value = null
+        _uiState.value =
+            _uiState.value.copy(
+                errorMessage = e.message ?: "Failed to load user information", userEmail = null)
       }
     }
   }
@@ -128,18 +137,20 @@ class MyInvitationsViewModel(
   fun acceptInvitation(invitationId: String) {
     viewModelScope.launch {
       try {
-        _errorMessage.value = null
+        _uiState.value = _uiState.value.copy(errorMessage = null)
 
         val result =
             organizationRepository.updateInvitationStatus(
                 invitationId = invitationId, newStatus = InvitationStatus.ACCEPTED)
 
         result.onFailure { error ->
-          _errorMessage.value = error.message ?: "Failed to accept invitation"
+          _uiState.value =
+              _uiState.value.copy(errorMessage = error.message ?: "Failed to accept invitation")
         }
         // On success, the Flow will automatically update the state
       } catch (e: Exception) {
-        _errorMessage.value = e.message ?: "Failed to accept invitation"
+        _uiState.value =
+            _uiState.value.copy(errorMessage = e.message ?: "Failed to accept invitation")
       }
     }
   }
@@ -156,18 +167,20 @@ class MyInvitationsViewModel(
   fun rejectInvitation(invitationId: String) {
     viewModelScope.launch {
       try {
-        _errorMessage.value = null
+        _uiState.value = _uiState.value.copy(errorMessage = null)
 
         val result =
             organizationRepository.updateInvitationStatus(
                 invitationId = invitationId, newStatus = InvitationStatus.REJECTED)
 
         result.onFailure { error ->
-          _errorMessage.value = error.message ?: "Failed to reject invitation"
+          _uiState.value =
+              _uiState.value.copy(errorMessage = error.message ?: "Failed to reject invitation")
         }
         // On success, the Flow will automatically update the state
       } catch (e: Exception) {
-        _errorMessage.value = e.message ?: "Failed to reject invitation"
+        _uiState.value =
+            _uiState.value.copy(errorMessage = e.message ?: "Failed to reject invitation")
       }
     }
   }
