@@ -41,6 +41,9 @@ object NavigationDestinations {
 
     // Not implemented yet → will redirect to ComingSoon for now
     object CreateEvent : Screen("create_event", "Create Event", false)
+
+    /** Screen for viewing and managing organization invitations. */
+    object MyInvitations : Screen("my_invitations", "My Invitations", false)
   }
 
   /** Bottom navigation tabs and their linked screens. */
