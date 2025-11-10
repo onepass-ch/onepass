@@ -73,6 +73,7 @@ class BecomeOrganizerViewModel(
     private val repository: OrganizationRepository = OrganizationRepositoryFirebase()
 ) : ViewModel() {
 
+  /** Private form state */
   private val _formState = MutableStateFlow(BecomeOrganizerFormState())
   /** Public form state */
   val formState: StateFlow<BecomeOrganizerFormState> = _formState.asStateFlow()
@@ -378,7 +379,7 @@ class BecomeOrganizerViewModel(
    *
    * @return True if the form is valid, false otherwise
    */
-  private fun validateForm(): Boolean {
+  fun validateForm(): Boolean {
     val s = _formState.value
 
     // Validate all fields
