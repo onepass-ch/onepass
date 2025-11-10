@@ -13,6 +13,10 @@ import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.organization.OrganizationStatus
 import ch.onepass.onepass.utils.EventTestData
 import ch.onepass.onepass.utils.OrganizationTestData
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -39,7 +43,10 @@ class OrganizerProfileViewModelTest {
 
   private val testDispatcher = StandardTestDispatcher()
 
-  // Mock Organization Repository
+  // Auth Mocks
+  private lateinit var mockAuth: FirebaseAuth
+  private lateinit var mockUser: FirebaseUser
+
   private class MockOrganizationRepository(
       private val organizations: Map<String, Organization> = emptyMap(),
       private val shouldThrowError: Boolean = false
@@ -107,7 +114,6 @@ class OrganizerProfileViewModelTest {
     override suspend fun deleteInvitation(invitationId: String): Result<Unit> = Result.success(Unit)
   }
 
-  // Mock Event Repository
   private class MockEventRepository(
       private val eventsByOrg: Map<String, List<Event>> = emptyMap(),
       private val shouldThrowError: Boolean = false
@@ -141,9 +147,29 @@ class OrganizerProfileViewModelTest {
     override suspend fun deleteEvent(eventId: String): Result<Unit> = Result.success(Unit)
   }
 
+  // Helper function to create ViewModel with injected mocks
+  private fun createViewModel(
+      organizations: Map<String, Organization> = emptyMap(),
+      eventsByOrg: Map<String, List<Event>> = emptyMap(),
+      orgShouldThrow: Boolean = false,
+      eventShouldThrow: Boolean = false
+  ): OrganizerProfileViewModel {
+    val orgRepository = MockOrganizationRepository(organizations, orgShouldThrow)
+    val eventRepository = MockEventRepository(eventsByOrg, eventShouldThrow)
+    return OrganizerProfileViewModel(
+        organizationRepository = orgRepository,
+        eventRepository = eventRepository,
+        auth = mockAuth // Inject the mock auth
+        )
+  }
+
   @Before
   fun setUp() {
     Dispatchers.setMain(testDispatcher)
+    // Initialize mocks
+    mockAuth = mockk<FirebaseAuth>(relaxed = true)
+    mockUser = mockk<FirebaseUser>(relaxed = true)
+    every { mockAuth.currentUser } returns mockUser
   }
 
   @After
@@ -157,9 +183,7 @@ class OrganizerProfileViewModelTest {
 
   @Test
   fun initialState_hasCorrectDefaults() = runTest {
-    val orgRepository = MockOrganizationRepository()
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel()
 
     val state = viewModel.state.value
 
@@ -173,6 +197,7 @@ class OrganizerProfileViewModelTest {
     Assert.assertNull(state.facebookUrl)
     Assert.assertEquals(0, state.followersCount)
     Assert.assertFalse(state.isFollowing)
+    Assert.assertFalse(state.isOwner)
     Assert.assertFalse(state.isVerified)
     Assert.assertEquals(0, state.eventCount)
     Assert.assertEquals(OrganizerProfileTab.UPCOMING, state.selectedTab)
@@ -202,9 +227,7 @@ class OrganizerProfileViewModelTest {
             facebook = "https://facebook.com/test",
             profileImageUrl = "https://example.com/profile.jpg")
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-valid" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-valid" to testOrg))
 
     viewModel.loadOrganizationProfile("org-valid")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -227,9 +250,7 @@ class OrganizerProfileViewModelTest {
 
   @Test
   fun loadOrganizationProfile_nonExistentOrganization_setsErrorMessage() = runTest {
-    val orgRepository = MockOrganizationRepository()
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel()
 
     viewModel.loadOrganizationProfile("non-existent-org")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -246,9 +267,7 @@ class OrganizerProfileViewModelTest {
         OrganizationTestData.createTestOrganization(
             id = "org-loading", name = "Loading Test", ownerId = "owner-1")
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-loading" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-loading" to testOrg))
 
     viewModel.loadOrganizationProfile("org-loading")
 
@@ -263,9 +282,7 @@ class OrganizerProfileViewModelTest {
 
   @Test
   fun loadOrganizationProfile_repositoryError_setsErrorMessage() = runTest {
-    val orgRepository = MockOrganizationRepository(shouldThrowError = true)
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(orgShouldThrow = true)
 
     viewModel.loadOrganizationProfile("org-error")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -327,10 +344,10 @@ class OrganizerProfileViewModelTest {
             endTime = EventTestData.createFutureTimestamp(daysFromNow = 1))
 
     val allEvents = listOf(upcomingEvent1, upcomingEvent2, pastEvent1, pastEvent2, currentEvent1)
-
-    val orgRepository = MockOrganizationRepository(mapOf("org-with-events" to testOrg))
-    val eventRepository = MockEventRepository(mapOf("org-with-events" to allEvents))
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel =
+        createViewModel(
+            organizations = mapOf("org-with-events" to testOrg),
+            eventsByOrg = mapOf("org-with-events" to allEvents))
 
     viewModel.loadOrganizationProfile("org-with-events")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -359,9 +376,7 @@ class OrganizerProfileViewModelTest {
         OrganizationTestData.createTestOrganization(
             id = "org-no-events", name = "No Events Org", ownerId = "owner-1")
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-no-events" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-no-events" to testOrg))
 
     viewModel.loadOrganizationProfile("org-no-events")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -381,9 +396,9 @@ class OrganizerProfileViewModelTest {
         OrganizationTestData.createTestOrganization(
             id = "org-events-error", name = "Events Error Org", ownerId = "owner-1")
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-events-error" to testOrg))
-    val eventRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel =
+        createViewModel(
+            organizations = mapOf("org-events-error" to testOrg), eventShouldThrow = true)
 
     // Start collecting effects BEFORE triggering the action
     val effects = mutableListOf<OrganizerProfileEffect>()
@@ -413,9 +428,7 @@ class OrganizerProfileViewModelTest {
         OrganizationTestData.createTestOrganization(
             id = "org-follow", name = "Follow Test Org", ownerId = "owner-1", followerCount = 1000)
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-follow" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-follow" to testOrg))
 
     viewModel.loadOrganizationProfile("org-follow")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -440,9 +453,7 @@ class OrganizerProfileViewModelTest {
             ownerId = "owner-1",
             followerCount = 500)
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-unfollow" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-unfollow" to testOrg))
 
     viewModel.loadOrganizationProfile("org-unfollow")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -470,9 +481,7 @@ class OrganizerProfileViewModelTest {
             ownerId = "owner-1",
             followerCount = 100)
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-multi-follow" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-multi-follow" to testOrg))
 
     viewModel.loadOrganizationProfile("org-multi-follow")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -502,9 +511,7 @@ class OrganizerProfileViewModelTest {
 
   @Test
   fun onTabSelected_changesSelectedTab() = runTest {
-    val orgRepository = MockOrganizationRepository()
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel()
 
     Assert.assertEquals(OrganizerProfileTab.UPCOMING, viewModel.state.value.selectedTab)
 
@@ -520,9 +527,7 @@ class OrganizerProfileViewModelTest {
 
   @Test
   fun onTabSelected_selectingSameTab_remainsSelected() = runTest {
-    val orgRepository = MockOrganizationRepository()
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel()
 
     Assert.assertEquals(OrganizerProfileTab.UPCOMING, viewModel.state.value.selectedTab)
 
@@ -539,9 +544,7 @@ class OrganizerProfileViewModelTest {
 
   @Test
   fun onEventClicked_emitsNavigateToEventEffect() = runTest {
-    val orgRepository = MockOrganizationRepository()
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel()
 
     val effects = mutableListOf<OrganizerProfileEffect>()
     val collectJob = launch { viewModel.effects.collect { effects.add(it) } }
@@ -562,9 +565,7 @@ class OrganizerProfileViewModelTest {
 
   @Test
   fun onEventClicked_differentEventIds_emitsCorrectEffects() = runTest {
-    val orgRepository = MockOrganizationRepository()
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel()
 
     val effects = mutableListOf<OrganizerProfileEffect>()
     val collectJob = launch { viewModel.effects.collect { effects.add(it) } }
@@ -596,9 +597,7 @@ class OrganizerProfileViewModelTest {
             ownerId = "owner-1",
             website = "https://example.com")
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-website" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-website" to testOrg))
 
     viewModel.loadOrganizationProfile("org-website")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -625,9 +624,7 @@ class OrganizerProfileViewModelTest {
         OrganizationTestData.createTestOrganization(
             id = "org-no-website", name = "No Website Test", ownerId = "owner-1", website = null)
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-no-website" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-no-website" to testOrg))
 
     viewModel.loadOrganizationProfile("org-no-website")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -660,9 +657,7 @@ class OrganizerProfileViewModelTest {
             ownerId = "owner-1",
             instagram = "https://instagram.com/testorg")
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-instagram" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-instagram" to testOrg))
 
     viewModel.loadOrganizationProfile("org-instagram")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -694,9 +689,7 @@ class OrganizerProfileViewModelTest {
             ownerId = "owner-1",
             tiktok = "https://tiktok.com/@testorg")
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-tiktok" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-tiktok" to testOrg))
 
     viewModel.loadOrganizationProfile("org-tiktok")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -728,9 +721,7 @@ class OrganizerProfileViewModelTest {
             ownerId = "owner-1",
             facebook = "https://facebook.com/testorg")
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-facebook" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-facebook" to testOrg))
 
     viewModel.loadOrganizationProfile("org-facebook")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -762,9 +753,7 @@ class OrganizerProfileViewModelTest {
             ownerId = "owner-1",
             instagram = null)
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-no-instagram" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-no-instagram" to testOrg))
 
     viewModel.loadOrganizationProfile("org-no-instagram")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -791,9 +780,7 @@ class OrganizerProfileViewModelTest {
             ownerId = "owner-1",
             instagram = "https://instagram.com/testorg")
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-case-test" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-case-test" to testOrg))
 
     viewModel.loadOrganizationProfile("org-case-test")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -824,9 +811,7 @@ class OrganizerProfileViewModelTest {
         OrganizationTestData.createTestOrganization(
             id = "org-unknown", name = "Unknown Platform Test", ownerId = "owner-1")
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-unknown" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-unknown" to testOrg))
 
     viewModel.loadOrganizationProfile("org-unknown")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -854,9 +839,7 @@ class OrganizerProfileViewModelTest {
         OrganizationTestData.createTestOrganization(
             id = "org-format-1", name = "Format Test 1", ownerId = "owner-1", followerCount = 999)
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-format-1" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-format-1" to testOrg))
 
     viewModel.loadOrganizationProfile("org-format-1")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -871,9 +854,7 @@ class OrganizerProfileViewModelTest {
         OrganizationTestData.createTestOrganization(
             id = "org-format-2", name = "Format Test 2", ownerId = "owner-1", followerCount = 1000)
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-format-2" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-format-2" to testOrg))
 
     viewModel.loadOrganizationProfile("org-format-2")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -888,9 +869,7 @@ class OrganizerProfileViewModelTest {
         OrganizationTestData.createTestOrganization(
             id = "org-format-3", name = "Format Test 3", ownerId = "owner-1", followerCount = 2500)
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-format-3" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-format-3" to testOrg))
 
     viewModel.loadOrganizationProfile("org-format-3")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -908,9 +887,7 @@ class OrganizerProfileViewModelTest {
             ownerId = "owner-1",
             followerCount = 999999)
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-format-4" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-format-4" to testOrg))
 
     viewModel.loadOrganizationProfile("org-format-4")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -928,9 +905,7 @@ class OrganizerProfileViewModelTest {
             ownerId = "owner-1",
             followerCount = 1000000)
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-format-5" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-format-5" to testOrg))
 
     viewModel.loadOrganizationProfile("org-format-5")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -948,9 +923,7 @@ class OrganizerProfileViewModelTest {
             ownerId = "owner-1",
             followerCount = 2500000)
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-format-6" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-format-6" to testOrg))
 
     viewModel.loadOrganizationProfile("org-format-6")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -965,9 +938,7 @@ class OrganizerProfileViewModelTest {
         OrganizationTestData.createTestOrganization(
             id = "org-format-7", name = "Format Test 7", ownerId = "owner-1", followerCount = 0)
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-format-7" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-format-7" to testOrg))
 
     viewModel.loadOrganizationProfile("org-format-7")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -982,9 +953,7 @@ class OrganizerProfileViewModelTest {
         OrganizationTestData.createTestOrganization(
             id = "org-format-8", name = "Format Test 8", ownerId = "owner-1", followerCount = 5432)
 
-    val orgRepository = MockOrganizationRepository(mapOf("org-format-8" to testOrg))
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel(organizations = mapOf("org-format-8" to testOrg))
 
     viewModel.loadOrganizationProfile("org-format-8")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -999,9 +968,7 @@ class OrganizerProfileViewModelTest {
 
   @Test
   fun loadOrganizationProfile_clearsErrorMessageOnNewLoad() = runTest {
-    val orgRepository = MockOrganizationRepository()
-    val eventRepository = MockEventRepository()
-    val viewModel = OrganizerProfileViewModel(orgRepository, eventRepository)
+    val viewModel = createViewModel()
 
     // First, try to load a non-existent organization
     viewModel.loadOrganizationProfile("non-existent")
@@ -1014,9 +981,7 @@ class OrganizerProfileViewModelTest {
     val validOrg =
         OrganizationTestData.createTestOrganization(
             id = "org-valid-after-error", name = "Valid After Error", ownerId = "owner-1")
-    val orgRepositoryWithValid =
-        MockOrganizationRepository(mapOf("org-valid-after-error" to validOrg))
-    val viewModel2 = OrganizerProfileViewModel(orgRepositoryWithValid, eventRepository)
+    val viewModel2 = createViewModel(organizations = mapOf("org-valid-after-error" to validOrg))
 
     viewModel2.loadOrganizationProfile("org-valid-after-error")
 
@@ -1030,5 +995,97 @@ class OrganizerProfileViewModelTest {
     val finalState = viewModel2.state.value
     Assert.assertFalse(finalState.loading)
     Assert.assertNull(finalState.errorMessage)
+  }
+
+  // ========================================
+  // Tests for User Roles and Edit Effect
+  // ========================================
+
+  @Test
+  fun loadOrganizationProfile_setsIsOwner_whenCurrentUserIsOwner() = runTest {
+    val ownerId = "user-is-owner"
+    every { mockUser.uid } returns ownerId
+
+    val testOrg = OrganizationTestData.createTestOrganization(id = "org-owner", ownerId = ownerId)
+    val viewModel = createViewModel(organizations = mapOf(testOrg.id to testOrg))
+
+    viewModel.loadOrganizationProfile(testOrg.id)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    Assert.assertTrue(viewModel.state.value.isOwner)
+  }
+
+  @Test
+  fun loadOrganizationProfile_setsNotIsOwner_whenCurrentUserIsNotOwner() = runTest {
+    val ownerId = "organization-owner"
+    val currentUserId = "different-user"
+    every { mockUser.uid } returns currentUserId
+
+    val testOrg =
+        OrganizationTestData.createTestOrganization(id = "org-not-owner", ownerId = ownerId)
+    val viewModel = createViewModel(organizations = mapOf(testOrg.id to testOrg))
+
+    viewModel.loadOrganizationProfile(testOrg.id)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    Assert.assertFalse(viewModel.state.value.isOwner)
+  }
+
+  @Test
+  fun loadOrganizationProfile_setsNotIsOwner_whenUserIsNull() = runTest {
+    every { mockAuth.currentUser } returns null // Mock no user
+
+    val testOrg =
+        OrganizationTestData.createTestOrganization(id = "org-no-user", ownerId = "some-owner")
+    val viewModel = createViewModel(organizations = mapOf(testOrg.id to testOrg))
+
+    viewModel.loadOrganizationProfile(testOrg.id)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    Assert.assertFalse(viewModel.state.value.isOwner)
+  }
+
+  @Test
+  fun onEditOrganizationClicked_emitsNavigateToEditOrganizationEffect() = runTest {
+    val testOrg = OrganizationTestData.createTestOrganization(id = "org-for-edit")
+    val viewModel = createViewModel(organizations = mapOf(testOrg.id to testOrg))
+
+    // Load the org first to set the organizationId in state
+    viewModel.loadOrganizationProfile(testOrg.id)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val effects = mutableListOf<OrganizerProfileEffect>()
+    val collectJob = launch { viewModel.effects.collect { effects.add(it) } }
+
+    viewModel.onEditOrganizationClicked()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    collectJob.cancel()
+
+    Assert.assertTrue(
+        "Should emit NavigateToEditOrganization effect",
+        effects.any { it is OrganizerProfileEffect.NavigateToEditOrganization })
+    val effect =
+        effects.find { it is OrganizerProfileEffect.NavigateToEditOrganization }
+            as OrganizerProfileEffect.NavigateToEditOrganization
+    Assert.assertEquals(testOrg.id, effect.organizationId)
+  }
+
+  @Test
+  fun onEditOrganizationClicked_doesNotEmitEffect_whenOrganizationIdIsEmpty() = runTest {
+    // Create viewmodel with no org loaded
+    val viewModel = createViewModel()
+
+    val effects = mutableListOf<OrganizerProfileEffect>()
+    val collectJob = launch { viewModel.effects.collect { effects.add(it) } }
+
+    viewModel.onEditOrganizationClicked()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    collectJob.cancel()
+
+    Assert.assertFalse(
+        "Should not emit effect when organizationId is empty",
+        effects.any { it is OrganizerProfileEffect.NavigateToEditOrganization })
   }
 }
