@@ -9,9 +9,9 @@ import ch.onepass.onepass.model.staff.StaffSearchResult
  * full Firebase functionality.
  */
 class FakeUserRepository(
-    private val currentUser: User? = null,
-    private val createdUser: User? = null,
-    private val throwOnLoad: Boolean = false
+    private var currentUser: User? = null,
+    private var createdUser: User? = null,
+    private var throwOnLoad: Boolean = false
 ) : UserRepository {
 
   override suspend fun getCurrentUser(): User? {
@@ -58,5 +58,20 @@ class FakeUserRepository(
       function: (String, UserSearchType, String?) -> Result<List<StaffSearchResult>>
   ) {
     searchResultsFunction = function
+  }
+
+  /** Update the current user for testing retry scenarios. */
+  fun updateCurrentUser(user: User?) {
+    currentUser = user
+  }
+
+  /** Update the created user for testing retry scenarios. */
+  fun updateCreatedUser(user: User?) {
+    createdUser = user
+  }
+
+  /** Set whether to throw an exception on load for testing error scenarios. */
+  fun setThrowOnLoad(value: Boolean) {
+    throwOnLoad = value
   }
 }
