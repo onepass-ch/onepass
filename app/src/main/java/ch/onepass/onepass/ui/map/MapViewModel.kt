@@ -41,10 +41,13 @@ class MapViewModel(
     private val eventRepository: EventRepository = RepositoryProvider.eventRepository,
 ) : ViewModel() {
   companion object {
-    // Default camera configuration
+    // Default configuration
     private const val DEFAULT_LATITUDE = 46.5197
     private const val DEFAULT_LONGITUDE = 6.6323
     private const val DEFAULT_ZOOM = 7.0
+    private const val RECENTER_ZOOM = 15.0
+    private const val ANIMATION_DURATION_MS = 1000L
+    private const val MAPBOX_STYLE_URI = "mapbox://styles/walid-as/cmhmmxczk00ar01shdw6r8lel"
   }
 
   // --- UI state ---
@@ -85,7 +88,13 @@ class MapViewModel(
     }
   }
 
-  /** Checks if given latitude and longitude are valid. */
+  /**
+   * Checks if given latitude and longitude are valid coordinates.
+   *
+   * @param latitude The latitude value to validate
+   * @param longitude The longitude value to validate
+   * @return true if coordinates are within valid ranges, false otherwise
+   */
   private fun isValidCoordinate(latitude: Double, longitude: Double): Boolean {
     return !latitude.isNaN() &&
         !longitude.isNaN() &&
@@ -114,7 +123,9 @@ class MapViewModel(
     _uiState.value = _uiState.value.copy(selectedEvent = null)
   }
 
-  /** Refreshes events manually by fetching from repository. */
+  /**
+   * Refreshes events manually by fetching from repository.
+   */
   fun refreshEvents() {
     fetchPublishedEvents()
   }
@@ -127,7 +138,7 @@ class MapViewModel(
     if (internalMapView == mapView) return
     internalMapView = mapView
 
-    mapView.mapboxMap.loadStyleUri("mapbox://styles/walid-as/cmghzwo3h001501s358d677ye") {
+    mapView.mapboxMap.loadStyle(MAPBOX_STYLE_URI) {
       configurePlugins(mapView)
 
       if (hasLocationPermission) {
@@ -138,7 +149,9 @@ class MapViewModel(
     }
   }
 
-  /** Enables location tracking if permission is granted. */
+  /**
+   * Enables location tracking if permission is granted.
+   */
   fun enableLocationTracking() {
     internalMapView?.let { enableLocationTracking(it) }
   }
@@ -173,8 +186,8 @@ class MapViewModel(
     }
 
     mapboxMap.easeTo(
-        CameraOptions.Builder().center(point).zoom(15.0).build(),
-        MapAnimationOptions.mapAnimationOptions { duration(1000L) },
+        CameraOptions.Builder().center(point).zoom(RECENTER_ZOOM).build(),
+        MapAnimationOptions.mapAnimationOptions { duration(ANIMATION_DURATION_MS) },
     )
   }
 
@@ -190,10 +203,19 @@ class MapViewModel(
   }
 
   // --- Map lifecycle delegation ---
+  /**
+   * Starts the map lifecycle.
+   */
   fun onMapStart() = internalMapView?.onStart()
 
+  /**
+   * Stops the map lifecycle.
+   */
   fun onMapStop() = internalMapView?.onStop()
 
+  /**
+   * Handles low memory situations for the map.
+   */
   fun onMapLowMemory() = internalMapView?.onLowMemory()
 
   override fun onCleared() {
