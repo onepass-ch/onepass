@@ -25,6 +25,8 @@
     <color name="surface_container_low">#242424</color>
     <color name="surface_card_color">#262626</color>
 
+    <!-- small Icon Colors -->
+    <color name="icon_color_detailScreen">#C4C4C4</color>
     <!-- Status Colors -->
     <color name="status_currently">#FF4C3D</color>
     <color name="status_upcoming">#683F88</color>
