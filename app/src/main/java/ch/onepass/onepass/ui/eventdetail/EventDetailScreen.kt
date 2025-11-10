@@ -422,10 +422,8 @@ private fun AboutEventSection(description: String, modifier: Modifier = Modifier
 @Composable
 private fun EventDetailsSection(
     event: Event,
-    onNavigateToMap:
-        (
-            ) -> Unit, // Information for navigation: This onNavigateToMap takes the event
-                       // geolocation and navigate to the map at this location for him to see it.
+    onNavigateToMap: () -> Unit, // Information for navigation: This onNavigateToMap takes the event
+    // geolocation and navigate to the map at this location for him to see it.
     onBuyTicket: () -> Unit, // TODO: implement buy ticket action in M3
     modifier: Modifier = Modifier
 ) {
