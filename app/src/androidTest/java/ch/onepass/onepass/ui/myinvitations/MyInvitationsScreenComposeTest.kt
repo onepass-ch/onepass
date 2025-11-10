@@ -4,12 +4,11 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.Organization
-import ch.onepass.onepass.model.organization.OrganizationInvitation
 import ch.onepass.onepass.model.organization.OrganizationRepository
-import ch.onepass.onepass.model.organization.OrganizationRole
+import ch.onepass.onepass.ui.organization.MockOrganizationRepository
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import ch.onepass.onepass.utils.OrganizationTestData
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Rule
@@ -33,111 +32,36 @@ class MyInvitationsScreenComposeTest {
   @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
   /**
-   * Mock implementation of OrganizationRepository for testing.
+   * Extended MockOrganizationRepository that supports multiple organizations via a Map.
    *
-   * This mock allows us to control the organization data returned for testing purposes.
+   * This extends the existing MockOrganizationRepository to support looking up organizations by ID
+   * from a Map, which is needed for testing scenarios with multiple organizations.
    */
-  private class MockOrganizationRepository(
+  private class TestOrganizationRepository(
       private val organizations: Map<String, Organization> = emptyMap()
-  ) : OrganizationRepository {
-    override suspend fun createOrganization(organization: Organization): Result<String> =
-        Result.success("org-id")
-
-    override suspend fun updateOrganization(organization: Organization): Result<Unit> =
-        Result.success(Unit)
-
-    override suspend fun deleteOrganization(organizationId: String): Result<Unit> =
-        Result.success(Unit)
-
+  ) : MockOrganizationRepository() {
     override fun getOrganizationById(organizationId: String): Flow<Organization?> {
       return flowOf(organizations[organizationId])
     }
-
-    override fun getOrganizationsByOwner(ownerId: String): Flow<List<Organization>> =
-        flowOf(emptyList())
-
-    override fun getOrganizationsByMember(userId: String): Flow<List<Organization>> =
-        flowOf(emptyList())
-
-    override fun getOrganizationsByStatus(
-        status: ch.onepass.onepass.model.organization.OrganizationStatus
-    ): Flow<List<Organization>> = flowOf(emptyList())
-
-    override fun searchOrganizations(query: String): Flow<List<Organization>> = flowOf(emptyList())
-
-    override fun getVerifiedOrganizations(): Flow<List<Organization>> = flowOf(emptyList())
-
-    override suspend fun addMember(
-        organizationId: String,
-        userId: String,
-        role: OrganizationRole
-    ): Result<Unit> = Result.success(Unit)
-
-    override suspend fun removeMember(organizationId: String, userId: String): Result<Unit> =
-        Result.success(Unit)
-
-    override suspend fun updateMemberRole(
-        organizationId: String,
-        userId: String,
-        newRole: OrganizationRole
-    ): Result<Unit> = Result.success(Unit)
-
-    override suspend fun createInvitation(invitation: OrganizationInvitation): Result<String> =
-        Result.success("invite-id")
-
-    override fun getPendingInvitations(organizationId: String): Flow<List<OrganizationInvitation>> =
-        flowOf(emptyList())
-
-    override fun getInvitationsByEmail(email: String): Flow<List<OrganizationInvitation>> =
-        flowOf(emptyList())
-
-    override suspend fun updateInvitationStatus(
-        invitationId: String,
-        newStatus: InvitationStatus
-    ): Result<Unit> = Result.success(Unit)
-
-    override suspend fun deleteInvitation(invitationId: String): Result<Unit> = Result.success(Unit)
   }
 
-  /**
-   * Creates a test invitation with the specified parameters.
-   *
-   * @param id Unique identifier for the invitation.
-   * @param orgId Organization ID associated with the invitation.
-   * @param inviteeEmail Email of the invited user.
-   * @param role Role to be assigned upon acceptance.
-   * @return A test OrganizationInvitation instance.
-   */
-  private fun createTestInvitation(
-      id: String,
-      orgId: String,
-      inviteeEmail: String = "test@example.com",
-      role: OrganizationRole = OrganizationRole.MEMBER
-  ): OrganizationInvitation {
-    return OrganizationInvitation(
-        id = id,
-        orgId = orgId,
-        inviteeEmail = inviteeEmail,
-        role = role,
-        invitedBy = "owner-1",
-        status = InvitationStatus.PENDING)
-  }
+  // Reusable test data
+  private val testInvitation1 =
+      OrganizationTestData.createTestInvitation(
+          id = "invite-1", orgId = "org-1", inviteeEmail = "test@example.com")
+  private val testInvitation2 =
+      OrganizationTestData.createTestInvitation(
+          id = "invite-2", orgId = "org-2", inviteeEmail = "test@example.com")
+  private val testInvitation3 =
+      OrganizationTestData.createTestInvitation(
+          id = "invite-3", orgId = "org-3", inviteeEmail = "test@example.com")
 
-  /**
-   * Creates a test organization with the specified parameters.
-   *
-   * @param id Unique identifier for the organization.
-   * @param name Name of the organization.
-   * @return A test Organization instance.
-   */
-  private fun createTestOrganization(id: String, name: String): Organization {
-    return Organization(
-        id = id,
-        name = name,
-        description = "Test organization",
-        ownerId = "owner-1",
-        status = ch.onepass.onepass.model.organization.OrganizationStatus.ACTIVE)
-  }
+  private val testOrg1 =
+      OrganizationTestData.createTestOrganization(id = "org-1", name = "Test Organization")
+  private val testOrg2 =
+      OrganizationTestData.createTestOrganization(id = "org-2", name = "Organization Two")
+  private val testOrg3 =
+      OrganizationTestData.createTestOrganization(id = "org-3", name = "Organization Three")
 
   /**
    * Sets up the compose content with the given state and callbacks.
@@ -153,7 +77,7 @@ class MyInvitationsScreenComposeTest {
       onRejectInvitation: (String) -> Unit = {},
       onRetry: () -> Unit = {},
       onNavigateBack: () -> Unit = {},
-      organizationRepository: OrganizationRepository = MockOrganizationRepository()
+      organizationRepository: OrganizationRepository = TestOrganizationRepository()
   ) {
     composeTestRule.setContent {
       OnePassTheme {
@@ -196,7 +120,7 @@ class MyInvitationsScreenComposeTest {
         state = state,
         onAcceptInvitation = {},
         onRejectInvitation = {},
-        organizationRepository = MockOrganizationRepository())
+        organizationRepository = TestOrganizationRepository())
 
     composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
     composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
@@ -244,16 +168,16 @@ class MyInvitationsScreenComposeTest {
 
   @Test
   fun invitationsList_displaysAllInvitations() {
-    val invitation1 = createTestInvitation(id = "invite-1", orgId = "org-1")
-    val invitation2 = createTestInvitation(id = "invite-2", orgId = "org-2")
+    val invitation1 = testInvitation1
+    val invitation2 = testInvitation2
     val state =
         MyInvitationsUiState(
             loading = false, errorMessage = null, invitations = listOf(invitation1, invitation2))
 
-    val org1 = createTestOrganization(id = "org-1", name = "Organization One")
-    val org2 = createTestOrganization(id = "org-2", name = "Organization Two")
+    val org1 = OrganizationTestData.createTestOrganization(id = "org-1", name = "Organization One")
+    val org2 = OrganizationTestData.createTestOrganization(id = "org-2", name = "Organization Two")
     val orgRepository =
-        MockOrganizationRepository(organizations = mapOf("org-1" to org1, "org-2" to org2))
+        TestOrganizationRepository(organizations = mapOf("org-1" to org1, "org-2" to org2))
 
     setContent(state = state, organizationRepository = orgRepository)
 
@@ -268,12 +192,11 @@ class MyInvitationsScreenComposeTest {
 
   @Test
   fun invitationCard_displaysOrganizationName() {
-    val invitation = createTestInvitation(id = "invite-1", orgId = "org-1")
+    val invitation = testInvitation1
     val state =
         MyInvitationsUiState(loading = false, errorMessage = null, invitations = listOf(invitation))
 
-    val organization = createTestOrganization(id = "org-1", name = "Test Organization")
-    val orgRepository = MockOrganizationRepository(organizations = mapOf("org-1" to organization))
+    val orgRepository = TestOrganizationRepository(organizations = mapOf("org-1" to testOrg1))
 
     setContent(state = state, organizationRepository = orgRepository)
 
@@ -288,12 +211,14 @@ class MyInvitationsScreenComposeTest {
   @Test
   fun invitationCard_displaysRole() {
     val invitation =
-        createTestInvitation(id = "invite-1", orgId = "org-1", role = OrganizationRole.STAFF)
+        OrganizationTestData.createTestInvitation(
+            id = "invite-1",
+            orgId = "org-1",
+            role = ch.onepass.onepass.model.organization.OrganizationRole.STAFF)
     val state =
         MyInvitationsUiState(loading = false, errorMessage = null, invitations = listOf(invitation))
 
-    val organization = createTestOrganization(id = "org-1", name = "Test Organization")
-    val orgRepository = MockOrganizationRepository(organizations = mapOf("org-1" to organization))
+    val orgRepository = TestOrganizationRepository(organizations = mapOf("org-1" to testOrg1))
 
     setContent(state = state, organizationRepository = orgRepository)
 
@@ -305,12 +230,11 @@ class MyInvitationsScreenComposeTest {
 
   @Test
   fun invitationCard_displaysAcceptAndRejectButtons() {
-    val invitation = createTestInvitation(id = "invite-1", orgId = "org-1")
+    val invitation = testInvitation1
     val state =
         MyInvitationsUiState(loading = false, errorMessage = null, invitations = listOf(invitation))
 
-    val organization = createTestOrganization(id = "org-1", name = "Test Organization")
-    val orgRepository = MockOrganizationRepository(organizations = mapOf("org-1" to organization))
+    val orgRepository = TestOrganizationRepository(organizations = mapOf("org-1" to testOrg1))
 
     setContent(state = state, organizationRepository = orgRepository)
 
@@ -328,12 +252,11 @@ class MyInvitationsScreenComposeTest {
 
   @Test
   fun invitationCard_acceptButton_isClickable() {
-    val invitation = createTestInvitation(id = "invite-1", orgId = "org-1")
+    val invitation = testInvitation1
     val state =
         MyInvitationsUiState(loading = false, errorMessage = null, invitations = listOf(invitation))
 
-    val organization = createTestOrganization(id = "org-1", name = "Test Organization")
-    val orgRepository = MockOrganizationRepository(organizations = mapOf("org-1" to organization))
+    val orgRepository = TestOrganizationRepository(organizations = mapOf("org-1" to testOrg1))
 
     var acceptCalled = false
     setContent(
@@ -353,12 +276,11 @@ class MyInvitationsScreenComposeTest {
 
   @Test
   fun invitationCard_rejectButton_isClickable() {
-    val invitation = createTestInvitation(id = "invite-1", orgId = "org-1")
+    val invitation = testInvitation1
     val state =
         MyInvitationsUiState(loading = false, errorMessage = null, invitations = listOf(invitation))
 
-    val organization = createTestOrganization(id = "org-1", name = "Test Organization")
-    val orgRepository = MockOrganizationRepository(organizations = mapOf("org-1" to organization))
+    val orgRepository = TestOrganizationRepository(organizations = mapOf("org-1" to testOrg1))
 
     var rejectCalled = false
     setContent(
@@ -378,11 +300,12 @@ class MyInvitationsScreenComposeTest {
 
   @Test
   fun invitationCard_organizationNotFound_displaysOrgId() {
-    val invitation = createTestInvitation(id = "invite-1", orgId = "org-unknown")
+    val invitation =
+        OrganizationTestData.createTestInvitation(id = "invite-1", orgId = "org-unknown")
     val state =
         MyInvitationsUiState(loading = false, errorMessage = null, invitations = listOf(invitation))
 
-    val orgRepository = MockOrganizationRepository(organizations = emptyMap())
+    val orgRepository = TestOrganizationRepository(organizations = emptyMap())
 
     setContent(state = state, organizationRepository = orgRepository)
 
@@ -394,16 +317,16 @@ class MyInvitationsScreenComposeTest {
 
   @Test
   fun multipleInvitations_eachHasUniqueButtons() {
-    val invitation1 = createTestInvitation(id = "invite-1", orgId = "org-1")
-    val invitation2 = createTestInvitation(id = "invite-2", orgId = "org-2")
+    val invitation1 = testInvitation1
+    val invitation2 = testInvitation2
     val state =
         MyInvitationsUiState(
             loading = false, errorMessage = null, invitations = listOf(invitation1, invitation2))
 
-    val org1 = createTestOrganization(id = "org-1", name = "Organization One")
-    val org2 = createTestOrganization(id = "org-2", name = "Organization Two")
+    val org1 = OrganizationTestData.createTestOrganization(id = "org-1", name = "Organization One")
+    val org2 = OrganizationTestData.createTestOrganization(id = "org-2", name = "Organization Two")
     val orgRepository =
-        MockOrganizationRepository(organizations = mapOf("org-1" to org1, "org-2" to org2))
+        TestOrganizationRepository(organizations = mapOf("org-1" to org1, "org-2" to org2))
 
     var acceptInvitationId: String? = null
     var rejectInvitationId: String? = null
@@ -445,5 +368,325 @@ class MyInvitationsScreenComposeTest {
     setContent(state = state)
 
     composeTestRule.onNodeWithText("My Invitations").assertIsDisplayed()
+  }
+
+  // ========================================
+  // Tests for Navigation
+  // ========================================
+
+  @Test
+  fun navigationButton_clickTriggersCallback() {
+    val state =
+        MyInvitationsUiState(loading = false, errorMessage = null, invitations = emptyList())
+
+    var navigateBackCalled = false
+    setContent(state = state, onNavigateBack = { navigateBackCalled = true })
+
+    composeTestRule.onNodeWithContentDescription("Back").performClick()
+    composeTestRule.waitForIdle()
+
+    assert(navigateBackCalled) { "Navigate back callback should be called" }
+  }
+
+  // ========================================
+  // Tests for Success Message (Snackbar)
+  // ========================================
+
+  @Test
+  fun successMessage_displaysSnackbar() {
+    val state =
+        MyInvitationsUiState(
+            loading = false,
+            errorMessage = null,
+            invitations = emptyList(),
+            successMessage = "Invitation accepted successfully")
+
+    setContent(state = state)
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.SUCCESS_MESSAGE).assertIsDisplayed()
+    composeTestRule.onNodeWithText("Invitation accepted successfully").assertIsDisplayed()
+  }
+
+  @Test
+  fun successMessage_acceptInvitation_showsSnackbar() {
+    val invitation = testInvitation1
+    val state =
+        MyInvitationsUiState(
+            loading = false,
+            errorMessage = null,
+            invitations = listOf(invitation),
+            successMessage = "Invitation accepted successfully. You are now a member.")
+
+    val orgRepository = TestOrganizationRepository(organizations = mapOf("org-1" to testOrg1))
+
+    setContent(state = state, organizationRepository = orgRepository)
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.SUCCESS_MESSAGE).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText("Invitation accepted successfully. You are now a member.")
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun successMessage_rejectInvitation_showsSnackbar() {
+    val invitation = testInvitation1
+    val state =
+        MyInvitationsUiState(
+            loading = false,
+            errorMessage = null,
+            invitations = listOf(invitation),
+            successMessage = "Invitation rejected successfully")
+
+    val orgRepository = TestOrganizationRepository(organizations = mapOf("org-1" to testOrg1))
+
+    setContent(state = state, organizationRepository = orgRepository)
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.SUCCESS_MESSAGE).assertIsDisplayed()
+    composeTestRule.onNodeWithText("Invitation rejected successfully").assertIsDisplayed()
+  }
+
+  // ========================================
+  // Tests for Organization Loading Error
+  // ========================================
+
+  @Test
+  fun invitationCard_organizationLoadError_displaysOrgId() {
+    val invitation = OrganizationTestData.createTestInvitation(id = "invite-1", orgId = "org-error")
+    val state =
+        MyInvitationsUiState(loading = false, errorMessage = null, invitations = listOf(invitation))
+
+    // Repository that returns null (organization not found) - this is the actual fallback case
+    val orgRepository = TestOrganizationRepository(organizations = emptyMap())
+
+    setContent(state = state, organizationRepository = orgRepository)
+
+    composeTestRule.waitForIdle()
+
+    // When organization is not found, should display orgId as fallback
+    composeTestRule.onNodeWithText("org-error").assertIsDisplayed()
+  }
+
+  // ========================================
+  // Tests for Different Roles
+  // ========================================
+
+  @Test
+  fun invitationCard_displaysAllRoles() {
+    // Test all roles in a single test with multiple invitations
+    val invitation1 =
+        OrganizationTestData.createTestInvitation(
+            id = "invite-1",
+            orgId = "org-1",
+            role = ch.onepass.onepass.model.organization.OrganizationRole.OWNER)
+    val invitation2 =
+        OrganizationTestData.createTestInvitation(
+            id = "invite-2",
+            orgId = "org-2",
+            role = ch.onepass.onepass.model.organization.OrganizationRole.STAFF)
+    val invitation3 =
+        OrganizationTestData.createTestInvitation(
+            id = "invite-3",
+            orgId = "org-3",
+            role = ch.onepass.onepass.model.organization.OrganizationRole.MEMBER)
+
+    val state =
+        MyInvitationsUiState(
+            loading = false,
+            errorMessage = null,
+            invitations = listOf(invitation1, invitation2, invitation3))
+
+    val org1 =
+        OrganizationTestData.createTestOrganization(id = "org-1", name = "Test Organization 1")
+    val org2 =
+        OrganizationTestData.createTestOrganization(id = "org-2", name = "Test Organization 2")
+    val org3 =
+        OrganizationTestData.createTestOrganization(id = "org-3", name = "Test Organization 3")
+    val orgRepository =
+        TestOrganizationRepository(
+            organizations = mapOf("org-1" to org1, "org-2" to org2, "org-3" to org3))
+
+    setContent(state = state, organizationRepository = orgRepository)
+
+    composeTestRule.waitForIdle()
+
+    // Verify all roles are displayed
+    composeTestRule.onNodeWithText("Role: OWNER").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Role: STAFF").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Role: MEMBER").assertIsDisplayed()
+  }
+
+  // ========================================
+  // Tests for Error State with Invitations
+  // ========================================
+
+  @Test
+  fun errorState_withInvitations_showsInvitationsList() {
+    val invitation = testInvitation1
+    val state =
+        MyInvitationsUiState(
+            loading = false, errorMessage = "Some error occurred", invitations = listOf(invitation))
+
+    val orgRepository = TestOrganizationRepository(organizations = mapOf("org-1" to testOrg1))
+
+    setContent(state = state, organizationRepository = orgRepository)
+
+    composeTestRule.waitForIdle()
+
+    // When there are invitations, they should be displayed even if there's an error message
+    composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.INVITATIONS_LIST).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(MyInvitationsScreenTestTags.getInvitationCardTag("invite-1"))
+        .assertIsDisplayed()
+  }
+
+  // ========================================
+  // Comprehensive Integration Tests
+  // ========================================
+
+  @Test
+  fun comprehensiveFlow_multipleInvitations_acceptAndReject() {
+    val invitation1 =
+        OrganizationTestData.createTestInvitation(
+            id = "invite-1",
+            orgId = "org-1",
+            role = ch.onepass.onepass.model.organization.OrganizationRole.OWNER)
+    val invitation2 =
+        OrganizationTestData.createTestInvitation(
+            id = "invite-2",
+            orgId = "org-2",
+            role = ch.onepass.onepass.model.organization.OrganizationRole.STAFF)
+    val invitation3 =
+        OrganizationTestData.createTestInvitation(
+            id = "invite-3",
+            orgId = "org-3",
+            role = ch.onepass.onepass.model.organization.OrganizationRole.MEMBER)
+
+    val state =
+        MyInvitationsUiState(
+            loading = false,
+            errorMessage = null,
+            invitations = listOf(invitation1, invitation2, invitation3))
+
+    val org1 =
+        OrganizationTestData.createTestOrganization(id = "org-1", name = "Owner Organization")
+    val org2 =
+        OrganizationTestData.createTestOrganization(id = "org-2", name = "Staff Organization")
+    val org3 =
+        OrganizationTestData.createTestOrganization(id = "org-3", name = "Member Organization")
+    val orgRepository =
+        TestOrganizationRepository(
+            organizations = mapOf("org-1" to org1, "org-2" to org2, "org-3" to org3))
+
+    val acceptCalls = mutableListOf<String>()
+    val rejectCalls = mutableListOf<String>()
+
+    setContent(
+        state = state,
+        onAcceptInvitation = { acceptCalls.add(it) },
+        onRejectInvitation = { rejectCalls.add(it) },
+        organizationRepository = orgRepository)
+
+    composeTestRule.waitForIdle()
+
+    // Verify all invitations are displayed
+    composeTestRule.onNodeWithText("Owner Organization").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Staff Organization").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Member Organization").assertIsDisplayed()
+
+    // Verify all roles are displayed
+    composeTestRule.onNodeWithText("Role: OWNER").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Role: STAFF").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Role: MEMBER").assertIsDisplayed()
+
+    // Accept first invitation
+    composeTestRule
+        .onNodeWithTag(MyInvitationsScreenTestTags.getAcceptButtonTag("invite-1"))
+        .performClick()
+    composeTestRule.waitForIdle()
+
+    assert(acceptCalls.contains("invite-1")) { "Accept should be called for invite-1" }
+
+    // Reject second invitation
+    composeTestRule
+        .onNodeWithTag(MyInvitationsScreenTestTags.getRejectButtonTag("invite-2"))
+        .performClick()
+    composeTestRule.waitForIdle()
+
+    assert(rejectCalls.contains("invite-2")) { "Reject should be called for invite-2" }
+
+    // Accept third invitation
+    composeTestRule
+        .onNodeWithTag(MyInvitationsScreenTestTags.getAcceptButtonTag("invite-3"))
+        .performClick()
+    composeTestRule.waitForIdle()
+
+    assert(acceptCalls.contains("invite-3")) { "Accept should be called for invite-3" }
+
+    // Verify all callbacks were called
+    assert(acceptCalls.size == 2) { "Should have 2 accept calls" }
+    assert(rejectCalls.size == 1) { "Should have 1 reject call" }
+  }
+
+  @Test
+  fun contentState_withSuccessMessage_displaysSnackbar() {
+    // Test success message display when there are invitations
+    val invitation = testInvitation1
+    val state =
+        MyInvitationsUiState(
+            loading = false,
+            errorMessage = null,
+            invitations = listOf(invitation),
+            successMessage = "Invitation accepted successfully. You are now a member.")
+    val orgRepository = TestOrganizationRepository(organizations = mapOf("org-1" to testOrg1))
+
+    setContent(state = state, onAcceptInvitation = {}, organizationRepository = orgRepository)
+
+    composeTestRule.waitForIdle()
+
+    // Verify content is displayed
+    composeTestRule.waitUntil(timeoutMillis = 3000) {
+      composeTestRule.onAllNodesWithText("Test Organization").fetchSemanticsNodes().isNotEmpty()
+    }
+    composeTestRule.onNodeWithText("Test Organization").assertIsDisplayed()
+
+    // Verify success message is displayed (Snackbar) - wait for LaunchedEffect to trigger
+    composeTestRule.waitUntil(timeoutMillis = 3000) {
+      composeTestRule
+          .onAllNodesWithTag(MyInvitationsScreenTestTags.SUCCESS_MESSAGE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+    composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.SUCCESS_MESSAGE).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText("Invitation accepted successfully. You are now a member.")
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun contentState_afterErrorState_displaysInvitations() {
+    // Test that content can be displayed after an error state (simulating retry success)
+    val invitation = testInvitation1
+    val state =
+        MyInvitationsUiState(loading = false, errorMessage = null, invitations = listOf(invitation))
+    val orgRepository = TestOrganizationRepository(organizations = mapOf("org-1" to testOrg1))
+
+    setContent(state = state, organizationRepository = orgRepository)
+
+    composeTestRule.waitForIdle()
+
+    // Verify content is displayed (wait for organization to load asynchronously)
+    composeTestRule.waitUntil(timeoutMillis = 3000) {
+      composeTestRule.onAllNodesWithText("Test Organization").fetchSemanticsNodes().isNotEmpty()
+    }
+    composeTestRule.onNodeWithText("Test Organization").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(MyInvitationsScreenTestTags.getInvitationCardTag("invite-1"))
+        .assertIsDisplayed()
   }
 }
