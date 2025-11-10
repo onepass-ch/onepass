@@ -18,10 +18,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.staff.StaffSearchResult
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
@@ -68,13 +70,20 @@ object StaffTestTags {
 fun StaffListItem(
     user: StaffSearchResult,
     modifier: Modifier = Modifier,
-    onClick: (StaffSearchResult) -> Unit
+    onClick: (() -> Unit)?,
+    enabled: Boolean = true
 ) {
   ListItem(
       modifier =
           modifier
               .fillMaxWidth()
-              .clickable(role = Role.Button) { onClick(user) }
+              .background(colorResource(id = R.color.staff_list_item_background))
+              .then(
+                  if (enabled && onClick != null) {
+                    Modifier.clickable(role = Role.Button) { onClick() }
+                  } else {
+                    Modifier
+                  })
               .testTag(StaffTestTags.Item.LIST_ITEM),
       leadingContent = {
         Avatar(

@@ -204,6 +204,9 @@ dependencies {
     // ---------- ZXing for QR code generation ------------
     implementation("com.google.zxing:core:3.5.1")
 
+    // ---------- libphonenumber for phone number formatting ------------
+    implementation("com.googlecode.libphonenumber:libphonenumber:8.13.17")
+
     // ---------- MapBox ------------
     implementation("com.mapbox.maps:android-ndk27:11.15.2")
     implementation("com.mapbox.extension:maps-compose-ndk27:11.15.2")
@@ -225,6 +228,7 @@ dependencies {
     testImplementation(libs.junit)
     globalTestImplementation(libs.androidx.junit)
     globalTestImplementation(libs.androidx.espresso.core)
+    testImplementation(kotlin("test"))
 }
 
 tasks.withType<Test> {

@@ -9,6 +9,7 @@ import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,6 +38,7 @@ data class OrganizerProfileUiState(
     val facebookUrl: String? = null,
     val followersCount: Int = 0,
     val isFollowing: Boolean = false,
+    val isOwner: Boolean = false,
     val isVerified: Boolean = false,
     val eventCount: Int = 0,
     val selectedTab: OrganizerProfileTab = OrganizerProfileTab.UPCOMING,
@@ -83,6 +85,8 @@ sealed interface OrganizerProfileEffect {
 
   data class OpenSocialMedia(val platform: String, val url: String) : OrganizerProfileEffect
 
+  data class NavigateToEditOrganization(val organizationId: String) : OrganizerProfileEffect
+
   data class ShowError(val message: String) : OrganizerProfileEffect
 }
 
@@ -90,7 +94,8 @@ sealed interface OrganizerProfileEffect {
 
 open class OrganizerProfileViewModel(
     private val organizationRepository: OrganizationRepository = OrganizationRepositoryFirebase(),
-    private val eventRepository: EventRepository = EventRepositoryFirebase()
+    private val eventRepository: EventRepository = EventRepositoryFirebase(),
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ViewModel() {
 
   private val _state = MutableStateFlow(OrganizerProfileUiState())
@@ -112,7 +117,10 @@ open class OrganizerProfileViewModel(
 
         organizationRepository.getOrganizationById(organizationId).collect { organization ->
           if (organization != null) {
-            _state.value = organization.toUiState()
+            val currentUserId = auth.currentUser?.uid
+            val isOwner = currentUserId != null && organization.ownerId == currentUserId
+
+            _state.value = organization.toUiState(isOwner = isOwner)
             // Load events for this organization
             loadOrganizationEvents(organizationId)
             // TODO: Check if current user is following this organization
@@ -211,10 +219,20 @@ open class OrganizerProfileViewModel(
   fun onEventClicked(eventId: String) {
     viewModelScope.launch { _effects.tryEmit(OrganizerProfileEffect.NavigateToEvent(eventId)) }
   }
+
+  /** Handles edit organization button click */
+  fun onEditOrganizationClicked() {
+    val organizationId = _state.value.organizationId
+    if (organizationId.isNotEmpty()) {
+      viewModelScope.launch {
+        _effects.tryEmit(OrganizerProfileEffect.NavigateToEditOrganization(organizationId))
+      }
+    }
+  }
 }
 
 // --- Extension: Map Organization model to UI state ---
-private fun Organization.toUiState(): OrganizerProfileUiState {
+private fun Organization.toUiState(isOwner: Boolean = false): OrganizerProfileUiState {
   return OrganizerProfileUiState(
       organizationId = id,
       name = name,
@@ -226,6 +244,7 @@ private fun Organization.toUiState(): OrganizerProfileUiState {
       facebookUrl = facebook,
       followersCount = followerCount,
       isFollowing = false, // TODO: Determine from user-organization relationship, needs change !
+      isOwner = isOwner,
       isVerified = verified,
       eventCount = eventIds.size,
       loading = false)

@@ -24,6 +24,7 @@ import java.util.Date
 import java.util.concurrent.TimeUnit
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -279,7 +280,9 @@ class OrganizerProfileScreenComposeTest {
     val followersCount = "1.5k"
 
     composeTestRule.setContent {
-      OnePassTheme { FollowSection(followersCount = followersCount, isFollowing = false) }
+      OnePassTheme {
+        FollowSection(followersCount = followersCount, isFollowing = false, isOwner = false)
+      }
     }
 
     // Verify follow section is displayed
@@ -306,7 +309,9 @@ class OrganizerProfileScreenComposeTest {
     val followersCount = "3.2k"
 
     composeTestRule.setContent {
-      OnePassTheme { FollowSection(followersCount = followersCount, isFollowing = true) }
+      OnePassTheme {
+        FollowSection(followersCount = followersCount, isFollowing = true, isOwner = false)
+      }
     }
 
     // Verify follow button text shows "FOLLOWING"
@@ -823,5 +828,172 @@ class OrganizerProfileScreenComposeTest {
         status = EventStatus.PUBLISHED,
         startTime = Timestamp(Date(startMillis)),
         endTime = Timestamp(Date(endMillis)))
+  }
+
+  // ========================================
+  // Tests for Edit Organization Button
+  // ========================================
+
+  @Test
+  fun followSection_ownerUser_displaysEditOrganizationButton() {
+    val followersCount = "2.4k"
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        FollowSection(
+            followersCount = followersCount,
+            isFollowing = false,
+            isOwner = true,
+            onFollowClick = {},
+            onEditClick = {})
+      }
+    }
+
+    // Verify follow section is displayed
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FOLLOW_SECTION).assertIsDisplayed()
+
+    // Verify follow button is displayed
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON).assertIsDisplayed()
+
+    // Verify edit organization button is displayed for owner
+    composeTestRule
+        .onNodeWithTag(OrganizerProfileTestTags.EDIT_ORGANIZATION_BUTTON)
+        .assertIsDisplayed()
+        .assertTextEquals("EDIT ORGANIZATION")
+  }
+
+  @Test
+  fun followSection_nonOwnerUser_hidesEditOrganizationButton() {
+    val followersCount = "1.5k"
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        FollowSection(
+            followersCount = followersCount,
+            isFollowing = false,
+            isOwner = false,
+            onFollowClick = {},
+            onEditClick = {})
+      }
+    }
+
+    // Verify follow section is displayed
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FOLLOW_SECTION).assertIsDisplayed()
+
+    // Verify follow button is displayed
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON).assertIsDisplayed()
+
+    // Verify edit organization button is NOT displayed for non-owner
+    composeTestRule
+        .onNodeWithTag(OrganizerProfileTestTags.EDIT_ORGANIZATION_BUTTON)
+        .assertDoesNotExist()
+  }
+
+  @Test
+  fun followSection_ownerAndFollowing_displaysBothButtons() {
+    val followersCount = "5.7k"
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        FollowSection(
+            followersCount = followersCount,
+            isFollowing = true,
+            isOwner = true,
+            onFollowClick = {},
+            onEditClick = {})
+      }
+    }
+
+    // Verify both buttons are displayed
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(OrganizerProfileTestTags.EDIT_ORGANIZATION_BUTTON)
+        .assertIsDisplayed()
+
+    // Verify follow button shows "FOLLOWING"
+    composeTestRule
+        .onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT, useUnmergedTree = true)
+        .assertTextEquals("FOLLOWING")
+  }
+
+  @Test
+  fun followSection_ownerClickHandling_callsCorrectCallbacks() {
+    var followClicked = false
+    var editClicked = false
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        FollowSection(
+            followersCount = "1k",
+            isFollowing = false,
+            isOwner = true,
+            onFollowClick = { followClicked = true },
+            onEditClick = { editClicked = true })
+      }
+    }
+
+    // Click follow button
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    Assert.assertTrue("Follow callback should be called", followClicked)
+
+    // Reset and click edit button
+    followClicked = false
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.EDIT_ORGANIZATION_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+    Assert.assertTrue("Edit callback should be called", editClicked)
+    Assert.assertFalse("Follow callback should not be called", followClicked)
+  }
+
+  @Test
+  fun organizerProfileContent_ownerUser_displaysEditButton() {
+    composeTestRule.setContent {
+      OnePassTheme {
+        OrganizerProfileContent(
+            name = "Test Owner Organizer",
+            description = "Test description",
+            followersCount = "2.4k",
+            isFollowing = false,
+            isOwner = true,
+            selectedTab = OrganizerProfileTab.UPCOMING)
+      }
+    }
+
+    // Verify main screen is displayed
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.SCREEN).assertIsDisplayed()
+
+    // Verify follow section is displayed
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FOLLOW_SECTION).assertIsDisplayed()
+
+    // Verify edit organization button is displayed
+    composeTestRule
+        .onNodeWithTag(OrganizerProfileTestTags.EDIT_ORGANIZATION_BUTTON)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun organizerProfileContent_nonOwnerUser_hidesEditButton() {
+    composeTestRule.setContent {
+      OnePassTheme {
+        OrganizerProfileContent(
+            name = "Test Non-Owner Organizer",
+            description = "Test description",
+            followersCount = "1.2k",
+            isFollowing = false,
+            isOwner = false,
+            selectedTab = OrganizerProfileTab.UPCOMING)
+      }
+    }
+
+    // Verify main screen is displayed
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.SCREEN).assertIsDisplayed()
+
+    // Verify follow section is displayed
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FOLLOW_SECTION).assertIsDisplayed()
+
+    // Verify edit organization button is NOT displayed
+    composeTestRule
+        .onNodeWithTag(OrganizerProfileTestTags.EDIT_ORGANIZATION_BUTTON)
+        .assertDoesNotExist()
   }
 }
