@@ -4,11 +4,13 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
@@ -565,6 +567,7 @@ class OrganizerProfileScreenComposeTest {
     }
 
     composeTestRule.waitUntil(timeoutMillis = 5_000) { !viewModel.state.value.loading }
+    composeTestRule.waitForIdle()
 
     assertTrue(viewModel.requestedOrganizationIds.contains(organizationId))
     assertTrue(viewModel.requestedEventOrganizationIds.contains(organizationId))
@@ -578,8 +581,20 @@ class OrganizerProfileScreenComposeTest {
         .assertIsDisplayed()
         .assertTextEquals(organization.description)
 
-    composeTestRule.onNodeWithText("Future Event").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Current Event").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(OrganizerProfileTestTags.EVENT_LIST)
+        .performScrollToNode(hasText("Future Event"))
+    composeTestRule
+        .onNodeWithText("Future Event", useUnmergedTree = true)
+        .assertExists()
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(OrganizerProfileTestTags.EVENT_LIST)
+        .performScrollToNode(hasText("Current Event"))
+    composeTestRule
+        .onNodeWithText("Current Event", useUnmergedTree = true)
+        .assertExists()
+        .assertIsDisplayed()
     composeTestRule.onNodeWithText("Past Event").assertDoesNotExist()
     composeTestRule.onAllNodesWithTag(MyEventsTestTags.TICKET_CARD).assertCountEquals(2)
   }
