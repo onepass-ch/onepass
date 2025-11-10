@@ -38,6 +38,15 @@ import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.White
 import coil.compose.AsyncImage
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.tooling.preview.Preview
+import ch.onepass.onepass.model.event.EventStatus
+import ch.onepass.onepass.model.event.PricingTier
+import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.model.organization.OrganizationStatus
+import ch.onepass.onepass.ui.theme.OnePassTheme
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.GeoPoint
+import java.util.Calendar
 
 object EventDetailTestTags {
   const val SCREEN = "eventDetailScreen"
@@ -304,78 +313,104 @@ private fun OrganizerSection(
             style = MaterialTheme.typography.titleMedium,
             color = Color.White,
             modifier = Modifier.padding(vertical = 10.dp))
+        
+        OrganizerInfoRow(
+            organization = organization,
+            organizerName = organizerName,
+            onNavigate = {
+              // TODO: Navigate to organizer profile screen
+            }
+        )
+      }
+}
 
-        Row(
+/**
+ * Displays the organizer information row with profile image, name, followers, and rating.
+ * 
+ * @param organization The organization data to display (nullable)
+ * @param organizerName Fallback name to display if organization is null
+ * @param onNavigate Callback for navigating to the organizer profile (added for future implementation of navigation to organizer profile screen)
+ * @param modifier Modifier for styling
+ */
+@Composable
+private fun OrganizerInfoRow(
+    organization: Organization?,
+    organizerName: String,
+    onNavigate: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+  Row(
+      modifier =
+          modifier
+              .fillMaxWidth()
+              .background(
+                  color = Color(0xFF1F1F1F), // neutral-800
+                  shape = RoundedCornerShape(10.dp))
+              .clickable(onClick = onNavigate)
+              .padding(10.dp),
+      horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        // Organizer image
+        AsyncImage(
+            model = organization?.profileImageUrl,
+            contentDescription = "Organizer profile",
+            placeholder = rememberVectorPainter(Icons.Default.Person),
+            error = rememberVectorPainter(Icons.Default.Person),
             modifier =
-                Modifier.fillMaxWidth()
-                    .background(
-                        color = Color(0xFF1F1F1F), // neutral-800
-                        shape = RoundedCornerShape(10.dp))
-                    .padding(10.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-              // Organizer image
-              AsyncImage(
-                  model = organization?.profileImageUrl,
-                  contentDescription = "Organizer profile",
-                  placeholder = rememberVectorPainter(Icons.Default.Person),
-                  error = rememberVectorPainter(Icons.Default.Person),
-                  modifier =
-                      Modifier.size(70.dp)
-                          .clip(RoundedCornerShape(10.dp))
-                          .background(Color.Black)
-                          .testTag(EventDetailTestTags.ORGANIZER_IMAGE),
-                  contentScale = ContentScale.Crop)
+                Modifier.size(70.dp)
+                    .clip(RoundedCornerShape(10.dp))
+                    .background(Color.Black)
+                    .testTag(EventDetailTestTags.ORGANIZER_IMAGE),
+            contentScale = ContentScale.Crop)
 
-              // Organizer details
-              Column(
-                  modifier = Modifier.weight(1f).padding(10.dp),
-                  verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        // Organizer details
+        Column(
+            modifier = Modifier.weight(1f).padding(10.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)) {
+              Text(
+                  text = organization?.name ?: organizerName,
+                  style =
+                      MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                  color = Color.White,
+                  modifier = Modifier.testTag(EventDetailTestTags.ORGANIZER_NAME))
+
+              // Stats row (followers and rating)
+              Row(
+                  modifier = Modifier.fillMaxWidth(),
+                  horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    // Followers
                     Text(
-                        text = organization?.name ?: organizerName,
+                        text = formatFollowerCount(organization?.followerCount ?: 0),
                         style =
-                            MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                            MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight(400),
+                                fontSize = 11.sp,
+                                lineHeight = 16.sp),
                         color = Color.White,
-                        modifier = Modifier.testTag(EventDetailTestTags.ORGANIZER_NAME))
+                        modifier = Modifier.testTag(EventDetailTestTags.ORGANIZER_FOLLOWERS))
 
-                    // Stats row (followers and rating)
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                          // Followers
-                          Text(
-                              text = formatFollowerCount(organization?.followerCount ?: 0),
-                              style =
-                                  MaterialTheme.typography.titleLarge.copy(
-                                      fontWeight = FontWeight(400),
-                                      fontSize = 11.sp,
-                                      lineHeight = 16.sp),
-                              color = Color.White,
-                              modifier = Modifier.testTag(EventDetailTestTags.ORGANIZER_FOLLOWERS))
-
-                          // Rating
-                          if ((organization?.averageRating ?: 0f) > 0f) {
-                            Row(
-                                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                                verticalAlignment = Alignment.CenterVertically) {
-                                  Icon(
-                                      imageVector = Icons.Default.Star,
-                                      contentDescription = null,
-                                      modifier = Modifier.size(14.dp).padding(1.dp),
-                                      tint = Color(0xFF683F88))
-                                  Text(
-                                      text =
-                                          String.format("%.1f", organization?.averageRating ?: 0f),
-                                      style =
-                                          MaterialTheme.typography.titleLarge.copy(
-                                              fontWeight = FontWeight.Bold,
-                                              fontSize = 11.sp,
-                                              lineHeight = 16.sp),
-                                      color = Color.White,
-                                      modifier =
-                                          Modifier.testTag(EventDetailTestTags.ORGANIZER_RATING))
-                                }
+                    // Rating
+                    if ((organization?.averageRating ?: 0f) > 0f) {
+                      Row(
+                          horizontalArrangement = Arrangement.spacedBy(4.dp),
+                          verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = Icons.Default.Star,
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp).padding(1.dp),
+                                tint = Color(0xFF683F88))
+                            Text(
+                                text =
+                                    String.format("%.1f", organization?.averageRating ?: 0f),
+                                style =
+                                    MaterialTheme.typography.titleLarge.copy(
+                                        fontWeight = FontWeight.Bold,
+                                        fontSize = 11.sp,
+                                        lineHeight = 16.sp),
+                                color = Color.White,
+                                modifier =
+                                    Modifier.testTag(EventDetailTestTags.ORGANIZER_RATING))
                           }
-                        }
+                    }
                   }
             }
       }
@@ -493,4 +528,83 @@ internal fun formatPrice(event: Event): String {
   } else {
     "Buy ticket for ${lowestPrice}${event.currency.lowercase()}"
   }
+}
+
+// Preview functions
+@Preview(showBackground = true, backgroundColor = 0xFF1A1A1A)
+@Composable
+private fun EventDetailScreenPreview() {
+    OnePassTheme {
+        val sampleEvent = createSampleEvent()
+        val sampleOrganization = createSampleOrganization()
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(DefaultBackground)
+        ) {
+            EventDetailContent(
+                event = sampleEvent,
+                organization = sampleOrganization,
+                isLiked = false,
+                onLikeToggle = {},
+                onNavigateToMap = {},
+                onBuyTicket = {},
+                onBack = {})
+
+            // Fixed button at bottom
+            BuyButton(
+                onBuyTicket = {},
+                priceText = formatPrice(sampleEvent),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+            )
+        }
+    }
+}
+
+private fun createSampleEvent(): Event {
+    val calendar = Calendar.getInstance()
+    calendar.set(2024, Calendar.DECEMBER, 15, 21, 0, 0) // Dec 15, 2024 at 9:00 PM
+    calendar.set(Calendar.MILLISECOND, 0)
+
+    return Event(
+        eventId = "preview-event-1",
+        title = "LAUSANNE BEST PARTY",
+        description =
+            "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vitae nisi nec magna consequat tincidunt. Curabitur suscipit sem vel.",
+        organizerId = "preview-organizer-1",
+        organizerName = "lausanne organizer",
+        status = EventStatus.PUBLISHED,
+        location =
+            Location(
+                coordinates = GeoPoint(46.5197, 6.6323),
+                name = "Lausanne, flon",
+                region = "Lausanne"),
+        startTime = Timestamp(calendar.time),
+        endTime = Timestamp(calendar.time),
+        capacity = 500,
+        ticketsRemaining = 350,
+        ticketsIssued = 150,
+        ticketsRedeemed = 0,
+        currency = "CHF",
+        pricingTiers = listOf(PricingTier("General", 35.0, 500, 350)),
+        images = listOf(),
+        tags = listOf("party", "music", "lausanne"))
+}
+
+private fun createSampleOrganization(): Organization {
+    return Organization(
+        id = "preview-organizer-1",
+        name = "lausanne organizer",
+        description = "Best party organizer in Lausanne",
+        ownerId = "owner-1",
+        status = OrganizationStatus.ACTIVE,
+        verified = false,
+        profileImageUrl = null,
+        followerCount = 1500, // 1.5K followers
+        averageRating = 4.5f,
+        createdAt = Timestamp.now(),
+        updatedAt = Timestamp.now())
 }
