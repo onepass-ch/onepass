@@ -4,7 +4,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.OrganizationInvitation
 import ch.onepass.onepass.model.organization.OrganizationRole
-import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.model.user.FakeUserRepository
 import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.ui.organization.MockOrganizationRepository
@@ -143,7 +142,6 @@ class MyInvitationsViewModelTest {
       return addMemberResult
     }
   }
-
 
   @Before
   fun setUp() {
