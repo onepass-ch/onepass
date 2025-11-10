@@ -37,6 +37,7 @@ import ch.onepass.onepass.ui.event.LikeButton
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.White
 import coil.compose.AsyncImage
+import androidx.compose.ui.res.colorResource
 
 object EventDetailTestTags {
   const val SCREEN = "eventDetailScreen"
@@ -380,6 +381,7 @@ private fun OrganizerSection(
       }
 }
 
+@SuppressLint("ResourceAsColor")
 @Composable
 private fun AboutEventSection(description: String, modifier: Modifier = Modifier) {
   Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
@@ -392,7 +394,7 @@ private fun AboutEventSection(description: String, modifier: Modifier = Modifier
     Text(
         text = description.ifEmpty { "No description available." },
         style = MaterialTheme.typography.bodyMedium,
-        color = Color(0xFFC4C4C4),
+        color = Color(R.color.icon_color_detailScreen),
         modifier = Modifier.testTag(EventDetailTestTags.ABOUT_EVENT))
   }
 }
@@ -400,8 +402,8 @@ private fun AboutEventSection(description: String, modifier: Modifier = Modifier
 @Composable
 private fun EventDetailsSection(
     event: Event,
-    onNavigateToMap: () -> Unit,
-    onBuyTicket: () -> Unit,
+    onNavigateToMap: () -> Unit, // Information for navigation: This onNavigateToMap takes the event geolocation and navigate to the map at this location for him to see it.
+    onBuyTicket: () -> Unit, // TODO: implement buy ticket action in M3
     modifier: Modifier = Modifier
 ) {
   Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(15.dp)) {
