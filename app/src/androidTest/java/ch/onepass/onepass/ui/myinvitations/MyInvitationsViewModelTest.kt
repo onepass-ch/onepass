@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.OrganizationInvitation
 import ch.onepass.onepass.model.organization.OrganizationRole
+import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.model.user.FakeUserRepository
 import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.ui.organization.MockOrganizationRepository
@@ -143,6 +144,7 @@ class MyInvitationsViewModelTest {
     }
   }
 
+
   @Before
   fun setUp() {
     Dispatchers.setMain(testDispatcher)
@@ -241,6 +243,37 @@ class MyInvitationsViewModelTest {
     val state = viewModel.state.value
 
     assertNotNull("Expected an error message", state.errorMessage)
+  }
+
+  // ========================================
+  // Tests for Retry
+  // ========================================
+
+  @Test
+  fun retry_afterUserLoadError_clearsErrorAndReloadsInvitations() = runTest {
+    val userRepository = FakeUserRepository()
+    val orgRepository =
+        TestMockOrganizationRepository(
+            invitationsByEmail = mapOf(testUserEmail to listOf(pendingInvitation)))
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    var state = viewModel.state.value
+    assertNotNull("Expected an error message when user cannot be loaded", state.errorMessage)
+    assertTrue("No invitations should be loaded when user fails", state.invitations.isEmpty())
+
+    userRepository.updateCurrentUser(testUser)
+    userRepository.updateCreatedUser(testUser)
+
+    viewModel.retry()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    state = viewModel.state.value
+    assertNull("Error message should be cleared after retry succeeds", state.errorMessage)
+    assertFalse("Loading should be false after retry succeeds", state.loading)
+    assertEquals("Expected invitations to be reloaded after retry", 1, state.invitations.size)
+    assertEquals("invite-1", state.invitations.first().id)
   }
 
   // ========================================
