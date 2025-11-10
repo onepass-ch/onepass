@@ -36,8 +36,8 @@ object MapScreenTestTags {
 }
 
 private object AnnotationConfig {
-    const val PIN_ICON = "purple-pin"
-    const val PIN_SIZE = 0.6
+  const val PIN_ICON = "purple-pin"
+  const val PIN_SIZE = 0.6
 }
 
 /**

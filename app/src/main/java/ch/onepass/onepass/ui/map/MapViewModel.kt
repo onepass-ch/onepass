@@ -123,9 +123,7 @@ class MapViewModel(
     _uiState.value = _uiState.value.copy(selectedEvent = null)
   }
 
-  /**
-   * Refreshes events manually by fetching from repository.
-   */
+  /** Refreshes events manually by fetching from repository. */
   fun refreshEvents() {
     fetchPublishedEvents()
   }
@@ -149,9 +147,7 @@ class MapViewModel(
     }
   }
 
-  /**
-   * Enables location tracking if permission is granted.
-   */
+  /** Enables location tracking if permission is granted. */
   fun enableLocationTracking() {
     internalMapView?.let { enableLocationTracking(it) }
   }
@@ -203,19 +199,13 @@ class MapViewModel(
   }
 
   // --- Map lifecycle delegation ---
-  /**
-   * Starts the map lifecycle.
-   */
+  /** Starts the map lifecycle. */
   fun onMapStart() = internalMapView?.onStart()
 
-  /**
-   * Stops the map lifecycle.
-   */
+  /** Stops the map lifecycle. */
   fun onMapStop() = internalMapView?.onStop()
 
-  /**
-   * Handles low memory situations for the map.
-   */
+  /** Handles low memory situations for the map. */
   fun onMapLowMemory() = internalMapView?.onLowMemory()
 
   override fun onCleared() {
