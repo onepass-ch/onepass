@@ -25,8 +25,8 @@ import org.junit.Test
 /**
  * Unit tests for EventDetailViewModel.
  *
- * These tests verify the ViewModel's behavior for loading event and organization data,
- * handling errors, and managing loading states.
+ * These tests verify the ViewModel's behavior for loading event and organization data, handling
+ * errors, and managing loading states.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class EventDetailViewModelTest {
@@ -76,9 +76,10 @@ class EventDetailViewModelTest {
   @Test
   fun eventDetailViewModel_initialState_isLoadingWithNullValues() {
     // Mock event repository to return a flow that doesn't emit immediately
-    every { mockEventRepository.getEventById(any()) } returns flow {
-      // Don't emit anything immediately
-    }
+    every { mockEventRepository.getEventById(any()) } returns
+        flow {
+          // Don't emit anything immediately
+        }
 
     val viewModel =
         EventDetailViewModel(
@@ -148,9 +149,8 @@ class EventDetailViewModelTest {
   @Test
   fun eventDetailViewModel_loadEvent_handlesRepositoryError() {
     // Mock event repository throwing an error
-    every { mockEventRepository.getEventById("event-123") } returns flow {
-      throw Exception("Network error")
-    }
+    every { mockEventRepository.getEventById("event-123") } returns
+        flow { throw Exception("Network error") }
 
     val viewModel =
         EventDetailViewModel(
@@ -174,9 +174,7 @@ class EventDetailViewModelTest {
   @Test
   fun eventDetailViewModel_loadEvent_handlesRepositoryErrorWithNullMessage() {
     // Mock event repository throwing an error with null message
-    every { mockEventRepository.getEventById("event-123") } returns flow {
-      throw Exception()
-    }
+    every { mockEventRepository.getEventById("event-123") } returns flow { throw Exception() }
 
     val viewModel =
         EventDetailViewModel(
@@ -197,9 +195,8 @@ class EventDetailViewModelTest {
     every { mockEventRepository.getEventById("event-123") } returns flowOf(testEvent)
 
     // Mock organization repository throwing an error
-    every { mockOrganizationRepository.getOrganizationById("org-123") } returns flow {
-      throw Exception("Organization error")
-    }
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flow { throw Exception("Organization error") }
 
     val viewModel =
         EventDetailViewModel(
@@ -226,8 +223,7 @@ class EventDetailViewModelTest {
     val eventWithBlankOrganizer = testEvent.copy(organizerId = "")
 
     // Mock event repository
-    every { mockEventRepository.getEventById("event-123") } returns
-        flowOf(eventWithBlankOrganizer)
+    every { mockEventRepository.getEventById("event-123") } returns flowOf(eventWithBlankOrganizer)
 
     val viewModel =
         EventDetailViewModel(
@@ -283,8 +279,7 @@ class EventDetailViewModelTest {
 
     // Mock for event-1
     every { mockEventRepository.getEventById("event-1") } returns flowOf(event1)
-    every { mockOrganizationRepository.getOrganizationById(any()) } returns
-        flowOf(testOrganization)
+    every { mockOrganizationRepository.getOrganizationById(any()) } returns flowOf(testOrganization)
 
     val viewModel1 =
         EventDetailViewModel(
@@ -314,10 +309,11 @@ class EventDetailViewModelTest {
     every { mockEventRepository.getEventById("event-123") } returns flowOf(testEvent)
 
     // Mock organization repository to track when it's called
-    every { mockOrganizationRepository.getOrganizationById("org-123") } returns flow {
-      organizationLoadCalled = true
-      emit(testOrganization)
-    }
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flow {
+          organizationLoadCalled = true
+          emit(testOrganization)
+        }
 
     val viewModel =
         EventDetailViewModel(

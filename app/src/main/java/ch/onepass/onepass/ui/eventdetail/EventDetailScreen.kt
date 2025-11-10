@@ -37,16 +37,6 @@ import ch.onepass.onepass.ui.event.LikeButton
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.White
 import coil.compose.AsyncImage
-import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.tooling.preview.Preview
-import ch.onepass.onepass.model.event.EventStatus
-import ch.onepass.onepass.model.event.PricingTier
-import ch.onepass.onepass.model.map.Location
-import ch.onepass.onepass.model.organization.OrganizationStatus
-import ch.onepass.onepass.ui.theme.OnePassTheme
-import com.google.firebase.Timestamp
-import com.google.firebase.firestore.GeoPoint
-import java.util.Calendar
 
 object EventDetailTestTags {
   const val SCREEN = "eventDetailScreen"
@@ -313,23 +303,23 @@ private fun OrganizerSection(
             style = MaterialTheme.typography.titleMedium,
             color = Color.White,
             modifier = Modifier.padding(vertical = 10.dp))
-        
+
         OrganizerInfoRow(
             organization = organization,
             organizerName = organizerName,
             onNavigate = {
               // TODO: Navigate to organizer profile screen
-            }
-        )
+            })
       }
 }
 
 /**
  * Displays the organizer information row with profile image, name, followers, and rating.
- * 
+ *
  * @param organization The organization data to display (nullable)
  * @param organizerName Fallback name to display if organization is null
- * @param onNavigate Callback for navigating to the organizer profile (added for future implementation of navigation to organizer profile screen)
+ * @param onNavigate Callback for navigating to the organizer profile (added for future
+ *   implementation of navigation to organizer profile screen)
  * @param modifier Modifier for styling
  */
 @Composable
@@ -368,8 +358,7 @@ private fun OrganizerInfoRow(
             verticalArrangement = Arrangement.spacedBy(10.dp)) {
               Text(
                   text = organization?.name ?: organizerName,
-                  style =
-                      MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                  style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                   color = Color.White,
                   modifier = Modifier.testTag(EventDetailTestTags.ORGANIZER_NAME))
 
@@ -382,9 +371,7 @@ private fun OrganizerInfoRow(
                         text = formatFollowerCount(organization?.followerCount ?: 0),
                         style =
                             MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight(400),
-                                fontSize = 11.sp,
-                                lineHeight = 16.sp),
+                                fontWeight = FontWeight(400), fontSize = 11.sp, lineHeight = 16.sp),
                         color = Color.White,
                         modifier = Modifier.testTag(EventDetailTestTags.ORGANIZER_FOLLOWERS))
 
@@ -399,16 +386,14 @@ private fun OrganizerInfoRow(
                                 modifier = Modifier.size(14.dp).padding(1.dp),
                                 tint = Color(0xFF683F88))
                             Text(
-                                text =
-                                    String.format("%.1f", organization?.averageRating ?: 0f),
+                                text = String.format("%.1f", organization?.averageRating ?: 0f),
                                 style =
                                     MaterialTheme.typography.titleLarge.copy(
                                         fontWeight = FontWeight.Bold,
                                         fontSize = 11.sp,
                                         lineHeight = 16.sp),
                                 color = Color.White,
-                                modifier =
-                                    Modifier.testTag(EventDetailTestTags.ORGANIZER_RATING))
+                                modifier = Modifier.testTag(EventDetailTestTags.ORGANIZER_RATING))
                           }
                     }
                   }
@@ -437,7 +422,10 @@ private fun AboutEventSection(description: String, modifier: Modifier = Modifier
 @Composable
 private fun EventDetailsSection(
     event: Event,
-    onNavigateToMap: () -> Unit, // Information for navigation: This onNavigateToMap takes the event geolocation and navigate to the map at this location for him to see it.
+    onNavigateToMap:
+        (
+            ) -> Unit, // Information for navigation: This onNavigateToMap takes the event
+                       // geolocation and navigate to the map at this location for him to see it.
     onBuyTicket: () -> Unit, // TODO: implement buy ticket action in M3
     modifier: Modifier = Modifier
 ) {

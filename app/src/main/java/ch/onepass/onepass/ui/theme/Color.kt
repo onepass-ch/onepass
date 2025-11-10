@@ -24,5 +24,5 @@ val EventDateColor = Color(0xFF683F88) // Purple/Magenta
 // Default background color for the app
 val DefaultBackground = Color(0xFF1A1A1A)
 
-//Icon color EventDetailScreen
+// Icon color EventDetailScreen
 val IconColor_EventDetail = Color(0xFFC4C4C4)
