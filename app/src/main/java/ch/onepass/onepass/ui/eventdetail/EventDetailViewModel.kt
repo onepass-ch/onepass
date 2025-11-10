@@ -8,14 +8,13 @@ import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import ch.onepass.onepass.repository.RepositoryProvider
-import ch.onepass.onepass.repository.RepositoryProvider.eventRepository
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
 /** ViewModel for EventDetailScreen that manages event and organizer data. */
 class EventDetailViewModel(
     private val eventId: String,
-    eventRepository: EventRepository = RepositoryProvider.eventRepository,
+    private val eventRepository: EventRepository = RepositoryProvider.eventRepository,
     private val organizationRepository: OrganizationRepository = OrganizationRepositoryFirebase()
 ) : ViewModel() {
 
