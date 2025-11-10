@@ -22,9 +22,9 @@ import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.google.firebase.Timestamp
 import java.util.Date
 import java.util.concurrent.TimeUnit
+import org.junit.Assert
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
-import org.junit.Assert
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
