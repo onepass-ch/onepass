@@ -16,16 +16,16 @@ class BecomeOrganizerScreenTest {
 
     val tags =
         listOf(
-            OrganizerTestTags.NAME_FIELD,
-            OrganizerTestTags.DESCRIPTION_FIELD,
-            OrganizerTestTags.EMAIL_FIELD,
-            OrganizerTestTags.PHONE_FIELD,
-            OrganizerTestTags.WEBSITE_FIELD,
-            OrganizerTestTags.INSTAGRAM_FIELD,
-            OrganizerTestTags.FACEBOOK_FIELD,
-            OrganizerTestTags.TIKTOK_FIELD,
-            OrganizerTestTags.ADDRESS_FIELD,
-            OrganizerTestTags.SUBMIT_BUTTON)
+            BecomeOrganizerTestTags.NAME_FIELD,
+            BecomeOrganizerTestTags.DESCRIPTION_FIELD,
+            BecomeOrganizerTestTags.EMAIL_FIELD,
+            BecomeOrganizerTestTags.PHONE_FIELD,
+            BecomeOrganizerTestTags.WEBSITE_FIELD,
+            BecomeOrganizerTestTags.INSTAGRAM_FIELD,
+            BecomeOrganizerTestTags.FACEBOOK_FIELD,
+            BecomeOrganizerTestTags.TIKTOK_FIELD,
+            BecomeOrganizerTestTags.ADDRESS_FIELD,
+            BecomeOrganizerTestTags.SUBMIT_BUTTON)
 
     tags.forEach { tag -> composeTestRule.onNodeWithTag(tag).performScrollTo().assertIsDisplayed() }
   }
@@ -35,65 +35,73 @@ class BecomeOrganizerScreenTest {
     composeTestRule.setContent { OnePassTheme { BecomeOrganizerScreen(ownerId = "user123") } }
 
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.NAME_FIELD)
+        .onNodeWithTag(BecomeOrganizerTestTags.NAME_FIELD)
         .performScrollTo()
         .performTextInput("Test Org")
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.DESCRIPTION_FIELD)
+        .onNodeWithTag(BecomeOrganizerTestTags.DESCRIPTION_FIELD)
         .performScrollTo()
         .performTextInput("Cool description")
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.EMAIL_FIELD)
+        .onNodeWithTag(BecomeOrganizerTestTags.EMAIL_FIELD)
         .performScrollTo()
         .performTextInput("test@email.com")
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.WEBSITE_FIELD)
+        .onNodeWithTag(BecomeOrganizerTestTags.WEBSITE_FIELD)
         .performScrollTo()
         .performTextInput("example.com")
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.INSTAGRAM_FIELD)
+        .onNodeWithTag(BecomeOrganizerTestTags.INSTAGRAM_FIELD)
         .performScrollTo()
         .performTextInput("test_insta")
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.FACEBOOK_FIELD)
+        .onNodeWithTag(BecomeOrganizerTestTags.FACEBOOK_FIELD)
         .performScrollTo()
         .performTextInput("test_fb")
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.TIKTOK_FIELD)
+        .onNodeWithTag(BecomeOrganizerTestTags.TIKTOK_FIELD)
         .performScrollTo()
         .performTextInput("test_tiktok")
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.ADDRESS_FIELD)
+        .onNodeWithTag(BecomeOrganizerTestTags.ADDRESS_FIELD)
         .performScrollTo()
         .performTextInput("123 Test Street")
 
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.PREFIX_DROPDOWN)
+        .onNodeWithTag(BecomeOrganizerTestTags.PREFIX_DROPDOWN)
         .performScrollTo()
         .performClick()
     composeTestRule.onNode(hasText("+1 American Samoa")).performScrollTo().performClick()
 
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.PHONE_FIELD)
+        .onNodeWithTag(BecomeOrganizerTestTags.PHONE_FIELD)
         .performScrollTo()
         .performTextInput("123456789")
 
-    composeTestRule.onNodeWithTag(OrganizerTestTags.NAME_FIELD).assertTextContains("Test Org")
+    composeTestRule.onNodeWithTag(BecomeOrganizerTestTags.NAME_FIELD).assertTextContains("Test Org")
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.DESCRIPTION_FIELD)
+        .onNodeWithTag(BecomeOrganizerTestTags.DESCRIPTION_FIELD)
         .assertTextContains("Cool description")
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.EMAIL_FIELD)
+        .onNodeWithTag(BecomeOrganizerTestTags.EMAIL_FIELD)
         .assertTextContains("test@email.com")
-    composeTestRule.onNodeWithTag(OrganizerTestTags.PHONE_FIELD).assertTextContains("123456789")
-    composeTestRule.onNodeWithTag(OrganizerTestTags.WEBSITE_FIELD).assertTextContains("example.com")
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.INSTAGRAM_FIELD)
+        .onNodeWithTag(BecomeOrganizerTestTags.PHONE_FIELD)
+        .assertTextContains("123456789")
+    composeTestRule
+        .onNodeWithTag(BecomeOrganizerTestTags.WEBSITE_FIELD)
+        .assertTextContains("example.com")
+    composeTestRule
+        .onNodeWithTag(BecomeOrganizerTestTags.INSTAGRAM_FIELD)
         .assertTextContains("test_insta")
-    composeTestRule.onNodeWithTag(OrganizerTestTags.FACEBOOK_FIELD).assertTextContains("test_fb")
-    composeTestRule.onNodeWithTag(OrganizerTestTags.TIKTOK_FIELD).assertTextContains("test_tiktok")
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.ADDRESS_FIELD)
+        .onNodeWithTag(BecomeOrganizerTestTags.FACEBOOK_FIELD)
+        .assertTextContains("test_fb")
+    composeTestRule
+        .onNodeWithTag(BecomeOrganizerTestTags.TIKTOK_FIELD)
+        .assertTextContains("test_tiktok")
+    composeTestRule
+        .onNodeWithTag(BecomeOrganizerTestTags.ADDRESS_FIELD)
         .assertTextContains("123 Test Street")
   }
 
@@ -101,7 +109,10 @@ class BecomeOrganizerScreenTest {
   fun submitButtonShowsErrorOnEmptyRequiredFields() {
     composeTestRule.setContent { OnePassTheme { BecomeOrganizerScreen(ownerId = "user123") } }
 
-    composeTestRule.onNodeWithTag(OrganizerTestTags.SUBMIT_BUTTON).performScrollTo().performClick()
+    composeTestRule
+        .onNodeWithTag(BecomeOrganizerTestTags.SUBMIT_BUTTON)
+        .performScrollTo()
+        .performClick()
 
     composeTestRule.onNodeWithText("Please fix errors").assertIsDisplayed()
   }
@@ -111,7 +122,7 @@ class BecomeOrganizerScreenTest {
     composeTestRule.setContent { OnePassTheme { BecomeOrganizerScreen(ownerId = "user123") } }
 
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.PREFIX_DROPDOWN)
+        .onNodeWithTag(BecomeOrganizerTestTags.PREFIX_DROPDOWN)
         .performScrollTo()
         .performClick()
 
