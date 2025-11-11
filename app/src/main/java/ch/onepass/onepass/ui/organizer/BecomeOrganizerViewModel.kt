@@ -6,6 +6,8 @@ import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import ch.onepass.onepass.model.organization.OrganizationStatus
+import ch.onepass.onepass.model.user.UserRepository
+import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -67,10 +69,11 @@ class BecomeOrganizerUiState(
 /**
  * ViewModel for managing the Become Organizer form and its submission.
  *
- * @param repository The organization repository for data operations.
+ * @param organizationRepository The organization repository for data operations.
  */
 class BecomeOrganizerViewModel(
-    private val repository: OrganizationRepository = OrganizationRepositoryFirebase()
+    private val organizationRepository: OrganizationRepository = OrganizationRepositoryFirebase(),
+    private val userRepository: UserRepository = UserRepositoryFirebase()
 ) : ViewModel() {
 
   /** Private form state */
@@ -449,12 +452,15 @@ class BecomeOrganizerViewModel(
                 facebook = s.facebook.value,
                 tiktok = s.tiktok.value,
                 address = s.address.value)
-        val result = repository.createOrganization(org)
+        val result = organizationRepository.createOrganization(org)
 
         // Update UI state based on result
         _uiState.value =
             result.fold(
-                onSuccess = { BecomeOrganizerUiState(successOrganizationId = it) },
+                onSuccess = { orgId ->
+                  userRepository.addOrganizationToUser(ownerId, orgId)
+                  BecomeOrganizerUiState(successOrganizationId = orgId)
+                },
                 onFailure = {
                   BecomeOrganizerUiState(errorMessage = it.message ?: "Unknown error")
                 })
