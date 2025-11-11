@@ -152,9 +152,11 @@ class MyInvitationsViewModel(
    * Retries loading user information and invitations.
    *
    * This method can be called when an error occurs to retry loading the user's email and
-   * subsequently their invitations.
+   * subsequently their invitations. It clears any existing error message to provide better UX
+   * feedback.
    */
   fun retry() {
+    _uiState.value = _uiState.value.copy(errorMessage = null, successMessage = null)
     loadUserEmail()
   }
 
