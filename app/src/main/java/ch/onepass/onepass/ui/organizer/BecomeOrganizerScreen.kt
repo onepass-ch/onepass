@@ -16,7 +16,7 @@ import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.OnePassTheme
 
 /** Test tags for BecomeOrganizer screen components */
-object OrganizerTestTags {
+object BecomeOrganizerTestTags {
   const val NAME_FIELD = "BecomeOrgNameField"
   const val DESCRIPTION_FIELD = "BecomeOrgDescriptionField"
   const val EMAIL_FIELD = "BecomeOrgEmailField"
@@ -42,19 +42,26 @@ object OrganizerTestTags {
 fun BecomeOrganizerScreen(
     ownerId: String,
     viewModel: BecomeOrganizerViewModel = viewModel(),
-    onOrganizationCreated: () -> Unit = {}
+    onOrganizationCreated: (String) -> Unit = {}
 ) {
   val formState by viewModel.formState.collectAsState()
   val uiState by viewModel.uiState.collectAsState()
   val countryList by viewModel.countryList.collectAsState()
+  val selectedCountryCode by viewModel.selectedCountryCode.collectAsState()
   val scrollState = rememberScrollState()
   val snackbarHostState = remember { SnackbarHostState() }
   var prefixDropdownExpanded by remember { mutableStateOf(false) }
-  var prefixDisplayText by remember { mutableStateOf("Prefix") }
 
-  // Handle side effects based on UI state changes
-  LaunchedEffect(uiState) {
-    uiState.successOrganizationId?.let { onOrganizationCreated() }
+  // Handle successful organization creation
+  LaunchedEffect(uiState.successOrganizationId) {
+    uiState.successOrganizationId?.let { newOrgId ->
+      onOrganizationCreated(newOrgId)
+      viewModel.clearSuccess()
+    }
+  }
+
+  // Handle error messages
+  LaunchedEffect(uiState.errorMessage) {
     uiState.errorMessage?.let {
       snackbarHostState.showSnackbar(it)
       viewModel.clearError()
@@ -64,7 +71,7 @@ fun BecomeOrganizerScreen(
   Scaffold(
       snackbarHost = {
         // Snackbar host to show error messages
-        SnackbarHost(snackbarHostState, Modifier.testTag(OrganizerTestTags.SNACKBAR))
+        SnackbarHost(snackbarHostState, Modifier.testTag(BecomeOrganizerTestTags.SNACKBAR))
       }) { paddingValues ->
         Column(
             modifier =
@@ -86,7 +93,7 @@ fun BecomeOrganizerScreen(
                   isError = formState.name.error != null,
                   onFocusChanged = viewModel::onFocusChangeName,
                   errorMessage = formState.name.error,
-                  testTag = OrganizerTestTags.NAME_FIELD)
+                  testTag = BecomeOrganizerTestTags.NAME_FIELD)
 
               // Organization Description Field
               FormTextField(
@@ -97,7 +104,7 @@ fun BecomeOrganizerScreen(
                   onFocusChanged = viewModel::onFocusChangeDescription,
                   maxLines = 5,
                   errorMessage = formState.description.error,
-                  testTag = OrganizerTestTags.DESCRIPTION_FIELD)
+                  testTag = BecomeOrganizerTestTags.DESCRIPTION_FIELD)
 
               // Contact Email Field
               FormTextField(
@@ -108,26 +115,25 @@ fun BecomeOrganizerScreen(
                   onFocusChanged = viewModel::onFocusChangeEmail,
                   keyboardType = KeyboardType.Email,
                   errorMessage = formState.contactEmail.error,
-                  testTag = OrganizerTestTags.EMAIL_FIELD)
+                  testTag = BecomeOrganizerTestTags.EMAIL_FIELD)
 
               // Contact Phone Field with Prefix Dropdown
               PrefixPhoneRow(
-                  prefixDisplayText = prefixDisplayText,
+                  prefixDisplayText = selectedCountryCode,
                   prefixError = formState.contactPhone.error,
                   countryList = countryList,
                   dropdownExpanded = prefixDropdownExpanded,
                   onDropdownDismiss = { prefixDropdownExpanded = false },
                   onCountrySelected = { index ->
                     viewModel.updateCountryIndex(index)
-                    prefixDisplayText = "+${countryList[index].second}"
                     prefixDropdownExpanded = false
                   },
                   phoneValue = formState.contactPhone.value,
                   onPhoneChange = viewModel::updateContactPhone,
                   onPhoneFocusChanged = viewModel::onFocusChangePhone,
                   onPrefixClick = { prefixDropdownExpanded = true },
-                  phoneTestTag = OrganizerTestTags.PHONE_FIELD,
-                  prefixTestTag = OrganizerTestTags.PREFIX_DROPDOWN)
+                  phoneTestTag = BecomeOrganizerTestTags.PHONE_FIELD,
+                  prefixTestTag = BecomeOrganizerTestTags.PREFIX_DROPDOWN)
 
               // Website Field
               FormTextField(
@@ -137,31 +143,31 @@ fun BecomeOrganizerScreen(
                   isError = formState.website.error != null,
                   onFocusChanged = viewModel::onFocusChangeWebsite,
                   errorMessage = formState.website.error,
-                  testTag = OrganizerTestTags.WEBSITE_FIELD)
+                  testTag = BecomeOrganizerTestTags.WEBSITE_FIELD)
 
               // Social Media Fields
               FormTextField(
                   value = formState.instagram.value,
                   onValueChange = viewModel::updateInstagram,
                   label = "Instagram",
-                  testTag = OrganizerTestTags.INSTAGRAM_FIELD)
+                  testTag = BecomeOrganizerTestTags.INSTAGRAM_FIELD)
               FormTextField(
                   value = formState.facebook.value,
                   onValueChange = viewModel::updateFacebook,
                   label = "Facebook",
-                  testTag = OrganizerTestTags.FACEBOOK_FIELD)
+                  testTag = BecomeOrganizerTestTags.FACEBOOK_FIELD)
               FormTextField(
                   value = formState.tiktok.value,
                   onValueChange = viewModel::updateTiktok,
                   label = "TikTok",
-                  testTag = OrganizerTestTags.TIKTOK_FIELD)
+                  testTag = BecomeOrganizerTestTags.TIKTOK_FIELD)
 
               // Address Field
               FormTextField(
                   value = formState.address.value,
                   onValueChange = viewModel::updateAddress,
                   label = "Address",
-                  testTag = OrganizerTestTags.ADDRESS_FIELD)
+                  testTag = BecomeOrganizerTestTags.ADDRESS_FIELD)
 
               Spacer(Modifier.height(32.dp))
 
@@ -169,7 +175,7 @@ fun BecomeOrganizerScreen(
               SubmitButton(
                   onClick = { viewModel.createOrganization(ownerId) },
                   text = "Submit",
-                  modifier = Modifier.testTag(OrganizerTestTags.SUBMIT_BUTTON))
+                  modifier = Modifier.testTag(BecomeOrganizerTestTags.SUBMIT_BUTTON))
             }
       }
 }

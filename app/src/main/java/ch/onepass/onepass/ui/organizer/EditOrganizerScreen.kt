@@ -14,56 +14,106 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import kotlinx.coroutines.launch
 
+/** Test tags for EditOrganization screen components */
+object EditOrganizerTestTags {
+  const val NAME_FIELD = "EditOrgNameField"
+  const val DESCRIPTION_FIELD = "EditOrgDescriptionField"
+  const val EMAIL_FIELD = "EditOrgEmailField"
+  const val PHONE_FIELD = "EditOrgPhoneField"
+  const val WEBSITE_FIELD = "EditOrgWebsiteField"
+  const val INSTAGRAM_FIELD = "EditOrgInstagramField"
+  const val FACEBOOK_FIELD = "EditOrgFacebookField"
+  const val TIKTOK_FIELD = "EditOrgTiktokField"
+  const val ADDRESS_FIELD = "EditOrgAddressField"
+  const val SUBMIT_BUTTON = "EditOrgSubmitButton"
+  const val PREFIX_DROPDOWN = "EditOrgPrefixDropdown"
+  const val SNACKBAR = "EditOrgSnackbar"
+}
+
+/**
+ * Composable screen for editing an existing organization's details.
+ *
+ * @param organizationId ID of the organization to edit
+ * @param viewModel ViewModel managing the organization's data and update logic
+ * @param formViewModel ViewModel managing the form state
+ * @param onOrganizationUpdated Callback invoked when the organization is successfully updated
+ */
 @Composable
 fun EditOrganizationScreen(
     organizationId: String,
-    userId: String,
     viewModel: EditOrganizationViewModel = viewModel(),
     formViewModel: BecomeOrganizerViewModel = viewModel(),
     onOrganizationUpdated: () -> Unit = {}
 ) {
+  val uiState by viewModel.uiState.collectAsState()
   val formState by formViewModel.formState.collectAsState()
-  val uiState by formViewModel.uiState.collectAsState()
   val countryList by formViewModel.countryList.collectAsState()
-  val scrollState = rememberScrollState()
   val snackbarHostState = remember { SnackbarHostState() }
-  val coroutineScope = rememberCoroutineScope()
+  val scope = rememberCoroutineScope()
+  val scrollState = rememberScrollState()
   var prefixDropdownExpanded by remember { mutableStateOf(false) }
-  var prefixDisplayText by remember { mutableStateOf("Prefix") }
+  var prefixDisplayText by remember { mutableStateOf("") }
 
-  LaunchedEffect(userId) {
-    // Load the first organization for the user
-    // when the screen is first composed
-    viewModel.loadFirstOrganizationForUser(userId)
-  }
+  // Load organization data when the screen is first displayed
+  LaunchedEffect(organizationId) { viewModel.loadOrganizationById(organizationId) }
 
-  LaunchedEffect(uiState) {
-    // Handle side effects based on UI state changes
-    uiState.successOrganizationId?.let { onOrganizationUpdated() }
-    uiState.errorMessage?.let {
-      coroutineScope.launch { snackbarHostState.showSnackbar(it) }
-      formViewModel.clearError()
+  // Populate form fields when organization data is loaded
+  LaunchedEffect(uiState.organization) {
+    uiState.organization?.let { org ->
+      formViewModel.updateName(org.name)
+      formViewModel.updateDescription(org.description)
+      formViewModel.updateContactEmail(org.contactEmail ?: "")
+      formViewModel.updateContactPhone(org.contactPhone ?: "")
+      formViewModel.updateWebsite(org.website ?: "")
+      formViewModel.updateInstagram(org.instagram ?: "")
+      formViewModel.updateFacebook(org.facebook ?: "")
+      formViewModel.updateTiktok(org.tiktok ?: "")
+      formViewModel.updateAddress(org.address ?: "")
+
+      // Set country index based on phone prefix
+      org.contactPhone?.let {
+        val prefix = it.takeWhile { c -> c == '+' || c.isDigit() }
+        prefixDisplayText = prefix
+      }
     }
   }
 
-  Scaffold(
-      snackbarHost = {
-        // Display snackbar for error messages
-        SnackbarHost(snackbarHostState, Modifier.testTag(OrganizerTestTags.SNACKBAR))
-      }) { paddingValues ->
+  // Handle success and error messages
+  LaunchedEffect(uiState.success, uiState.errorMessage) {
+    if (uiState.success) {
+      onOrganizationUpdated()
+      viewModel.clearSuccessFlag()
+    }
+    // Show error message in snackbar
+    uiState.errorMessage?.let {
+      scope.launch { snackbarHostState.showSnackbar(it) }
+      viewModel.clearError()
+    }
+  }
+
+  Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
+    // Main content
+    when {
+      uiState.isLoading && uiState.organization == null -> {
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+          CircularProgressIndicator(modifier = Modifier.padding(32.dp))
+        }
+      }
+      // Show form when organization data is available
+      uiState.organization != null -> {
         Column(
             modifier =
                 Modifier.fillMaxSize()
                     .verticalScroll(scrollState)
                     .padding(16.dp)
-                    .padding(paddingValues)) {
+                    .padding(padding)) {
               Text(
                   text = "Edit Organization",
                   style = MaterialTheme.typography.headlineMedium,
                   color = colorResource(id = R.color.on_background),
                   modifier = Modifier.padding(vertical = 24.dp))
 
-              // Organization Name Field
+              // Form fields
               FormTextField(
                   value = formState.name.value,
                   onValueChange = formViewModel::updateName,
@@ -71,7 +121,7 @@ fun EditOrganizationScreen(
                   isError = formState.name.error != null,
                   onFocusChanged = formViewModel::onFocusChangeName,
                   errorMessage = formState.name.error,
-                  testTag = OrganizerTestTags.NAME_FIELD)
+                  testTag = EditOrganizerTestTags.NAME_FIELD)
 
               // Organization Description Field
               FormTextField(
@@ -82,18 +132,18 @@ fun EditOrganizationScreen(
                   onFocusChanged = formViewModel::onFocusChangeDescription,
                   maxLines = 5,
                   errorMessage = formState.description.error,
-                  testTag = OrganizerTestTags.DESCRIPTION_FIELD)
+                  testTag = EditOrganizerTestTags.DESCRIPTION_FIELD)
 
               // Contact Email Field
               FormTextField(
                   value = formState.contactEmail.value,
                   onValueChange = formViewModel::updateContactEmail,
                   label = "Contact Email",
+                  keyboardType = KeyboardType.Email,
                   isError = formState.contactEmail.error != null,
                   onFocusChanged = formViewModel::onFocusChangeEmail,
-                  keyboardType = KeyboardType.Email,
                   errorMessage = formState.contactEmail.error,
-                  testTag = OrganizerTestTags.EMAIL_FIELD)
+                  testTag = EditOrganizerTestTags.EMAIL_FIELD)
 
               // Contact Phone Field with Prefix Dropdown
               PrefixPhoneRow(
@@ -111,49 +161,44 @@ fun EditOrganizationScreen(
                   onPhoneChange = formViewModel::updateContactPhone,
                   onPhoneFocusChanged = formViewModel::onFocusChangePhone,
                   onPrefixClick = { prefixDropdownExpanded = true },
-                  phoneTestTag = OrganizerTestTags.PHONE_FIELD,
-                  prefixTestTag = OrganizerTestTags.PREFIX_DROPDOWN)
+                  phoneTestTag = EditOrganizerTestTags.PHONE_FIELD,
+                  prefixTestTag = EditOrganizerTestTags.PREFIX_DROPDOWN)
 
-              // Website Field
+              // Social Media
               FormTextField(
                   value = formState.website.value,
                   onValueChange = formViewModel::updateWebsite,
                   label = "Website",
-                  isError = formState.website.error != null,
-                  onFocusChanged = formViewModel::onFocusChangeWebsite,
-                  errorMessage = formState.website.error,
-                  testTag = OrganizerTestTags.WEBSITE_FIELD)
-
-              // Social Media Fields
+                  testTag = EditOrganizerTestTags.WEBSITE_FIELD)
               FormTextField(
                   value = formState.instagram.value,
                   onValueChange = formViewModel::updateInstagram,
                   label = "Instagram",
-                  testTag = OrganizerTestTags.INSTAGRAM_FIELD)
+                  testTag = EditOrganizerTestTags.INSTAGRAM_FIELD)
               FormTextField(
                   value = formState.facebook.value,
                   onValueChange = formViewModel::updateFacebook,
                   label = "Facebook",
-                  testTag = OrganizerTestTags.FACEBOOK_FIELD)
+                  testTag = EditOrganizerTestTags.FACEBOOK_FIELD)
               FormTextField(
                   value = formState.tiktok.value,
                   onValueChange = formViewModel::updateTiktok,
                   label = "TikTok",
-                  testTag = OrganizerTestTags.TIKTOK_FIELD)
+                  testTag = EditOrganizerTestTags.TIKTOK_FIELD)
 
               // Address Field
               FormTextField(
                   value = formState.address.value,
                   onValueChange = formViewModel::updateAddress,
                   label = "Address",
-                  testTag = OrganizerTestTags.ADDRESS_FIELD)
+                  testTag = EditOrganizerTestTags.ADDRESS_FIELD)
 
               Spacer(Modifier.height(32.dp))
 
               // Submit Button
               SubmitButton(
                   onClick = {
-                    coroutineScope.launch {
+                    scope.launch {
                       val data =
                           EditOrganizationData(
                               id = organizationId,
@@ -170,7 +215,9 @@ fun EditOrganizationScreen(
                     }
                   },
                   text = "Update",
-                  modifier = Modifier.testTag(OrganizerTestTags.SUBMIT_BUTTON))
+                  modifier = Modifier.testTag(EditOrganizerTestTags.SUBMIT_BUTTON))
             }
       }
+    }
+  }
 }

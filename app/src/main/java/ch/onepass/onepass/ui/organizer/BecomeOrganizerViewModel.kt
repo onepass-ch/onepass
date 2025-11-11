@@ -86,6 +86,8 @@ class BecomeOrganizerViewModel(
   private val phoneUtil: PhoneNumberUtil = PhoneNumberUtil.getInstance()
   /** Selected country code state */
   private val _selectedCountryCode = MutableStateFlow("+41")
+  /** Public selected country code */
+  val selectedCountryCode: StateFlow<String> = _selectedCountryCode.asStateFlow()
   /** List of countries with their names and dialing codes */
   private val _countryList = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
   /** Public country list */
@@ -97,6 +99,8 @@ class BecomeOrganizerViewModel(
   private val REGEX_WEBSITE_URL = """^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}.*$""".toRegex()
   /** Regex pattern for validating phone numbers */
   private val REGEX_PHONE = """^\+\d{1,4}\d{4,14}$""".toRegex()
+  /** Initial region code for default country selection */
+  private val INITIAL_REGION_CODE = 41
 
   init {
     // Initialize country list using PhoneNumberUtil
@@ -110,6 +114,13 @@ class BecomeOrganizerViewModel(
             }
             .sortedBy { it.first }
     _countryList.value = countries
+
+    // Set initial country based on default region code
+    val initialIndex = countries.indexOfFirst { it.second == INITIAL_REGION_CODE }
+    if (initialIndex != -1) {
+      _selectedCountryIndex.value = initialIndex
+      _selectedCountryCode.value = "+${countries[initialIndex].second}"
+    }
   }
 
   /**
@@ -150,8 +161,8 @@ class BecomeOrganizerViewModel(
    */
   private fun validatePhone(value: String): String? {
     val countryCode = _selectedCountryIndex.value?.let { _countryList.value.getOrNull(it)?.second }
+    val fullNumber = if (countryCode != null) "+$countryCode$value" else value
 
-    val fullNumber = "+${countryCode ?: ""}$value"
     return if (countryCode == null || value.isBlank() || !REGEX_PHONE.matches(fullNumber)) {
       "Invalid phone number"
     } else null
@@ -451,6 +462,11 @@ class BecomeOrganizerViewModel(
         _uiState.value = BecomeOrganizerUiState(errorMessage = e.message ?: "Unknown error")
       }
     }
+  }
+
+  /** Clears any success state */
+  fun clearSuccess() {
+    _uiState.value = BecomeOrganizerUiState()
   }
 
   /** Clears any error state */

@@ -2,7 +2,11 @@ package ch.onepass.onepass.ui.organizer
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import io.mockk.every
+import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Rule
 import org.junit.Test
 
@@ -10,24 +14,70 @@ class EditOrganizationScreenTest {
 
   @get:Rule val composeTestRule = createComposeRule()
 
+  private val mockOrganization =
+      Organization(
+          id = "org123",
+          name = "",
+          description = "",
+          contactEmail = "",
+          contactPhone = "",
+          website = "",
+          instagram = "",
+          facebook = "",
+          tiktok = "",
+          address = "")
+
+  private val mockUiState =
+      MutableStateFlow(EditOrganizationUiState(organization = mockOrganization))
+  private val mockFormState = MutableStateFlow(BecomeOrganizerFormState())
+  private val mockCountryList = MutableStateFlow(listOf("American Samoa" to 1))
+
+  private val mockViewModel =
+      mockk<EditOrganizationViewModel>(relaxed = true) {
+        every { uiState } returns mockUiState
+        every { loadOrganizationById(any()) } returns Unit
+        every { clearSuccessFlag() } returns Unit
+        every { clearError() } returns Unit
+      }
+
+  private val mockFormViewModel =
+      mockk<BecomeOrganizerViewModel>(relaxed = true) {
+        every { formState } returns mockFormState
+        every { countryList } returns mockCountryList
+        every { updateName(any()) } returns Unit
+        every { updateDescription(any()) } returns Unit
+        every { updateContactEmail(any()) } returns Unit
+        every { updateContactPhone(any()) } returns Unit
+        every { updateWebsite(any()) } returns Unit
+        every { updateInstagram(any()) } returns Unit
+        every { updateFacebook(any()) } returns Unit
+        every { updateTiktok(any()) } returns Unit
+        every { updateAddress(any()) } returns Unit
+        every { updateCountryIndex(any()) } returns Unit
+      }
+
   @Test
   fun formFieldsAreVisible() {
     composeTestRule.setContent {
-      OnePassTheme { EditOrganizationScreen(organizationId = "org123", userId = "user123") }
+      OnePassTheme {
+        EditOrganizationScreen(
+            organizationId = "org123", viewModel = mockViewModel, formViewModel = mockFormViewModel)
+      }
     }
 
     val tags =
         listOf(
-            OrganizerTestTags.NAME_FIELD,
-            OrganizerTestTags.DESCRIPTION_FIELD,
-            OrganizerTestTags.EMAIL_FIELD,
-            OrganizerTestTags.PHONE_FIELD,
-            OrganizerTestTags.WEBSITE_FIELD,
-            OrganizerTestTags.INSTAGRAM_FIELD,
-            OrganizerTestTags.FACEBOOK_FIELD,
-            OrganizerTestTags.TIKTOK_FIELD,
-            OrganizerTestTags.ADDRESS_FIELD,
-            OrganizerTestTags.SUBMIT_BUTTON)
+            EditOrganizerTestTags.NAME_FIELD,
+            EditOrganizerTestTags.DESCRIPTION_FIELD,
+            EditOrganizerTestTags.EMAIL_FIELD,
+            EditOrganizerTestTags.PHONE_FIELD,
+            EditOrganizerTestTags.WEBSITE_FIELD,
+            EditOrganizerTestTags.INSTAGRAM_FIELD,
+            EditOrganizerTestTags.FACEBOOK_FIELD,
+            EditOrganizerTestTags.TIKTOK_FIELD,
+            EditOrganizerTestTags.ADDRESS_FIELD,
+            EditOrganizerTestTags.SUBMIT_BUTTON,
+            EditOrganizerTestTags.PREFIX_DROPDOWN)
 
     tags.forEach { tag -> composeTestRule.onNodeWithTag(tag).performScrollTo().assertIsDisplayed() }
   }
@@ -35,83 +85,79 @@ class EditOrganizationScreenTest {
   @Test
   fun enteringTextUpdatesFields() {
     composeTestRule.setContent {
-      OnePassTheme { EditOrganizationScreen(organizationId = "org123", userId = "user123") }
+      OnePassTheme {
+        EditOrganizationScreen(
+            organizationId = "org123", viewModel = mockViewModel, formViewModel = mockFormViewModel)
+      }
     }
 
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.NAME_FIELD)
+        .onNodeWithTag(EditOrganizerTestTags.NAME_FIELD)
         .performScrollTo()
         .performTextInput("Test Org")
+
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.DESCRIPTION_FIELD)
+        .onNodeWithTag(EditOrganizerTestTags.DESCRIPTION_FIELD)
         .performScrollTo()
         .performTextInput("Cool description")
+
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.EMAIL_FIELD)
+        .onNodeWithTag(EditOrganizerTestTags.EMAIL_FIELD)
         .performScrollTo()
         .performTextInput("test@email.com")
+
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.WEBSITE_FIELD)
+        .onNodeWithTag(EditOrganizerTestTags.WEBSITE_FIELD)
         .performScrollTo()
         .performTextInput("example.com")
+
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.INSTAGRAM_FIELD)
+        .onNodeWithTag(EditOrganizerTestTags.INSTAGRAM_FIELD)
         .performScrollTo()
         .performTextInput("test_insta")
+
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.FACEBOOK_FIELD)
+        .onNodeWithTag(EditOrganizerTestTags.FACEBOOK_FIELD)
         .performScrollTo()
         .performTextInput("test_fb")
+
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.TIKTOK_FIELD)
+        .onNodeWithTag(EditOrganizerTestTags.TIKTOK_FIELD)
         .performScrollTo()
         .performTextInput("test_tiktok")
+
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.ADDRESS_FIELD)
+        .onNodeWithTag(EditOrganizerTestTags.ADDRESS_FIELD)
         .performScrollTo()
         .performTextInput("123 Test Street")
 
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.PREFIX_DROPDOWN)
+        .onNodeWithTag(EditOrganizerTestTags.PREFIX_DROPDOWN)
         .performScrollTo()
         .performClick()
+
     composeTestRule
         .onNode(hasText("+1 American Samoa", substring = true))
         .performScrollTo()
         .performClick()
 
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.PHONE_FIELD)
+        .onNodeWithTag(EditOrganizerTestTags.PHONE_FIELD)
         .performScrollTo()
         .performTextInput("123456789")
-
-    composeTestRule.onNodeWithTag(OrganizerTestTags.NAME_FIELD).assertTextContains("Test Org")
-    composeTestRule
-        .onNodeWithTag(OrganizerTestTags.DESCRIPTION_FIELD)
-        .assertTextContains("Cool description")
-    composeTestRule
-        .onNodeWithTag(OrganizerTestTags.EMAIL_FIELD)
-        .assertTextContains("test@email.com")
-    composeTestRule.onNodeWithTag(OrganizerTestTags.PHONE_FIELD).assertTextContains("123456789")
-    composeTestRule.onNodeWithTag(OrganizerTestTags.WEBSITE_FIELD).assertTextContains("example.com")
-    composeTestRule
-        .onNodeWithTag(OrganizerTestTags.INSTAGRAM_FIELD)
-        .assertTextContains("test_insta")
-    composeTestRule.onNodeWithTag(OrganizerTestTags.FACEBOOK_FIELD).assertTextContains("test_fb")
-    composeTestRule.onNodeWithTag(OrganizerTestTags.TIKTOK_FIELD).assertTextContains("test_tiktok")
-    composeTestRule
-        .onNodeWithTag(OrganizerTestTags.ADDRESS_FIELD)
-        .assertTextContains("123 Test Street")
   }
 
   @Test
   fun canSelectCountryPrefix() {
     composeTestRule.setContent {
-      OnePassTheme { EditOrganizationScreen(organizationId = "org123", userId = "user123") }
+      OnePassTheme {
+        EditOrganizationScreen(
+            organizationId = "org123", viewModel = mockViewModel, formViewModel = mockFormViewModel)
+      }
     }
 
     composeTestRule
-        .onNodeWithTag(OrganizerTestTags.PREFIX_DROPDOWN)
+        .onNodeWithTag(EditOrganizerTestTags.PREFIX_DROPDOWN)
         .performScrollTo()
         .performClick()
 

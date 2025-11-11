@@ -1,25 +1,43 @@
 package ch.onepass.onepass.ui.organizer
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.organization.*
 import com.google.firebase.Timestamp
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
+
+/**
+ * UI state for the EditOrganization screen.
+ *
+ * @property isLoading Indicates if a loading operation is in progress.
+ * @property organization The organization being edited, or null if not loaded.
+ * @property success Indicates if the last update operation was successful.
+ * @property errorMessage An error message if an error occurred, or null.
+ */
+data class EditOrganizationUiState(
+    val isLoading: Boolean = false,
+    val organization: Organization? = null,
+    val success: Boolean = false,
+    val errorMessage: String? = null
+)
 
 /**
  * Data class representing the editable fields of an organization.
  *
- * @param id The unique identifier of the organization.
- * @param name The name of the organization.
- * @param description A brief description of the organization.
- * @param contactEmail The contact email of the organization (optional).
- * @param contactPhone The contact phone number of the organization (optional).
- * @param website The website URL of the organization (optional).
- * @param instagram The Instagram handle or URL of the organization (optional).
- * @param facebook The Facebook page URL of the organization (optional).
- * @param tiktok The TikTok handle or URL of the organization (optional).
- * @param address The physical address of the organization (optional).
+ * @property id The unique identifier of the organization.
+ * @property name The name of the organization.
+ * @property description A short description of the organization.
+ * @property contactEmail Optional contact email address.
+ * @property contactPhone Optional contact phone number.
+ * @property website Optional website URL.
+ * @property instagram Optional Instagram profile link or handle.
+ * @property facebook Optional Facebook profile link or handle.
+ * @property tiktok Optional TikTok profile link or handle.
+ * @property address Optional physical address of the organization.
  */
 data class EditOrganizationData(
     val id: String,
@@ -43,61 +61,96 @@ class EditOrganizationViewModel(
     private val repository: OrganizationRepository = OrganizationRepositoryFirebase()
 ) : ViewModel() {
 
+  /** The UI state exposed to the Composable. */
+  private val _uiState = MutableStateFlow(EditOrganizationUiState())
+  /** The UI state exposed to the Composable. */
+  val uiState: StateFlow<EditOrganizationUiState> = _uiState.asStateFlow()
+
   /**
-   * Loads the first organization associated with the given user ID.
+   * Load organization details by ID.
    *
-   * @param userId The user ID whose organization is to be loaded.
-   * @return An [EditOrganizationData] object if an organization is found, otherwise null
+   * @param organizationId The ID of the organization to load.
    */
-  suspend fun loadFirstOrganizationForUser(userId: String): EditOrganizationData? =
-      withContext(Dispatchers.Default) {
-        // Fetch organizations owned by the user
-        val ownedOrgs = repository.getOrganizationsByOwner(userId).firstOrNull() ?: emptyList()
-        // Fetch organizations where the user is a member
-        val memberOrgs = repository.getOrganizationsByMember(userId).firstOrNull() ?: emptyList()
-
-        // Combine both lists and find the most recently created organization
-        val firstOrg = (ownedOrgs + memberOrgs).maxByOrNull { it.createdAt?.seconds ?: 0L }
-
-        firstOrg?.let {
-          EditOrganizationData(
-              id = it.id,
-              name = it.name,
-              description = it.description,
-              contactEmail = it.contactEmail,
-              contactPhone = it.contactPhone,
-              website = it.website,
-              instagram = it.instagram,
-              facebook = it.facebook,
-              tiktok = it.tiktok,
-              address = it.address)
+  fun loadOrganizationById(organizationId: String) {
+    // Start loading the organization
+    viewModelScope.launch {
+      _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+      try {
+        val org = repository.getOrganizationById(organizationId).firstOrNull()
+        // Update the UI state based on whether the organization was found
+        if (org != null) {
+          _uiState.value = _uiState.value.copy(isLoading = false, organization = org)
+        } else {
+          _uiState.value =
+              _uiState.value.copy(
+                  isLoading = false, organization = null, errorMessage = "Organization not found")
         }
+      } catch (e: Exception) {
+        _uiState.value =
+            _uiState.value.copy(isLoading = false, errorMessage = e.message ?: "Unknown error")
       }
+    }
+  }
 
   /**
-   * Updates the organization with the provided data.
+   * Update organization details.
    *
-   * @param data The [EditOrganizationData] containing updated organization details.
-   * @throws Exception if the update operation fails.
+   * @param data The [EditOrganizationData] containing updated fields.
    */
-  suspend fun updateOrganization(data: EditOrganizationData) {
-    val org =
-        Organization(
-            id = data.id,
-            name = data.name,
-            description = data.description,
-            ownerId = "", // optional ownerId
-            status = OrganizationStatus.ACTIVE,
-            contactEmail = data.contactEmail,
-            contactPhone = data.contactPhone,
-            website = data.website,
-            instagram = data.instagram,
-            facebook = data.facebook,
-            tiktok = data.tiktok,
-            address = data.address,
-            createdAt = Timestamp.now())
+  fun updateOrganization(data: EditOrganizationData) {
+    val currentOrg = _uiState.value.organization
+    if (currentOrg == null) {
+      // Cannot update if organization is not loaded
+      _uiState.value = _uiState.value.copy(errorMessage = "Cannot update: organization not loaded")
+      return
+    }
 
-    val result = repository.updateOrganization(org)
-    if (!result.isSuccess) throw result.exceptionOrNull() ?: Exception("Update failed")
+    // Proceed with update
+    viewModelScope.launch {
+      _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, success = false)
+      try {
+        val org =
+            Organization(
+                id = data.id,
+                name = data.name,
+                description = data.description,
+                ownerId = currentOrg.ownerId,
+                status = currentOrg.status, // preserve existing status
+                contactEmail = data.contactEmail,
+                contactPhone = data.contactPhone,
+                website = data.website,
+                instagram = data.instagram,
+                facebook = data.facebook,
+                tiktok = data.tiktok,
+                address = data.address,
+                createdAt = currentOrg.createdAt ?: Timestamp.now() // fallback if null
+                )
+
+        val result = repository.updateOrganization(org)
+        // Update the UI state based on the result
+        if (result.isSuccess) {
+          _uiState.value =
+              _uiState.value.copy(isLoading = false, success = true, organization = org)
+        } else {
+          _uiState.value =
+              _uiState.value.copy(
+                  isLoading = false,
+                  errorMessage = result.exceptionOrNull()?.message ?: "Update failed")
+        }
+      } catch (e: Exception) {
+        _uiState.value =
+            _uiState.value.copy(isLoading = false, errorMessage = e.message ?: "Network error")
+      }
+    }
+  }
+
+  /** Clear the success flag after it has been handled. */
+  fun clearSuccessFlag() {
+    _uiState.value = _uiState.value.copy(success = false)
+  }
+
+  /** Clear the error message after it has been handled. */
+  fun clearError() {
+    _uiState.value = _uiState.value.copy(errorMessage = null)
   }
 }
