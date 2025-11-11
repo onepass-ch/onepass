@@ -77,4 +77,16 @@ class FakeUserRepository(
   fun setThrowOnLoad(value: Boolean) {
     throwOnLoad = value
   }
+
+  /**
+   * Resets all state to initial values.
+   *
+   * Useful in test teardown or between test cases to ensure a clean state.
+   */
+  fun reset() {
+    currentUser = null
+    createdUser = null
+    throwOnLoad = false
+    searchResultsFunction = { _, _, _ -> Result.success(emptyList()) }
+  }
 }
