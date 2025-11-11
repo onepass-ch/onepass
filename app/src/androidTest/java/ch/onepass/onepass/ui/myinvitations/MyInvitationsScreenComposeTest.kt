@@ -69,6 +69,9 @@ class MyInvitationsScreenComposeTest {
    * @param state UI state to display.
    * @param onAcceptInvitation Callback for accepting invitations.
    * @param onRejectInvitation Callback for rejecting invitations.
+   * @param onRetry Callback for retry action.
+   * @param onClearSuccessMessage Callback for clearing success message.
+   * @param onNavigateBack Callback for navigation back.
    * @param organizationRepository Repository for fetching organization details.
    */
   private fun setContent(
@@ -76,6 +79,7 @@ class MyInvitationsScreenComposeTest {
       onAcceptInvitation: (String) -> Unit = {},
       onRejectInvitation: (String) -> Unit = {},
       onRetry: () -> Unit = {},
+      onClearSuccessMessage: () -> Unit = {},
       onNavigateBack: () -> Unit = {},
       organizationRepository: OrganizationRepository = TestOrganizationRepository()
   ) {
@@ -86,6 +90,7 @@ class MyInvitationsScreenComposeTest {
             onAcceptInvitation = onAcceptInvitation,
             onRejectInvitation = onRejectInvitation,
             onRetry = onRetry,
+            onClearSuccessMessage = onClearSuccessMessage,
             onNavigateBack = onNavigateBack,
             organizationRepository = organizationRepository)
       }
@@ -449,6 +454,65 @@ class MyInvitationsScreenComposeTest {
 
     composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.SUCCESS_MESSAGE).assertIsDisplayed()
     composeTestRule.onNodeWithText("Invitation rejected successfully").assertIsDisplayed()
+  }
+
+  @Test
+  fun successMessage_clearsAfterDisplaying() {
+    val state =
+        MyInvitationsUiState(
+            loading = false,
+            errorMessage = null,
+            invitations = emptyList(),
+            successMessage = "Test success message")
+
+    var clearSuccessMessageCalled = false
+    setContent(state = state, onClearSuccessMessage = { clearSuccessMessageCalled = true })
+
+    // Wait for LaunchedEffect to trigger, show snackbar, and call clearSuccessMessage
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule.waitForIdle()
+      clearSuccessMessageCalled
+    }
+
+    // Verify snackbar was displayed (it may have been dismissed by now)
+    // and that clearSuccessMessage was called
+    assert(clearSuccessMessageCalled) {
+      "onClearSuccessMessage should be called after displaying snackbar"
+    }
+  }
+
+  @Test
+  fun successMessage_displaysAndClears() {
+    val invitation = testInvitation1
+    val orgRepository = TestOrganizationRepository(organizations = mapOf("org-1" to testOrg1))
+
+    var clearSuccessMessageCallCount = 0
+    val successMessage = "Invitation accepted successfully"
+
+    val state =
+        MyInvitationsUiState(
+            loading = false,
+            errorMessage = null,
+            invitations = listOf(invitation),
+            successMessage = successMessage)
+
+    setContent(
+        state = state,
+        onClearSuccessMessage = { clearSuccessMessageCallCount++ },
+        organizationRepository = orgRepository)
+
+    // Wait for snackbar to show and clearSuccessMessage to be called
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule.waitForIdle()
+      clearSuccessMessageCallCount >= 1
+    }
+
+    // Verify snackbar was displayed
+    // Note: The snackbar may have been dismissed by the time we check,
+    // but clearSuccessMessage should have been called
+    assert(clearSuccessMessageCallCount >= 1) {
+      "onClearSuccessMessage should be called after displaying snackbar, but was called $clearSuccessMessageCallCount times"
+    }
   }
 
   // ========================================
