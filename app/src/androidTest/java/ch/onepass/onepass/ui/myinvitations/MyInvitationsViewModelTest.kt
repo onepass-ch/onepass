@@ -244,6 +244,95 @@ class MyInvitationsViewModelTest {
   }
 
   // ========================================
+  // Tests for Retry
+  // ========================================
+
+  @Test
+  fun retry_afterUserLoadError_clearsErrorAndReloadsInvitations() = runTest {
+    val userRepository = FakeUserRepository()
+    val orgRepository =
+        TestMockOrganizationRepository(
+            invitationsByEmail = mapOf(testUserEmail to listOf(pendingInvitation)))
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    var state = viewModel.state.value
+    assertNotNull("Expected an error message when user cannot be loaded", state.errorMessage)
+    assertTrue("No invitations should be loaded when user fails", state.invitations.isEmpty())
+
+    userRepository.updateCurrentUser(testUser)
+    userRepository.updateCreatedUser(testUser)
+
+    viewModel.retry()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    state = viewModel.state.value
+    assertNull("Error message should be cleared after retry succeeds", state.errorMessage)
+    assertFalse("Loading should be false after retry succeeds", state.loading)
+    assertEquals("Expected invitations to be reloaded after retry", 1, state.invitations.size)
+    assertEquals("invite-1", state.invitations.first().id)
+  }
+
+  @Test
+  fun retry_clearsErrorMessageAndSuccessMessage() = runTest {
+    val userRepository = FakeUserRepository(currentUser = testUser)
+    val orgRepository =
+        TestMockOrganizationRepository(
+            invitationsByEmail = mapOf(testUserEmail to listOf(pendingInvitation)))
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Set an error message by trying to accept a non-existent invitation
+    viewModel.acceptInvitation("non-existent")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    var state = viewModel.state.value
+    assertNotNull("Error message should be set", state.errorMessage)
+
+    // Set a success message by accepting a valid invitation
+    viewModel.acceptInvitation("invite-1")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Now call retry - both messages should be cleared
+    // Since user exists, loadUserEmail() will succeed and not set a new error
+    viewModel.retry()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    state = viewModel.state.value
+    // After retry with a valid user, both messages should be cleared
+    assertNull("Error message should be cleared when retry is called", state.errorMessage)
+    assertNull("Success message should be cleared when retry is called", state.successMessage)
+  }
+
+  @Test
+  fun retry_clearsSuccessMessageWhenSet() = runTest {
+    val userRepository = FakeUserRepository(currentUser = testUser)
+    val orgRepository =
+        TestMockOrganizationRepository(
+            invitationsByEmail = mapOf(testUserEmail to listOf(pendingInvitation)))
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Set a success message by accepting an invitation
+    viewModel.acceptInvitation("invite-1")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    var state = viewModel.state.value
+    assertNotNull("Success message should be set after accepting invitation", state.successMessage)
+
+    // Call retry - success message should be cleared
+    // Since user exists, loadUserEmail() will succeed and not interfere
+    viewModel.retry()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    state = viewModel.state.value
+    assertNull("Success message should be cleared when retry is called", state.successMessage)
+  }
+
+  // ========================================
   // Tests for Accepting Invitations
   // ========================================
 
@@ -739,5 +828,126 @@ class MyInvitationsViewModelTest {
     val state = viewModel.state.value
     assertNotNull("Expected an error message", state.errorMessage)
     assertEquals("Failed to reject invitation", state.errorMessage!!)
+  }
+
+  // ========================================
+  // Tests for clearSuccessMessage
+  // ========================================
+
+  @Test
+  fun clearSuccessMessage_clearsSuccessMessage() = runTest {
+    val userRepository = FakeUserRepository(currentUser = testUser)
+
+    val orgRepository =
+        TestMockOrganizationRepository(
+            invitationsByEmail = mapOf(testUserEmail to listOf(pendingInvitation)))
+
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // First, set a success message by accepting an invitation
+    viewModel.acceptInvitation("invite-1")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Verify success message is set
+    var state = viewModel.state.value
+    assertNotNull("Expected a success message after accepting invitation", state.successMessage)
+
+    // Clear the success message
+    viewModel.clearSuccessMessage()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Verify success message is cleared
+    state = viewModel.state.value
+    assertNull("Success message should be cleared", state.successMessage)
+  }
+
+  @Test
+  fun clearSuccessMessage_whenNoSuccessMessage_doesNotError() = runTest {
+    val userRepository = FakeUserRepository(currentUser = testUser)
+
+    val orgRepository =
+        TestMockOrganizationRepository(
+            invitationsByEmail = mapOf(testUserEmail to listOf(pendingInvitation)))
+
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Verify initial state has no success message
+    var state = viewModel.state.value
+    assertNull("Initial state should have no success message", state.successMessage)
+
+    // Clear success message when it's already null
+    viewModel.clearSuccessMessage()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Verify state is still valid and success message is still null
+    state = viewModel.state.value
+    assertNull("Success message should still be null", state.successMessage)
+  }
+
+  @Test
+  fun clearSuccessMessage_afterRejectInvitation_clearsSuccessMessage() = runTest {
+    val userRepository = FakeUserRepository(currentUser = testUser)
+
+    val orgRepository =
+        TestMockOrganizationRepository(
+            invitationsByEmail = mapOf(testUserEmail to listOf(pendingInvitation)))
+
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Reject invitation to set success message
+    viewModel.rejectInvitation("invite-1")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Verify success message is set
+    var state = viewModel.state.value
+    assertNotNull("Expected a success message after rejecting invitation", state.successMessage)
+    assertTrue(
+        "Success message should mention rejection", state.successMessage!!.contains("rejected"))
+
+    // Clear the success message
+    viewModel.clearSuccessMessage()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Verify success message is cleared
+    state = viewModel.state.value
+    assertNull("Success message should be cleared", state.successMessage)
+  }
+
+  @Test
+  fun clearSuccessMessage_doesNotAffectOtherState() = runTest {
+    val userRepository = FakeUserRepository(currentUser = testUser)
+
+    val orgRepository =
+        TestMockOrganizationRepository(
+            invitationsByEmail = mapOf(testUserEmail to listOf(pendingInvitation)))
+
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Accept invitation to set success message
+    viewModel.acceptInvitation("invite-1")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Get state before clearing
+    val stateBefore = viewModel.state.value
+    val invitationsBefore = stateBefore.invitations
+    val loadingBefore = stateBefore.loading
+    val errorMessageBefore = stateBefore.errorMessage
+    val userEmailBefore = stateBefore.userEmail
+
+    // Clear success message
+    viewModel.clearSuccessMessage()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Verify other state properties are unchanged
+    val stateAfter = viewModel.state.value
+    assertEquals("Invitations should not change", invitationsBefore, stateAfter.invitations)
+    assertEquals("Loading should not change", loadingBefore, stateAfter.loading)
+    assertEquals("Error message should not change", errorMessageBefore, stateAfter.errorMessage)
+    assertEquals("User email should not change", userEmailBefore, stateAfter.userEmail)
+    assertNull("Success message should be cleared", stateAfter.successMessage)
   }
 }

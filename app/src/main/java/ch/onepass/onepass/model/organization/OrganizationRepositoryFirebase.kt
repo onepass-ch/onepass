@@ -1,5 +1,6 @@
 package ch.onepass.onepass.model.organization
 
+import android.util.Log
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
@@ -35,6 +36,10 @@ class OrganizationRepositoryFirebase : OrganizationRepository {
     val listener =
         organizationsCollection.document(organizationId).addSnapshotListener { snap, error ->
           if (error != null) {
+            Log.w(
+                "OrganizationRepository",
+                "Failed to load organization details for orgId: $organizationId",
+                error)
             close(error)
             return@addSnapshotListener
           }

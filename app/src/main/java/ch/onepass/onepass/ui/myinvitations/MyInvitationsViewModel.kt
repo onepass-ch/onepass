@@ -149,6 +149,18 @@ class MyInvitationsViewModel(
   }
 
   /**
+   * Retries loading user information and invitations.
+   *
+   * This method can be called when an error occurs to retry loading the user's email and
+   * subsequently their invitations. It clears any existing error message to provide better UX
+   * feedback.
+   */
+  fun retry() {
+    _uiState.value = _uiState.value.copy(errorMessage = null, successMessage = null)
+    loadUserEmail()
+  }
+
+  /**
    * Loads the current user's email address.
    *
    * This method retrieves the current user and extracts their email, which is then used to fetch
@@ -298,5 +310,16 @@ class MyInvitationsViewModel(
             _uiState.value.copy(errorMessage = e.message ?: "Failed to reject invitation")
       }
     }
+  }
+
+  /**
+   * Clears the success message from the UI state.
+   *
+   * This method should be called after displaying the success message (e.g., in a snackbar) to
+   * ensure that subsequent operations with the same success message will trigger the UI to show the
+   * snackbar again.
+   */
+  fun clearSuccessMessage() {
+    _uiState.value = _uiState.value.copy(successMessage = null)
   }
 }

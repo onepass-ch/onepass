@@ -9,9 +9,12 @@ import ch.onepass.onepass.model.staff.StaffSearchResult
  * full Firebase functionality.
  */
 class FakeUserRepository(
-    private val currentUser: User? = null,
-    private val createdUser: User? = null,
-    private val throwOnLoad: Boolean = false
+    // These parameters are mutable (var) to support setter methods (updateCurrentUser,
+    // updateCreatedUser, setThrowOnLoad) that allow tests to modify the repository state
+    // dynamically during test execution.
+    private var currentUser: User? = null,
+    private var createdUser: User? = null,
+    private var throwOnLoad: Boolean = false
 ) : UserRepository {
 
   override suspend fun getCurrentUser(): User? {
@@ -58,5 +61,32 @@ class FakeUserRepository(
       function: (String, UserSearchType, String?) -> Result<List<StaffSearchResult>>
   ) {
     searchResultsFunction = function
+  }
+
+  /** Update the current user for testing retry scenarios. */
+  fun updateCurrentUser(user: User?) {
+    currentUser = user
+  }
+
+  /** Update the created user for testing retry scenarios. */
+  fun updateCreatedUser(user: User?) {
+    createdUser = user
+  }
+
+  /** Set whether to throw an exception on load for testing error scenarios. */
+  fun setThrowOnLoad(value: Boolean) {
+    throwOnLoad = value
+  }
+
+  /**
+   * Resets all state to initial values.
+   *
+   * Useful in test teardown or between test cases to ensure a clean state.
+   */
+  fun reset() {
+    currentUser = null
+    createdUser = null
+    throwOnLoad = false
+    searchResultsFunction = { _, _, _ -> Result.success(emptyList()) }
   }
 }
