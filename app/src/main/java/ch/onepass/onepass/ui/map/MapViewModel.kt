@@ -198,21 +198,10 @@ class MapViewModel(
     compassPlugin?.updateSettings { enabled = true }
   }
 
-  // --- Map lifecycle delegation ---
-  /** Starts the map lifecycle. */
-  fun onMapStart() = internalMapView?.onStart()
-
-  /** Stops the map lifecycle. */
-  fun onMapStop() = internalMapView?.onStop()
-
-  /** Handles low memory situations for the map. */
-  fun onMapLowMemory() = internalMapView?.onLowMemory()
-
   override fun onCleared() {
     indicatorListener?.let { listener ->
       internalMapView?.location?.removeOnIndicatorPositionChangedListener(listener)
     }
-    internalMapView?.onDestroy()
     internalMapView = null
     super.onCleared()
   }
