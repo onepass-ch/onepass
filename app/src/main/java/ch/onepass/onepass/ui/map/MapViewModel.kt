@@ -41,13 +41,20 @@ class MapViewModel(
     private val eventRepository: EventRepository = RepositoryProvider.eventRepository,
 ) : ViewModel() {
   companion object {
-    // Default configuration
-    private const val DEFAULT_LATITUDE = 46.5197
-    private const val DEFAULT_LONGITUDE = 6.6323
-    private const val DEFAULT_ZOOM = 7.0
-    private const val RECENTER_ZOOM = 15.0
-    private const val ANIMATION_DURATION_MS = 1000L
-    private const val MAPBOX_STYLE_URI = "mapbox://styles/walid-as/cmhmmxczk00ar01shdw6r8lel"
+    object CameraConfig {
+      const val DEFAULT_LATITUDE = 46.5197
+      const val DEFAULT_LONGITUDE = 6.6323
+      const val DEFAULT_ZOOM = 7.0
+      const val RECENTER_ZOOM = 15.0
+    }
+
+    object AnimationConfig {
+      const val DURATION_MS = 1000L
+    }
+
+    object MapStyle {
+      const val URI = "mapbox://styles/walid-as/cmhmmxczk00ar01shdw6r8lel"
+    }
   }
 
   // --- UI state ---
@@ -58,11 +65,12 @@ class MapViewModel(
   private var internalMapView: MapView? = null
   private var lastKnownPoint: Point? = null
   private var indicatorListener: OnIndicatorPositionChangedListener? = null
-  private val defaultCenterPoint = Point.fromLngLat(DEFAULT_LONGITUDE, DEFAULT_LATITUDE)
+  private val defaultCenterPoint =
+      Point.fromLngLat(CameraConfig.DEFAULT_LONGITUDE, CameraConfig.DEFAULT_LATITUDE)
   val initialCameraOptions: CameraOptions =
       CameraOptions.Builder()
           .center(defaultCenterPoint) // Lausanne
-          .zoom(DEFAULT_ZOOM)
+          .zoom(CameraConfig.DEFAULT_ZOOM)
           .build()
 
   init {
@@ -136,7 +144,7 @@ class MapViewModel(
     if (internalMapView == mapView) return
     internalMapView = mapView
 
-    mapView.mapboxMap.loadStyle(MAPBOX_STYLE_URI) {
+    mapView.mapboxMap.loadStyle(MapStyle.URI) {
       configurePlugins(mapView)
 
       if (hasLocationPermission) {
@@ -182,8 +190,8 @@ class MapViewModel(
     }
 
     mapboxMap.easeTo(
-        CameraOptions.Builder().center(point).zoom(RECENTER_ZOOM).build(),
-        MapAnimationOptions.mapAnimationOptions { duration(ANIMATION_DURATION_MS) },
+        CameraOptions.Builder().center(point).zoom(CameraConfig.RECENTER_ZOOM).build(),
+        MapAnimationOptions.mapAnimationOptions { duration(AnimationConfig.DURATION_MS) },
     )
   }
 
