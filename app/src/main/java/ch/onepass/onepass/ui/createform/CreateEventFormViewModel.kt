@@ -7,6 +7,8 @@ import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.event.PricingTier
+import ch.onepass.onepass.model.organization.OrganizationRepository
+import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import com.google.firebase.Timestamp
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -22,9 +24,8 @@ import kotlinx.coroutines.launch
  * @property eventRepository Repository for event operations
  */
 class CreateEventFormViewModel(
-    // TODO: make sure this is replaced with
-    // Dependency Injection in the future (after test)
-    private val eventRepository: EventRepository = EventRepositoryFirebase()
+    private val eventRepository: EventRepository = EventRepositoryFirebase(),
+    private val organizationRepository: OrganizationRepository = OrganizationRepositoryFirebase()
 ) : ViewModel() {
 
   enum class ValidationError(val key: String, val message: String) {
@@ -44,6 +45,8 @@ class CreateEventFormViewModel(
 
     fun toError(): Pair<String, String> = key to message
   }
+
+  private val _organizationId = MutableStateFlow<String?>(null)
 
   // Form state
   private val _formState = MutableStateFlow(CreateEventFormState())
@@ -111,6 +114,9 @@ class CreateEventFormViewModel(
         ValidationError.CAPACITY_NEGATIVE.key)
   }
 
+  fun setOrganizationId(organizationId: String) {
+    _organizationId.value = organizationId
+  }
   /**
    * Validates the form data
    *
@@ -215,14 +221,15 @@ class CreateEventFormViewModel(
   private fun clearFieldError(vararg keys: String) {
     _fieldErrors.value = _fieldErrors.value.filterKeys { it !in keys }
   }
-  /**
-   * Creates a new event with the current form data
-   *
-   * @param organizerId The ID of the user creating the event
-   * @param organizerName The name of the organizer
-   */
-  fun createEvent(organizerId: String, organizerName: String) {
+  /** Creates a new event with the current form data */
+  fun createEvent() {
     viewModelScope.launch {
+      val orgId = _organizationId.value
+      if (orgId == null) {
+        _uiState.value = CreateEventUiState.Error("No organization selected")
+        return@launch
+      }
+
       // Validate form
       val errors = validateForm()
       _fieldErrors.value = errors
@@ -231,25 +238,31 @@ class CreateEventFormViewModel(
         return@launch
       }
 
-      _fieldErrors.value = emptyMap()
-      // Convert form to event
-      val event = formStateToEvent(organizerId, organizerName)
-      if (event == null) {
-        _uiState.value = CreateEventUiState.Error("Failed to create event from form data")
-        return@launch
+      // Load organization data
+      organizationRepository.getOrganizationById(orgId).collect { organization ->
+        if (organization == null) {
+          _uiState.value = CreateEventUiState.Error("Organization not found")
+          return@collect
+        }
+
+        // Convert form to event with real organization data
+        val event =
+            formStateToEvent(organizerId = organization.id, organizerName = organization.name)
+
+        if (event == null) {
+          _uiState.value = CreateEventUiState.Error("Failed to create event")
+          return@collect
+        }
+
+        _uiState.value = CreateEventUiState.Loading
+
+        val result = eventRepository.createEvent(event)
+        result.fold(
+            onSuccess = { eventId -> _uiState.value = CreateEventUiState.Success(eventId) },
+            onFailure = { error ->
+              _uiState.value = CreateEventUiState.Error(error.message ?: "Failed to create event")
+            })
       }
-
-      // Set loading state
-      _uiState.value = CreateEventUiState.Loading
-
-      // Create event in repository
-      val result = eventRepository.createEvent(event)
-
-      result.fold(
-          onSuccess = { eventId -> _uiState.value = CreateEventUiState.Success(eventId) },
-          onFailure = { error ->
-            _uiState.value = CreateEventUiState.Error(error.message ?: "Failed to create event")
-          })
     }
   }
 

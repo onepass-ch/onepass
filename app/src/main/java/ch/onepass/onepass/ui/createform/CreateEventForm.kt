@@ -627,6 +627,7 @@ fun CreateEventButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 
 @Composable
 fun CreateEventForm(
+    organizationId: String,
     viewModel: CreateEventFormViewModel = viewModel(),
     onNavigateBack: () -> Unit = {},
     onEventCreated: () -> Unit = {},
@@ -635,6 +636,8 @@ fun CreateEventForm(
   val uiState by viewModel.uiState.collectAsState()
   val fieldErrors by viewModel.fieldErrors.collectAsState()
   val scrollState = rememberScrollState()
+
+  LaunchedEffect(Unit) { viewModel.setOrganizationId(organizationId) }
 
   LaunchedEffect(uiState) {
     when (uiState) {
@@ -735,11 +738,7 @@ fun CreateEventForm(
     Spacer(modifier = Modifier.height(32.dp))
 
     // Create Button
-    CreateEventButton(
-        onClick = {
-          viewModel.createEvent(
-              organizerId = "temp-organizer-id", organizerName = "Temporary Organizer")
-        })
+    CreateEventButton(onClick = { viewModel.createEvent() })
     Spacer(modifier = Modifier.height(24.dp))
   }
 
