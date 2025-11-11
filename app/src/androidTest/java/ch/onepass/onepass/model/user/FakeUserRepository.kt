@@ -9,6 +9,9 @@ import ch.onepass.onepass.model.staff.StaffSearchResult
  * full Firebase functionality.
  */
 class FakeUserRepository(
+    // These parameters are mutable (var) to support setter methods (updateCurrentUser,
+    // updateCreatedUser, setThrowOnLoad) that allow tests to modify the repository state
+    // dynamically during test execution.
     private var currentUser: User? = null,
     private var createdUser: User? = null,
     private var throwOnLoad: Boolean = false
