@@ -204,7 +204,7 @@ class MapViewModel(
 
   /** Configures gesture and compass plugins for the MapView. */
   private fun configurePlugins(mapView: MapView) {
-    mapView.gestures?.updateSettings {
+    mapView.gestures.updateSettings {
       rotateEnabled = true
       pinchToZoomEnabled = true
     }
