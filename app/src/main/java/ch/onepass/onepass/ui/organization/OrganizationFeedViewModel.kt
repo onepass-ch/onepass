@@ -38,11 +38,16 @@ class OrganizationFeedViewModel(
 
     viewModelScope.launch {
       try {
-        repository.getOrganizationsByMember(userId).collect { organizations ->
-          _uiState.update {
-            it.copy(organizations = organizations, isLoading = false, error = null)
-          }
-        }
+        combine(
+                repository.getOrganizationsByOwner(userId),
+                repository.getOrganizationsByMember(userId)) { ownedOrgs, memberOrgs ->
+                  (ownedOrgs + memberOrgs).distinctBy { it.id }
+                }
+            .collect { organizations ->
+              _uiState.update {
+                it.copy(organizations = organizations, isLoading = false, error = null)
+              }
+            }
       } catch (e: Exception) {
         _uiState.update {
           it.copy(isLoading = false, error = e.message ?: "Failed to load organizations")
