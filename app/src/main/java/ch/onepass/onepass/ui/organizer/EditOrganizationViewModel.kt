@@ -110,12 +110,12 @@ class EditOrganizationViewModel(
       _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, success = false)
       try {
         val org =
-            Organization(
+            currentOrg.copy(
                 id = data.id,
                 name = data.name,
                 description = data.description,
                 ownerId = currentOrg.ownerId,
-                status = currentOrg.status, // preserve existing status
+                status = currentOrg.status,
                 contactEmail = data.contactEmail,
                 contactPhone = data.contactPhone,
                 website = data.website,
