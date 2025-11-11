@@ -274,6 +274,64 @@ class MyInvitationsViewModelTest {
     assertEquals("invite-1", state.invitations.first().id)
   }
 
+  @Test
+  fun retry_clearsErrorMessageAndSuccessMessage() = runTest {
+    val userRepository = FakeUserRepository(currentUser = testUser)
+    val orgRepository =
+        TestMockOrganizationRepository(
+            invitationsByEmail = mapOf(testUserEmail to listOf(pendingInvitation)))
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Set an error message by trying to accept a non-existent invitation
+    viewModel.acceptInvitation("non-existent")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    var state = viewModel.state.value
+    assertNotNull("Error message should be set", state.errorMessage)
+
+    // Set a success message by accepting a valid invitation
+    viewModel.acceptInvitation("invite-1")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Now call retry - both messages should be cleared
+    // Since user exists, loadUserEmail() will succeed and not set a new error
+    viewModel.retry()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    state = viewModel.state.value
+    // After retry with a valid user, both messages should be cleared
+    assertNull("Error message should be cleared when retry is called", state.errorMessage)
+    assertNull("Success message should be cleared when retry is called", state.successMessage)
+  }
+
+  @Test
+  fun retry_clearsSuccessMessageWhenSet() = runTest {
+    val userRepository = FakeUserRepository(currentUser = testUser)
+    val orgRepository =
+        TestMockOrganizationRepository(
+            invitationsByEmail = mapOf(testUserEmail to listOf(pendingInvitation)))
+    val viewModel = MyInvitationsViewModel(orgRepository, userRepository)
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Set a success message by accepting an invitation
+    viewModel.acceptInvitation("invite-1")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    var state = viewModel.state.value
+    assertNotNull("Success message should be set after accepting invitation", state.successMessage)
+
+    // Call retry - success message should be cleared
+    // Since user exists, loadUserEmail() will succeed and not interfere
+    viewModel.retry()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    state = viewModel.state.value
+    assertNull("Success message should be cleared when retry is called", state.successMessage)
+  }
+
   // ========================================
   // Tests for Accepting Invitations
   // ========================================
