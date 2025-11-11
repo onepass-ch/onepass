@@ -55,6 +55,13 @@ class MapViewModel(
     object MapStyle {
       const val URI = "mapbox://styles/walid-as/cmhmmxczk00ar01shdw6r8lel"
     }
+
+    object CoordinateLimits {
+      const val MIN_LATITUDE = -90.0
+      const val MAX_LATITUDE = 90.0
+      const val MIN_LONGITUDE = -180.0
+      const val MAX_LONGITUDE = 180.0
+    }
   }
 
   // --- UI state ---
@@ -106,8 +113,8 @@ class MapViewModel(
   private fun isValidCoordinate(latitude: Double, longitude: Double): Boolean {
     return !latitude.isNaN() &&
         !longitude.isNaN() &&
-        latitude in -90.0..90.0 &&
-        longitude in -180.0..180.0
+        latitude in CoordinateLimits.MIN_LATITUDE..CoordinateLimits.MAX_LATITUDE &&
+        longitude in CoordinateLimits.MIN_LONGITUDE..CoordinateLimits.MAX_LONGITUDE
   }
 
   /**
