@@ -325,6 +325,7 @@ private fun InvitationCard(
     } catch (e: Exception) {
       isLoadingOrg = false
       // Organization not found or error - will show orgId as fallback
+      // Error is logged in OrganizationRepositoryFirebase
     }
   }
 
