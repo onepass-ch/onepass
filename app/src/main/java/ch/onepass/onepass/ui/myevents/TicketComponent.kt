@@ -52,7 +52,8 @@ fun TicketComponent(
     status: TicketStatus,
     dateTime: String,
     location: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCardClick: (() -> Unit)? = null
 ) {
   var showDetails by remember { mutableStateOf(false) }
 
@@ -107,11 +108,19 @@ fun TicketComponent(
     }
   }
 
+  val handleCardClick = {
+    if (onCardClick != null) {
+      onCardClick()
+    } else {
+      showDetails = true
+    }
+  }
+
   Card(
       modifier =
           modifier
               .fillMaxWidth()
-              .clickable { showDetails = true }
+              .clickable { handleCardClick() }
               .testTag(MyEventsTestTags.TICKET_CARD),
       shape = RoundedCornerShape(12.dp),
       colors =

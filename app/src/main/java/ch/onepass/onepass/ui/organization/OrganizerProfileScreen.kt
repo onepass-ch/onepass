@@ -528,7 +528,7 @@ fun UpcomingTabContent(
                     status = determineTicketStatus(event),
                     dateTime = event.displayDateTime,
                     location = event.displayLocation,
-                    modifier = Modifier.clickable { onEventClick(event.eventId) })
+                    onCardClick = { onEventClick(event.eventId) })
               }
         }
       }
@@ -563,7 +563,7 @@ fun PastTabContent(
                     status = TicketStatus.EXPIRED,
                     dateTime = event.displayDateTime,
                     location = event.displayLocation,
-                    modifier = Modifier.clickable { onEventClick(event.eventId) })
+                    onCardClick = { onEventClick(event.eventId) })
               }
         }
       }

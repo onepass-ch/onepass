@@ -1,16 +1,30 @@
 package ch.onepass.onepass.ui.organization
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertTextEquals
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToNode
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.R
+import ch.onepass.onepass.model.event.Event
+import ch.onepass.onepass.model.event.EventStatus
+import ch.onepass.onepass.model.organization.Organization
+import ch.onepass.onepass.model.organization.OrganizationStatus
+import ch.onepass.onepass.ui.myevents.MyEventsTestTags
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import com.google.firebase.Timestamp
+import java.util.Date
+import java.util.concurrent.TimeUnit
 import org.junit.Assert
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -514,6 +528,306 @@ class OrganizerProfileScreenComposeTest {
 
     // Verify empty state message is displayed
     composeTestRule.onNodeWithText("No past events").assertIsDisplayed()
+  }
+
+  @Test
+  fun organizerProfileScreen_loadsData_displaysUpcomingEvents() {
+    val organizationId = "org-profile"
+    val organization =
+        createTestOrganization(
+            id = organizationId,
+            name = "Compose Organizer",
+            description = "Compose description",
+            followerCount = 1530,
+            website = "https://compose.example",
+            instagram = "https://instagram.com/compose",
+            tiktok = "https://tiktok.com/@compose",
+            facebook = "https://facebook.com/compose")
+    val events =
+        listOf(
+            createEvent(
+                id = "future-event",
+                title = "Future Event",
+                organizerId = organizationId,
+                startHoursFromNow = 4,
+                endHoursFromNow = 6),
+            createEvent(
+                id = "current-event",
+                title = "Current Event",
+                organizerId = organizationId,
+                startHoursFromNow = -1,
+                endHoursFromNow = 1),
+            createEvent(
+                id = "past-event",
+                title = "Past Event",
+                organizerId = organizationId,
+                startHoursFromNow = -5,
+                endHoursFromNow = -3))
+    val viewModel = MockOrganizerProfileViewModel(organization = organization, events = events)
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel)
+      }
+    }
+
+    composeTestRule.waitUntil(timeoutMillis = 5_000) { !viewModel.state.value.loading }
+    composeTestRule.waitForIdle()
+
+    assertTrue(viewModel.requestedOrganizationIds.contains(organizationId))
+    assertTrue(viewModel.requestedEventOrganizationIds.contains(organizationId))
+
+    composeTestRule
+        .onNodeWithTag(OrganizerProfileTestTags.NAME_TEXT)
+        .assertIsDisplayed()
+        .assertTextEquals(organization.name)
+    composeTestRule
+        .onNodeWithTag(OrganizerProfileTestTags.DESCRIPTION_TEXT)
+        .assertIsDisplayed()
+        .assertTextEquals(organization.description)
+
+    composeTestRule
+        .onNodeWithTag(OrganizerProfileTestTags.EVENT_LIST)
+        .performScrollToNode(hasText("Future Event"))
+    composeTestRule
+        .onNodeWithText("Future Event", useUnmergedTree = true)
+        .assertExists()
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(OrganizerProfileTestTags.EVENT_LIST)
+        .performScrollToNode(hasText("Current Event"))
+    composeTestRule
+        .onNodeWithText("Current Event", useUnmergedTree = true)
+        .assertExists()
+        .assertIsDisplayed()
+    composeTestRule.onNodeWithText("Past Event").assertDoesNotExist()
+    composeTestRule.onAllNodesWithTag(MyEventsTestTags.TICKET_CARD).assertCountEquals(2)
+  }
+
+  @Test
+  fun organizerProfileScreen_followButton_togglesFollowState() {
+    val organizationId = "org-follow"
+    val organization =
+        createTestOrganization(
+            id = organizationId,
+            name = "Follow Org",
+            description = "Follow description",
+            followerCount = 9)
+    val viewModel = MockOrganizerProfileViewModel(organization = organization, events = emptyList())
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel)
+      }
+    }
+
+    composeTestRule.waitUntil(timeoutMillis = 5_000) { !viewModel.state.value.loading }
+
+    composeTestRule
+        .onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT, useUnmergedTree = true)
+        .assertTextEquals("FOLLOW")
+
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON).performClick()
+
+    composeTestRule.waitUntil(timeoutMillis = 5_000) { viewModel.state.value.isFollowing }
+
+    composeTestRule
+        .onNodeWithTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT, useUnmergedTree = true)
+        .assertTextEquals("FOLLOWING")
+    composeTestRule
+        .onNodeWithTag(OrganizerProfileTestTags.FOLLOWERS_TEXT)
+        .assertTextEquals("join 10 community")
+
+    assertTrue(viewModel.state.value.isFollowing)
+  }
+
+  @Test
+  fun organizerProfileScreen_switchToPastTab_showsPastEventsOnly() {
+    val organizationId = "org-tabs"
+    val organization =
+        createTestOrganization(
+            id = organizationId,
+            name = "Tabs Org",
+            description = "Tabs description",
+            followerCount = 42)
+    val events =
+        listOf(
+            createEvent(
+                id = "future-event",
+                title = "Future Event",
+                organizerId = organizationId,
+                startHoursFromNow = 2,
+                endHoursFromNow = 3),
+            createEvent(
+                id = "past-event",
+                title = "Past Event",
+                organizerId = organizationId,
+                startHoursFromNow = -6,
+                endHoursFromNow = -5))
+    val viewModel = MockOrganizerProfileViewModel(organization = organization, events = events)
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel)
+      }
+    }
+
+    composeTestRule.waitUntil(timeoutMillis = 5_000) { !viewModel.state.value.loading }
+
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.TAB_PAST).performClick()
+
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      viewModel.state.value.selectedTab == OrganizerProfileTab.PAST
+    }
+
+    composeTestRule.onNodeWithText("Past Event").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Future Event").assertDoesNotExist()
+    composeTestRule.onAllNodesWithTag(OrganizerProfileTestTags.EVENT_LIST).assertCountEquals(1)
+  }
+
+  @Test
+  fun organizerProfileScreen_clickWebsite_emitsOpenWebsiteEffect() {
+    val organizationId = "org-website"
+    val organization =
+        createTestOrganization(
+            id = organizationId,
+            name = "Website Org",
+            description = "Website description",
+            followerCount = 50,
+            website = "https://website.example")
+    val viewModel = MockOrganizerProfileViewModel(organization = organization, events = emptyList())
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel)
+      }
+    }
+
+    composeTestRule.waitUntil(timeoutMillis = 5_000) { !viewModel.state.value.loading }
+
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.WEBSITE_LINK).performClick()
+
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      viewModel.recordedEffects.any { it is OrganizerProfileEffect.OpenWebsite }
+    }
+
+    val effect = viewModel.recordedEffects.last() as OrganizerProfileEffect.OpenWebsite
+    assertEquals(organization.website, effect.url)
+  }
+
+  @Test
+  fun organizerProfileScreen_clickSocialMedia_emitsOpenSocialMediaEffect() {
+    val organizationId = "org-social"
+    val organization =
+        createTestOrganization(
+            id = organizationId,
+            name = "Social Org",
+            description = "Social description",
+            followerCount = 77,
+            instagram = "https://instagram.com/social")
+    val viewModel = MockOrganizerProfileViewModel(organization = organization, events = emptyList())
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel)
+      }
+    }
+
+    composeTestRule.waitUntil(timeoutMillis = 5_000) { !viewModel.state.value.loading }
+
+    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.INSTAGRAM_ICON).performClick()
+
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      viewModel.recordedEffects.any {
+        it is OrganizerProfileEffect.OpenSocialMedia && it.platform == "instagram"
+      }
+    }
+
+    val effect = viewModel.recordedEffects.last() as OrganizerProfileEffect.OpenSocialMedia
+    assertEquals("instagram", effect.platform)
+    assertEquals(organization.instagram, effect.url)
+  }
+
+  @Test
+  fun organizerProfileScreen_clickEvent_emitsNavigateEffect() {
+    val organizationId = "org-events"
+    val organization =
+        createTestOrganization(
+            id = organizationId,
+            name = "Events Org",
+            description = "Events description",
+            followerCount = 15)
+    val events =
+        listOf(
+            createEvent(
+                id = "event-navigate",
+                title = "Navigate Event",
+                organizerId = organizationId,
+                startHoursFromNow = 1,
+                endHoursFromNow = 2))
+    val viewModel = MockOrganizerProfileViewModel(organization = organization, events = events)
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        OrganizerProfileScreen(organizationId = organizationId, viewModel = viewModel)
+      }
+    }
+
+    composeTestRule.waitUntil(timeoutMillis = 5_000) { !viewModel.state.value.loading }
+
+    composeTestRule.onNodeWithTag(MyEventsTestTags.TICKET_CARD).performClick()
+
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      viewModel.recordedEffects.any { it is OrganizerProfileEffect.NavigateToEvent }
+    }
+
+    val effect = viewModel.recordedEffects.last() as OrganizerProfileEffect.NavigateToEvent
+    assertEquals("event-navigate", effect.eventId)
+  }
+
+  private fun createTestOrganization(
+      id: String,
+      name: String,
+      description: String,
+      followerCount: Int,
+      website: String? = "https://example.com",
+      instagram: String? = "https://instagram.com/example",
+      tiktok: String? = "https://tiktok.com/@example",
+      facebook: String? = "https://facebook.com/example"
+  ): Organization =
+      Organization(
+          id = id,
+          name = name,
+          description = description,
+          ownerId = "owner-$id",
+          status = OrganizationStatus.ACTIVE,
+          verified = true,
+          website = website,
+          instagram = instagram,
+          tiktok = tiktok,
+          facebook = facebook,
+          followerCount = followerCount,
+          eventIds = listOf("future-event", "current-event", "past-event"))
+
+  private fun createEvent(
+      id: String,
+      title: String,
+      organizerId: String,
+      startHoursFromNow: Long,
+      endHoursFromNow: Long
+  ): Event {
+    val now = System.currentTimeMillis()
+    val startMillis = now + TimeUnit.HOURS.toMillis(startHoursFromNow)
+    val endMillis = now + TimeUnit.HOURS.toMillis(endHoursFromNow)
+    return Event(
+        eventId = id,
+        title = title,
+        description = "$title description",
+        organizerId = organizerId,
+        organizerName = "Organizer $organizerId",
+        status = EventStatus.PUBLISHED,
+        startTime = Timestamp(Date(startMillis)),
+        endTime = Timestamp(Date(endMillis)))
   }
 
   // ========================================
