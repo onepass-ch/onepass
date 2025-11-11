@@ -92,6 +92,7 @@ fun MyInvitationsScreen(
       onAcceptInvitation = viewModel::acceptInvitation,
       onRejectInvitation = viewModel::rejectInvitation,
       onRetry = viewModel::retry,
+      onClearSuccessMessage = viewModel::clearSuccessMessage,
       onNavigateBack = onNavigateBack,
       organizationRepository = organizationRepository,
       modifier = modifier)
@@ -107,6 +108,7 @@ fun MyInvitationsScreen(
  * @param onAcceptInvitation Callback invoked when an invitation is accepted.
  * @param onRejectInvitation Callback invoked when an invitation is rejected.
  * @param onRetry Callback invoked when retry button is clicked to reload data.
+ * @param onClearSuccessMessage Callback invoked to clear the success message after displaying it.
  * @param onNavigateBack Callback invoked when the back button is clicked.
  * @param organizationRepository Repository for fetching organization details.
  * @param modifier Optional modifier for layout adjustments.
@@ -118,17 +120,23 @@ internal fun MyInvitationsContent(
     onAcceptInvitation: (String) -> Unit,
     onRejectInvitation: (String) -> Unit,
     onRetry: () -> Unit = {},
+    onClearSuccessMessage: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
     organizationRepository: OrganizationRepository,
     modifier: Modifier = Modifier
 ) {
   val snackbarHostState = remember { SnackbarHostState() }
 
-  // Show success message as snackbar
+  // Show success message as snackbar and clear it after displaying
+  // This ensures that subsequent operations with the same success message will trigger
+  // the snackbar to show again (since LaunchedEffect only triggers when the key changes).
   LaunchedEffect(state.successMessage) {
     state.successMessage?.let { message ->
       snackbarHostState.showSnackbar(
           message = message, duration = SnackbarDuration.Short, withDismissAction = true)
+      // Clear the success message after displaying to allow the same message to be shown again
+      // if the same operation is performed multiple times.
+      onClearSuccessMessage()
     }
   }
 
