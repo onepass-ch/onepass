@@ -309,4 +309,15 @@ class MyInvitationsViewModel(
       }
     }
   }
+
+  /**
+   * Clears the success message from the UI state.
+   *
+   * This method should be called after displaying the success message (e.g., in a snackbar) to
+   * ensure that subsequent operations with the same success message will trigger the UI to show the
+   * snackbar again.
+   */
+  fun clearSuccessMessage() {
+    _uiState.value = _uiState.value.copy(successMessage = null)
+  }
 }
