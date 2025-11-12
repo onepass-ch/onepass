@@ -4,8 +4,8 @@ import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationStatus
+import ch.onepass.onepass.ui.eventform.EventFormViewModel.ValidationError
 import ch.onepass.onepass.ui.eventform.createform.CreateEventFormViewModel
-import ch.onepass.onepass.ui.eventform.createform.CreateEventFormViewModel.ValidationError
 import ch.onepass.onepass.ui.eventform.createform.CreateEventUiState
 import io.mockk.coEvery
 import io.mockk.coVerify
