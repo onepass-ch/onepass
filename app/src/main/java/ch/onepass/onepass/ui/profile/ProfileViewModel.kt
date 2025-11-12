@@ -38,6 +38,8 @@ sealed interface ProfileEffect {
 
   object NavigateToHelp : ProfileEffect
 
+  object NavigateToMyInvitations : ProfileEffect
+
   // Keep this one active (only supported flow for now)
   object NavigateToOrganizerOnboarding : ProfileEffect
 
@@ -105,6 +107,9 @@ open class ProfileViewModel(private val userRepository: UserRepository = UserRep
         // TODO: enable when Account Settings screen exists
         // _effects.emit(ProfileEffect.NavigateToAccountSettings)
       }
+
+  fun onInvitations() =
+      viewModelScope.launch { _effects.tryEmit(ProfileEffect.NavigateToMyInvitations) }
 
   fun onPaymentMethods() =
       viewModelScope.launch {

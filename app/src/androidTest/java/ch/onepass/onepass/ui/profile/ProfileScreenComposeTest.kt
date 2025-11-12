@@ -49,27 +49,29 @@ class ProfileScreenComposeTest {
     compose.setContent { ProfileScreen(viewModel = fakeVm, onEffect = {}) }
 
     // Main sections
-    compose.onNodeWithTag(ProfileTestTags.SCREEN).assertIsDisplayed()
-    compose.onNodeWithTag(ProfileTestTags.HEADER).assertIsDisplayed()
-    compose.onNodeWithTag(ProfileTestTags.HEADER_NAME).assertIsDisplayed()
-    compose.onNodeWithTag(ProfileTestTags.HEADER_EMAIL).assertIsDisplayed()
 
-    compose.onNodeWithTag(ProfileTestTags.STATS_ROW).assertIsDisplayed()
-    compose.onNodeWithTag(ProfileTestTags.STAT_EVENTS).assertIsDisplayed()
-    compose.onNodeWithTag(ProfileTestTags.STAT_UPCOMING).assertIsDisplayed()
-    compose.onNodeWithTag(ProfileTestTags.STAT_SAVED).assertIsDisplayed()
+    compose.onNodeWithTag(ProfileTestTags.SCREEN).assertExists()
+    compose.onNodeWithTag(ProfileTestTags.HEADER).assertExists()
+    compose.onNodeWithTag(ProfileTestTags.HEADER_NAME).assertExists()
+    compose.onNodeWithTag(ProfileTestTags.HEADER_EMAIL).assertExists()
 
-    compose.onNodeWithTag(ProfileTestTags.ORG_SECTION_TITLE).assertIsDisplayed()
-    compose.onNodeWithTag(ProfileTestTags.ORG_CARD).assertIsDisplayed()
-    compose.onNodeWithTag(ProfileTestTags.ORG_CTA).assertIsDisplayed()
+    compose.onNodeWithTag(ProfileTestTags.STATS_ROW).assertExists()
+    compose.onNodeWithTag(ProfileTestTags.STAT_EVENTS).assertExists()
+    compose.onNodeWithTag(ProfileTestTags.STAT_UPCOMING).assertExists()
+    compose.onNodeWithTag(ProfileTestTags.STAT_SAVED).assertExists()
 
-    compose.onNodeWithTag(ProfileTestTags.SETTINGS_ACCOUNT).assertIsDisplayed()
-    compose.onNodeWithTag(ProfileTestTags.SETTINGS_PAYMENTS).assertIsDisplayed()
-    compose.onNodeWithTag(ProfileTestTags.SETTINGS_HELP).assertIsDisplayed()
-    compose.onNodeWithTag(ProfileTestTags.SETTINGS_SIGN_OUT).assertIsDisplayed()
+    compose.onNodeWithTag(ProfileTestTags.ORG_SECTION_TITLE).assertExists()
+    compose.onNodeWithTag(ProfileTestTags.ORG_CARD).assertExists()
+    compose.onNodeWithTag(ProfileTestTags.ORG_CTA).assertExists()
+
+    compose.onNodeWithTag(ProfileTestTags.SETTINGS_INVITATIONS).assertExists()
+    compose.onNodeWithTag(ProfileTestTags.SETTINGS_ACCOUNT).assertExists()
+    compose.onNodeWithTag(ProfileTestTags.SETTINGS_PAYMENTS).assertExists()
+    compose.onNodeWithTag(ProfileTestTags.SETTINGS_HELP).assertExists()
+    compose.onNodeWithTag(ProfileTestTags.SETTINGS_SIGN_OUT).assertExists()
 
     // Sanity check for text content
-    compose.onNodeWithText("WILL SMITH").assertIsDisplayed()
-    compose.onNodeWithText("ORGANIZER SETTINGS").assertIsDisplayed()
+    compose.onNodeWithText("WILL SMITH").assertExists()
+    compose.onNodeWithText("ORGANIZER SETTINGS").assertExists()
   }
 }

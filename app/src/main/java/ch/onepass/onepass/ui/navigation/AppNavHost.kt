@@ -21,6 +21,7 @@ import ch.onepass.onepass.ui.map.MapScreen
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.myevents.MyEventsScreen
 import ch.onepass.onepass.ui.myevents.MyEventsViewModel
+import ch.onepass.onepass.ui.myinvitations.MyInvitationsScreen
 import ch.onepass.onepass.ui.navigation.NavigationDestinations.Screen
 import ch.onepass.onepass.ui.profile.ProfileEffect
 import ch.onepass.onepass.ui.profile.ProfileScreen
@@ -110,6 +111,8 @@ fun AppNavHost(
                   ProfileEffect.NavigateToAccountSettings,
                   ProfileEffect.NavigateToPaymentMethods,
                   ProfileEffect.NavigateToHelp -> navController.navigate(Screen.ComingSoon.route)
+                  ProfileEffect.NavigateToMyInvitations ->
+                      navController.navigate(Screen.MyInvitations.route)
                   ProfileEffect.SignOut -> {
                     authVm.signOut()
                     navController.navigate(Screen.Auth.route) {
@@ -117,13 +120,12 @@ fun AppNavHost(
                       launchSingleTop = true
                     }
                   }
-                  ProfileEffect.NavigateToAccountSettings ->
-                      navController.navigate(Screen.ComingSoon.route)
-                  ProfileEffect.NavigateToHelp -> navController.navigate(Screen.ComingSoon.route)
-                  ProfileEffect.NavigateToPaymentMethods ->
-                      navController.navigate(Screen.ComingSoon.route)
                 }
               })
+        }
+
+        composable(Screen.MyInvitations.route) {
+          MyInvitationsScreen(onNavigateBack = { navController.popBackStack() })
         }
 
         // ------------------ Placeholders ------------------
