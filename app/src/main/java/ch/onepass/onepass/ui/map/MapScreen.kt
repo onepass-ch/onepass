@@ -35,6 +35,11 @@ object MapScreenTestTags {
   const val RECENTER_BUTTON = "recenterButton"
 }
 
+private object AnnotationConfig {
+  const val PIN_ICON = "purple-pin"
+  const val PIN_SIZE = 0.6
+}
+
 /**
  * A Composable function that displays a Mapbox map, covering the entire screen.Includes a floating
  * action button to recenter the camera on the user's location puck.
@@ -93,6 +98,13 @@ fun MapScreen(mapViewModel: MapViewModel = viewModel(), isLocationPermissionGran
   }
 }
 
+/**
+ * Sets up map annotations (pins) for events and configures click listeners.
+ *
+ * @param mapView The MapView instance to configure
+ * @param events List of events to display as annotations
+ * @param viewModel ViewModel for handling event selection
+ */
 private fun setupAnnotations(mapView: MapView, events: List<Event>, viewModel: MapViewModel) {
   val annotationPlugin = mapView.annotations
   val pointAnnotationManager = annotationPlugin.createPointAnnotationManager()
@@ -108,8 +120,8 @@ private fun setupAnnotations(mapView: MapView, events: List<Event>, viewModel: M
     val pin =
         PointAnnotationOptions()
             .withPoint(point)
-            .withIconImage("purple-pin")
-            .withIconSize(0.6)
+            .withIconImage(AnnotationConfig.PIN_ICON)
+            .withIconSize(AnnotationConfig.PIN_SIZE)
             .withData(JsonPrimitive(event.eventId))
 
     pointAnnotationManager.create(pin)
