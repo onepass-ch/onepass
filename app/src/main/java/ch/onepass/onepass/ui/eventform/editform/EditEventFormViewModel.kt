@@ -1,1 +1,159 @@
 package ch.onepass.onepass.ui.eventform.editform
+
+import androidx.lifecycle.viewModelScope
+import ch.onepass.onepass.model.event.Event
+import ch.onepass.onepass.model.event.EventRepository
+import ch.onepass.onepass.model.event.EventRepositoryFirebase
+import ch.onepass.onepass.model.event.PricingTier
+import ch.onepass.onepass.ui.eventform.EventFormViewModel
+import java.text.SimpleDateFormat
+import java.util.Locale
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.launch
+
+/**
+ * ViewModel for the Edit Event Form screen. Manages loading an existing event, editing its data,
+ * and updating it.
+ *
+ * @property eventRepository Repository for event operations
+ */
+class EditEventFormViewModel(eventRepository: EventRepository = EventRepositoryFirebase()) :
+    EventFormViewModel(eventRepository) {
+
+  // UI state
+  private val _uiState = MutableStateFlow<EditEventUiState>(EditEventUiState.Idle)
+  val uiState: StateFlow<EditEventUiState> = _uiState.asStateFlow()
+
+  // Store original event for updates
+  private var originalEvent: Event? = null
+
+  /** Loads an event by ID and populates the form */
+  fun loadEvent(eventId: String) {
+    viewModelScope.launch {
+      _uiState.value = EditEventUiState.Loading
+
+      try {
+        val event = eventRepository.getEventById(eventId).firstOrNull()
+
+        if (event == null) {
+          _uiState.value = EditEventUiState.LoadError("Event not found")
+          return@launch
+        }
+
+        originalEvent = event
+        _formState.value = event.toFormState()
+        _uiState.value = EditEventUiState.Idle
+      } catch (e: Exception) {
+        _uiState.value = EditEventUiState.LoadError(e.message ?: "Failed to load event")
+      }
+    }
+  }
+
+  /** Updates the event with current form data */
+  fun updateEvent() {
+    viewModelScope.launch {
+      // Original event check first
+      val original = originalEvent
+      if (original == null) {
+        _uiState.value = EditEventUiState.Error("Original event not loaded")
+        return@launch
+      }
+
+      val parsed = validateAndParse()
+      if (parsed == null) {
+        val message =
+            if (fieldErrors.value.isNotEmpty()) {
+              "Please fix validation errors"
+            } else {
+              "Failed to process form data"
+            }
+        _uiState.value = EditEventUiState.Error(message)
+        return@launch
+      }
+
+      _uiState.value = EditEventUiState.Updating
+
+      // Create updated event from parsed data
+      val updatedEvent =
+          original.copy(
+              title = parsed.title,
+              description = parsed.description,
+              startTime = parsed.startTime,
+              endTime = parsed.endTime,
+              capacity = parsed.capacity,
+              location = null, // TODO: Create Location object from location string
+              pricingTiers =
+                  listOf(
+                      PricingTier(
+                          name = "General",
+                          price = parsed.price,
+                          quantity = parsed.capacity,
+                          remaining = parsed.capacity - original.ticketsIssued)))
+
+      // Update event in repository
+      val result = eventRepository.updateEvent(updatedEvent)
+
+      result.fold(
+          onSuccess = {
+            originalEvent = updatedEvent
+            _uiState.value = EditEventUiState.Success
+          },
+          onFailure = { error ->
+            _uiState.value = EditEventUiState.Error(error.message ?: "Failed to update event")
+          })
+    }
+  }
+
+  /** Clears any error state */
+  fun clearError() {
+    if (_uiState.value is EditEventUiState.Error) {
+      _uiState.value = EditEventUiState.Idle
+    }
+  }
+}
+
+/** Sealed class representing the UI state of event editing */
+sealed class EditEventUiState {
+  /** Initial state, no operation in progress */
+  object Idle : EditEventUiState()
+
+  /** Event is being loaded */
+  object Loading : EditEventUiState()
+
+  /** Failed to load event */
+  data class LoadError(val message: String) : EditEventUiState()
+
+  /** Event update is in progress */
+  object Updating : EditEventUiState()
+
+  /** Event update succeeded */
+  object Success : EditEventUiState()
+
+  /** Event update failed */
+  data class Error(val message: String) : EditEventUiState()
+}
+
+/** Extension function to convert Event to EventFormState */
+private fun Event.toFormState(): EventFormViewModel.EventFormState {
+  val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+  val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+
+  val dateString = startTime?.toDate()?.let { dateFormat.format(it) } ?: ""
+  val startTimeString = startTime?.toDate()?.let { timeFormat.format(it) } ?: ""
+  val endTimeString = endTime?.toDate()?.let { timeFormat.format(it) } ?: ""
+
+  val lowestPrice = pricingTiers.minOfOrNull { it.price } ?: 0.0
+
+  return EventFormViewModel.EventFormState(
+      title = title,
+      description = description,
+      startTime = startTimeString,
+      endTime = endTimeString,
+      date = dateString,
+      location = location?.name ?: "",
+      price = if (lowestPrice > 0) lowestPrice.toString() else "0",
+      capacity = capacity.toString())
+}
