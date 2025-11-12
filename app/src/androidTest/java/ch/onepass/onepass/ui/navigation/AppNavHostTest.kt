@@ -190,4 +190,3 @@ class AppNavHostTest {
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_SCREEN).assertIsDisplayed()
   }
 }
-
