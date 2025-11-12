@@ -32,6 +32,8 @@ object NavigationDestinations {
 
     object ComingSoon : Screen("coming_soon", "Coming Soon", false)
 
+    object MyInvitations : Screen("my_invitations", "My Invitations", false)
+
     // Parameterized routes
     object EventDetail : Screen("event/{eventId}", "Event Detail", false) {
       const val ARG_EVENT_ID = "eventId"
