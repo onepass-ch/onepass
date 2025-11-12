@@ -35,7 +35,7 @@ fun FormTextField(
     isError: Boolean = false,
     onFocusChanged: (Boolean) -> Unit = {},
     keyboardType: KeyboardType = KeyboardType.Text,
-    maxLines: Int = 1,
+    maxLines: Int = 1, // Single line by default
     errorMessage: String? = null,
     testTag: String? = null
 ) {
@@ -47,6 +47,7 @@ fun FormTextField(
         modifier =
             Modifier.fillMaxWidth()
                 .onFocusChanged { onFocusChanged(it.isFocused) }
+                // Apply test tag if provided
                 .then(if (testTag != null) Modifier.testTag(testTag) else Modifier),
         isError = isError,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
@@ -59,6 +60,22 @@ fun FormTextField(
   }
 }
 
+/**
+ * Composable row for selecting phone prefix and entering phone number.
+ *
+ * @param prefixDisplayText Text to display for the selected prefix
+ * @param prefixError Optional error message for the prefix field
+ * @param countryList List of country names and their corresponding codes
+ * @param dropdownExpanded Whether the prefix dropdown is expanded
+ * @param onDropdownDismiss Callback to dismiss the dropdown
+ * @param onCountrySelected Callback when a country is selected
+ * @param phoneValue Current phone number value
+ * @param onPhoneChange Callback for phone number changes
+ * @param onPhoneFocusChanged Callback for phone field focus changes
+ * @param onPrefixClick Callback when the prefix field is clicked
+ * @param phoneTestTag Optional test tag for the phone field
+ * @param prefixTestTag Optional test tag for the prefix field
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PrefixPhoneRow(

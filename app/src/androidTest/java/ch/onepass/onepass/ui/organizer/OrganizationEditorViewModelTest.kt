@@ -11,10 +11,10 @@ import org.junit.*
 import org.junit.Assert.*
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class EditOrganizationViewModelTest {
+class OrganizationEditorViewModelTest {
 
   private lateinit var repository: FakeEditOrganizationRepository
-  private lateinit var viewModel: EditOrganizationViewModel
+  private lateinit var viewModel: OrganizationEditorViewModel
 
   private val testDispatcher = StandardTestDispatcher()
 
@@ -24,7 +24,7 @@ class EditOrganizationViewModelTest {
     Dispatchers.setMain(testDispatcher)
 
     repository = FakeEditOrganizationRepository()
-    viewModel = EditOrganizationViewModel(repository)
+    viewModel = OrganizationEditorViewModel(repository)
   }
 
   @After
@@ -68,7 +68,7 @@ class EditOrganizationViewModelTest {
     advanceUntilIdle()
 
     val data =
-        EditOrganizationData(
+        OrganizationEditorData(
             id = "org1",
             name = "New Name",
             description = "New Description",
@@ -101,7 +101,7 @@ class EditOrganizationViewModelTest {
     advanceUntilIdle()
 
     val data =
-        EditOrganizationData(
+        OrganizationEditorData(
             id = "org1",
             name = "New Name",
             description = "New Description",
@@ -125,7 +125,7 @@ class EditOrganizationViewModelTest {
   @Test
   fun updateOrganization_withoutLoadingOrganization() = runTest {
     val data =
-        EditOrganizationData(
+        OrganizationEditorData(
             id = "org1",
             name = "New Name",
             description = "New Description",
