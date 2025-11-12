@@ -64,10 +64,10 @@ class ProfileViewModelTest {
 
     val effect =
         withTimeout(1000) {
-          vm.onCreateEventClicked()
+          vm.onOrganizationButton()
           vm.effects.first()
         }
-    assertEquals(ProfileEffect.NavigateToOrganizerOnboarding, effect)
+    assertEquals(ProfileEffect.NavigateToBecomeOrganizer, effect)
   }
 
   @Test
@@ -79,9 +79,9 @@ class ProfileViewModelTest {
     vm.state.first { !it.loading }
 
     // Trigger and assert the only active effect
-    vm.onCreateEventClicked()
+    vm.onOrganizationButton()
     val effect = vm.effects.first()
-    assertEquals(ProfileEffect.NavigateToOrganizerOnboarding, effect)
+    assertEquals(ProfileEffect.NavigateToMyOrganizations, effect)
   }
 
   @Test

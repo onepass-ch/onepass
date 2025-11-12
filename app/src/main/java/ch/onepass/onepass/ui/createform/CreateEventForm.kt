@@ -627,7 +627,7 @@ fun CreateEventButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
 
 @Composable
 fun CreateEventForm(
-    organizationId: String,
+    organizationId: String = "",
     viewModel: CreateEventFormViewModel = viewModel(),
     onNavigateBack: () -> Unit = {},
     onEventCreated: () -> Unit = {},
