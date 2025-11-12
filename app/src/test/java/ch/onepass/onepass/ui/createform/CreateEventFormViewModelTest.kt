@@ -31,13 +31,13 @@ class CreateEventFormViewModelTest {
   private lateinit var mockOrganizationRepository: OrganizationRepository
   private val testDispatcher = UnconfinedTestDispatcher()
 
-  private val testOrganization = Organization(
-      id = "test-org-id",
-      name = "Test Organization",
-      description = "Test Description",
-      ownerId = "test-owner-id",
-      status = OrganizationStatus.ACTIVE
-  )
+  private val testOrganization =
+      Organization(
+          id = "test-org-id",
+          name = "Test Organization",
+          description = "Test Description",
+          ownerId = "test-owner-id",
+          status = OrganizationStatus.ACTIVE)
 
   @Before
   fun setUp() {
@@ -46,7 +46,8 @@ class CreateEventFormViewModelTest {
     mockOrganizationRepository = mockk(relaxed = true)
 
     // Mock the organization repository to return a test organization
-    coEvery { mockOrganizationRepository.getOrganizationById(any()) } returns flowOf(testOrganization)
+    coEvery { mockOrganizationRepository.getOrganizationById(any()) } returns
+        flowOf(testOrganization)
 
     viewModel = CreateEventFormViewModel(mockEventRepository, mockOrganizationRepository)
 
