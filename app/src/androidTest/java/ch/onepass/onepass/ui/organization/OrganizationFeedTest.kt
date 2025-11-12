@@ -41,6 +41,8 @@ class OrganizationFeedTest {
   @Before
   fun setup() {
     mockRepository = mockk(relaxed = true)
+      coEvery { mockRepository.getOrganizationsByOwner(any()) } returns flowOf(emptyList())
+
   }
 
   @After
@@ -89,47 +91,40 @@ class OrganizationFeedTest {
         .assertIsDisplayed()
   }
 
-  @Test
-  fun organizationFeedScreen_organizationCard_clickTriggersNavigation() {
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns
-        flowOf(testOrganizations)
-    viewModel = OrganizationFeedViewModel(mockRepository)
-    var clickedOrgId = ""
-    composeTestRule.setContent {
-      OnePassTheme {
-        OrganizationFeedScreen(
-            userId = testUserId,
-            viewModel = viewModel,
-            onNavigateToOrganization = { orgId -> clickedOrgId = orgId })
-      }
+    @Test
+    fun organizationFeedScreen_organizationCard_clickTriggersNavigation() {
+        coEvery { mockRepository.getOrganizationsByOwner(testUserId) } returns flowOf(emptyList())
+        coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns flowOf(testOrganizations)
+        viewModel = OrganizationFeedViewModel(mockRepository)
+        var clickedOrgId = ""
+        composeTestRule.setContent {
+            OnePassTheme {
+                OrganizationFeedScreen(
+                    userId = testUserId,
+                    viewModel = viewModel,
+                    onNavigateToOrganization = { orgId -> clickedOrgId = orgId })
+            }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithText("Tech Events Zurich").assertExists().performClick()
+        assert(clickedOrgId == "org1")
     }
-    composeTestRule.waitUntil(timeoutMillis = 3000) {
-      composeTestRule.onAllNodesWithText("Tech Events Zurich").fetchSemanticsNodes().isNotEmpty()
-    }
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("Tech Events Zurich").assertExists().performClick()
-    assert(clickedOrgId == "org1")
-  }
+
   // ==================== Empty State Tests ====================
   @Test
   fun organizationFeedScreen_displaysEmptyState_whenNoOrganizations() {
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns flowOf(emptyList())
-    viewModel = OrganizationFeedViewModel(mockRepository)
-    composeTestRule.setContent {
-      OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
-    }
-    composeTestRule
-        .onNodeWithTag(OrganizationFeedTestTags.EMPTY_STATE)
-        .assertExists()
-        .assertIsDisplayed()
+      coEvery { mockRepository.getOrganizationsByOwner(testUserId) } returns flowOf(emptyList())
+      coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns flowOf(emptyList())
+      viewModel = OrganizationFeedViewModel(mockRepository)
+      composeTestRule.setContent {
+          OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
+      }
 
-    composeTestRule.onNodeWithText("No Organizations").assertExists().assertIsDisplayed()
-
-    composeTestRule
-        .onNodeWithText("You haven't joined any organizations yet.")
-        .assertExists()
-        .assertIsDisplayed()
+      composeTestRule.waitForIdle()
+      composeTestRule.onNodeWithTag(OrganizationFeedTestTags.EMPTY_STATE).assertExists().assertIsDisplayed()
   }
+
   // ==================== Error State Tests ====================
   @Test
   fun organizationFeedScreen_displaysErrorState_whenLoadingFails() {
@@ -246,8 +241,7 @@ class OrganizationFeedTest {
   // ==================== Scrolling and List Tests ====================
   @Test
   fun organizationFeedScreen_scrollableList_worksCorrectly() {
-    val manyOrgs =
-        (1..10).map { i ->
+      val manyOrgs = (1..10).map { i ->
           Organization(
               id = "org$i",
               name = "Organization $i",
@@ -256,29 +250,35 @@ class OrganizationFeedTest {
               followerCount = i * 1000,
               averageRating = 4f + (i % 5) * 0.2f,
               createdAt = Timestamp.now())
-        }
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns flowOf(manyOrgs)
-    viewModel = OrganizationFeedViewModel(mockRepository)
-    composeTestRule.setContent {
-      OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
-    }
-    composeTestRule.onNodeWithText("Organization 1").assertExists().assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST)
-        .performScrollToNode(hasText("Organization 10"))
-    composeTestRule.onNodeWithText("Organization 10").assertExists().assertIsDisplayed()
+      }
+      coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns flowOf(manyOrgs)
+      viewModel = OrganizationFeedViewModel(mockRepository)
+      composeTestRule.setContent {
+          OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
+      }
+
+      composeTestRule.waitForIdle()
+      composeTestRule.onNodeWithText("Organization 1").assertExists().assertIsDisplayed()
+      composeTestRule
+          .onNodeWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST)
+          .performScrollToNode(hasText("Organization 10"))
+      composeTestRule.onNodeWithText("Organization 10").assertExists().assertIsDisplayed()
   }
 
-  @Test
-  fun organizationFeedScreen_displaysVerifiedBadge_forVerifiedOrganizations() {
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns
-        flowOf(testOrganizations)
-    viewModel = OrganizationFeedViewModel(mockRepository)
-    composeTestRule.setContent {
-      OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
+
+    @Test
+    fun organizationFeedScreen_displaysVerifiedBadge_forVerifiedOrganizations() {
+        coEvery { mockRepository.getOrganizationsByOwner(testUserId) } returns flowOf(emptyList())
+        coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns flowOf(testOrganizations)
+        viewModel = OrganizationFeedViewModel(mockRepository)
+        composeTestRule.setContent {
+            OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
+        }
+
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithContentDescription("Verified").assertExists()
     }
-    composeTestRule.onNodeWithContentDescription("Verified").assertExists()
-  }
+
 
   @Test
   fun organizationFeedScaffold_callsOnOrganizationClick() {

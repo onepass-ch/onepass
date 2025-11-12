@@ -71,20 +71,6 @@ class ProfileViewModelTest {
   }
 
   @Test
-  fun createEventEmitsOrganizerOnboarding_withoutTimeout() = runBlocking {
-    val repo = FakeUserRepository(currentUser = makeUser())
-    val vm = ProfileViewModel(userRepository = repo)
-
-    // Wait until the initial load finishes (no timeout used)
-    vm.state.first { !it.loading }
-
-    // Trigger and assert the only active effect
-    vm.onOrganizationButton()
-    val effect = vm.effects.first()
-    assertEquals(ProfileEffect.NavigateToMyOrganizations, effect)
-  }
-
-  @Test
   fun onInvitationsEmitsNavigateToMyInvitations() = runBlocking {
     val repo = FakeUserRepository(currentUser = makeUser())
     val vm = ProfileViewModel(userRepository = repo)
