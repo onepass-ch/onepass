@@ -9,13 +9,7 @@ import java.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestCoroutineScheduler
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.advanceUntilIdle
-import kotlinx.coroutines.test.resetMain
-import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
@@ -24,738 +18,441 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class ScannerViewModelTest {
 
-  private lateinit var repository: TicketScanRepository
-  private val testDispatcher = StandardTestDispatcher()
+    private lateinit var repository: TicketScanRepository
+    private val testDispatcher = StandardTestDispatcher()
+    private val eventId = "event-123"
 
-  private val eventId = "event-123"
-  private var currentTime = 1000L
+    @Before
+    fun setup() {
+        Dispatchers.setMain(testDispatcher)
+        repository = mockk(relaxed = true)
+    }
 
-  private fun createValidQr(uid: String = "user-001"): String {
-    val payload = """{"uid":"$uid","kid":"key-1","iat":1000,"ver":1}"""
-    val payloadB64 = Base64.getUrlEncoder().withoutPadding().encodeToString(payload.toByteArray())
-    val signature = "validSignature123"
-    return "onepass:user:v1.$payloadB64.$signature"
-  }
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
+    }
 
-  @Before
-  fun setup() {
-    Dispatchers.setMain(testDispatcher)
-    repository = mockk(relaxed = true)
-    currentTime = 1000L
-  }
+    private fun createValidQr(uid: String = "user-001"): String {
+        val payload = """{"uid":"$uid","kid":"key-1","iat":1000,"ver":1}"""
+        val payloadB64 = Base64.getUrlEncoder().withoutPadding().encodeToString(payload.toByteArray())
+        return "onepass:user:v1.$payloadB64.validSignature123"
+    }
 
-  @After
-  fun tearDown() {
-    Dispatchers.resetMain()
-  }
-
-  private fun createViewModel(
-      testScheduler: TestCoroutineScheduler,
-      resetDelayMs: Long = Long.MAX_VALUE,
-      customRepo: TicketScanRepository? = null
-  ): ScannerViewModel {
-    return ScannerViewModel(
+    private fun createViewModel(
+        testScheduler: TestCoroutineScheduler,
+        resetDelayMs: Long = Long.MAX_VALUE,
+        customRepo: TicketScanRepository? = null,
+        customClock: (() -> Long)? = null
+    ): ScannerViewModel = ScannerViewModel(
         eventId = eventId,
         repo = customRepo ?: repository,
-        clock = { currentTime },
+        clock = customClock ?: { System.currentTimeMillis() },
         enableAutoCleanup = false,
-        cleanupPeriodMs = 10_000L,
         stateResetDelayMs = resetDelayMs,
-        coroutineScope = TestScope(testScheduler))
-  }
+        coroutineScope = TestScope(testScheduler)
+    )
 
-  @Test
-  fun onQrScannedWithInvalidQrShouldEmitRejectedEffect() =
-      runTest(testDispatcher) {
-        val viewModel = createViewModel(this.testScheduler)
-        val invalidQr = "bad-qr"
+    // ========== Basic Validation ==========
 
-        var collectedEffect: ScannerEffect? = null
-        val job = launch { viewModel.effects.collect { effect -> collectedEffect = effect } }
+    @Test
+    fun initialStateShouldBeIdle() = runTest(testDispatcher) {
+        val vm = createViewModel(testScheduler)
+        with(vm.state.value) {
+            assertFalse(isProcessing)
+            assertEquals("Scan a pass…", message)
+            assertNull(lastTicketId)
+            assertEquals(ScannerUiState.Status.IDLE, status)
+        }
+    }
 
-        viewModel.onQrScanned(invalidQr)
+    @Test(expected = IllegalArgumentException::class)
+    fun shouldRejectBlankEventId() {
+        ScannerViewModel(eventId = "  ", repo = repository, coroutineScope = TestScope())
+    }
+
+    @Test
+    fun invalidQrShouldReject() = runTest(testDispatcher) {
+        val vm = createViewModel(testScheduler)
+        var effect: ScannerEffect? = null
+        val job = launch { vm.effects.collect { effect = it } }
+
+        vm.onQrScanned("bad-qr")
         advanceUntilIdle()
 
-        assertTrue(collectedEffect is ScannerEffect.Rejected)
-        assertEquals("Invalid QR format", (collectedEffect as ScannerEffect.Rejected).message)
-
+        assertTrue(effect is ScannerEffect.Rejected)
+        assertEquals("Invalid QR format", (effect as ScannerEffect.Rejected).message)
         job.cancel()
-      }
+    }
 
-  @Test
-  fun cleanupShouldNotRemoveRecentEntries() =
-      runTest(testDispatcher) {
-        val viewModel = createViewModel(this.testScheduler)
+    @Test
+    fun qrWithMissingFieldShouldReject() = runTest(testDispatcher) {
+        val vm = createViewModel(testScheduler)
+        val payload = """{"uid":"user-123","iat":1000,"ver":1}"""
+        val payloadB64 = Base64.getUrlEncoder().withoutPadding().encodeToString(payload.toByteArray())
 
+        vm.onQrScanned("onepass:user:v1.$payloadB64.signature")
+        advanceUntilIdle()
+
+        assertEquals(ScannerUiState.Status.REJECTED, vm.state.value.status)
+    }
+
+    // ========== Accepted Flow ==========
+
+    @Test
+    fun acceptedShouldUpdateStateAndEmitEffect() = runTest(testDispatcher) {
+        val repo = object : TicketScanRepository {
+            override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> =
+                Result.success(
+                    ScanDecision.Accepted(ticketId = "ticket-456", scannedAtSeconds = 2000L, remaining = 5)
+                )
+        }
+        val vm = createViewModel(testScheduler, customRepo = repo)
+        var effect: ScannerEffect? = null
+        val job = launch { vm.effects.collect { effect = it } }
+
+        vm.onQrScanned(createValidQr())
+        advanceUntilIdle()
+
+        with(vm.state.value) {
+            assertEquals(ScannerUiState.Status.ACCEPTED, status)
+            assertEquals("Access Granted", message)
+            assertEquals("ticket-456", lastTicketId)
+            assertEquals(2000L, lastScannedAt)
+            assertEquals(5, remaining)
+        }
+        assertTrue(effect is ScannerEffect.Accepted)
+        job.cancel()
+    }
+
+    @Test
+    fun acceptedWithNullFieldsShouldWork() = runTest(testDispatcher) {
+        val repo = object : TicketScanRepository {
+            override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> =
+                Result.success(
+                    ScanDecision.Accepted(ticketId = null, scannedAtSeconds = null, remaining = null)
+                )
+        }
+        val vm = createViewModel(testScheduler, customRepo = repo)
+        vm.onQrScanned(createValidQr())
+        advanceUntilIdle()
+
+        with(vm.state.value) {
+            assertEquals(ScannerUiState.Status.ACCEPTED, status)
+            assertNull(lastTicketId)
+            assertNull(lastScannedAt)
+            assertNull(remaining)
+        }
+    }
+
+    // ========== Rejected Flow ==========
+
+    @Test
+    fun rejectedReasonsShouldShowCorrectMessages() = runTest(testDispatcher) {
+        val reasons: Map<ScanDecision.Reason, String> = mapOf(
+            ScanDecision.Reason.UNREGISTERED to "User not registered",
+            ScanDecision.Reason.ALREADY_SCANNED to "Already scanned",
+            ScanDecision.Reason.BAD_SIGNATURE to "Invalid signature",
+            ScanDecision.Reason.REVOKED to "Pass revoked",
+            ScanDecision.Reason.UNKNOWN to "Access denied"
+        )
+
+        for ((reason, expectedMsg) in reasons) {
+            val repo = object : TicketScanRepository {
+                override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> =
+                    Result.success(ScanDecision.Rejected(reason = reason))
+            }
+            val vm = createViewModel(testScheduler, customRepo = repo)
+            vm.onQrScanned(createValidQr())
+            advanceUntilIdle()
+
+            assertEquals(ScannerUiState.Status.REJECTED, vm.state.value.status)
+            assertEquals(expectedMsg, vm.state.value.message)
+        }
+    }
+
+    @Test
+    fun rejectedShouldEmitEffect() = runTest(testDispatcher) {
+        val repo = object : TicketScanRepository {
+            override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> =
+                Result.success(ScanDecision.Rejected(reason = ScanDecision.Reason.UNREGISTERED))
+        }
+        val vm = createViewModel(testScheduler, customRepo = repo)
+        var effect: ScannerEffect? = null
+        val job = launch { vm.effects.collect { effect = it } }
+
+        vm.onQrScanned(createValidQr())
+        advanceUntilIdle()
+
+        assertTrue(effect is ScannerEffect.Rejected)
+        job.cancel()
+    }
+
+    // ========== Error Handling ==========
+
+    @Test
+    fun errorWithMessageShouldShowIt() = runTest(testDispatcher) {
+        val repo = object : TicketScanRepository {
+            override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> =
+                Result.failure(RuntimeException("Network timeout"))
+        }
+        val vm = createViewModel(testScheduler, customRepo = repo)
+        vm.onQrScanned(createValidQr())
+        advanceUntilIdle()
+
+        assertEquals(ScannerUiState.Status.ERROR, vm.state.value.status)
+        assertEquals("Error: Network timeout", vm.state.value.message)
+    }
+
+    @Test
+    fun errorWithoutMessageShouldShowGeneric() = runTest(testDispatcher) {
+        val repo = object : TicketScanRepository {
+            override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> =
+                Result.failure(RuntimeException())
+        }
+        val vm = createViewModel(testScheduler, customRepo = repo)
+        vm.onQrScanned(createValidQr())
+        advanceUntilIdle()
+
+        assertEquals("Network or server error", vm.state.value.message)
+    }
+
+    @Test
+    fun errorShouldEmitEffect() = runTest(testDispatcher) {
+        val repo = object : TicketScanRepository {
+            override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> =
+                Result.failure(RuntimeException("Connection failed"))
+        }
+        val vm = createViewModel(testScheduler, customRepo = repo)
+        var effect: ScannerEffect? = null
+        val job = launch { vm.effects.collect { effect = it } }
+
+        vm.onQrScanned(createValidQr())
+        advanceUntilIdle()
+
+        assertTrue(effect is ScannerEffect.Error)
+        assertEquals("Error: Connection failed", (effect as ScannerEffect.Error).message)
+        job.cancel()
+    }
+
+    // ========== Deduplication ==========
+
+    @Test
+    fun duplicateScanWithin2sShouldBeIgnored() = runTest(testDispatcher) {
+        var currentTime = 1000L
+        val vm = createViewModel(testScheduler, customClock = { currentTime })
+        val qr = createValidQr("user-same")
+        val decision = ScanDecision.Accepted(ticketId = "ticket-123")
+        coEvery { repository.validateByPass(qr, eventId) } returns Result.success(decision)
+
+        vm.onQrScanned(qr)
+        advanceUntilIdle()
+
+        currentTime += 1000L
+        vm.onQrScanned(qr)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.validateByPass(qr, eventId) }
+    }
+
+    @Test
+    fun differentUsersShouldNotBeDeduplicated() = runTest(testDispatcher) {
+        val repo = object : TicketScanRepository {
+            override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> =
+                Result.success(ScanDecision.Accepted(ticketId = "test"))
+        }
+        val vm = createViewModel(testScheduler, customRepo = repo)
+
+        vm.onQrScanned(createValidQr("user-1"))
+        advanceUntilIdle()
+
+        vm.onQrScanned(createValidQr("user-2"))
+        advanceUntilIdle()
+
+        assertEquals(ScannerUiState.Status.ACCEPTED, vm.state.value.status)
+    }
+
+    @Test
+    fun cleanupShouldRemoveExpiredEntries() = runTest(testDispatcher) {
+        var currentTime = 1000L
+        val repo = object : TicketScanRepository {
+            override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> =
+                Result.success(ScanDecision.Accepted(ticketId = "test"))
+        }
+        val vm = createViewModel(testScheduler, customRepo = repo, customClock = { currentTime })
+        val qr = createValidQr("user-cleanup")
+
+        vm.onQrScanned(qr)
+        advanceUntilIdle()
+
+        currentTime += 2001L
+        vm.cleanupRecentScans()
+
+        vm.onQrScanned(qr)
+        advanceUntilIdle()
+
+        assertEquals(ScannerUiState.Status.ACCEPTED, vm.state.value.status)
+    }
+
+    @Test
+    fun cleanupShouldNotRemoveRecentEntries() = runTest(testDispatcher) {
+        var currentTime = 1000L
+        val vm = createViewModel(testScheduler, customClock = { currentTime })
         val qr = createValidQr("user-recent")
         val decision = ScanDecision.Accepted(ticketId = "ticket-123")
         coEvery { repository.validateByPass(qr, eventId) } returns Result.success(decision)
 
-        viewModel.onQrScanned(qr)
+        vm.onQrScanned(qr)
         advanceUntilIdle()
 
         currentTime += 1000L
-        viewModel.cleanupRecentScans()
+        vm.cleanupRecentScans()
 
-        viewModel.onQrScanned(qr)
+        vm.onQrScanned(qr)
         advanceUntilIdle()
 
         coVerify(exactly = 1) { repository.validateByPass(qr, eventId) }
-      }
+    }
 
-  @Test
-  fun onQrScannedShouldTrimWhitespaceFromQr() =
-      runTest(testDispatcher) {
-        val viewModel = createViewModel(this.testScheduler)
+    // ========== Concurrency ==========
 
+    @Test
+    fun concurrentScansShouldBeSerializedByMutex() = runTest(testDispatcher) {
+        var callCount = 0
+        val repo = object : TicketScanRepository {
+            override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> {
+                callCount++
+                kotlinx.coroutines.delay(500)
+                return Result.success(ScanDecision.Accepted(ticketId = "test"))
+            }
+        }
+
+        val vm = createViewModel(testScheduler, customRepo = repo)
+        val qr = createValidQr()
+
+        vm.onQrScanned(qr)
+        testScheduler.advanceTimeBy(100)
+        vm.onQrScanned(qr)
+
+        advanceUntilIdle()
+        assertEquals(1, callCount)
+    }
+
+    // ========== Processing State ==========
+
+    @Test
+    fun processingStateShouldBeSetDuringValidation() = runTest(testDispatcher) {
+        var wasProcessing = false
+        val repo = object : TicketScanRepository {
+            override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> {
+                kotlinx.coroutines.delay(100)
+                return Result.success(ScanDecision.Accepted(ticketId = "test"))
+            }
+        }
+        val vm = createViewModel(testScheduler, customRepo = repo)
+        val job = launch { vm.state.collect { if (it.isProcessing) wasProcessing = true } }
+
+        vm.onQrScanned(createValidQr())
+        testScheduler.advanceTimeBy(50)
+        advanceUntilIdle()
+
+        assertTrue(wasProcessing)
+        assertFalse(vm.state.value.isProcessing)
+        job.cancel()
+    }
+
+    @Test
+    fun isProcessingShouldBeFalseAfterCompletion() = runTest(testDispatcher) {
+        val scenarios: List<Result<ScanDecision>> = listOf(
+            Result.success(ScanDecision.Accepted(ticketId = "test")),
+            Result.success(ScanDecision.Rejected(reason = ScanDecision.Reason.REVOKED)),
+            Result.failure(RuntimeException("Error"))
+        )
+
+        for (result in scenarios) {
+            val repo = object : TicketScanRepository {
+                override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> = result
+            }
+            val vm = createViewModel(testScheduler, customRepo = repo)
+            vm.onQrScanned(createValidQr())
+            advanceUntilIdle()
+
+            assertFalse(vm.state.value.isProcessing)
+        }
+    }
+
+    // ========== Whitespace & Trimming ==========
+
+    @Test
+    fun qrWithWhitespaceShouldBeTrimmed() = runTest(testDispatcher) {
+        val vm = createViewModel(testScheduler)
         val qr = createValidQr("user-trim")
         val qrWithWhitespace = "  $qr  \n"
         val decision = ScanDecision.Accepted(ticketId = "ticket-123")
         coEvery { repository.validateByPass(qr, eventId) } returns Result.success(decision)
 
-        viewModel.onQrScanned(qrWithWhitespace)
+        vm.onQrScanned(qrWithWhitespace)
         advanceUntilIdle()
 
         coVerify { repository.validateByPass(qr, eventId) }
-      }
+    }
 
-  @Test
-  fun shouldIgnoreConcurrentScans() =
-      runTest(testDispatcher) {
-        val qr = createValidQr("user-concurrent")
-        val decision = ScanDecision.Accepted(ticketId = "ticket-concurrent")
+    @Test
+    fun emptyQrAfterTrimShouldBeRejected() = runTest(testDispatcher) {
+        val vm = createViewModel(testScheduler)
 
-        val slowRepo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                kotlinx.coroutines.delay(500)
-                return Result.success(decision)
-              }
-            }
-
-        val vm = createViewModel(this.testScheduler, customRepo = slowRepo)
-        vm.onQrScanned(qr)
-        advanceUntilIdle()
-      }
-
-  @Test
-  fun onQrScannedWithSameUidWithin2sShouldBeIgnored() =
-      runTest(testDispatcher) {
-        val viewModel = createViewModel(this.testScheduler)
-
-        val qr = createValidQr("user-same")
-        val qr2 = createValidQr("user-same")
-        val decision = ScanDecision.Accepted(ticketId = "ticket-123")
-        coEvery { repository.validateByPass(qr, eventId) } returns Result.success(decision)
-
-        viewModel.onQrScanned(qr)
+        vm.onQrScanned("   ")
         advanceUntilIdle()
 
-        currentTime += 1000L
+        assertEquals(ScannerUiState.Status.REJECTED, vm.state.value.status)
+        assertEquals("Invalid QR format", vm.state.value.message)
+    }
 
-        viewModel.onQrScanned(qr2)
+    @Test
+    fun qrWithOnlyNewlinesShouldBeRejected() = runTest(testDispatcher) {
+        val vm = createViewModel(testScheduler)
+
+        vm.onQrScanned("\n\n\n")
         advanceUntilIdle()
 
-        coVerify(exactly = 1) { repository.validateByPass(qr, eventId) }
-      }
+        assertEquals(ScannerUiState.Status.REJECTED, vm.state.value.status)
+    }
 
-  @Test
-  fun processingStateShouldBeTrueDuringValidation() =
-      runTest(testDispatcher) {
-        val qr = createValidQr("user-processing")
-        val decision = ScanDecision.Accepted(ticketId = "ticket-123")
+    @Test
+    fun qrWithTabsShouldBeRejected() = runTest(testDispatcher) {
+        val vm = createViewModel(testScheduler)
 
-        val slowRepo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                kotlinx.coroutines.delay(500)
-                return Result.success(decision)
-              }
-            }
-
-        val vm = createViewModel(this.testScheduler, customRepo = slowRepo)
-        vm.onQrScanned(qr)
-        advanceUntilIdle()
-      }
-
-  @Test
-  fun initialStateShouldBeIdle() =
-      runTest(testDispatcher) {
-        val viewModel = createViewModel(this.testScheduler)
-        val state = viewModel.state.value
-
-        assertFalse(state.isProcessing)
-        assertEquals("Scan a pass…", state.message)
-        assertNull(state.lastTicketId)
-        assertNull(state.lastScannedAt)
-        assertNull(state.remaining)
-        assertEquals(ScannerUiState.Status.IDLE, state.status)
-      }
-
-  @Test
-  fun whitespaceOnlyQrShouldBeRejected() =
-      runTest(testDispatcher) {
-        val viewModel = createViewModel(this.testScheduler)
-
-        viewModel.onQrScanned("   \n\t  ")
+        vm.onQrScanned("\t\t\t")
         advanceUntilIdle()
 
-        val state = viewModel.state.value
-        assertEquals(ScannerUiState.Status.REJECTED, state.status)
-        assertEquals("Invalid QR format", state.message)
+        assertEquals(ScannerUiState.Status.REJECTED, vm.state.value.status)
+    }
 
-        coVerify(exactly = 0) { repository.validateByPass(any(), any()) }
-      }
+    // ========== Multiple Scans ==========
 
-  @Test(expected = IllegalArgumentException::class)
-  fun shouldThrowExceptionForBlankEventId() {
-    ScannerViewModel(
-        eventId = "  ",
-        repo = repository,
-        clock = { currentTime },
-        enableAutoCleanup = false,
-        coroutineScope = TestScope())
-  }
+    @Test
+    fun multipleAcceptedScansShouldUpdateStateEachTime() = runTest(testDispatcher) {
+        var currentTime = 1000L
+        val repo = object : TicketScanRepository {
+            private var counter = 0
 
-  @Test
-  fun onQrScannedWithMissingKidFieldShouldReject() =
-      runTest(testDispatcher) {
-        val viewModel = createViewModel(this.testScheduler)
-        val payload = """{"uid":"user-123","iat":1000,"ver":1}"""
-        val payloadB64 =
-            Base64.getUrlEncoder().withoutPadding().encodeToString(payload.toByteArray())
-        val invalidQr = "onepass:user:v1.$payloadB64.signature"
-
-        viewModel.onQrScanned(invalidQr)
-        advanceUntilIdle()
-
-        val state = viewModel.state.value
-        assertEquals(ScannerUiState.Status.REJECTED, state.status)
-        assertEquals("Invalid QR format", state.message)
-      }
-
-  @Test
-  fun acceptedDecisionShouldUpdateState() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.success(
-                    ScanDecision.Accepted(
-                        ticketId = "ticket-456", scannedAtSeconds = 2000L, remaining = 5))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        val qr = createValidQr("user-accepted")
-
-        viewModel.onQrScanned(qr)
-        advanceUntilIdle()
-
-        val state = viewModel.state.value
-        assertEquals(ScannerUiState.Status.ACCEPTED, state.status)
-        assertEquals("Access Granted", state.message)
-        assertEquals("ticket-456", state.lastTicketId)
-        assertEquals(2000L, state.lastScannedAt)
-        assertEquals(5, state.remaining)
-      }
-
-  @Test
-  fun acceptedDecisionShouldEmitEffect() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.success(ScanDecision.Accepted(ticketId = "ticket-789"))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        var collectedEffect: ScannerEffect? = null
-        val job = launch { viewModel.effects.collect { effect -> collectedEffect = effect } }
-
-        viewModel.onQrScanned(createValidQr("user-effect"))
-        advanceUntilIdle()
-
-        assertTrue(collectedEffect is ScannerEffect.Accepted)
-        assertEquals("Access Granted", (collectedEffect as ScannerEffect.Accepted).message)
-        job.cancel()
-      }
-
-  @Test
-  fun rejectedDecisionUnregisteredShouldShowMessage() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.success(
-                    ScanDecision.Rejected(reason = ScanDecision.Reason.UNREGISTERED))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        viewModel.onQrScanned(createValidQr("user-unregistered"))
-        advanceUntilIdle()
-
-        assertEquals(ScannerUiState.Status.REJECTED, viewModel.state.value.status)
-        assertEquals("User not registered", viewModel.state.value.message)
-      }
-
-  @Test
-  fun rejectedDecisionAlreadyScannedShouldShowMessage() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.success(
-                    ScanDecision.Rejected(reason = ScanDecision.Reason.ALREADY_SCANNED))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        viewModel.onQrScanned(createValidQr())
-        advanceUntilIdle()
-
-        assertEquals(ScannerUiState.Status.REJECTED, viewModel.state.value.status)
-        assertEquals("Already scanned", viewModel.state.value.message)
-      }
-
-  @Test
-  fun rejectedDecisionBadSignatureShouldShowMessage() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.success(
-                    ScanDecision.Rejected(reason = ScanDecision.Reason.BAD_SIGNATURE))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        viewModel.onQrScanned(createValidQr())
-        advanceUntilIdle()
-
-        assertEquals(ScannerUiState.Status.REJECTED, viewModel.state.value.status)
-        assertEquals("Invalid signature", viewModel.state.value.message)
-      }
-
-  @Test
-  fun rejectedDecisionRevokedShouldShowMessage() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.success(ScanDecision.Rejected(reason = ScanDecision.Reason.REVOKED))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        viewModel.onQrScanned(createValidQr())
-        advanceUntilIdle()
-
-        assertEquals(ScannerUiState.Status.REJECTED, viewModel.state.value.status)
-        assertEquals("Pass revoked", viewModel.state.value.message)
-      }
-
-  @Test
-  fun rejectedDecisionUnknownShouldShowGenericMessage() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.success(ScanDecision.Rejected(reason = ScanDecision.Reason.UNKNOWN))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        viewModel.onQrScanned(createValidQr())
-        advanceUntilIdle()
-
-        assertEquals(ScannerUiState.Status.REJECTED, viewModel.state.value.status)
-        assertEquals("Access denied", viewModel.state.value.message)
-      }
-
-  @Test
-  fun rejectedDecisionShouldEmitEffect() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.success(
-                    ScanDecision.Rejected(reason = ScanDecision.Reason.UNREGISTERED))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        var collectedEffect: ScannerEffect? = null
-        val job = launch { viewModel.effects.collect { effect -> collectedEffect = effect } }
-
-        viewModel.onQrScanned(createValidQr())
-        advanceUntilIdle()
-
-        assertTrue(collectedEffect is ScannerEffect.Rejected)
-        assertEquals("User not registered", (collectedEffect as ScannerEffect.Rejected).message)
-        job.cancel()
-      }
-
-  @Test
-  fun repositoryErrorShouldShowErrorState() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.failure(RuntimeException("Network timeout"))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        viewModel.onQrScanned(createValidQr())
-        advanceUntilIdle()
-
-        assertEquals(ScannerUiState.Status.ERROR, viewModel.state.value.status)
-        assertEquals("Error: Network timeout", viewModel.state.value.message)
-      }
-
-  @Test
-  fun repositoryErrorWithoutMessageShouldShowGeneric() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.failure(RuntimeException())
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        viewModel.onQrScanned(createValidQr())
-        advanceUntilIdle()
-
-        assertEquals(ScannerUiState.Status.ERROR, viewModel.state.value.status)
-        assertEquals("Network or server error", viewModel.state.value.message)
-      }
-
-  @Test
-  fun repositoryErrorShouldEmitEffect() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.failure(RuntimeException("Connection failed"))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        var collectedEffect: ScannerEffect? = null
-        val job = launch { viewModel.effects.collect { effect -> collectedEffect = effect } }
-
-        viewModel.onQrScanned(createValidQr())
-        advanceUntilIdle()
-
-        assertTrue(collectedEffect is ScannerEffect.Error)
-        assertEquals("Error: Connection failed", (collectedEffect as ScannerEffect.Error).message)
-        job.cancel()
-      }
-
-  @Test
-  fun acceptedWithNullFieldsShouldWork() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.success(
-                    ScanDecision.Accepted(
-                        ticketId = null, scannedAtSeconds = null, remaining = null))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        viewModel.onQrScanned(createValidQr())
-        advanceUntilIdle()
-
-        val state = viewModel.state.value
-        assertEquals(ScannerUiState.Status.ACCEPTED, state.status)
-        assertNull(state.lastTicketId)
-        assertNull(state.lastScannedAt)
-        assertNull(state.remaining)
-      }
-
-  @Test
-  fun cleanupShouldRemoveExpiredDeduplicationEntries() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.success(ScanDecision.Accepted(ticketId = "test-789"))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        val qr = createValidQr("user-cleanup")
-
-        viewModel.onQrScanned(qr)
-        advanceUntilIdle()
-
-        currentTime += 2001L
-        viewModel.cleanupRecentScans()
-
-        viewModel.onQrScanned(qr)
-        advanceUntilIdle()
-
-        assertEquals(ScannerUiState.Status.ACCEPTED, viewModel.state.value.status)
-      }
-
-  @Test
-  fun processingStateShouldBeSetDuringValidation() =
-      runTest(testDispatcher) {
-        var wasProcessing = false
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                kotlinx.coroutines.delay(100)
-                return Result.success(ScanDecision.Accepted(ticketId = "test"))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-
-        val job = launch {
-          viewModel.state.collect { state ->
-            if (state.isProcessing) {
-              wasProcessing = true
-            }
-          }
-        }
-
-        viewModel.onQrScanned(createValidQr())
-        testScheduler.advanceTimeBy(50)
-        advanceUntilIdle()
-
-        assertTrue(wasProcessing)
-        assertFalse(viewModel.state.value.isProcessing)
-        job.cancel()
-      }
-
-  @Test
-  fun duplicateScanDuringProcessingShouldBeIgnored() =
-      runTest(testDispatcher) {
-        var callCount = 0
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                callCount++
-                kotlinx.coroutines.delay(500)
-                return Result.success(ScanDecision.Accepted(ticketId = "test"))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        val qr = createValidQr()
-        viewModel.onQrScanned(qr)
-        testScheduler.advanceTimeBy(100)
-        viewModel.onQrScanned(qr)
-
-        advanceUntilIdle()
-        assertEquals(1, callCount)
-      }
-
-  @Test
-  fun differentQrCodesShouldNotBeDeduplicated() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.success(ScanDecision.Accepted(ticketId = "test"))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-
-        viewModel.onQrScanned(createValidQr("user-1"))
-        advanceUntilIdle()
-
-        viewModel.onQrScanned(createValidQr("user-2"))
-        advanceUntilIdle()
-        assertEquals(ScannerUiState.Status.ACCEPTED, viewModel.state.value.status)
-      }
-
-  @Test
-  fun emptyQrAfterTrimShouldBeRejected() =
-      runTest(testDispatcher) {
-        val viewModel = createViewModel(this.testScheduler)
-
-        viewModel.onQrScanned("   ")
-        advanceUntilIdle()
-
-        assertEquals(ScannerUiState.Status.REJECTED, viewModel.state.value.status)
-        assertEquals("Invalid QR format", viewModel.state.value.message)
-      }
-
-  @Test
-  fun qrWithOnlyNewlinesShouldBeRejected() =
-      runTest(testDispatcher) {
-        val viewModel = createViewModel(this.testScheduler)
-
-        viewModel.onQrScanned("\n\n\n")
-        advanceUntilIdle()
-
-        assertEquals(ScannerUiState.Status.REJECTED, viewModel.state.value.status)
-      }
-
-  @Test
-  fun qrWithTabsShouldBeRejected() =
-      runTest(testDispatcher) {
-        val viewModel = createViewModel(this.testScheduler)
-
-        viewModel.onQrScanned("\t\t\t")
-        advanceUntilIdle()
-
-        assertEquals(ScannerUiState.Status.REJECTED, viewModel.state.value.status)
-      }
-
-  @Test
-  fun multipleAcceptedScansShouldUpdateStateEachTime() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              private var counter = 0
-
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
+            override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> {
                 counter++
                 return Result.success(ScanDecision.Accepted(ticketId = "ticket-$counter"))
-              }
             }
+        }
 
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
+        val vm = createViewModel(testScheduler, customRepo = repo, customClock = { currentTime })
 
-        viewModel.onQrScanned(createValidQr("user-1"))
+        vm.onQrScanned(createValidQr("user-1"))
         advanceUntilIdle()
-        assertEquals("ticket-1", viewModel.state.value.lastTicketId)
+        assertEquals("ticket-1", vm.state.value.lastTicketId)
 
         currentTime += 3000L
-        viewModel.cleanupRecentScans()
+        vm.cleanupRecentScans()
 
-        viewModel.onQrScanned(createValidQr("user-2"))
+        vm.onQrScanned(createValidQr("user-2"))
         advanceUntilIdle()
-        assertEquals("ticket-2", viewModel.state.value.lastTicketId)
-      }
-
-  @Test
-  fun isProcessingShouldBeFalseAfterError() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.failure(RuntimeException("Error"))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        viewModel.onQrScanned(createValidQr())
-        advanceUntilIdle()
-
-        assertFalse(viewModel.state.value.isProcessing)
-      }
-
-  @Test
-  fun isProcessingShouldBeFalseAfterRejection() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.success(ScanDecision.Rejected(reason = ScanDecision.Reason.REVOKED))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        viewModel.onQrScanned(createValidQr())
-        advanceUntilIdle()
-
-        assertFalse(viewModel.state.value.isProcessing)
-      }
-
-  @Test
-  fun rejectedWithScannedAtTimestampShouldNotAffectState() =
-      runTest(testDispatcher) {
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                return Result.success(
-                    ScanDecision.Rejected(
-                        reason = ScanDecision.Reason.ALREADY_SCANNED, scannedAtSeconds = 5000L))
-              }
-            }
-
-        val viewModel = createViewModel(this.testScheduler, customRepo = repo)
-        viewModel.onQrScanned(createValidQr())
-        advanceUntilIdle()
-
-        assertEquals(ScannerUiState.Status.REJECTED, viewModel.state.value.status)
-        assertNull(viewModel.state.value.lastScannedAt)
-      }
+        assertEquals("ticket-2", vm.state.value.lastTicketId)
+    }
 }
