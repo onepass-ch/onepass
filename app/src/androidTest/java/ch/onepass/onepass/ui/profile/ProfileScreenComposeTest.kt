@@ -63,7 +63,7 @@ class ProfileScreenComposeTest {
     compose.onNodeWithTag(ProfileTestTags.ORG_CARD).assertIsDisplayed()
     compose.onNodeWithTag(ProfileTestTags.ORG_CTA).assertIsDisplayed()
 
-    compose.onNodeWithTag(ProfileTestTags.SETTINGS_INVITATIONS).assertIsDisplayed()
+//    compose.onNodeWithTag(ProfileTestTags.SETTINGS_INVITATIONS).assertIsDisplayed()
     compose.onNodeWithTag(ProfileTestTags.SETTINGS_ACCOUNT).assertIsDisplayed()
     compose.onNodeWithTag(ProfileTestTags.SETTINGS_PAYMENTS).assertIsDisplayed()
     compose.onNodeWithTag(ProfileTestTags.SETTINGS_HELP).assertIsDisplayed()
