@@ -4,36 +4,44 @@ import android.annotation.SuppressLint
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.ui.event.EventCard
 import ch.onepass.onepass.ui.event.EventCardViewModel
+import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
+import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
+import ch.onepass.onepass.ui.eventfilters.FilterDialog
 import com.google.gson.JsonPrimitive
 import com.mapbox.geojson.Point
 import com.mapbox.maps.MapView
 import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
-import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
-import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
 import com.mapbox.maps.plugin.gestures.gestures
 
 object MapScreenTestTags {
   const val MAPBOX_MAP_SCREEN = "mapScreen"
   const val RECENTER_BUTTON = "recenterButton"
+  const val FILTER_BUTTON = "filterButton"
+  const val ACTIVE_FILTERS_BAR = "activeFiltersBar"
 }
 
 private object AnnotationConfig {
@@ -55,16 +63,18 @@ private object AnnotationConfig {
 @Composable
 fun MapScreen(
     mapViewModel: MapViewModel = viewModel(),
-    isLocationPermissionGranted: Boolean,
-    onNavigateToEvent: (String) -> Unit = {}
+    filterViewModel: EventFilterViewModel = viewModel(),
+    onNavigateToEvent: (String) -> Unit = {},
+    isLocationPermissionGranted: Boolean
 ) {
   val uiState by mapViewModel.uiState.collectAsState()
-  val events = uiState.events
   val eventCardViewModel = EventCardViewModel.getInstance()
   val likedEvents by eventCardViewModel.likedEvents.collectAsState()
+  val currentFilters by filterViewModel.currentFilters.collectAsState()
+  val showFilterDialog = uiState.showFilterDialog
+  val allEvents by mapViewModel.allEvents.collectAsState()
 
   Box(modifier = Modifier.fillMaxSize()) {
-
     // --- Mapbox Map Composable ---
     MapboxMap(
         modifier = Modifier.fillMaxSize().testTag(MapScreenTestTags.MAPBOX_MAP_SCREEN),
@@ -72,8 +82,15 @@ fun MapScreen(
       // MapEffect bridges the Compose Mapbox API with the MapView
       MapEffect(Unit) { mapView: MapView ->
         mapViewModel.onMapReady(mapView, isLocationPermissionGranted)
+        mapViewModel.getOrCreatePointAnnotationManager(mapView)
       }
-      MapEffect(events) { mapView: MapView -> setupAnnotations(mapView, events, mapViewModel) }
+      MapEffect(uiState.events) { mapView: MapView ->
+        setupAnnotations(mapView, uiState.events, mapViewModel)
+      }
+    }
+
+    LaunchedEffect(currentFilters, allEvents) {
+      mapViewModel.applyFiltersToCurrentEvents(currentFilters)
     }
 
     // --- Floating Recenter Button ---
@@ -89,6 +106,23 @@ fun MapScreen(
       Icon(imageVector = Icons.Filled.LocationOn, contentDescription = "Recenter")
     }
 
+      // --- Floating Filter Button ---
+      FloatingActionButton(
+          onClick = { mapViewModel.setShowFilterDialog(true) },
+          containerColor = MaterialTheme.colorScheme.primaryContainer,
+          contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+          modifier =
+              Modifier.align(Alignment.BottomEnd)
+                  .padding(bottom = 88.dp, end = 16.dp)
+                  .size(55.dp)
+                  .testTag(MapScreenTestTags.FILTER_BUTTON),
+      ) {
+          Icon(
+              painter = painterResource(id = R.drawable.filter_icon),
+              contentDescription = "Filter events",
+              modifier = Modifier.padding(4.dp))
+      }
+
     uiState.selectedEvent?.let { event ->
       Box(modifier = Modifier.fillMaxSize().clickable { mapViewModel.clearSelectedEvent() }) {
         EventCard(
@@ -99,6 +133,31 @@ fun MapScreen(
             isLiked = likedEvents.contains(event.eventId),
             onLikeToggle = { eventId -> eventCardViewModel.toggleLike(eventId) })
       }
+    }
+
+    // --- Filter Dialog ---
+    if (showFilterDialog) {
+      LaunchedEffect(Unit) { filterViewModel.updateLocalFilters(currentFilters) }
+
+      FilterDialog(
+          viewModel = filterViewModel,
+          onApply = { newFilters ->
+            filterViewModel.applyFilters(newFilters)
+            mapViewModel.setShowFilterDialog(false)
+          },
+          onDismiss = { mapViewModel.setShowFilterDialog(false) },
+      )
+    }
+    // --- Active Filters Bar ---
+    if (currentFilters.hasActiveFilters) {
+      ActiveFiltersBar(
+          filters = currentFilters,
+          onClearFilters = { filterViewModel.clearFilters() },
+          modifier =
+              Modifier.fillMaxWidth()
+                  .padding(top = 56.dp)
+                  .testTag(MapScreenTestTags.ACTIVE_FILTERS_BAR),
+      )
     }
   }
 }
@@ -112,8 +171,7 @@ fun MapScreen(
  */
 @SuppressLint("ImplicitSamInstance")
 private fun setupAnnotations(mapView: MapView, events: List<Event>, viewModel: MapViewModel) {
-  val annotationPlugin = mapView.annotations
-  val pointAnnotationManager = annotationPlugin.createPointAnnotationManager()
+  val pointAnnotationManager = viewModel.getOrCreatePointAnnotationManager(mapView)
 
   // Clear existing annotations
   pointAnnotationManager.deleteAll()

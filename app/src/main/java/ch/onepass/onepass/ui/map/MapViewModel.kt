@@ -5,7 +5,9 @@ import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
+  import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.repository.RepositoryProvider
+import ch.onepass.onepass.ui.eventfilters.EventFilteringUtils.applyFiltersLocally
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
@@ -13,6 +15,9 @@ import com.mapbox.maps.plugin.Plugin.Companion.MAPBOX_COMPASS_PLUGIN_ID
 import com.mapbox.maps.plugin.PuckBearing
 import com.mapbox.maps.plugin.animation.MapAnimationOptions
 import com.mapbox.maps.plugin.animation.easeTo
+import com.mapbox.maps.plugin.annotation.annotations
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
+import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
 import com.mapbox.maps.plugin.compass.CompassPlugin
 import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin
@@ -22,9 +27,14 @@ import com.mapbox.maps.plugin.locationcomponent.location
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
-data class MapUIState(val events: List<Event> = emptyList(), val selectedEvent: Event? = null)
+data class MapUIState(
+    val events: List<Event> = emptyList(),
+    val selectedEvent: Event? = null,
+    val showFilterDialog: Boolean = false
+)
 
 /**
  * ViewModel for managing Mapbox map state and events.
@@ -68,6 +78,13 @@ class MapViewModel(
   private val _uiState = MutableStateFlow(MapUIState())
   val uiState: StateFlow<MapUIState> = _uiState.asStateFlow()
 
+  // --- All events ---
+  private val _allEvents = MutableStateFlow<List<Event>>(emptyList())
+  val allEvents: StateFlow<List<Event>> = _allEvents.asStateFlow()
+
+  // --- Reusable PointAnnotationManager ---
+  private var pointAnnotationManager: PointAnnotationManager? = null
+
   // --- Mapbox references ---
   private var internalMapView: MapView? = null
   private var lastKnownPoint: Point? = null
@@ -98,9 +115,20 @@ class MapViewModel(
               val coords = event.location?.coordinates
               coords != null && isValidCoordinate(coords.latitude, coords.longitude)
             }
+        _allEvents.value = validEvents
         _uiState.value = _uiState.value.copy(events = validEvents)
       }
     }
+  }
+
+  /** Apply current filters to the loaded events */
+  fun applyFiltersToCurrentEvents(filters: EventFilters) {
+    val filteredEvents = applyFiltersLocally(_allEvents.value, filters)
+    _uiState.value = _uiState.value.copy(events = filteredEvents)
+  }
+
+  fun setShowFilterDialog(show: Boolean) {
+    _uiState.update { it.copy(showFilterDialog = show) }
   }
 
   /**
@@ -141,6 +169,25 @@ class MapViewModel(
   /** Refreshes events manually by fetching from repository. */
   fun refreshEvents() {
     fetchPublishedEvents()
+  }
+
+  /** Return a single PointAnnotationManager for the given MapView, creating it once if needed. */
+  fun getOrCreatePointAnnotationManager(mapView: MapView): PointAnnotationManager {
+    // If we already created one earlier, reuse it. Otherwise, create and store it.
+    return pointAnnotationManager
+        ?: mapView.annotations.createPointAnnotationManager().also { manager ->
+          pointAnnotationManager = manager
+        }
+  }
+
+  /** Optionally clear and release the manager. */
+  fun clearAnnotationManager() {
+    pointAnnotationManager?.let {
+      try {
+        it.deleteAll()
+      } catch (_: Throwable) {}
+    }
+    pointAnnotationManager = null
   }
 
   // --- Mapbox integration ---
@@ -217,6 +264,7 @@ class MapViewModel(
     indicatorListener?.let { listener ->
       internalMapView?.location?.removeOnIndicatorPositionChangedListener(listener)
     }
+    clearAnnotationManager()
     internalMapView = null
     super.onCleared()
   }
