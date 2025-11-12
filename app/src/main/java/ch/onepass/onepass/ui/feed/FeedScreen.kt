@@ -189,6 +189,7 @@ private fun FeedTopBar(
                 modifier = Modifier.size(24.dp),
             )
           }
+          // TODO: Obsolete Calendar Button, remove later
           IconButton(
               onClick = onCalendarClick,
               modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.CALENDAR_BUTTON),
