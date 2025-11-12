@@ -39,9 +39,6 @@ sealed interface ProfileEffect {
 
   object NavigateToMyInvitations : ProfileEffect
 
-  // Keep this one active (only supported flow for now)
-  object NavigateToOrganizerOnboarding : ProfileEffect
-
   object NavigateToMyOrganizations : ProfileEffect
 
   object SignOut : ProfileEffect
