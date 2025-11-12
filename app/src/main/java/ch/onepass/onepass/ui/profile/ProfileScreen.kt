@@ -11,7 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.AccountCircle
-import androidx.compose.material.icons.outlined.Diversity3
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
@@ -142,12 +141,12 @@ private fun DarkProfileContent(
 
           Spacer(Modifier.height(8.dp))
 
-          SettingsItemDark(
-              icon = Icons.Outlined.Diversity3,
-              title = "My Invitations",
-              titleColor = ProfileColors.TextPrimary,
-              onClick = onInvitations,
-              testTag = ProfileTestTags.SETTINGS_INVITATIONS)
+          //          SettingsItemDark(
+          //              icon = Icons.Outlined.Diversity3,
+          //              title = "My Invitations",
+          //              titleColor = ProfileColors.TextPrimary,
+          //              onClick = onInvitations,
+          //              testTag = ProfileTestTags.SETTINGS_INVITATIONS)
           SettingsItemDark(
               icon = Icons.Outlined.AccountCircle,
               title = "Account Settings",
