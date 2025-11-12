@@ -219,6 +219,8 @@ class OrganizationFeedTest {
         flowOf(testOrganizations)
     viewModel = OrganizationFeedViewModel(mockRepository)
     viewModel.loadUserOrganizations(testUserId)
+
+    composeTestRule.waitForIdle()
     coVerify { mockRepository.getOrganizationsByMember(testUserId) }
   }
 
