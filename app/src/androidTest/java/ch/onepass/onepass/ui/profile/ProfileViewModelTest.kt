@@ -83,4 +83,17 @@ class ProfileViewModelTest {
     val effect = vm.effects.first()
     assertEquals(ProfileEffect.NavigateToOrganizerOnboarding, effect)
   }
+
+  @Test
+  fun onInvitationsEmitsNavigateToMyInvitations() = runBlocking {
+    val repo = FakeUserRepository(currentUser = makeUser())
+    val vm = ProfileViewModel(userRepository = repo)
+
+    vm.state.filter { !it.loading }.first()
+
+    vm.onInvitations()
+    val effect = vm.effects.first()
+
+    assertEquals(ProfileEffect.NavigateToMyInvitations, effect)
+  }
 }

@@ -24,6 +24,7 @@ import ch.onepass.onepass.ui.map.MapScreen
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.myevents.MyEventsScreen
 import ch.onepass.onepass.ui.myevents.MyEventsViewModel
+import ch.onepass.onepass.ui.myinvitations.MyInvitationsScreen
 import ch.onepass.onepass.ui.navigation.NavigationDestinations.Screen
 import ch.onepass.onepass.ui.profile.ProfileEffect
 import ch.onepass.onepass.ui.profile.ProfileScreen

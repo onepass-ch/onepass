@@ -11,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.Diversity3
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
@@ -56,6 +57,7 @@ object ProfileTestTags {
   const val ORG_CARD = "profile_org_card"
   const val ORG_CTA = "profile_org_cta"
   const val SETTINGS_ACCOUNT = "profile_settings_account"
+  const val SETTINGS_INVITATIONS = "profile_settings_invitations"
   const val SETTINGS_PAYMENTS = "profile_settings_payments"
   const val SETTINGS_HELP = "profile_settings_help"
   const val SETTINGS_SIGN_OUT = "profile_settings_sign_out"
@@ -79,6 +81,7 @@ fun ProfileScreen(viewModel: ProfileViewModel, onEffect: (ProfileEffect) -> Unit
   DarkProfileContent(
       state = state,
       onCreateEvent = viewModel::onCreateEventClicked,
+      onInvitations = viewModel::onInvitations,
       onAccountSettings = viewModel::onAccountSettings,
       onPaymentMethods = viewModel::onPaymentMethods,
       onHelp = viewModel::onHelp,
@@ -90,6 +93,7 @@ private fun DarkProfileContent(
     state: ProfileUiState,
     onCreateEvent: () -> Unit,
     onAccountSettings: () -> Unit,
+    onInvitations: () -> Unit = {},
     onPaymentMethods: () -> Unit,
     onHelp: () -> Unit,
     onSignOut: () -> Unit
@@ -139,6 +143,12 @@ private fun DarkProfileContent(
 
           Spacer(Modifier.height(8.dp))
 
+          SettingsItemDark(
+              icon = Icons.Outlined.Diversity3,
+              title = "My Invitations",
+              titleColor = ProfileColors.TextPrimary,
+              onClick = onInvitations,
+              testTag = ProfileTestTags.SETTINGS_INVITATIONS)
           SettingsItemDark(
               icon = Icons.Outlined.AccountCircle,
               title = "Account Settings",

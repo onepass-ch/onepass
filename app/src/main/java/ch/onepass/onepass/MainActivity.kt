@@ -77,22 +77,6 @@ class MainActivity : ComponentActivity() {
       }
     }
   }
-
-  // --- MapView lifecycle delegation via ViewModel ---
-  override fun onStart() {
-    super.onStart()
-    mapViewModel.onMapStart()
-  }
-
-  override fun onStop() {
-    super.onStop()
-    mapViewModel.onMapStop()
-  }
-
-  override fun onLowMemory() {
-    super.onLowMemory()
-    mapViewModel.onMapLowMemory()
-  }
 }
 
 /**
