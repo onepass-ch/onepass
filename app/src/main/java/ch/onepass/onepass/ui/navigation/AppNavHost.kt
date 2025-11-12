@@ -38,105 +38,107 @@ fun AppNavHost(
     isLocationPermissionGranted: Boolean,
     testAuthButtonTag: String? = null,
     authViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
-      initializer { AuthViewModel() }
+        initializer { AuthViewModel() }
     }
 ) {
-  // Create a single AuthViewModel instance for the entire nav host
-  val authViewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
-  val authState by authViewModel.uiState.collectAsState()
+    // Create a single AuthViewModel instance for the entire nav host
+    val authViewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
+    val authState by authViewModel.uiState.collectAsState()
 
-  // Determine start destination based on auth state
-  val startDestination = if (authState.isSignedIn) Screen.Events.route else Screen.Auth.route
+    // Determine start destination based on auth state
+    val startDestination = if (authState.isSignedIn) Screen.Events.route else Screen.Auth.route
 
-  NavHost(navController = navController, startDestination = startDestination, modifier = modifier) {
+    NavHost(navController = navController, startDestination = startDestination, modifier = modifier) {
 
-    // ------------------ Auth ------------------
-    composable(Screen.Auth.route) {
-      if (testAuthButtonTag != null) {
-        // test shortcut: tagged button that immediately navigates to Events
-        Box(modifier = Modifier.fillMaxSize()) {
-          Button(
-              onClick = { navController.navigate(Screen.Events.route) { launchSingleTop = true } },
-              modifier = Modifier.semantics { testTag = testAuthButtonTag }) {
-                Text("Login")
-              }
-        }
-      } else {
-        AuthScreen(
-            onSignedIn = {
-              navController.navigate(Screen.Events.route) {
-                popUpTo(Screen.Auth.route) { inclusive = true }
-                launchSingleTop = true
-              }
-            },
-            authViewModel = authViewModel)
-      }
-    }
-
-    // ------------------ Events (Feed) ------------------
-    composable(Screen.Events.route) {
-      FeedScreen(
-          // TODO: replace ComingSoon with EventDetail when implemented
-          onNavigateToEvent = { /* eventId -> */
-            navController.navigate(Screen.ComingSoon.route)
-          },
-          // TODO: replace ComingSoon with Calendar when implemented
-          onNavigateToCalendar = { navController.navigate(Screen.ComingSoon.route) })
-    }
-
-    // ------------------ Tickets (My Events) ------------------
-    composable(Screen.Tickets.route) {
-      val uid = FirebaseAuth.getInstance().currentUser?.uid ?: "LOCAL_TEST_UID"
-
-      val myEventsVm: MyEventsViewModel =
-          viewModel(factory = viewModelFactory { initializer { MyEventsViewModel(userId = uid) } })
-      MyEventsScreen(viewModel = myEventsVm, userQrData = "USER-QR-DEMO")
-    }
-
-    // ------------------ Map ------------------
-    composable(Screen.Map.route) {
-      MapScreen(
-          mapViewModel = mapViewModel, isLocationPermissionGranted = isLocationPermissionGranted)
-    }
-
-    // ------------------ Profile ------------------
-    composable(Screen.Profile.route) {
-      val profileVm: ProfileViewModel = viewModel()
-      ProfileScreen(
-          viewModel = profileVm,
-          onEffect = { effect ->
-            when (effect) {
-              // TODO: wire to real destinations when implemented
-              ProfileEffect.NavigateToOrganizerOnboarding ->
-                  navController.navigate(Screen.ComingSoon.route)
-              ProfileEffect.NavigateToCreateEvent ->
-                  navController.navigate(Screen.CreateEvent.route)
-              ProfileEffect.NavigateToAccountSettings,
-              ProfileEffect.NavigateToPaymentMethods,
-              ProfileEffect.NavigateToHelp -> navController.navigate(Screen.ComingSoon.route)
-              ProfileEffect.SignOut -> {
-                authViewModel.signOut()
-                navController.navigate(Screen.Auth.route) {
-                  popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                  launchSingleTop = true
+        // ------------------ Auth ------------------
+        composable(Screen.Auth.route) {
+            if (testAuthButtonTag != null) {
+                // test shortcut: tagged button that immediately navigates to Events
+                Box(modifier = Modifier.fillMaxSize()) {
+                    Button(
+                        onClick = { navController.navigate(Screen.Events.route) { launchSingleTop = true } },
+                        modifier = Modifier.semantics { testTag = testAuthButtonTag }) {
+                        Text("Login")
+                    }
                 }
-              }
-              ProfileEffect.NavigateToAccountSettings ->
-                  navController.navigate(Screen.ComingSoon.route)
-              ProfileEffect.NavigateToHelp -> navController.navigate(Screen.ComingSoon.route)
-              ProfileEffect.NavigateToPaymentMethods ->
-                  navController.navigate(Screen.ComingSoon.route)
+            } else {
+                AuthScreen(
+                    onSignedIn = {
+                        navController.navigate(Screen.Events.route) {
+                            popUpTo(Screen.Auth.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    authViewModel = authViewModel)
             }
-          })
-    }
+        }
 
-    // ------------------ Placeholders ------------------
-    composable(Screen.ComingSoon.route) {
-      ComingSoonScreen(onBack = { navController.popBackStack() })
+        // ------------------ Events (Feed) ------------------
+        composable(Screen.Events.route) {
+            FeedScreen(
+                // TODO: replace ComingSoon with EventDetail when implemented
+                onNavigateToEvent = { /* eventId -> */
+                    navController.navigate(Screen.ComingSoon.route)
+                },
+                // TODO: replace ComingSoon with Calendar when implemented
+                onNavigateToCalendar = { navController.navigate(Screen.ComingSoon.route) })
+        }
+
+        // ------------------ Tickets (My Events) ------------------
+        composable(Screen.Tickets.route) {
+            val uid = FirebaseAuth.getInstance().currentUser?.uid ?: "LOCAL_TEST_UID"
+
+            val myEventsVm: MyEventsViewModel =
+                viewModel(factory = viewModelFactory { initializer { MyEventsViewModel(userId = uid) } })
+            MyEventsScreen(viewModel = myEventsVm, userQrData = "USER-QR-DEMO")
+        }
+
+        // ------------------ Map ------------------
+        composable(Screen.Map.route) {
+            MapScreen(
+                mapViewModel = mapViewModel, isLocationPermissionGranted = isLocationPermissionGranted)
+        }
+
+        // ------------------ Profile ------------------
+        composable(Screen.Profile.route) {
+            val profileVm: ProfileViewModel = viewModel()
+            ProfileScreen(
+                viewModel = profileVm,
+                onEffect = { effect ->
+                    when (effect) {
+                        // TODO: wire to real destinations when implemented
+                        ProfileEffect.NavigateToOrganizerOnboarding ->
+                            navController.navigate(Screen.ComingSoon.route)
+                        ProfileEffect.NavigateToCreateEvent ->
+                            navController.navigate(Screen.CreateEvent.route)
+                        ProfileEffect.NavigateToAccountSettings,
+                        ProfileEffect.NavigateToPaymentMethods,
+                        ProfileEffect.NavigateToHelp -> navController.navigate(Screen.ComingSoon.route)
+                        ProfileEffect.SignOut -> {
+                            authViewModel.signOut()
+                            navController.navigate(Screen.Auth.route) {
+                                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
+                        ProfileEffect.NavigateToAccountSettings ->
+                            navController.navigate(Screen.ComingSoon.route)
+                        ProfileEffect.NavigateToHelp -> navController.navigate(Screen.ComingSoon.route)
+                        ProfileEffect.NavigateToPaymentMethods ->
+                            navController.navigate(Screen.ComingSoon.route)
+
+                        ProfileEffect.NavigateToMyInvitations -> TODO()
+                    }
+                })
+        }
+
+        // ------------------ Placeholders ------------------
+        composable(Screen.ComingSoon.route) {
+            ComingSoonScreen(onBack = { navController.popBackStack() })
+        }
+        // TODO: replace with real detail when ready
+        composable(Screen.EventDetail.route) {
+            ComingSoonScreen(onBack = { navController.popBackStack() })
+        }
     }
-    // TODO: replace with real detail when ready
-    composable(Screen.EventDetail.route) {
-      ComingSoonScreen(onBack = { navController.popBackStack() })
-    }
-  }
 }
