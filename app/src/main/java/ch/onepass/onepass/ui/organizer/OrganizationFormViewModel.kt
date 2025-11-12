@@ -481,6 +481,11 @@ class OrganizationFormViewModel(
     }
   }
 
+  /** Resets the form to its initial empty state */
+  fun resetForm() {
+    _formState.value = OrganizationFormState() // Reset to initial empty state
+  }
+
   /** Clears any success state */
   fun clearSuccess() {
     _uiState.value = OrganizationFormUiState()

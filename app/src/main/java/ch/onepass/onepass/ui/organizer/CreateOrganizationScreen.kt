@@ -42,6 +42,9 @@ fun CreateOrganizationScreen(
   val snackbarHostState = remember { SnackbarHostState() }
   var prefixDropdownExpanded by remember { mutableStateOf(false) }
 
+  // Reset form when the screen is first displayed
+  LaunchedEffect(Unit) { viewModel.resetForm() }
+
   // Handle success and error events
   LaunchedEffect(uiState.successOrganizationId) {
     uiState.successOrganizationId?.let {
