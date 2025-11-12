@@ -1,6 +1,5 @@
 <resources>
     <string name="app_name">OnePass</string>
-    <string name="title_activity_main">MainActivity</string>
-    <string name="title_activity_second">SecondActivity</string>
+    <string name="title_activity_main">OnePass</string>
     <string name="default_web_client_id">475889926955-in78smn54fn00ojr3h6cuuhsk8hsc4ud.apps.googleusercontent.com</string>
 </resources>
