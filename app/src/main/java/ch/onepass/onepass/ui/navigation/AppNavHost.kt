@@ -5,9 +5,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -33,11 +36,21 @@ fun AppNavHost(
     modifier: Modifier = Modifier,
     mapViewModel: MapViewModel,
     isLocationPermissionGranted: Boolean,
-    testAuthButtonTag: String? = null
+    testAuthButtonTag: String? = null,
+    authViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
+      initializer { AuthViewModel() }
+    }
 ) {
+  // Create a single AuthViewModel instance for the entire nav host
+  val authViewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
+  val authState by authViewModel.uiState.collectAsState()
+  
+  // Determine start destination based on auth state
+  val startDestination = if (authState.isSignedIn) Screen.Events.route else Screen.Auth.route
+
   NavHost(
       navController = navController,
-      startDestination = Screen.Auth.route, // Auth comes first
+      startDestination = startDestination,
       modifier = modifier) {
 
         // ------------------ Auth ------------------
@@ -54,7 +67,6 @@ fun AppNavHost(
                   }
             }
           } else {
-            val authVm: AuthViewModel = viewModel()
             AuthScreen(
                 onSignedIn = {
                   navController.navigate(Screen.Events.route) {
@@ -62,7 +74,7 @@ fun AppNavHost(
                     launchSingleTop = true
                   }
                 },
-                authViewModel = authVm)
+                authViewModel = authViewModel)
           }
         }
 
@@ -97,7 +109,6 @@ fun AppNavHost(
         // ------------------ Profile ------------------
         composable(Screen.Profile.route) {
           val profileVm: ProfileViewModel = viewModel()
-          val authVm: AuthViewModel = viewModel()
           ProfileScreen(
               viewModel = profileVm,
               onEffect = { effect ->
@@ -111,7 +122,7 @@ fun AppNavHost(
                   ProfileEffect.NavigateToPaymentMethods,
                   ProfileEffect.NavigateToHelp -> navController.navigate(Screen.ComingSoon.route)
                   ProfileEffect.SignOut -> {
-                    authVm.signOut()
+                    authViewModel.signOut()
                     navController.navigate(Screen.Auth.route) {
                       popUpTo(navController.graph.startDestinationId) { inclusive = true }
                       launchSingleTop = true

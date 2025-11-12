@@ -7,6 +7,13 @@ import com.google.firebase.auth.FirebaseUser
 interface AuthRepository {
 
   /**
+   * Checks if a user is currently signed in.
+   *
+   * @return true if a user is authenticated, false otherwise.
+   */
+  fun isUserSignedIn(): Boolean
+
+  /**
    * Signs in the user using a Google account through the Credential Manager API.
    *
    * @return A [Result] containing a [FirebaseUser] on success, or an exception on failure.

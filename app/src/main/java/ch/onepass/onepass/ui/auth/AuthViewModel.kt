@@ -24,6 +24,12 @@ open class AuthViewModel(
   private val _uiState = MutableStateFlow(AuthUiState())
   open val uiState = _uiState.asStateFlow()
 
+  init {
+    if (authRepository.isUserSignedIn()) {
+      _uiState.value = _uiState.value.copy(isSignedIn = true)
+    }
+  }
+
   fun getServerClientId(context: Context): String {
     return context.getString(R.string.default_web_client_id)
   }
