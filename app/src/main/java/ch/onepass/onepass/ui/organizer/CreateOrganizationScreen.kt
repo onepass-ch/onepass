@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
-import ch.onepass.onepass.ui.theme.OnePassTheme
 
 /** Test tags for CreateOrganization screen components */
 object CreateOrganizationTestTags {
@@ -82,11 +80,4 @@ fun CreateOrganizationScreen(
         viewModel = viewModel,
         modifier = Modifier.padding(padding))
   }
-}
-
-/** Preview of the CreateOrganizationScreen composable */
-@Preview(showBackground = true)
-@Composable
-fun CreateOrganizationPreview() {
-  OnePassTheme { CreateOrganizationScreen(ownerId = "user123") }
 }
