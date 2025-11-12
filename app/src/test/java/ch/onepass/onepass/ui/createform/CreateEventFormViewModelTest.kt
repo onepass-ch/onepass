@@ -1,12 +1,16 @@
 package ch.onepass.onepass.ui.createform
 
 import ch.onepass.onepass.model.event.EventRepository
+import ch.onepass.onepass.model.organization.Organization
+import ch.onepass.onepass.model.organization.OrganizationRepository
+import ch.onepass.onepass.model.organization.OrganizationStatus
 import ch.onepass.onepass.ui.createform.CreateEventFormViewModel.ValidationError
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.*
 import org.junit.After
 import org.junit.Assert.*
@@ -23,18 +27,31 @@ import org.junit.Test
 class CreateEventFormViewModelTest {
 
   private lateinit var viewModel: CreateEventFormViewModel
-  private lateinit var mockRepository: EventRepository
+  private lateinit var mockEventRepository: EventRepository
+  private lateinit var mockOrganizationRepository: OrganizationRepository
   private val testDispatcher = UnconfinedTestDispatcher()
+
+  private val testOrganization = Organization(
+      id = "test-org-id",
+      name = "Test Organization",
+      description = "Test Description",
+      ownerId = "test-owner-id",
+      status = OrganizationStatus.ACTIVE
+  )
 
   @Before
   fun setUp() {
     Dispatchers.setMain(testDispatcher)
-    mockRepository = mockk(relaxed = true)
+    mockEventRepository = mockk(relaxed = true)
+    mockOrganizationRepository = mockk(relaxed = true)
 
-    // Setup default behavior for createEvent
-    coEvery { mockRepository.createEvent(any()) } returns Result.success("test-event-id")
+    // Mock the organization repository to return a test organization
+    coEvery { mockOrganizationRepository.getOrganizationById(any()) } returns flowOf(testOrganization)
 
-    viewModel = CreateEventFormViewModel(mockRepository)
+    viewModel = CreateEventFormViewModel(mockEventRepository, mockOrganizationRepository)
+
+    // Set the organization ID for the viewModel
+    viewModel.setOrganizationId("test-org-id")
   }
 
   @After
@@ -130,7 +147,7 @@ class CreateEventFormViewModelTest {
         viewModel.updatePrice("25")
         viewModel.updateCapacity("100")
 
-        viewModel.createEvent("org-id", "Organizer")
+        viewModel.createEvent()
 
         val fieldErrors = viewModel.fieldErrors.value
         assertTrue(fieldErrors.containsKey(ValidationError.TITLE.key))
@@ -148,7 +165,7 @@ class CreateEventFormViewModelTest {
         viewModel.updatePrice("25")
         viewModel.updateCapacity("100")
 
-        viewModel.createEvent("org-id", "Organizer")
+        viewModel.createEvent()
 
         val fieldErrors = viewModel.fieldErrors.value
         assertTrue(fieldErrors.containsKey(ValidationError.DESCRIPTION.key))
@@ -167,7 +184,7 @@ class CreateEventFormViewModelTest {
         viewModel.updatePrice("25")
         viewModel.updateCapacity("100")
 
-        viewModel.createEvent("org-id", "Organizer")
+        viewModel.createEvent()
 
         val fieldErrors = viewModel.fieldErrors.value
         assertTrue(fieldErrors.containsKey(ValidationError.DATE.key))
@@ -185,7 +202,7 @@ class CreateEventFormViewModelTest {
         viewModel.updatePrice("25")
         viewModel.updateCapacity("100")
 
-        viewModel.createEvent("org-id", "Organizer")
+        viewModel.createEvent()
 
         val fieldErrors = viewModel.fieldErrors.value
         assertTrue(fieldErrors.containsKey(ValidationError.START_TIME.key))
@@ -204,7 +221,7 @@ class CreateEventFormViewModelTest {
         viewModel.updatePrice("25")
         viewModel.updateCapacity("100")
 
-        viewModel.createEvent("org-id", "Organizer")
+        viewModel.createEvent()
 
         val fieldErrors = viewModel.fieldErrors.value
         assertTrue(fieldErrors.containsKey(ValidationError.END_TIME.key))
@@ -222,7 +239,7 @@ class CreateEventFormViewModelTest {
         viewModel.updatePrice("25")
         viewModel.updateCapacity("100")
 
-        viewModel.createEvent("org-id", "Organizer")
+        viewModel.createEvent()
 
         val fieldErrors = viewModel.fieldErrors.value
         assertTrue(fieldErrors.containsKey(ValidationError.LOCATION.key))
@@ -241,7 +258,7 @@ class CreateEventFormViewModelTest {
         viewModel.updatePrice("invalid")
         viewModel.updateCapacity("100")
 
-        viewModel.createEvent("org-id", "Organizer")
+        viewModel.createEvent()
 
         val fieldErrors = viewModel.fieldErrors.value
         assertTrue(fieldErrors.containsKey(ValidationError.PRICE_INVALID.key))
@@ -261,7 +278,7 @@ class CreateEventFormViewModelTest {
         viewModel.updatePrice("25")
         viewModel.updateCapacity("invalid")
 
-        viewModel.createEvent("org-id", "Organizer")
+        viewModel.createEvent()
 
         val fieldErrors = viewModel.fieldErrors.value
         assertTrue(fieldErrors.containsKey(ValidationError.CAPACITY_INVALID.key))
@@ -274,7 +291,7 @@ class CreateEventFormViewModelTest {
   fun `createEvent succeeds with valid data`() =
       runTest(testDispatcher) {
         // Mock successful event creation
-        coEvery { mockRepository.createEvent(any()) } returns Result.success("new-event-id")
+        coEvery { mockEventRepository.createEvent(any()) } returns Result.success("new-event-id")
 
         // Fill in valid form data
         viewModel.updateTitle("Test Event")
@@ -286,10 +303,10 @@ class CreateEventFormViewModelTest {
         viewModel.updatePrice("25.50")
         viewModel.updateCapacity("100")
 
-        viewModel.createEvent("org-id", "Organizer Name")
+        viewModel.createEvent()
 
         // Verify repository was called
-        coVerify(timeout = 2000) { mockRepository.createEvent(any()) }
+        coVerify(timeout = 2000) { mockEventRepository.createEvent(any()) }
 
         // Verify UI state is Success (form is reset after success)
         val uiState = viewModel.uiState.value
@@ -301,7 +318,7 @@ class CreateEventFormViewModelTest {
   fun `createEvent handles repository failure`() =
       runTest(testDispatcher) {
         // Mock repository failure
-        coEvery { mockRepository.createEvent(any()) } returns
+        coEvery { mockEventRepository.createEvent(any()) } returns
             Result.failure(Exception("Network error"))
 
         // Fill in valid form data
@@ -314,7 +331,7 @@ class CreateEventFormViewModelTest {
         viewModel.updatePrice("25")
         viewModel.updateCapacity("100")
 
-        viewModel.createEvent("org-id", "Organizer")
+        viewModel.createEvent()
 
         advanceUntilIdle()
 
@@ -362,7 +379,7 @@ class CreateEventFormViewModelTest {
   @Test
   fun `clearError sets UI state to Idle`() = runTest {
     // Trigger an error
-    viewModel.createEvent("org-id", "Organizer")
+    viewModel.createEvent()
     advanceUntilIdle()
 
     // Clear error
@@ -375,7 +392,7 @@ class CreateEventFormViewModelTest {
   @Test
   fun `createEvent calls repository with valid data`() =
       runTest(testDispatcher) {
-        coEvery { mockRepository.createEvent(any()) } returns Result.success("event-id")
+        coEvery { mockEventRepository.createEvent(any()) } returns Result.success("event-id")
 
         // Fill in valid form data
         viewModel.updateTitle("Test Event")
@@ -387,17 +404,17 @@ class CreateEventFormViewModelTest {
         viewModel.updatePrice("25")
         viewModel.updateCapacity("100")
 
-        viewModel.createEvent("org-123", "Test Organizer")
+        viewModel.createEvent()
 
         // Verify repository was called
-        coVerify(timeout = 2000) { mockRepository.createEvent(any()) }
+        coVerify(timeout = 2000) { mockEventRepository.createEvent(any()) }
       }
 
   @Test
   fun `createEvent validates all required fields before creating`() =
       runTest(testDispatcher) {
         // Test with all valid fields - should succeed
-        coEvery { mockRepository.createEvent(any()) } returns Result.success("event-id")
+        coEvery { mockEventRepository.createEvent(any()) } returns Result.success("event-id")
 
         viewModel.updateTitle("Test Event")
         viewModel.updateDescription("Test Description")
@@ -408,16 +425,16 @@ class CreateEventFormViewModelTest {
         viewModel.updatePrice("25.50")
         viewModel.updateCapacity("100")
 
-        viewModel.createEvent("org-id", "Organizer")
+        viewModel.createEvent()
 
         // Verify repository was called (indicating validation passed)
-        coVerify(timeout = 2000) { mockRepository.createEvent(any()) }
+        coVerify(timeout = 2000) { mockEventRepository.createEvent(any()) }
       }
 
   @Test
   fun `resetForm after successful creation`() =
       runTest(testDispatcher) {
-        coEvery { mockRepository.createEvent(any()) } returns Result.success("event-id")
+        coEvery { mockEventRepository.createEvent(any()) } returns Result.success("event-id")
 
         viewModel.updateTitle("Test Event")
         viewModel.updateDescription("Test Description")
@@ -428,7 +445,7 @@ class CreateEventFormViewModelTest {
         viewModel.updatePrice("25")
         viewModel.updateCapacity("150")
 
-        viewModel.createEvent("org-id", "Organizer")
+        viewModel.createEvent()
 
         // Wait for async completion
         advanceUntilIdle()
