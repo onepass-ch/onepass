@@ -81,6 +81,7 @@ fun ProfileScreen(viewModel: ProfileViewModel, onEffect: (ProfileEffect) -> Unit
   DarkProfileContent(
       state = state,
       onCreateEvent = viewModel::onCreateEventClicked,
+      onInvitations = viewModel::onInvitations,
       onAccountSettings = viewModel::onAccountSettings,
       onPaymentMethods = viewModel::onPaymentMethods,
       onHelp = viewModel::onHelp,
