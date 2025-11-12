@@ -156,4 +156,27 @@ class AuthRepositoryFirebaseTest {
     assertTrue(error is IllegalStateException)
     assertEquals("Logout failed: sign-out failed", error?.message)
   }
+
+  @Test
+  fun isUserSignedIn_returnsTrue_whenUserExists() {
+    val auth = mockk<FirebaseAuth>()
+    val firebaseUser = mockk<FirebaseUser>()
+    every { auth.currentUser } returns firebaseUser
+    val repository = AuthRepositoryFirebase(auth, mockk(relaxed = true)) { mockk(relaxed = true) }
+
+    val result = repository.isUserSignedIn()
+
+    assertTrue(result)
+  }
+
+  @Test
+  fun isUserSignedIn_returnsFalse_whenUserIsNull() {
+    val auth = mockk<FirebaseAuth>()
+    every { auth.currentUser } returns null
+    val repository = AuthRepositoryFirebase(auth, mockk(relaxed = true)) { mockk(relaxed = true) }
+
+    val result = repository.isUserSignedIn()
+
+    assertTrue(!result)
+  }
 }

@@ -27,6 +27,8 @@ class AuthRepositoryFirebase(
     private val userRepositoryProvider: () -> UserRepositoryFirebase = { UserRepositoryFirebase() }
 ) : AuthRepository {
 
+  override fun isUserSignedIn(): Boolean = auth.currentUser != null
+
   fun getGoogleSignInOption(serverClientId: String) =
       GetSignInWithGoogleOption.Builder(serverClientId = serverClientId).build()
 
