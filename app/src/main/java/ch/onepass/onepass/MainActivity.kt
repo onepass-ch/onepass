@@ -21,6 +21,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import ch.onepass.onepass.resources.C
@@ -102,6 +104,9 @@ fun OnePassApp(
     mapViewModel: MapViewModel,
     isLocationPermissionGranted: Boolean,
     testAuthButtonTag: String? = null,
+    authViewModelFactory: androidx.lifecycle.ViewModelProvider.Factory = viewModelFactory {
+      initializer { ch.onepass.onepass.ui.auth.AuthViewModel() }
+    }
 ) {
   val navController = rememberNavController()
   val navActions = NavigationActions(navController)
@@ -127,6 +132,7 @@ fun OnePassApp(
             modifier = Modifier.padding(padding),
             mapViewModel = mapViewModel,
             isLocationPermissionGranted = isLocationPermissionGranted,
-            testAuthButtonTag = testAuthButtonTag)
+            testAuthButtonTag = testAuthButtonTag,
+            authViewModelFactory = authViewModelFactory)
       }
 }

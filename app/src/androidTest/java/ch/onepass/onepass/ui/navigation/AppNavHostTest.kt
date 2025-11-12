@@ -13,6 +13,7 @@ import ch.onepass.onepass.ui.auth.AuthViewModel
 import ch.onepass.onepass.ui.auth.SignInScreenTestTags
 import ch.onepass.onepass.ui.feed.FeedScreenTestTags
 import ch.onepass.onepass.ui.map.MapViewModel
+import ch.onepass.onepass.ui.profile.ProfileTestTags
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import io.mockk.every
@@ -111,10 +112,14 @@ class AppNavHostTest {
       initializer { AuthViewModel(mockAuthRepository) }
     }
 
+    // Create navController outside of setContent so we can use it to navigate
+    lateinit var navController: androidx.navigation.NavHostController
+
     // When: we set the AppNavHost
     composeTestRule.setContent {
+      navController = rememberNavController()
       AppNavHost(
-          navController = rememberNavController(),
+          navController = navController,
           mapViewModel = MapViewModel(),
           isLocationPermissionGranted = true,
           testAuthButtonTag = SignInScreenTestTags.LOGIN_BUTTON,
@@ -125,9 +130,14 @@ class AppNavHostTest {
     composeTestRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).performClick()
     composeTestRule.waitForIdle()
 
-    // Navigate to profile tab
-    composeTestRule.onNodeWithTag("BOTTOM_TAB_PROFILE").performClick()
+    // Navigate to profile screen programmatically (no bottom bar in AppNavHost)
+    composeTestRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.Profile.route)
+    }
     composeTestRule.waitForIdle()
+
+    // Verify we navigated to the profile screen
+    composeTestRule.onNodeWithTag(ProfileTestTags.SCREEN).assertIsDisplayed()
 
     // Then: the same auth repository instance should be used
     // (This is verified by the fact that we only created one instance via the factory)
