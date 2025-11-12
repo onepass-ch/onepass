@@ -5,7 +5,7 @@ import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
-  import ch.onepass.onepass.model.eventfilters.EventFilters
+import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.repository.RepositoryProvider
 import ch.onepass.onepass.ui.eventfilters.EventFilteringUtils.applyFiltersLocally
 import com.mapbox.geojson.Point

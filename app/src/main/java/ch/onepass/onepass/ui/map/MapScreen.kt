@@ -106,22 +106,22 @@ fun MapScreen(
       Icon(imageVector = Icons.Filled.LocationOn, contentDescription = "Recenter")
     }
 
-      // --- Floating Filter Button ---
-      FloatingActionButton(
-          onClick = { mapViewModel.setShowFilterDialog(true) },
-          containerColor = MaterialTheme.colorScheme.primaryContainer,
-          contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-          modifier =
-              Modifier.align(Alignment.BottomEnd)
-                  .padding(bottom = 88.dp, end = 16.dp)
-                  .size(55.dp)
-                  .testTag(MapScreenTestTags.FILTER_BUTTON),
-      ) {
-          Icon(
-              painter = painterResource(id = R.drawable.filter_icon),
-              contentDescription = "Filter events",
-              modifier = Modifier.padding(4.dp))
-      }
+    // --- Floating Filter Button ---
+    FloatingActionButton(
+        onClick = { mapViewModel.setShowFilterDialog(true) },
+        containerColor = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        modifier =
+            Modifier.align(Alignment.BottomEnd)
+                .padding(bottom = 88.dp, end = 16.dp)
+                .size(55.dp)
+                .testTag(MapScreenTestTags.FILTER_BUTTON),
+    ) {
+      Icon(
+          painter = painterResource(id = R.drawable.filter_icon),
+          contentDescription = "Filter events",
+          modifier = Modifier.padding(4.dp))
+    }
 
     uiState.selectedEvent?.let { event ->
       Box(modifier = Modifier.fillMaxSize().clickable { mapViewModel.clearSelectedEvent() }) {
