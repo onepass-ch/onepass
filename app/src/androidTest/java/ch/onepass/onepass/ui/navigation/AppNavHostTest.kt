@@ -13,6 +13,7 @@ import ch.onepass.onepass.ui.auth.AuthViewModel
 import ch.onepass.onepass.ui.auth.SignInScreenTestTags
 import ch.onepass.onepass.ui.feed.FeedScreenTestTags
 import ch.onepass.onepass.ui.map.MapViewModel
+import ch.onepass.onepass.ui.myinvitations.MyInvitationsScreenTestTags
 import ch.onepass.onepass.ui.profile.ProfileTestTags
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -189,5 +190,49 @@ class AppNavHostTest {
 
     // Then: should start at events screen
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_SCREEN).assertIsDisplayed()
+  }
+
+  @Test
+  fun appNavHost_navigatesToMyInvitations_fromProfile() {
+    // Given: a mock auth repository that returns true for isUserSignedIn
+    val mockAuthRepository = mockk<AuthRepositoryFirebase>(relaxed = true)
+    every { mockAuthRepository.isUserSignedIn() } returns true
+
+    val authViewModelFactory = viewModelFactory {
+      initializer { AuthViewModel(mockAuthRepository) }
+    }
+
+    // Create navController outside of setContent so we can use it to navigate
+    lateinit var navController: androidx.navigation.NavHostController
+
+    // When: we set the AppNavHost
+    composeTestRule.setContent {
+      navController = rememberNavController()
+      AppNavHost(
+          navController = navController,
+          mapViewModel = MapViewModel(),
+          isLocationPermissionGranted = true,
+          authViewModelFactory = authViewModelFactory)
+    }
+
+    // Navigate to profile screen
+    composeTestRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.Profile.route)
+    }
+    composeTestRule.waitForIdle()
+    Thread.sleep(500)
+    composeTestRule.waitForIdle()
+
+    // Verify we navigated to the profile screen
+    composeTestRule.onNodeWithTag(ProfileTestTags.SCREEN).assertIsDisplayed()
+
+    // Click on invitations button
+    composeTestRule.onNodeWithTag(ProfileTestTags.SETTINGS_INVITATIONS).performClick()
+    composeTestRule.waitForIdle()
+    Thread.sleep(500)
+    composeTestRule.waitForIdle()
+
+    // Then: we should navigate to the My Invitations screen
+    composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.SCREEN).assertIsDisplayed()
   }
 }
