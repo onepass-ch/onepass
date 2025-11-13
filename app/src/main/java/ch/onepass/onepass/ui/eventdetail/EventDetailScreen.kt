@@ -45,8 +45,6 @@ object EventDetailTestTags {
   const val LIKE_BUTTON = "eventDetailLikeButton"
   const val EVENT_TITLE = "eventDetailEventTitle"
   const val ORGANIZER_SECTION = "eventDetailOrganizerSection"
-  const val ORGANIZER_NAME = "eventDetailOrganizerName"
-  const val ORGANIZER_FOLLOWERS = "eventDetailOrganizerFollowers"
   const val ORGANIZER_RATING = "eventDetailOrganizerRating"
   const val ABOUT_EVENT = "eventDetailAboutEvent"
   const val EVENT_DATE = "eventDetailDate"
