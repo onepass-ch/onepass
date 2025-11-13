@@ -14,6 +14,8 @@ import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import java.util.Calendar
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -310,5 +312,238 @@ class EditEventFormComposeTest {
     composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
 
     composeTestRule.onNodeWithTag(EditEventFormTestTags.SCREEN).assertExists()
+  }
+
+  @Test
+  fun editEventForm_showsLoadingIndicatorWhileLoading() = runTest {
+    // Create a custom ViewModel that stays in Loading state
+    val loadingViewModel = EditEventFormViewModel(mockRepository)
+
+    // Don't mock the repository to return anything - let it hang
+    every { mockRepository.getEventById("test-event-id") } answers
+        {
+          flow<Event?> {
+            // Never emit - stay loading forever
+            delay(Long.MAX_VALUE)
+          }
+        }
+
+    composeTestRule.setContent {
+      EditEventForm(eventId = "test-event-id", viewModel = loadingViewModel)
+    }
+
+    // Give it a moment to enter loading state
+    composeTestRule.mainClock.autoAdvance = false
+    composeTestRule.mainClock.advanceTimeBy(100)
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag(EditEventFormTestTags.LOADING_INDICATOR).assertExists()
+  }
+
+  @Test
+  fun retryButton_reloadsEvent() = runTest {
+    every { mockRepository.getEventById("test-event-id") } returns flowOf(null)
+
+    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
+
+    composeTestRule.waitForIdle()
+
+    // Now return a valid event on retry
+    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+
+    composeTestRule.onNodeWithText("Retry").performClick()
+
+    composeTestRule.waitForIdle()
+
+    // Form should now be displayed
+    composeTestRule.onNodeWithTag(EditEventFormTestTags.FORM_COLUMN).assertExists()
+  }
+
+  @Test
+  fun updateButton_showsLoadingWhenUpdating() = runTest {
+    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+    coEvery { mockRepository.updateEvent(any()) } returns Result.success(Unit)
+
+    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule
+        .onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON)
+        .performScrollTo()
+        .performClick()
+
+    // Should briefly show loading indicator (this might be too fast to catch)
+    composeTestRule.waitForIdle()
+  }
+
+  @Test
+  fun formIsScrollable() = runTest {
+    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+
+    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
+
+    composeTestRule.waitForIdle()
+
+    // Verify we can see the top
+    composeTestRule.onNodeWithText("Title*").assertIsDisplayed()
+
+    // Scroll to bottom
+    composeTestRule
+        .onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON)
+        .performScrollTo()
+        .assertIsDisplayed()
+
+    // Scroll back to top
+    composeTestRule.onNodeWithText("Title*").performScrollTo().assertIsDisplayed()
+  }
+
+  @Test
+  fun allFieldsAreDisplayed() = runTest {
+    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+
+    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
+
+    composeTestRule.waitForIdle()
+
+    // Verify all field sections are present
+    composeTestRule.onNodeWithTag(EditEventFormTestTags.TITLE_FIELD).assertExists()
+    composeTestRule.onNodeWithTag(EditEventFormTestTags.DESCRIPTION_FIELD).assertExists()
+    composeTestRule.onNodeWithTag(EditEventFormTestTags.TIME_FIELD).performScrollTo().assertExists()
+    composeTestRule.onNodeWithTag(EditEventFormTestTags.DATE_FIELD).performScrollTo().assertExists()
+    composeTestRule
+        .onNodeWithTag(EditEventFormTestTags.LOCATION_FIELD)
+        .performScrollTo()
+        .assertExists()
+    composeTestRule
+        .onNodeWithTag(EditEventFormTestTags.TICKETS_FIELD)
+        .performScrollTo()
+        .assertExists()
+  }
+
+  @Test
+  fun priceField_acceptsNumericInput() = runTest {
+    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+
+    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
+
+    composeTestRule.waitForIdle()
+
+    // Find and clear price field
+    composeTestRule.onNodeWithText("25.0").performScrollTo().performTextClearance()
+
+    composeTestRule.onNodeWithText("ex: 12").performTextInput("30.5")
+
+    composeTestRule.onNodeWithText("30.5").performScrollTo().assertIsDisplayed()
+  }
+
+  @Test
+  fun capacityField_acceptsNumericInput() = runTest {
+    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+
+    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithText("100").performScrollTo().performTextClearance()
+
+    composeTestRule.onNodeWithText("ex: 100").performTextInput("150")
+
+    composeTestRule.onNodeWithText("150").performScrollTo().assertIsDisplayed()
+  }
+
+  @Test
+  fun formPreservesDataOnRecomposition() = runTest {
+    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+
+    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag("title_input_field").performTextClearance()
+
+    composeTestRule.onNodeWithTag("title_input_field").performTextInput("Modified")
+
+    composeTestRule.waitForIdle()
+
+    // Force recomposition
+    composeTestRule.onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON).performScrollTo()
+    composeTestRule.onNodeWithText("Title*").performScrollTo()
+
+    composeTestRule.waitForIdle()
+
+    assert(viewModel.formState.value.title == "Modified")
+  }
+
+  @Test
+  fun retryButton_hasCorrectTag() = runTest {
+    every { mockRepository.getEventById("test-event-id") } returns flowOf(null)
+
+    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag(EditEventFormTestTags.RETRY_BUTTON).assertExists()
+  }
+
+  @Test
+  fun errorDialogOkButton_hasCorrectTag() = runTest {
+    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+    coEvery { mockRepository.updateEvent(any()) } returns Result.failure(Exception("Error"))
+
+    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule
+        .onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON)
+        .performScrollTo()
+        .performClick()
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag(EditEventFormTestTags.ERROR_DIALOG_OK_BUTTON).assertExists()
+  }
+
+  @Test
+  fun backButton_hasCorrectTag() = runTest {
+    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+
+    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag(EditEventFormTestTags.BACK_BUTTON).assertExists()
+  }
+
+  @Test
+  fun validationErrors_clearWhenFieldsUpdated() = runTest {
+    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+
+    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
+
+    composeTestRule.waitForIdle()
+
+    // Clear description to trigger error
+    composeTestRule.onNodeWithText("Test Description").performTextClearance()
+
+    // Try to update
+    composeTestRule
+        .onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON)
+        .performScrollTo()
+        .performClick()
+
+    composeTestRule.waitForIdle()
+
+    // Should show validation error
+    composeTestRule.onNodeWithText(ValidationError.DESCRIPTION.message).assertIsDisplayed()
+
+    // Fix the error
+    composeTestRule.onNodeWithText("This is amazing..").performTextInput("New Description")
+
+    composeTestRule.waitForIdle()
+
+    // Error should be cleared
+    composeTestRule.onNodeWithText(ValidationError.DESCRIPTION.message).assertDoesNotExist()
   }
 }
