@@ -268,7 +268,8 @@ fun AppNavHost(
             navController.navigate(Screen.OrganizationFeed.route) {
               popUpTo(Screen.BecomeOrganizer.route) { inclusive = true }
             }
-          })
+          },
+          onNavigateBack = { navController.popBackStack() })
     }
     // ------------------ My Invitations ----------------
     composable(Screen.MyInvitations.route) {
