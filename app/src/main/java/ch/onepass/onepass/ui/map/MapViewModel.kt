@@ -138,7 +138,7 @@ class MapViewModel(
    * @param longitude The longitude value to validate
    * @return true if coordinates are within valid ranges, false otherwise
    */
-  private fun isValidCoordinate(latitude: Double, longitude: Double): Boolean {
+  fun isValidCoordinate(latitude: Double, longitude: Double): Boolean {
     return !latitude.isNaN() &&
         !longitude.isNaN() &&
         latitude in CoordinateLimits.MIN_LATITUDE..CoordinateLimits.MAX_LATITUDE &&
@@ -180,7 +180,7 @@ class MapViewModel(
         }
   }
 
-  /** Optionally clear and release the manager. */
+  /** Clear and release the manager. */
   fun clearAnnotationManager() {
     pointAnnotationManager?.let {
       try {

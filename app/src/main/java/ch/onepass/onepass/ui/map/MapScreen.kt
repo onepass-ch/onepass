@@ -42,6 +42,7 @@ object MapScreenTestTags {
   const val RECENTER_BUTTON = "recenterButton"
   const val FILTER_BUTTON = "filterButton"
   const val ACTIVE_FILTERS_BAR = "activeFiltersBar"
+  const val EVENT_CARD = "eventCard"
 }
 
 private object AnnotationConfig {
@@ -62,6 +63,7 @@ private object AnnotationConfig {
  */
 @Composable
 fun MapScreen(
+    modifier: Modifier = Modifier,
     mapViewModel: MapViewModel = viewModel(),
     filterViewModel: EventFilterViewModel = viewModel(),
     onNavigateToEvent: (String) -> Unit = {},
@@ -74,10 +76,10 @@ fun MapScreen(
   val showFilterDialog = uiState.showFilterDialog
   val allEvents by mapViewModel.allEvents.collectAsState()
 
-  Box(modifier = Modifier.fillMaxSize()) {
+  Box(modifier = modifier.fillMaxSize()) {
     // --- Mapbox Map Composable ---
     MapboxMap(
-        modifier = Modifier.fillMaxSize().testTag(MapScreenTestTags.MAPBOX_MAP_SCREEN),
+        modifier = modifier.fillMaxSize().testTag(MapScreenTestTags.MAPBOX_MAP_SCREEN),
     ) {
       // MapEffect bridges the Compose Mapbox API with the MapView
       MapEffect(Unit) { mapView: MapView ->
@@ -99,7 +101,8 @@ fun MapScreen(
         containerColor = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         modifier =
-            Modifier.align(Alignment.BottomEnd)
+            modifier
+                .align(Alignment.BottomEnd)
                 .padding(16.dp)
                 .testTag(MapScreenTestTags.RECENTER_BUTTON),
     ) {
@@ -112,7 +115,8 @@ fun MapScreen(
         containerColor = MaterialTheme.colorScheme.primaryContainer,
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
         modifier =
-            Modifier.align(Alignment.BottomEnd)
+            modifier
+                .align(Alignment.BottomEnd)
                 .padding(bottom = 88.dp, end = 16.dp)
                 .size(55.dp)
                 .testTag(MapScreenTestTags.FILTER_BUTTON),
@@ -120,19 +124,24 @@ fun MapScreen(
       Icon(
           painter = painterResource(id = R.drawable.filter_icon),
           contentDescription = "Filter events",
-          modifier = Modifier.padding(4.dp))
+          modifier = modifier.padding(4.dp))
     }
 
     uiState.selectedEvent?.let { event ->
-      Box(modifier = Modifier.fillMaxSize().clickable { mapViewModel.clearSelectedEvent() }) {
-        EventCard(
-            event = event,
-            onCardClick = { onNavigateToEvent(event.eventId) },
-            onDismiss = { mapViewModel.clearSelectedEvent() },
-            modifier = Modifier.align(Alignment.TopCenter).padding(16.dp),
-            isLiked = likedEvents.contains(event.eventId),
-            onLikeToggle = { eventId -> eventCardViewModel.toggleLike(eventId) })
-      }
+      Box(
+          modifier =
+              modifier
+                  .fillMaxSize()
+                  .clickable { mapViewModel.clearSelectedEvent() }
+                  .testTag(MapScreenTestTags.EVENT_CARD)) {
+            EventCard(
+                event = event,
+                onCardClick = { onNavigateToEvent(event.eventId) },
+                onDismiss = { mapViewModel.clearSelectedEvent() },
+                modifier = modifier.align(Alignment.TopCenter).padding(16.dp),
+                isLiked = likedEvents.contains(event.eventId),
+                onLikeToggle = { eventId -> eventCardViewModel.toggleLike(eventId) })
+          }
     }
 
     // --- Filter Dialog ---
@@ -154,7 +163,8 @@ fun MapScreen(
           filters = currentFilters,
           onClearFilters = { filterViewModel.clearFilters() },
           modifier =
-              Modifier.fillMaxWidth()
+              modifier
+                  .fillMaxWidth()
                   .padding(top = 56.dp)
                   .testTag(MapScreenTestTags.ACTIVE_FILTERS_BAR),
       )
