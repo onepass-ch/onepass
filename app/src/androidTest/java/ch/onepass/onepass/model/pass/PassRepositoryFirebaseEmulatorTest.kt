@@ -1,6 +1,8 @@
 package ch.onepass.onepass.model.pass
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.LargeTest
+import com.google.firebase.FirebaseApp
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.SetOptions
@@ -17,6 +19,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
+@LargeTest
 class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
 
   private lateinit var uid: String
@@ -32,11 +35,22 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
   override fun setUp() {
     super.setUp()
     runBlocking {
+      // Ensure FirebaseApp is initialized before attempting any Firebase operations
+      try {
+        if (FirebaseApp.getApps(androidx.test.core.app.ApplicationProvider.getApplicationContext())
+            .isEmpty()) {
+          FirebaseApp.initializeApp(
+              androidx.test.core.app.ApplicationProvider.getApplicationContext())
+        }
+      } catch (e: Exception) {
+        // FirebaseApp might already be initialized, continue
+        android.util.Log.w("PassRepoTest", "Firebase init warning: ${e.message}")
+      }
+
       auth.signInAnonymously().await()
       uid = getTestUserId("test")
       clearUserPass(uid)
     }
-    // Prepare reflection target for dataToPassStrict
     strictRepo = PassRepositoryFirebase(firestore, functions)
     strictMethod =
         PassRepositoryFirebase::class

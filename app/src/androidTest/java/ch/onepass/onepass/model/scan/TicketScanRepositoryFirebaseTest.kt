@@ -41,7 +41,7 @@ class TicketScanRepositoryFirebaseTest {
     every { result.data } returns data
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val res = repo.validateByPass("qr", "event", "device")
+    val res = repo.validateByPass("qr", "event")
 
     assertTrue(res.isSuccess)
     val accepted = res.getOrNull() as ScanDecision.Accepted
@@ -63,7 +63,7 @@ class TicketScanRepositoryFirebaseTest {
     every { result.data } returns data
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val res = repo.validateByPass("qr", "event", "device")
+    val res = repo.validateByPass("qr", "event")
 
     assertTrue(res.isSuccess)
     val accepted = res.getOrNull() as ScanDecision.Accepted
@@ -78,7 +78,7 @@ class TicketScanRepositoryFirebaseTest {
     every { result.data } returns data
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val res = repo.validateByPass("qr", "event", "device")
+    val res = repo.validateByPass("qr", "event")
 
     assertTrue(res.isSuccess)
     val rejected = res.getOrNull() as ScanDecision.Rejected
@@ -92,7 +92,7 @@ class TicketScanRepositoryFirebaseTest {
     every { result.data } returns data
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val res = repo.validateByPass("qr", "event", "device")
+    val res = repo.validateByPass("qr", "event")
 
     assertTrue(res.isSuccess)
     val rejected = res.getOrNull() as ScanDecision.Rejected
@@ -102,19 +102,13 @@ class TicketScanRepositoryFirebaseTest {
 
   @Test
   fun failsOnEmptyQr() = runTest {
-    val res = repo.validateByPass("", "event", "device")
+    val res = repo.validateByPass("", "event")
     assertTrue(res.isFailure)
   }
 
   @Test
   fun failsOnEmptyEventId() = runTest {
-    val res = repo.validateByPass("qr", "", "device")
-    assertTrue(res.isFailure)
-  }
-
-  @Test
-  fun failsOnEmptyDeviceId() = runTest {
-    val res = repo.validateByPass("qr", "event", "")
+    val res = repo.validateByPass("qr", "")
     assertTrue(res.isFailure)
   }
 
@@ -126,7 +120,7 @@ class TicketScanRepositoryFirebaseTest {
     every { result.data } returns data
     every { callable.call(any()) } returns Tasks.forResult(result)
 
-    val res = repo.validateByPass("qr", "event", "device")
+    val res = repo.validateByPass("qr", "event")
     assertTrue(res.isFailure)
   }
 
@@ -134,7 +128,7 @@ class TicketScanRepositoryFirebaseTest {
   fun returnsFailureWhenCloudFunctionThrows() = runTest {
     every { callable.call(any()) } returns Tasks.forException(RuntimeException("CF down"))
 
-    val res = repo.validateByPass("qr", "event", "device")
+    val res = repo.validateByPass("qr", "event")
     assertTrue(res.isFailure)
   }
 }
