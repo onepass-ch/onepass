@@ -612,33 +612,32 @@ class ScannerViewModelTest {
         assertTrue(vm.state.value.isProcessing)
       }
 
-    @Test
-    fun allRejectionReasonsShouldShowCorrectMessages() =
-        runTest(testDispatcher) {
-            val reasonsToMessages = mapOf(
+  @Test
+  fun allRejectionReasonsShouldShowCorrectMessages() =
+      runTest(testDispatcher) {
+        val reasonsToMessages =
+            mapOf(
                 ScanDecision.Reason.UNREGISTERED to "User not registered",
                 ScanDecision.Reason.ALREADY_SCANNED to "Already scanned",
                 ScanDecision.Reason.BAD_SIGNATURE to "Invalid signature",
                 ScanDecision.Reason.REVOKED to "Pass revoked",
-                ScanDecision.Reason.UNKNOWN to "Access denied"
-            )
+                ScanDecision.Reason.UNKNOWN to "Access denied")
 
-            reasonsToMessages.forEach { (reason, expectedMessage) ->
-                val repo =
-                    object : TicketScanRepository {
-                        override suspend fun validateByPass(
-                            qrText: String,
-                            eventId: String
-                        ): Result<ScanDecision> =
-                            Result.success(ScanDecision.Rejected(reason = reason))
-                    }
-                val vm = createViewModel(testScheduler, customRepo = repo)
+        reasonsToMessages.forEach { (reason, expectedMessage) ->
+          val repo =
+              object : TicketScanRepository {
+                override suspend fun validateByPass(
+                    qrText: String,
+                    eventId: String
+                ): Result<ScanDecision> = Result.success(ScanDecision.Rejected(reason = reason))
+              }
+          val vm = createViewModel(testScheduler, customRepo = repo)
 
-                vm.onQrScanned(createValidQr())
-                advanceUntilIdle()
+          vm.onQrScanned(createValidQr())
+          advanceUntilIdle()
 
-                assertEquals(ScannerUiState.Status.REJECTED, vm.state.value.status)
-                assertEquals(expectedMessage, vm.state.value.message)
-            }
+          assertEquals(ScannerUiState.Status.REJECTED, vm.state.value.status)
+          assertEquals(expectedMessage, vm.state.value.message)
         }
+      }
 }
