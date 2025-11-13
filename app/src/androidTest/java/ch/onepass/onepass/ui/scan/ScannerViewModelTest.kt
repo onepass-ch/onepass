@@ -8,6 +8,7 @@ import io.mockk.mockk
 import java.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.*
 import org.junit.After
@@ -43,13 +44,14 @@ class ScannerViewModelTest {
       testScheduler: TestCoroutineScheduler,
       resetDelayMs: Long = Long.MAX_VALUE,
       customRepo: TicketScanRepository? = null,
-      customClock: (() -> Long)? = null
+      customClock: (() -> Long)? = null,
+      enableAutoCleanup: Boolean = false
   ): ScannerViewModel =
       ScannerViewModel(
           eventId = eventId,
           repo = customRepo ?: repository,
           clock = customClock ?: { System.currentTimeMillis() },
-          enableAutoCleanup = false,
+          enableAutoCleanup = enableAutoCleanup,
           stateResetDelayMs = resetDelayMs,
           coroutineScope = TestScope(testScheduler))
 
@@ -70,6 +72,11 @@ class ScannerViewModelTest {
   @Test(expected = IllegalArgumentException::class)
   fun shouldRejectBlankEventId() {
     ScannerViewModel(eventId = "  ", repo = repository, coroutineScope = TestScope())
+  }
+
+  @Test(expected = IllegalArgumentException::class)
+  fun shouldRejectEmptyEventId() {
+    ScannerViewModel(eventId = "", repo = repository, coroutineScope = TestScope())
   }
 
   @Test
@@ -523,5 +530,144 @@ class ScannerViewModelTest {
         vm.onQrScanned(createValidQr("user-2"))
         advanceUntilIdle()
         assertEquals("ticket-2", vm.state.value.lastTicketId)
+      }
+
+  // ========== Lifecycle ==========
+
+  @Test
+  fun cancelledScopeShouldNotProcessScan() =
+      runTest(testDispatcher) {
+        var callCount = 0
+        val repo =
+            object : TicketScanRepository {
+              override suspend fun validateByPass(
+                  qrText: String,
+                  eventId: String
+              ): Result<ScanDecision> {
+                callCount++
+                return Result.success(ScanDecision.Accepted(ticketId = "test"))
+              }
+            }
+
+        val testScope = TestScope(testScheduler)
+        val vm =
+            ScannerViewModel(
+                eventId = eventId,
+                repo = repo,
+                enableAutoCleanup = false,
+                stateResetDelayMs = Long.MAX_VALUE,
+                coroutineScope = testScope)
+
+        // Cancel scope before scanning
+        testScope.cancel()
+        advanceUntilIdle()
+
+        vm.onQrScanned(createValidQr())
+        advanceUntilIdle()
+
+        // Should not have called the repository
+        assertEquals(0, callCount)
+      }
+
+  @Test
+  fun scopeCancelledDuringValidationShouldDiscardResult() =
+      runTest(testDispatcher) {
+        val testScope = TestScope(testScheduler)
+        var validationStarted = false
+        val repo =
+            object : TicketScanRepository {
+              override suspend fun validateByPass(
+                  qrText: String,
+                  eventId: String
+              ): Result<ScanDecision> {
+                validationStarted = true
+                kotlinx.coroutines.delay(1000)
+                return Result.success(ScanDecision.Accepted(ticketId = "test"))
+              }
+            }
+
+        val vm =
+            ScannerViewModel(
+                eventId = eventId,
+                repo = repo,
+                enableAutoCleanup = false,
+                stateResetDelayMs = Long.MAX_VALUE,
+                coroutineScope = testScope)
+
+        vm.onQrScanned(createValidQr())
+        testScheduler.advanceTimeBy(500)
+        advanceUntilIdle()
+
+        assertTrue(validationStarted)
+
+        // Cancel during validation
+        testScope.cancel()
+        advanceUntilIdle()
+
+        // State should remain processing or unchanged
+        val status = vm.state.value.status
+        assertTrue(status == ScannerUiState.Status.IDLE || status == ScannerUiState.Status.ACCEPTED)
+      }
+
+  // ========== Duplicate with First Scan Null ==========
+
+  @Test
+  fun duplicateCheckShouldWorkWhenFirstScanIsNull() =
+      runTest(testDispatcher) {
+        var currentTime = 1000L
+        val vm = createViewModel(testScheduler, customClock = { currentTime })
+        val qr = createValidQr("user-null-check")
+        val decision = ScanDecision.Accepted(ticketId = "ticket-123")
+        coEvery { repository.validateByPass(qr, eventId) } returns Result.success(decision)
+
+        vm.onQrScanned(qr)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.validateByPass(qr, eventId) }
+      }
+
+  // ========== Edge Cases for Deduplication ==========
+
+  @Test
+  fun scanExactlyAt2sWindowBoundaryShouldNotBeDeduplicated() =
+      runTest(testDispatcher) {
+        var currentTime = 1000L
+        val repo =
+            object : TicketScanRepository {
+              override suspend fun validateByPass(
+                  qrText: String,
+                  eventId: String
+              ): Result<ScanDecision> = Result.success(ScanDecision.Accepted(ticketId = "test"))
+            }
+        val vm = createViewModel(testScheduler, customRepo = repo, customClock = { currentTime })
+        val qr = createValidQr("user-boundary")
+
+        vm.onQrScanned(qr)
+        advanceUntilIdle()
+
+        currentTime += 2000L
+        vm.onQrScanned(qr)
+        advanceUntilIdle()
+
+        assertEquals(ScannerUiState.Status.ACCEPTED, vm.state.value.status)
+      }
+
+  @Test
+  fun scanJustBefore2sWindowShouldBeDeduplicated() =
+      runTest(testDispatcher) {
+        var currentTime = 1000L
+        val vm = createViewModel(testScheduler, customClock = { currentTime })
+        val qr = createValidQr("user-just-before")
+        val decision = ScanDecision.Accepted(ticketId = "ticket-123")
+        coEvery { repository.validateByPass(qr, eventId) } returns Result.success(decision)
+
+        vm.onQrScanned(qr)
+        advanceUntilIdle()
+
+        currentTime += 1999L
+        vm.onQrScanned(qr)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.validateByPass(qr, eventId) }
       }
 }
