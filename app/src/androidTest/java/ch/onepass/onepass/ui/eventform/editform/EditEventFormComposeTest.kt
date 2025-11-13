@@ -430,7 +430,7 @@ class EditEventFormComposeTest {
     composeTestRule.waitForIdle()
 
     // Find and clear price field
-    composeTestRule.onNodeWithText("25.0").performScrollTo().performTextClearance()
+    composeTestRule.onNodeWithText("25").performScrollTo().performTextClearance()
 
     composeTestRule.onNodeWithText("ex: 12").performTextInput("30.5")
 
