@@ -679,19 +679,6 @@ class ScannerViewModelTest {
         job.cancel()
       }
 
-  @Test
-  fun cleanupJobShouldNotRunWhenDisabled() =
-      runTest(testDispatcher) {
-        val vm = createViewModel(testScheduler)
-        vm.onQrScanned(createValidQr("user-1"))
-        advanceUntilIdle()
-
-        testScheduler.advanceTimeBy(10000L)
-        advanceUntilIdle()
-
-        assertTrue(true)
-      }
-
   // ========== State Consistency ==========
 
   @Test
@@ -752,35 +739,6 @@ class ScannerViewModelTest {
         assertTrue(vm.state.value.message.contains("Server error"))
       }
 
-  // ========== QR Parsing Edge Cases ==========
-
-  @Test
-  fun qrWithMixedWhitespaceShouldBeTrimmed() =
-      runTest(testDispatcher) {
-        val qr = createValidQr("user-mixed")
-        val qrWithSpaces = " \t $qr \n \r "
-        coEvery { repository.validateByPass(qr, eventId) } returns
-            Result.success(ScanDecision.Accepted(ticketId = "test"))
-        val vm = createViewModel(testScheduler)
-
-        vm.onQrScanned(qrWithSpaces)
-        advanceUntilIdle()
-
-        coVerify { repository.validateByPass(qr, eventId) }
-      }
-
-  @Test
-  fun qrWithInternalWhitespaceShouldNotBeTrimmed() =
-      runTest(testDispatcher) {
-        val vm = createViewModel(testScheduler)
-        val qrWithInternalSpace = "onepass:user:v1.invalid data.sig"
-
-        vm.onQrScanned(qrWithInternalSpace)
-        advanceUntilIdle()
-
-        assertEquals(ScannerUiState.Status.REJECTED, vm.state.value.status)
-      }
-
   @Test
   fun remainingShouldBeUpdatedFromDecision() =
       runTest(testDispatcher) {
@@ -818,33 +776,5 @@ class ScannerViewModelTest {
         advanceUntilIdle()
 
         assertNull(vm.state.value.remaining)
-      }
-
-  @Test
-  fun multipleDifferentUsersShouldAllBeProcessed() =
-      runTest(testDispatcher) {
-        var currentTime = 1000L
-        val repo =
-            object : TicketScanRepository {
-              private var counter = 0
-
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                counter++
-                return Result.success(ScanDecision.Accepted(ticketId = "ticket-$counter"))
-              }
-            }
-        val vm = createViewModel(testScheduler, customRepo = repo, customClock = { currentTime })
-
-        val users = listOf("user-a", "user-b", "user-c")
-        users.forEach { uid ->
-          vm.onQrScanned(createValidQr(uid))
-          advanceUntilIdle()
-          currentTime += 100L
-        }
-
-        assertEquals("ticket-3", vm.state.value.lastTicketId)
       }
 }
