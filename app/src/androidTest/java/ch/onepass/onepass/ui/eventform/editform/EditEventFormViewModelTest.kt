@@ -89,7 +89,7 @@ class EditEventFormViewModelTest {
     assertEquals("25/12/2025", form.date)
     assertEquals("14:30", form.startTime)
     assertEquals("16:30", form.endTime)
-    assertEquals("25.0", form.price)
+    assertEquals("25", form.price)
     assertEquals("100", form.capacity)
   }
 

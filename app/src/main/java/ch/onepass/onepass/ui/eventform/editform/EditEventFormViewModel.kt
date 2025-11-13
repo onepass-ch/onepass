@@ -144,8 +144,7 @@ private fun Event.toFormState(): EventFormViewModel.EventFormState {
   val dateString = startTime?.toDate()?.let { dateFormat.format(it) } ?: ""
   val startTimeString = startTime?.toDate()?.let { timeFormat.format(it) } ?: ""
   val endTimeString = endTime?.toDate()?.let { timeFormat.format(it) } ?: ""
-
-  val lowestPrice = pricingTiers.minOfOrNull { it.price } ?: 0.0
+  val lowestPrice = this.lowestPrice
 
   return EventFormViewModel.EventFormState(
       title = title,
@@ -154,6 +153,6 @@ private fun Event.toFormState(): EventFormViewModel.EventFormState {
       endTime = endTimeString,
       date = dateString,
       location = location?.name ?: "",
-      price = if (lowestPrice > 0) lowestPrice.toString() else "0",
+      price = if (lowestPrice > 0u) lowestPrice.toString() else "0",
       capacity = capacity.toString())
 }
