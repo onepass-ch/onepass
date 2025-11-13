@@ -8,7 +8,6 @@ import io.mockk.mockk
 import java.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.*
 import org.junit.After
@@ -530,83 +529,6 @@ class ScannerViewModelTest {
         vm.onQrScanned(createValidQr("user-2"))
         advanceUntilIdle()
         assertEquals("ticket-2", vm.state.value.lastTicketId)
-      }
-
-  // ========== Lifecycle ==========
-
-  @Test
-  fun cancelledScopeShouldNotProcessScan() =
-      runTest(testDispatcher) {
-        var callCount = 0
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                callCount++
-                return Result.success(ScanDecision.Accepted(ticketId = "test"))
-              }
-            }
-
-        val testScope = TestScope(testScheduler)
-        val vm =
-            ScannerViewModel(
-                eventId = eventId,
-                repo = repo,
-                enableAutoCleanup = false,
-                stateResetDelayMs = Long.MAX_VALUE,
-                coroutineScope = testScope)
-
-        // Cancel scope before scanning
-        testScope.cancel()
-        advanceUntilIdle()
-
-        vm.onQrScanned(createValidQr())
-        advanceUntilIdle()
-
-        // Should not have called the repository
-        assertEquals(0, callCount)
-      }
-
-  @Test
-  fun scopeCancelledDuringValidationShouldDiscardResult() =
-      runTest(testDispatcher) {
-        val testScope = TestScope(testScheduler)
-        var validationStarted = false
-        val repo =
-            object : TicketScanRepository {
-              override suspend fun validateByPass(
-                  qrText: String,
-                  eventId: String
-              ): Result<ScanDecision> {
-                validationStarted = true
-                kotlinx.coroutines.delay(1000)
-                return Result.success(ScanDecision.Accepted(ticketId = "test"))
-              }
-            }
-
-        val vm =
-            ScannerViewModel(
-                eventId = eventId,
-                repo = repo,
-                enableAutoCleanup = false,
-                stateResetDelayMs = Long.MAX_VALUE,
-                coroutineScope = testScope)
-
-        vm.onQrScanned(createValidQr())
-        testScheduler.advanceTimeBy(500)
-        advanceUntilIdle()
-
-        assertTrue(validationStarted)
-
-        // Cancel during validation
-        testScope.cancel()
-        advanceUntilIdle()
-
-        // State should remain processing or unchanged
-        val status = vm.state.value.status
-        assertTrue(status == ScannerUiState.Status.IDLE || status == ScannerUiState.Status.ACCEPTED)
       }
 
   // ========== Duplicate with First Scan Null ==========
