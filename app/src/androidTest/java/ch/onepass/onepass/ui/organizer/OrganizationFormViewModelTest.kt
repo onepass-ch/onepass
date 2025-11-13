@@ -7,10 +7,8 @@ import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.organization.OrganizationStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
@@ -82,17 +80,12 @@ class OrganizationFormViewModelTest {
     viewModel.updateName("")
     viewModel.updateDescription("")
 
-    val uiStates = mutableListOf<OrganizationFormUiState>()
-    val job = launch { viewModel.uiState.take(1).toList(uiStates) }
-
     viewModel.createOrganization("user123")
-    runCurrent()
 
-    job.cancel()
+    val finalState = viewModel.uiState.filter { it.errorMessage != null }.first()
 
-    val state = uiStates[0]
-    assertNull(state.successOrganizationId)
-    assertEquals("Please fix errors", state.errorMessage)
+    assertNull(finalState.successOrganizationId)
+    assertEquals("Please fix errors", finalState.errorMessage)
   }
 
   private fun OrganizationFormViewModel.createOrganizationValidation(): Boolean {
