@@ -2,7 +2,9 @@ package ch.onepass.onepass.ui.organizer
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import ch.onepass.onepass.model.organization.*
+import ch.onepass.onepass.model.organization.Organization
+import ch.onepass.onepass.model.organization.OrganizationRepository
+import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
