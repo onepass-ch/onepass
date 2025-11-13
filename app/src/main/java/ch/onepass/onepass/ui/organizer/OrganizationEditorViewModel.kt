@@ -2,7 +2,9 @@ package ch.onepass.onepass.ui.organizer
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import ch.onepass.onepass.model.organization.*
+import ch.onepass.onepass.model.organization.Organization
+import ch.onepass.onepass.model.organization.OrganizationRepository
+import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -18,7 +20,7 @@ import kotlinx.coroutines.launch
  * @property success Indicates if the last update operation was successful.
  * @property errorMessage An error message if an error occurred, or null.
  */
-data class EditOrganizationUiState(
+data class OrganizationEditorUiState(
     val isLoading: Boolean = false,
     val organization: Organization? = null,
     val success: Boolean = false,
@@ -39,7 +41,7 @@ data class EditOrganizationUiState(
  * @property tiktok Optional TikTok profile link or handle.
  * @property address Optional physical address of the organization.
  */
-data class EditOrganizationData(
+data class OrganizationEditorData(
     val id: String,
     val name: String,
     val description: String,
@@ -50,21 +52,44 @@ data class EditOrganizationData(
     val facebook: String?,
     val tiktok: String?,
     val address: String?
-)
+) {
+  companion object {
+    /**
+     * Create [OrganizationEditorData] from [OrganizationFormState].
+     *
+     * @param id The unique identifier of the organization.
+     * @param formState The form state containing the editable fields.
+     * @return An instance of [OrganizationEditorData] populated from the form state.
+     */
+    fun fromForm(id: String, formState: OrganizationFormState): OrganizationEditorData {
+      return OrganizationEditorData(
+          id = id,
+          name = formState.name.value,
+          description = formState.description.value,
+          contactEmail = formState.contactEmail.value.ifBlank { null },
+          contactPhone = formState.contactPhone.value.ifBlank { null },
+          website = formState.website.value.ifBlank { null },
+          instagram = formState.instagram.value.ifBlank { null },
+          facebook = formState.facebook.value.ifBlank { null },
+          tiktok = formState.tiktok.value.ifBlank { null },
+          address = formState.address.value.ifBlank { null })
+    }
+  }
+}
 
 /**
  * ViewModel for editing organization details.
  *
  * @property repository The [OrganizationRepository] used for data operations.
  */
-class EditOrganizationViewModel(
+class OrganizationEditorViewModel(
     private val repository: OrganizationRepository = OrganizationRepositoryFirebase()
 ) : ViewModel() {
 
   /** The UI state exposed to the Composable. */
-  private val _uiState = MutableStateFlow(EditOrganizationUiState())
+  private val _uiState = MutableStateFlow(OrganizationEditorUiState())
   /** The UI state exposed to the Composable. */
-  val uiState: StateFlow<EditOrganizationUiState> = _uiState.asStateFlow()
+  val uiState: StateFlow<OrganizationEditorUiState> = _uiState.asStateFlow()
 
   /**
    * Load organization details by ID.
@@ -95,9 +120,9 @@ class EditOrganizationViewModel(
   /**
    * Update organization details.
    *
-   * @param data The [EditOrganizationData] containing updated fields.
+   * @param data The [OrganizationEditorData] containing updated fields.
    */
-  fun updateOrganization(data: EditOrganizationData) {
+  fun updateOrganization(data: OrganizationEditorData) {
     val currentOrg = _uiState.value.organization
     if (currentOrg == null) {
       // Cannot update if organization is not loaded

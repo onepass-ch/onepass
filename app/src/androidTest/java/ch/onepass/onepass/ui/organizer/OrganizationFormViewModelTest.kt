@@ -1,29 +1,29 @@
 package ch.onepass.onepass.ui.organizer
 
+import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.Organization
+import ch.onepass.onepass.model.organization.OrganizationInvitation
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.organization.OrganizationStatus
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.take
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
-class BecomeOrganizerViewModelTest {
+class OrganizationFormViewModelTest {
 
   private lateinit var repository: FakeOrganizationRepository
-  private lateinit var viewModel: BecomeOrganizerViewModel
+  private lateinit var viewModel: OrganizationFormViewModel
 
   @Before
   fun setup() {
     repository = FakeOrganizationRepository()
-    viewModel = BecomeOrganizerViewModel(repository)
+    viewModel = OrganizationFormViewModel(repository)
   }
 
   @Test
@@ -80,21 +80,16 @@ class BecomeOrganizerViewModelTest {
     viewModel.updateName("")
     viewModel.updateDescription("")
 
-    val uiStates = mutableListOf<BecomeOrganizerUiState>()
-    val job = launch { viewModel.uiState.take(1).toList(uiStates) }
-
     viewModel.createOrganization("user123")
-    runCurrent()
 
-    job.cancel()
+    val finalState = viewModel.uiState.filter { it.errorMessage != null }.first()
 
-    val state = uiStates[0]
-    assertNull(state.successOrganizationId)
-    assertEquals("Please fix errors", state.errorMessage)
+    assertNull(finalState.successOrganizationId)
+    assertEquals("Please fix errors", finalState.errorMessage)
   }
 
-  private fun BecomeOrganizerViewModel.createOrganizationValidation(): Boolean {
-    val method = BecomeOrganizerViewModel::class.java.getDeclaredMethod("validateForm")
+  private fun OrganizationFormViewModel.createOrganizationValidation(): Boolean {
+    val method = OrganizationFormViewModel::class.java.getDeclaredMethod("validateForm")
     method.isAccessible = true
     return method.invoke(this) as Boolean
   }
@@ -140,18 +135,14 @@ class FakeOrganizationRepository : OrganizationRepository {
       newRole: OrganizationRole
   ) = TODO()
 
-  override suspend fun createInvitation(
-      invitation: ch.onepass.onepass.model.organization.OrganizationInvitation
-  ) = TODO()
+  override suspend fun createInvitation(invitation: OrganizationInvitation) = TODO()
 
   override fun getPendingInvitations(organizationId: String) = TODO()
 
   override fun getInvitationsByEmail(email: String) = TODO()
 
-  override suspend fun updateInvitationStatus(
-      invitationId: String,
-      newStatus: ch.onepass.onepass.model.organization.InvitationStatus
-  ) = TODO()
+  override suspend fun updateInvitationStatus(invitationId: String, newStatus: InvitationStatus) =
+      TODO()
 
   override suspend fun deleteInvitation(invitationId: String) = TODO()
 }

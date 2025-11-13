@@ -6,8 +6,6 @@ import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import ch.onepass.onepass.model.organization.OrganizationStatus
-import ch.onepass.onepass.model.user.UserRepository
-import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,7 +29,7 @@ data class FieldState(
 )
 
 /**
- * Data class representing the state of the Become Organizer form.
+ * Data class representing the state of the Organizer form.
  *
  * @param name The organization name field state.
  * @param description The organization description field state.
@@ -43,7 +41,7 @@ data class FieldState(
  * @param tiktok The organization TikTok field state.
  * @param address The organization address field state.
  */
-data class BecomeOrganizerFormState(
+data class OrganizationFormState(
     val name: FieldState = FieldState(),
     val description: FieldState = FieldState(),
     val contactEmail: FieldState = FieldState(),
@@ -56,34 +54,33 @@ data class BecomeOrganizerFormState(
 )
 
 /**
- * Data class representing the UI state of the Become Organizer screen.
+ * Data class representing the UI state of the Organizer form.
  *
  * @param successOrganizationId The ID of the created organization on success.
  * @param errorMessage An optional error message if an error occurred.
  */
-class BecomeOrganizerUiState(
+class OrganizationFormUiState(
     val successOrganizationId: String? = null,
     val errorMessage: String? = null
 )
 
 /**
- * ViewModel for managing the Become Organizer form and its submission.
+ * ViewModel for managing the Organizer form and its submission.
  *
- * @param organizationRepository The organization repository for data operations.
+ * @param repository The organization repository for data operations.
  */
-class BecomeOrganizerViewModel(
-    private val organizationRepository: OrganizationRepository = OrganizationRepositoryFirebase(),
-    private val userRepository: UserRepository = UserRepositoryFirebase()
+class OrganizationFormViewModel(
+    private val repository: OrganizationRepository = OrganizationRepositoryFirebase()
 ) : ViewModel() {
 
   /** Private form state */
-  private val _formState = MutableStateFlow(BecomeOrganizerFormState())
+  private val _formState = MutableStateFlow(OrganizationFormState())
   /** Public form state */
-  val formState: StateFlow<BecomeOrganizerFormState> = _formState.asStateFlow()
+  val formState: StateFlow<OrganizationFormState> = _formState.asStateFlow()
   /** Public UI state */
-  private val _uiState = MutableStateFlow(BecomeOrganizerUiState())
+  private val _uiState = MutableStateFlow(OrganizationFormUiState())
   /** Public UI state */
-  val uiState: StateFlow<BecomeOrganizerUiState> = _uiState.asStateFlow()
+  val uiState: StateFlow<OrganizationFormUiState> = _uiState.asStateFlow()
 
   /** Phone number utility instance */
   private val phoneUtil: PhoneNumberUtil = PhoneNumberUtil.getInstance()
@@ -389,6 +386,23 @@ class BecomeOrganizerViewModel(
   }
 
   /**
+   * Initializes the form fields from an existing organization
+   *
+   * @param org The organization to initialize from
+   */
+  fun initializeFrom(org: Organization) {
+    updateName(org.name)
+    updateDescription(org.description)
+    updateContactEmail(org.contactEmail ?: "")
+    updateContactPhone(org.contactPhone ?: "")
+    updateWebsite(org.website ?: "")
+    updateInstagram(org.instagram ?: "")
+    updateFacebook(org.facebook ?: "")
+    updateTiktok(org.tiktok ?: "")
+    updateAddress(org.address ?: "")
+  }
+
+  /**
    * Validates the entire form
    *
    * @return True if the form is valid, false otherwise
@@ -432,11 +446,11 @@ class BecomeOrganizerViewModel(
     viewModelScope.launch {
       // Validate form before submission
       if (!validateForm()) {
-        _uiState.value = BecomeOrganizerUiState(errorMessage = "Please fix errors")
+        _uiState.value = OrganizationFormUiState(errorMessage = "Please fix errors")
         return@launch
       }
       val s = _formState.value
-      _uiState.value = BecomeOrganizerUiState()
+      _uiState.value = OrganizationFormUiState()
       try {
         // Construct organization object
         val org =
@@ -452,31 +466,33 @@ class BecomeOrganizerViewModel(
                 facebook = s.facebook.value,
                 tiktok = s.tiktok.value,
                 address = s.address.value)
-        val result = organizationRepository.createOrganization(org)
+        val result = repository.createOrganization(org)
 
         // Update UI state based on result
         _uiState.value =
             result.fold(
-                onSuccess = { orgId ->
-                  userRepository.addOrganizationToUser(ownerId, orgId)
-                  BecomeOrganizerUiState(successOrganizationId = orgId)
-                },
+                onSuccess = { OrganizationFormUiState(successOrganizationId = it) },
                 onFailure = {
-                  BecomeOrganizerUiState(errorMessage = it.message ?: "Unknown error")
+                  OrganizationFormUiState(errorMessage = it.message ?: "Unknown error")
                 })
       } catch (e: Exception) {
-        _uiState.value = BecomeOrganizerUiState(errorMessage = e.message ?: "Unknown error")
+        _uiState.value = OrganizationFormUiState(errorMessage = e.message ?: "Unknown error")
       }
     }
   }
 
+  /** Resets the form to its initial empty state */
+  fun resetForm() {
+    _formState.value = OrganizationFormState() // Reset to initial empty state
+  }
+
   /** Clears any success state */
   fun clearSuccess() {
-    _uiState.value = BecomeOrganizerUiState()
+    _uiState.value = OrganizationFormUiState()
   }
 
   /** Clears any error state */
   fun clearError() {
-    _uiState.value = BecomeOrganizerUiState()
+    _uiState.value = OrganizationFormUiState()
   }
 }
