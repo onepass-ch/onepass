@@ -1,4 +1,4 @@
-package ch.onepass.onepass.ui.createform
+package ch.onepass.onepass.ui.eventform.createform
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
