@@ -43,14 +43,13 @@ class ScannerViewModelTest {
       testScheduler: TestCoroutineScheduler,
       resetDelayMs: Long = Long.MAX_VALUE,
       customRepo: TicketScanRepository? = null,
-      customClock: (() -> Long)? = null,
-      enableAutoCleanup: Boolean = false
+      customClock: (() -> Long)? = null
   ): ScannerViewModel =
       ScannerViewModel(
           eventId = eventId,
           repo = customRepo ?: repository,
           clock = customClock ?: { System.currentTimeMillis() },
-          enableAutoCleanup = enableAutoCleanup,
+          enableAutoCleanup = false,
           stateResetDelayMs = resetDelayMs,
           coroutineScope = TestScope(testScheduler))
 
@@ -531,24 +530,7 @@ class ScannerViewModelTest {
         assertEquals("ticket-2", vm.state.value.lastTicketId)
       }
 
-  // ========== Duplicate with First Scan Null ==========
-
-  @Test
-  fun duplicateCheckShouldWorkWhenFirstScanIsNull() =
-      runTest(testDispatcher) {
-        var currentTime = 1000L
-        val vm = createViewModel(testScheduler, customClock = { currentTime })
-        val qr = createValidQr("user-null-check")
-        val decision = ScanDecision.Accepted(ticketId = "ticket-123")
-        coEvery { repository.validateByPass(qr, eventId) } returns Result.success(decision)
-
-        vm.onQrScanned(qr)
-        advanceUntilIdle()
-
-        coVerify(exactly = 1) { repository.validateByPass(qr, eventId) }
-      }
-
-  // ========== Edge Cases for Deduplication ==========
+  // ========== Edge Cases ==========
 
   @Test
   fun scanExactlyAt2sWindowBoundaryShouldNotBeDeduplicated() =
@@ -591,5 +573,42 @@ class ScannerViewModelTest {
         advanceUntilIdle()
 
         coVerify(exactly = 1) { repository.validateByPass(qr, eventId) }
+      }
+
+  @Test
+  fun duplicateCheckWithFirstScanShouldWork() =
+      runTest(testDispatcher) {
+        var currentTime = 1000L
+        val vm = createViewModel(testScheduler, customClock = { currentTime })
+        val qr = createValidQr("user-first")
+        val decision = ScanDecision.Accepted(ticketId = "ticket-123")
+        coEvery { repository.validateByPass(qr, eventId) } returns Result.success(decision)
+
+        vm.onQrScanned(qr)
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.validateByPass(qr, eventId) }
+      }
+
+  @Test
+  fun validatingMessageShouldBeShownDuringScan() =
+      runTest(testDispatcher) {
+        val repo =
+            object : TicketScanRepository {
+              override suspend fun validateByPass(
+                  qrText: String,
+                  eventId: String
+              ): Result<ScanDecision> {
+                kotlinx.coroutines.delay(100)
+                return Result.success(ScanDecision.Accepted(ticketId = "test"))
+              }
+            }
+        val vm = createViewModel(testScheduler, customRepo = repo)
+
+        vm.onQrScanned(createValidQr())
+        testScheduler.advanceTimeBy(50)
+
+        assertEquals("Validating…", vm.state.value.message)
+        assertTrue(vm.state.value.isProcessing)
       }
 }
