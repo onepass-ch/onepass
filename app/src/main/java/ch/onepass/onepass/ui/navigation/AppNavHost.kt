@@ -261,14 +261,14 @@ fun AppNavHost(
     composable(Screen.BecomeOrganizer.route) {
       val becomeOrganizerVm: OrganizationFormViewModel = viewModel()
       val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-        CreateOrganizationScreen(
-            ownerId = currentUserId,
-            viewModel = becomeOrganizerVm,
-            onOrganizationCreated = {
-              navController.navigate(Screen.OrganizationFeed.route) {
-                popUpTo(Screen.BecomeOrganizer.route) { inclusive = true }
-              }
-            })
+      CreateOrganizationScreen(
+          ownerId = currentUserId,
+          viewModel = becomeOrganizerVm,
+          onOrganizationCreated = {
+            navController.navigate(Screen.OrganizationFeed.route) {
+              popUpTo(Screen.BecomeOrganizer.route) { inclusive = true }
+            }
+          })
     }
     // ------------------ My Invitations ----------------
     composable(Screen.MyInvitations.route) {
