@@ -6,7 +6,7 @@ import androidx.compose.ui.test.junit4.AndroidComposeTestRule
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.event.EventRepository
-import ch.onepass.onepass.ui.eventform.createform.CreateEventFormViewModel.ValidationError
+import ch.onepass.onepass.ui.eventform.EventFormViewModel.ValidationError
 import io.mockk.mockk
 import java.util.Calendar
 import kotlinx.coroutines.test.runTest

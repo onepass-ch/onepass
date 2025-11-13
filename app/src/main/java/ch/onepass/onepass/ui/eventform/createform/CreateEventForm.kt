@@ -25,7 +25,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
-import ch.onepass.onepass.ui.eventform.createform.CreateEventFormViewModel.ValidationError
+import ch.onepass.onepass.ui.eventform.EventFormViewModel.ValidationError
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
 import java.text.SimpleDateFormat
