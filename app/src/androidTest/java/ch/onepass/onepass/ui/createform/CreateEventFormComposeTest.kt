@@ -197,7 +197,7 @@ class CreateEventFormComposeTest {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Set loading state
-    viewModel.createEvent("test-org-id", "Test Organizer")
+    viewModel.createEvent()
 
     // Wait for loading state
     composeTestRule.waitForIdle()

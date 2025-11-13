@@ -135,7 +135,8 @@ class AppNavHostTest {
       navController.navigate(NavigationDestinations.Screen.Profile.route)
     }
     composeTestRule.waitForIdle()
-
+    Thread.sleep(500)
+    composeTestRule.waitForIdle()
     // Verify we navigated to the profile screen
     composeTestRule.onNodeWithTag(ProfileTestTags.SCREEN).assertIsDisplayed()
 

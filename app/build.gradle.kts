@@ -92,6 +92,7 @@ android {
             isIncludeAndroidResources = true
             isReturnDefaultValues = true
         }
+        animationsDisabled = true
     }
 
     // Robolectric needs to be run only in debug. But its tests are placed in the shared source set (test)

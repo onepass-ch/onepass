@@ -107,9 +107,9 @@ fun AppNavHost(
           onEffect = { effect ->
             when (effect) {
               // TODO: wire to real destinations when implemented
-              ProfileEffect.NavigateToOrganizerOnboarding ->
+              ProfileEffect.NavigateToMyOrganizations ->
                   navController.navigate(Screen.ComingSoon.route)
-              ProfileEffect.NavigateToCreateEvent ->
+              ProfileEffect.NavigateToBecomeOrganizer ->
                   navController.navigate(Screen.CreateEvent.route)
               ProfileEffect.NavigateToAccountSettings,
               ProfileEffect.NavigateToPaymentMethods,
