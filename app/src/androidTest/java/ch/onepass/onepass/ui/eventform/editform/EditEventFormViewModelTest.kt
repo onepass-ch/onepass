@@ -299,4 +299,321 @@ class EditEventFormViewModelTest {
     // Assert
     assertEquals(EditEventUiState.Idle, viewModel.uiState.value)
   }
+
+  @Test
+  fun loadEventRepositoryThrowsExceptionSetsLoadErrorState() = runTest {
+    // Arrange
+    val exception = RuntimeException("Database error")
+    coEvery { mockRepository.getEventById("error-id") } throws exception
+
+    // Act
+    viewModel.loadEvent("error-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    val state = viewModel.uiState.value
+    assertTrue(state is EditEventUiState.LoadError)
+    assertEquals("Database error", (state as EditEventUiState.LoadError).message)
+  }
+
+  @Test
+  fun loadEventHandlesNullLocation() = runTest {
+    // Arrange
+    val eventNoLocation = testEvent.copy(location = null)
+    coEvery { mockRepository.getEventById("no-location") } returns flowOf(eventNoLocation)
+
+    // Act
+    viewModel.loadEvent("no-location")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    assertEquals("", viewModel.formState.value.location)
+  }
+
+  @Test
+  fun loadEventHandlesZeroPrice() = runTest {
+    // Arrange
+    val eventZeroPrice = testEvent.copy(pricingTiers = listOf(PricingTier(price = 0.0)))
+    coEvery { mockRepository.getEventById("zero-price") } returns flowOf(eventZeroPrice)
+
+    // Act
+    viewModel.loadEvent("zero-price")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    assertEquals("0", viewModel.formState.value.price)
+  }
+
+  @Test
+  fun loadEventHandlesEmptyPricingTiers() = runTest {
+    // Arrange
+    val eventNoTiers = testEvent.copy(pricingTiers = emptyList())
+    coEvery { mockRepository.getEventById("no-tiers") } returns flowOf(eventNoTiers)
+
+    // Act
+    viewModel.loadEvent("no-tiers")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    assertEquals("0", viewModel.formState.value.price)
+  }
+
+  @Test
+  fun updateStartTimeClearsTimeError() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+    viewModel.updateStartTime("20:00")
+    viewModel.updateEndTime("10:00")
+    viewModel.updateEvent()
+    testDispatcher.scheduler.advanceUntilIdle()
+    assertTrue(viewModel.fieldErrors.value.containsKey(ValidationError.TIME.key))
+
+    viewModel.updateStartTime("09:00")
+    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.TIME.key))
+  }
+
+  @Test
+  fun updateEndTimeClearsTimeError() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+    viewModel.updateStartTime("20:00")
+    viewModel.updateEndTime("10:00")
+    viewModel.updateEvent()
+    testDispatcher.scheduler.advanceUntilIdle()
+    assertTrue(viewModel.fieldErrors.value.containsKey(ValidationError.TIME.key))
+
+    viewModel.updateEndTime("21:00")
+    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.TIME.key))
+  }
+
+  @Test
+  fun updateEventValidationFailsForAllEmptyFields() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+    viewModel.updateTitle("")
+    viewModel.updateDescription("")
+    viewModel.updateDate("")
+    viewModel.updateStartTime("")
+    viewModel.updateEndTime("")
+    viewModel.updateLocation("")
+    viewModel.updatePrice("")
+    viewModel.updateCapacity("")
+
+    viewModel.updateEvent()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val errors = viewModel.fieldErrors.value
+    assertEquals(9, errors.size)
+    assertTrue(errors.containsKey(ValidationError.TITLE.key))
+    assertTrue(errors.containsKey(ValidationError.DESCRIPTION.key))
+    assertTrue(errors.containsKey(ValidationError.DATE.key))
+    assertTrue(errors.containsKey(ValidationError.START_TIME.key))
+    assertTrue(errors.containsKey(ValidationError.END_TIME.key))
+    assertTrue(errors.containsKey(ValidationError.TIME.key)) // "" <= "" is true
+    assertTrue(errors.containsKey(ValidationError.LOCATION.key))
+    assertTrue(errors.containsKey(ValidationError.PRICE_EMPTY.key))
+    assertTrue(errors.containsKey(ValidationError.CAPACITY_EMPTY.key))
+  }
+
+  @Test
+  fun updateEventValidationFailsForEndTimeBeforeStartTime() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+    viewModel.updateStartTime("14:00")
+    viewModel.updateEndTime("12:00")
+
+    viewModel.updateEvent()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val errors = viewModel.fieldErrors.value
+    assertTrue(errors.containsKey(ValidationError.TIME.key))
+  }
+
+  @Test
+  fun updateEventValidationFailsForEndTimeEqualToStartTime() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+    viewModel.updateStartTime("14:00")
+    viewModel.updateEndTime("14:00")
+
+    viewModel.updateEvent()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val errors = viewModel.fieldErrors.value
+    assertTrue(errors.containsKey(ValidationError.TIME.key))
+  }
+
+  @Test
+  fun updateEventValidationFailsForInvalidPrice() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+    viewModel.updatePrice("abc")
+
+    viewModel.updateEvent()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val errors = viewModel.fieldErrors.value
+    assertTrue(errors.containsKey(ValidationError.PRICE_INVALID.key))
+  }
+
+  @Test
+  fun updateEventValidationFailsForNegativePrice() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+    viewModel.updatePrice("-10")
+
+    viewModel.updateEvent()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val errors = viewModel.fieldErrors.value
+    assertTrue(errors.containsKey(ValidationError.PRICE_NEGATIVE.key))
+  }
+
+  @Test
+  fun updateEventValidationFailsForInvalidCapacity() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+    viewModel.updateCapacity("abc")
+
+    viewModel.updateEvent()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val errors = viewModel.fieldErrors.value
+    assertTrue(errors.containsKey(ValidationError.CAPACITY_INVALID.key))
+  }
+
+  @Test
+  fun updateEventValidationFailsForZeroCapacity() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+    viewModel.updateCapacity("0")
+
+    viewModel.updateEvent()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val errors = viewModel.fieldErrors.value
+    assertTrue(errors.containsKey(ValidationError.CAPACITY_NEGATIVE.key))
+  }
+
+  @Test
+  fun updateEventValidationFailsForNegativeCapacity() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+    viewModel.updateCapacity("-5")
+
+    viewModel.updateEvent()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val errors = viewModel.fieldErrors.value
+    assertTrue(errors.containsKey(ValidationError.CAPACITY_NEGATIVE.key))
+  }
+
+  @Test
+  fun updateEventWithInvalidDateParseFailsSetsErrorState() = runTest {
+    // Arrange
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+    viewModel.updateDate("not a date") // Will cause parseDateAndTime to return null
+
+    // Act
+    viewModel.updateEvent()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    val state = viewModel.uiState.value
+    assertTrue(state is EditEventUiState.Error)
+    assertEquals("Failed to process form data", (state as EditEventUiState.Error).message)
+  }
+
+  @Test
+  fun updateEventWithInvalidTimeParseFailsSetsErrorState() = runTest {
+    // Arrange
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+    viewModel.updateEndTime("xx:xx")
+
+    // Act
+    viewModel.updateEvent()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    val state = viewModel.uiState.value
+    assertTrue(state is EditEventUiState.Error)
+    assertEquals("Failed to process form data", (state as EditEventUiState.Error).message)
+  }
+
+  @Test
+  fun updateEventRepositoryThrowsExceptionSetsErrorState() = runTest {
+    // Arrange
+    val exception = RuntimeException("DB write failed")
+    coEvery { mockRepository.updateEvent(any()) } coAnswers
+        {
+          delay(1)
+          Result.failure(exception)
+        }
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+    viewModel.updateTitle("A valid new title") // Make form valid
+
+    // Act
+    viewModel.updateEvent()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    val state = viewModel.uiState.value
+    assertTrue(state is EditEventUiState.Error)
+    assertEquals("DB write failed", (state as EditEventUiState.Error).message)
+  }
+
+  @Test
+  fun updateEventSetsUpdatingStateBeforeCompletion() = runTest {
+    // Arrange
+    coEvery { mockRepository.updateEvent(any()) } coAnswers
+        {
+          delay(1)
+          Result.success(Unit)
+        }
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Act
+    viewModel.updateEvent()
+    testDispatcher.scheduler.runCurrent() // Run queued launch to set Updating and suspend at delay
+
+    // Assert - state should be Updating
+    assertEquals(EditEventUiState.Updating, viewModel.uiState.value)
+
+    testDispatcher.scheduler.advanceUntilIdle()
+    assertEquals(EditEventUiState.Success, viewModel.uiState.value)
+  }
+
+  @Test
+  fun clearErrorWhenNotInErrorStateDoesNothing() = runTest {
+    // Arrange
+    viewModel.loadEvent("test-event-id") // Puts state in Loading, then Idle
+    testDispatcher.scheduler.advanceUntilIdle()
+    assertEquals(EditEventUiState.Idle, viewModel.uiState.value)
+
+    // Act
+    viewModel.clearError()
+
+    // Assert
+    assertEquals(EditEventUiState.Idle, viewModel.uiState.value)
+  }
+
+  @Test
+  fun loadEventHandlesNullStartTime() = runTest {
+    // Arrange
+    val eventNullTimes = testEvent.copy(startTime = null, endTime = null)
+    coEvery { mockRepository.getEventById("null-times") } returns flowOf(eventNullTimes)
+
+    // Act
+    viewModel.loadEvent("null-times")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    assertEquals("", viewModel.formState.value.date)
+    assertEquals("", viewModel.formState.value.startTime)
+    assertEquals("", viewModel.formState.value.endTime)
+  }
 }
