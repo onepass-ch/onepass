@@ -44,6 +44,7 @@ import ch.onepass.onepass.ui.myevents.TicketStatus
 import ch.onepass.onepass.ui.theme.Typography
 import ch.onepass.onepass.ui.theme.White
 import com.google.firebase.Timestamp
+import kotlinx.coroutines.flow.collectLatest
 
 object OrganizerProfileTestTags {
   const val SCREEN = "organizer_profile_screen"
@@ -369,12 +370,14 @@ fun TabSection(
 @Composable
 fun OrganizerProfileScreen(
     organizationId: String,
-    viewModel: OrganizerProfileViewModel = viewModel()
+    viewModel: OrganizerProfileViewModel = viewModel(),
+    onEffect: (OrganizerProfileEffect) -> Unit = {}
 ) {
   val state by viewModel.state.collectAsState()
 
   LaunchedEffect(organizationId) { viewModel.loadOrganizationProfile(organizationId) }
 
+  LaunchedEffect(viewModel) { viewModel.effects.collectLatest { effect -> onEffect(effect) } }
   OrganizerProfileContent(
       name = state.name,
       description = state.description,

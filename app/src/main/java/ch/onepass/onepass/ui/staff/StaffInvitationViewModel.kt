@@ -45,9 +45,9 @@ data class StaffInvitationUiState(
 /**
  * Result of an invitation attempt.
  *
- * @property success Whether the invitation was successfully created.
- * @property alreadyInvited Whether the user was already invited (not an error, just informational).
- * @property errorMessage Error message if the invitation failed.
+ * @property Success Whether the invitation was successfully created.
+ * @property AlreadyInvited Whether the user was already invited (not an error, just informational).
+ * @property Error Error message if the invitation failed.
  */
 sealed class InvitationResult {
   data object Success : InvitationResult()

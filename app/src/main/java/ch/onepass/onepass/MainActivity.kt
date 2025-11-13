@@ -21,8 +21,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import ch.onepass.onepass.resources.C
@@ -31,6 +33,7 @@ import ch.onepass.onepass.ui.navigation.AppNavHost
 import ch.onepass.onepass.ui.navigation.BottomNavigationBar
 import ch.onepass.onepass.ui.navigation.NavigationActions
 import ch.onepass.onepass.ui.navigation.NavigationDestinations
+import ch.onepass.onepass.ui.profile.ProfileViewModel
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.mapbox.common.MapboxOptions
 
@@ -88,11 +91,14 @@ fun OnePassApp(
     mapViewModel: MapViewModel,
     isLocationPermissionGranted: Boolean,
     testAuthButtonTag: String? = null,
-    authViewModelFactory: androidx.lifecycle.ViewModelProvider.Factory = viewModelFactory {
+    authViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
       initializer { ch.onepass.onepass.ui.auth.AuthViewModel() }
+    },
+    navController: NavHostController = rememberNavController(),
+    profileViewModelFactory: ViewModelProvider.Factory? = viewModelFactory {
+      initializer { ProfileViewModel() }
     }
 ) {
-  val navController = rememberNavController()
   val navActions = NavigationActions(navController)
 
   // Which route are we on?
@@ -117,6 +123,7 @@ fun OnePassApp(
             mapViewModel = mapViewModel,
             isLocationPermissionGranted = isLocationPermissionGranted,
             testAuthButtonTag = testAuthButtonTag,
-            authViewModelFactory = authViewModelFactory)
+            authViewModelFactory = authViewModelFactory,
+            profileViewModelFactory = profileViewModelFactory)
       }
 }

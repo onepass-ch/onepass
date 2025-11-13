@@ -169,6 +169,7 @@ dependencies {
     implementation(libs.firebase.auth.ktx)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.database.ktx)
+    androidTestImplementation(libs.androidx.navigation.testing)
 
     // ------------- Jetpack Compose ------------------
     val composeBom = platform(libs.compose.bom)
