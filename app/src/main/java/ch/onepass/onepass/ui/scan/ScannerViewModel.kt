@@ -286,7 +286,8 @@ class ScannerViewModel(
         }
   }
 
-  override fun onCleared() {
+  @VisibleForTesting
+  public override fun onCleared() {
     cleanupJob?.cancel()
     resetJob?.cancel()
     recentScans.clear()

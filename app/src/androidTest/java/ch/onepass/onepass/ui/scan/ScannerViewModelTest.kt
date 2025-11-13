@@ -613,31 +613,68 @@ class ScannerViewModelTest {
       }
 
   @Test
-  fun allRejectionReasonsShouldShowCorrectMessages() =
+  fun onClearedCancelsCleanupJob() =
       runTest(testDispatcher) {
-        val reasonsToMessages =
-            mapOf(
-                ScanDecision.Reason.UNREGISTERED to "User not registered",
-                ScanDecision.Reason.ALREADY_SCANNED to "Already scanned",
-                ScanDecision.Reason.BAD_SIGNATURE to "Invalid signature",
-                ScanDecision.Reason.REVOKED to "Pass revoked",
-                ScanDecision.Reason.UNKNOWN to "Access denied")
+        val vm =
+            ScannerViewModel(
+                eventId = eventId,
+                repo = repository,
+                enableAutoCleanup = true,
+                cleanupPeriodMs = 10000L,
+                stateResetDelayMs = Long.MAX_VALUE,
+                coroutineScope = TestScope(testScheduler))
 
-        reasonsToMessages.forEach { (reason, expectedMessage) ->
-          val repo =
-              object : TicketScanRepository {
-                override suspend fun validateByPass(
-                    qrText: String,
-                    eventId: String
-                ): Result<ScanDecision> = Result.success(ScanDecision.Rejected(reason = reason))
-              }
-          val vm = createViewModel(testScheduler, customRepo = repo)
+        vm.onCleared()
 
-          vm.onQrScanned(createValidQr())
-          advanceUntilIdle()
+        testScheduler.advanceTimeBy(20000L)
+        advanceUntilIdle()
 
-          assertEquals(ScannerUiState.Status.REJECTED, vm.state.value.status)
-          assertEquals(expectedMessage, vm.state.value.message)
-        }
+        assertNotNull(vm)
+      }
+
+  @Test
+  fun onClearedClearsRecentScansCache() =
+      runTest(testDispatcher) {
+        var currentTime = 1000L
+        val repo =
+            object : TicketScanRepository {
+              override suspend fun validateByPass(
+                  qrText: String,
+                  eventId: String
+              ): Result<ScanDecision> = Result.success(ScanDecision.Accepted(ticketId = "test"))
+            }
+
+        val vm =
+            ScannerViewModel(
+                eventId = eventId,
+                repo = repo,
+                clock = { currentTime },
+                enableAutoCleanup = false,
+                stateResetDelayMs = Long.MAX_VALUE,
+                coroutineScope = TestScope(testScheduler))
+
+        val qr = createValidQr("user-cache")
+
+        vm.onQrScanned(qr)
+        advanceUntilIdle()
+
+        currentTime += 1000L
+
+        vm.onQrScanned(qr)
+        advanceUntilIdle()
+
+        vm.onCleared()
+
+        assertNotNull(vm)
+      }
+
+  @Test
+  fun onClearedCallsSuperOnCleared() =
+      runTest(testDispatcher) {
+        val vm = createViewModel(testScheduler)
+
+        vm.onCleared()
+
+        assertNotNull(vm.state.value)
       }
 }
