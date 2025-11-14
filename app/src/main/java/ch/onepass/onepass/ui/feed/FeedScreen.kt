@@ -47,10 +47,11 @@ object FeedScreenTestTags {
 /**
  * Main Feed Screen composable.
  *
+ * @param modifier Optional modifier for the screen.
  * @param onNavigateToEvent Callback when an event card is clicked, receives eventId.
  * @param onNavigateToCalendar Callback when calendar button is clicked.
  * @param viewModel FeedViewModel instance, can be overridden for testing.
- * @param modifier Optional modifier for the screen.
+ * @param filterViewModel EventFilterViewModel instance, providing filter logic.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -137,7 +138,15 @@ fun FeedScreen(
   }
 }
 
-/** Top bar with title, location, and action buttons. */
+/**
+ * Top bar with title, location, and action buttons.
+ *
+ * @param currentLocation The string representing the current user location or selected region.
+ * @param currentDateRange The string representing the current date range filter.
+ * @param onCalendarClick Callback invoked when the calendar button is clicked.
+ * @param onFilterClick Callback invoked when the filter button is clicked.
+ * @param modifier Optional modifier for the top bar.
+ */
 @Composable
 private fun FeedTopBar(
     currentLocation: String,
@@ -189,6 +198,7 @@ private fun FeedTopBar(
                 modifier = Modifier.size(24.dp),
             )
           }
+
           IconButton(
               onClick = onCalendarClick,
               modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.CALENDAR_BUTTON),
@@ -206,7 +216,13 @@ private fun FeedTopBar(
   }
 }
 
-/** Event list content with scrollable cards. */
+/**
+ * Event list content with scrollable cards.
+ *
+ * @param events List of [Event]s to display in the list.
+ * @param isLoadingMore Boolean indicating if more events are currently being loaded.
+ * @param onEventClick Callback invoked when an event card is clicked, receives eventId.
+ */
 @Composable
 private fun EventListContent(
     events: List<Event>,
@@ -240,7 +256,11 @@ private fun EventListContent(
       }
 }
 
-/** Loading state indicator. */
+/**
+ * Loading state indicator.
+ *
+ * @param modifier Optional modifier for the loading indicator.
+ */
 @Composable
 private fun LoadingState(modifier: Modifier = Modifier) {
   CircularProgressIndicator(
@@ -249,7 +269,13 @@ private fun LoadingState(modifier: Modifier = Modifier) {
   )
 }
 
-/** Error state with retry button. */
+/**
+ * Error state with retry button.
+ *
+ * @param error The error message string to display.
+ * @param onRetry Callback invoked when the retry button is clicked.
+ * @param modifier Optional modifier for the error state composable.
+ */
 @Composable
 private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
   Column(
@@ -285,7 +311,11 @@ private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = 
   }
 }
 
-/** Empty state when no events are available. */
+/**
+ * Empty state when no events are available.
+ *
+ * @param modifier Optional modifier for the empty state composable.
+ */
 @Composable
 private fun EmptyFeedState(modifier: Modifier = Modifier) {
   Column(
