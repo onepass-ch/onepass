@@ -6,6 +6,8 @@ import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import ch.onepass.onepass.model.organization.OrganizationStatus
+import ch.onepass.onepass.model.user.UserRepository
+import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -68,9 +70,11 @@ class OrganizationFormUiState(
  * ViewModel for managing the Organizer form and its submission.
  *
  * @param repository The organization repository for data operations.
+ * @param userRepository The user repository for updating user data.
  */
 class OrganizationFormViewModel(
-    private val repository: OrganizationRepository = OrganizationRepositoryFirebase()
+    private val repository: OrganizationRepository = OrganizationRepositoryFirebase(),
+    private val userRepository: UserRepository = UserRepositoryFirebase()
 ) : ViewModel() {
 
   /** Private form state */
@@ -469,12 +473,19 @@ class OrganizationFormViewModel(
         val result = repository.createOrganization(org)
 
         // Update UI state based on result
-        _uiState.value =
-            result.fold(
-                onSuccess = { OrganizationFormUiState(successOrganizationId = it) },
-                onFailure = {
-                  OrganizationFormUiState(errorMessage = it.message ?: "Unknown error")
-                })
+        result.fold(
+            onSuccess = { orgId ->
+              // Update user's organizationIds to reflect the new organization
+              try {
+                userRepository.addOrganizationToUser(ownerId, orgId)
+              } catch (e: Exception) {
+                // Log error but don't fail the flow since the organization was created
+              }
+              _uiState.value = OrganizationFormUiState(successOrganizationId = orgId)
+            },
+            onFailure = {
+              _uiState.value = OrganizationFormUiState(errorMessage = it.message ?: "Unknown error")
+            })
       } catch (e: Exception) {
         _uiState.value = OrganizationFormUiState(errorMessage = e.message ?: "Unknown error")
       }

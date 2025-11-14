@@ -41,7 +41,9 @@ class OrganizationFeedViewModel(
         combine(
                 repository.getOrganizationsByOwner(userId),
                 repository.getOrganizationsByMember(userId)) { ownedOrgs, memberOrgs ->
-                  (ownedOrgs + memberOrgs).distinctBy { it.id }
+                  (ownedOrgs + memberOrgs)
+                      .distinctBy { it.id }
+                      .sortedByDescending { it.createdAt }
                 }
             .collect { organizations ->
               _uiState.update {

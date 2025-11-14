@@ -79,6 +79,9 @@ fun ProfileScreen(viewModel: ProfileViewModel, onEffect: (ProfileEffect) -> Unit
   val state by viewModel.state.collectAsState()
   LaunchedEffect(viewModel) { viewModel.effects.collectLatest(onEffect) }
 
+  // Reload profile when screen is shown to reflect any changes (e.g., new organization created)
+  LaunchedEffect(Unit) { viewModel.loadProfile() }
+
   ProfileContent(
       state = state,
       onOrganizationButton = viewModel::onOrganizationButton,

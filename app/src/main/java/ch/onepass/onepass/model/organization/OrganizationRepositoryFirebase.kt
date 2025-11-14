@@ -57,7 +57,7 @@ class OrganizationRepositoryFirebase : OrganizationRepository {
   override fun getOrganizationsByMember(userId: String): Flow<List<Organization>> = firestoreFlow {
     organizationsCollection
         .whereIn("members.${userId}.role", OrganizationRole.values().map { it.name })
-        .orderBy("createdAt", Query.Direction.DESCENDING)
+        // Removed orderBy to avoid composite index requirement - sorting done in-memory instead
   }
 
   override fun getOrganizationsByStatus(status: OrganizationStatus): Flow<List<Organization>> =
