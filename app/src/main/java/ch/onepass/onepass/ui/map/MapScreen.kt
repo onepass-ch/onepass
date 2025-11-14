@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.map
 
+import android.annotation.SuppressLint
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -52,7 +53,11 @@ private object AnnotationConfig {
  *   be displayed on the map.
  */
 @Composable
-fun MapScreen(mapViewModel: MapViewModel = viewModel(), isLocationPermissionGranted: Boolean) {
+fun MapScreen(
+    mapViewModel: MapViewModel = viewModel(),
+    isLocationPermissionGranted: Boolean,
+    onNavigateToEvent: (String) -> Unit = {}
+) {
   val uiState by mapViewModel.uiState.collectAsState()
   val events = uiState.events
   val eventCardViewModel = EventCardViewModel.getInstance()
@@ -88,7 +93,7 @@ fun MapScreen(mapViewModel: MapViewModel = viewModel(), isLocationPermissionGran
       Box(modifier = Modifier.fillMaxSize().clickable { mapViewModel.clearSelectedEvent() }) {
         EventCard(
             event = event,
-            onCardClick = { /* TODO: Navigate to full event page */},
+            onCardClick = { onNavigateToEvent(event.eventId) },
             onDismiss = { mapViewModel.clearSelectedEvent() },
             modifier = Modifier.align(Alignment.TopCenter).padding(16.dp),
             isLiked = likedEvents.contains(event.eventId),
@@ -105,6 +110,7 @@ fun MapScreen(mapViewModel: MapViewModel = viewModel(), isLocationPermissionGran
  * @param events List of events to display as annotations
  * @param viewModel ViewModel for handling event selection
  */
+@SuppressLint("ImplicitSamInstance")
 private fun setupAnnotations(mapView: MapView, events: List<Event>, viewModel: MapViewModel) {
   val annotationPlugin = mapView.annotations
   val pointAnnotationManager = annotationPlugin.createPointAnnotationManager()

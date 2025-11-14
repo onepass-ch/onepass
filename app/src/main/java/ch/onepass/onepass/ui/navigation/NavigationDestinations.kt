@@ -41,8 +41,45 @@ object NavigationDestinations {
       fun route(eventId: String) = "event/$eventId"
     }
 
-    // Not implemented yet → will redirect to ComingSoon for now
-    object CreateEvent : Screen("create_event", "Create Event", false)
+    object CreateEvent : Screen("create_event/{organizationId}", "Create Event", false) {
+      private const val BASE_ROUTE = "create_event"
+      const val ARG_ORGANIZATION_ID = "organizationId"
+
+      fun route(organizationId: String) = "$BASE_ROUTE/$organizationId"
+    }
+
+    object BecomeOrganizer : Screen("become_organizer", "Become Organizer", false)
+
+    object OrganizationFeed : Screen("organization_feed", "My Organizations", false)
+
+    object OrganizationDashboard :
+        Screen("organization/{organizationId}", "Organization Dashboard", false) {
+      const val ARG_ORGANIZATION_ID = "organizationId"
+
+      fun route(organizationId: String) = "organization/$organizationId"
+    }
+
+    object StaffInvitation :
+        Screen("staff_invitation/{organizationId}", "Staff Invitation", false) {
+      const val ARG_ORGANIZATION_ID = "organizationId"
+
+      fun route(organizationId: String) = "staff_invitation/$organizationId"
+    }
+
+    object OrganizationProfile :
+        Screen("organization_profile/{organizationId}", "Organization Profile", false) {
+      const val ARG_ORGANIZATION_ID = "organizationId"
+
+      fun route(organizationId: String) = "organization_profile/$organizationId"
+    }
+
+    object EditOrganization :
+        Screen("edit_organization/{organizationId}", "Edit Organization", false) {
+      private const val BASE_ROUTE = "edit_organization"
+      const val ARG_ORGANIZATION_ID = "organizationId"
+
+      fun route(organizationId: String) = "$BASE_ROUTE/$organizationId"
+    }
   }
 
   /** Bottom navigation tabs and their linked screens. */

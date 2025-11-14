@@ -46,8 +46,6 @@ sealed interface ProfileEffect {
   object NavigateToBecomeOrganizer : ProfileEffect
 }
 
-// --- ViewModel ---
-
 open class ProfileViewModel(private val userRepository: UserRepository = UserRepositoryFirebase()) :
     ViewModel() {
 
