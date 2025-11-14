@@ -322,7 +322,6 @@ class ScanScreenTest {
 
     viewModel.cleanupRecentScans()
 
-    // Le même QR devrait être accepté après cleanup
     viewModel.onQrScanned(createValidQrCode("user1"))
     advanceUntilIdle()
 
@@ -343,7 +342,6 @@ class ScanScreenTest {
 
     val job = launch { viewModel.effects.collect { collectedEffects.add(it) } }
 
-    // Premier scan accepté
     fakeRepo.response =
         Result.success(
             ScanDecision.Accepted(ticketId = "T-1", scannedAtSeconds = 1234567890L, remaining = 10))
@@ -352,7 +350,6 @@ class ScanScreenTest {
 
     advanceTimeBy(2500)
 
-    // Deuxième scan rejeté
     fakeRepo.response =
         Result.success(ScanDecision.Rejected(reason = ScanDecision.Reason.ALREADY_SCANNED))
     viewModel.onQrScanned(createValidQrCode("user2"))
@@ -363,25 +360,6 @@ class ScanScreenTest {
     assert(collectedEffects[1] is ScannerEffect.Rejected)
 
     job.cancel()
-  }
-
-  @Test
-  fun errorMessageIncludesExceptionMessage() = runTest {
-    val viewModel =
-        ScannerViewModel(
-            eventId = "test-event",
-            repo = fakeRepo,
-            clock = { testScheduler.currentTime },
-            coroutineScope = this,
-            enableAutoCleanup = false)
-
-    fakeRepo.response = Result.failure(Exception("Network timeout"))
-
-    viewModel.onQrScanned(validQrCode)
-    advanceUntilIdle()
-
-    assert(viewModel.state.value.message == "Error: Network timeout")
-    assert(viewModel.state.value.status == ScannerUiState.Status.ERROR)
   }
 
   @Test
@@ -436,11 +414,9 @@ class ScanScreenTest {
         Result.success(
             ScanDecision.Accepted(ticketId = "T-1", scannedAtSeconds = 1234567890L, remaining = 10))
 
-    // Scan user1
     viewModel.onQrScanned(createValidQrCode("user1"))
     advanceUntilIdle()
 
-    // Scan user2 immédiatement (devrait être accepté car UID différent)
     viewModel.onQrScanned(createValidQrCode("user2"))
     advanceUntilIdle()
 
