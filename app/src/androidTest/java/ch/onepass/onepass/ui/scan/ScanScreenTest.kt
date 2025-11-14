@@ -422,6 +422,49 @@ class ScanScreenTest {
 
     assert(fakeRepo.callCount == 2)
   }
+
+  @Test
+  fun acceptedScanShowsCorrectStatus() = runTest {
+    val viewModel =
+        ScannerViewModel(
+            eventId = "test-event",
+            repo = fakeRepo,
+            clock = { testScheduler.currentTime },
+            coroutineScope = this,
+            enableAutoCleanup = false)
+
+    fakeRepo.response =
+        Result.success(
+            ScanDecision.Accepted(
+                ticketId = "T-456", scannedAtSeconds = 1234567890L, remaining = 3))
+
+    viewModel.onQrScanned(validQrCode)
+    advanceUntilIdle()
+
+    assert(viewModel.state.value.status == ScannerUiState.Status.ACCEPTED)
+  }
+
+  @Test
+  fun processingStateIsClearedAfterAcceptedScan() = runTest {
+    val viewModel =
+        ScannerViewModel(
+            eventId = "test-event",
+            repo = fakeRepo,
+            clock = { testScheduler.currentTime },
+            coroutineScope = this,
+            enableAutoCleanup = false)
+
+    fakeRepo.delayMs = 100
+    fakeRepo.response =
+        Result.success(
+            ScanDecision.Accepted(
+                ticketId = "T-999", scannedAtSeconds = 1234567890L, remaining = 10))
+
+    viewModel.onQrScanned(validQrCode)
+    advanceUntilIdle()
+
+    assert(!viewModel.state.value.isProcessing)
+  }
 }
 
 class FakeTicketScanRepository(
