@@ -38,8 +38,6 @@ class ScanScreenTest {
 
   private val validQrCode = createValidQrCode()
 
-  // ==================== TESTS THAT PASS (8 tests) ====================
-
   @Test
   fun idleStateHasCorrectDefaults() = runTest {
     val viewModel =
@@ -198,6 +196,255 @@ class ScanScreenTest {
         repo = fakeRepo,
         coroutineScope = TestScope(testDispatcher),
         enableAutoCleanup = false)
+  }
+
+  @Test
+  fun processingStateIsSetDuringScan() = runTest {
+    val viewModel =
+        ScannerViewModel(
+            eventId = "test-event",
+            repo = fakeRepo,
+            clock = { testScheduler.currentTime },
+            coroutineScope = this,
+            enableAutoCleanup = false)
+
+    fakeRepo.delayMs = 100
+    fakeRepo.response =
+        Result.success(
+            ScanDecision.Accepted(
+                ticketId = "T-999", scannedAtSeconds = 1234567890L, remaining = 10))
+
+    viewModel.onQrScanned(validQrCode)
+    advanceTimeBy(50)
+
+    assert(viewModel.state.value.isProcessing)
+  }
+
+  @Test
+  fun emptyQrIsRejected() = runTest {
+    val viewModel =
+        ScannerViewModel(
+            eventId = "test-event",
+            repo = fakeRepo,
+            clock = { testScheduler.currentTime },
+            coroutineScope = this,
+            enableAutoCleanup = false)
+
+    viewModel.onQrScanned("")
+    advanceUntilIdle()
+
+    assert(viewModel.state.value.status == ScannerUiState.Status.REJECTED)
+  }
+
+  @Test
+  fun invalidPrefixIsRejected() = runTest {
+    val viewModel =
+        ScannerViewModel(
+            eventId = "test-event",
+            repo = fakeRepo,
+            clock = { testScheduler.currentTime },
+            coroutineScope = this,
+            enableAutoCleanup = false)
+
+    viewModel.onQrScanned("invalid:prefix:v1.payload.sig")
+    advanceUntilIdle()
+
+    assert(viewModel.state.value.status == ScannerUiState.Status.REJECTED)
+  }
+
+  @Test
+  fun errorEffectIsEmitted() = runTest {
+    val viewModel =
+        ScannerViewModel(
+            eventId = "test-event",
+            repo = fakeRepo,
+            clock = { testScheduler.currentTime },
+            coroutineScope = this,
+            enableAutoCleanup = false)
+
+    val collectedEffects = mutableListOf<ScannerEffect>()
+    fakeRepo.response = Result.failure(Exception("Error"))
+
+    val job = launch { viewModel.effects.collect { collectedEffects.add(it) } }
+
+    viewModel.onQrScanned(validQrCode)
+    advanceUntilIdle()
+
+    assert(collectedEffects.any { it is ScannerEffect.Error })
+
+    job.cancel()
+  }
+
+  @Test
+  fun concurrentScansAreIgnored() = runTest {
+    val viewModel =
+        ScannerViewModel(
+            eventId = "test-event",
+            repo = fakeRepo,
+            clock = { testScheduler.currentTime },
+            coroutineScope = this,
+            enableAutoCleanup = false)
+
+    fakeRepo.delayMs = 500
+    fakeRepo.response =
+        Result.success(
+            ScanDecision.Accepted(
+                ticketId = "T-999", scannedAtSeconds = 1234567890L, remaining = 10))
+
+    launch { viewModel.onQrScanned(validQrCode) }
+    advanceTimeBy(100)
+    launch { viewModel.onQrScanned(createValidQrCode("user2")) }
+
+    advanceUntilIdle()
+
+    assert(fakeRepo.callCount == 1) { "Expected callCount=1 but was ${fakeRepo.callCount}" }
+  }
+
+  @Test
+  fun oldScansAreCleanedUpPeriodically() = runTest {
+    val viewModel =
+        ScannerViewModel(
+            eventId = "test-event",
+            repo = fakeRepo,
+            clock = { testScheduler.currentTime },
+            coroutineScope = this,
+            enableAutoCleanup = false)
+
+    fakeRepo.response =
+        Result.success(
+            ScanDecision.Accepted(
+                ticketId = "T-999", scannedAtSeconds = 1234567890L, remaining = 10))
+
+    viewModel.onQrScanned(createValidQrCode("user1"))
+    advanceUntilIdle()
+
+    advanceTimeBy(2500)
+
+    viewModel.cleanupRecentScans()
+
+    // Le même QR devrait être accepté après cleanup
+    viewModel.onQrScanned(createValidQrCode("user1"))
+    advanceUntilIdle()
+
+    assert(fakeRepo.callCount == 2)
+  }
+
+  @Test
+  fun multipleEffectsCanBeCollected() = runTest {
+    val viewModel =
+        ScannerViewModel(
+            eventId = "test-event",
+            repo = fakeRepo,
+            clock = { testScheduler.currentTime },
+            coroutineScope = this,
+            enableAutoCleanup = false)
+
+    val collectedEffects = mutableListOf<ScannerEffect>()
+
+    val job = launch { viewModel.effects.collect { collectedEffects.add(it) } }
+
+    // Premier scan accepté
+    fakeRepo.response =
+        Result.success(
+            ScanDecision.Accepted(ticketId = "T-1", scannedAtSeconds = 1234567890L, remaining = 10))
+    viewModel.onQrScanned(validQrCode)
+    advanceUntilIdle()
+
+    advanceTimeBy(2500)
+
+    // Deuxième scan rejeté
+    fakeRepo.response =
+        Result.success(ScanDecision.Rejected(reason = ScanDecision.Reason.ALREADY_SCANNED))
+    viewModel.onQrScanned(createValidQrCode("user2"))
+    advanceUntilIdle()
+
+    assert(collectedEffects.size == 2)
+    assert(collectedEffects[0] is ScannerEffect.Accepted)
+    assert(collectedEffects[1] is ScannerEffect.Rejected)
+
+    job.cancel()
+  }
+
+  @Test
+  fun errorMessageIncludesExceptionMessage() = runTest {
+    val viewModel =
+        ScannerViewModel(
+            eventId = "test-event",
+            repo = fakeRepo,
+            clock = { testScheduler.currentTime },
+            coroutineScope = this,
+            enableAutoCleanup = false)
+
+    fakeRepo.response = Result.failure(Exception("Network timeout"))
+
+    viewModel.onQrScanned(validQrCode)
+    advanceUntilIdle()
+
+    assert(viewModel.state.value.message == "Error: Network timeout")
+    assert(viewModel.state.value.status == ScannerUiState.Status.ERROR)
+  }
+
+  @Test
+  fun processingStateIsClearedAfterError() = runTest {
+    val viewModel =
+        ScannerViewModel(
+            eventId = "test-event",
+            repo = fakeRepo,
+            clock = { testScheduler.currentTime },
+            coroutineScope = this,
+            enableAutoCleanup = false)
+
+    fakeRepo.delayMs = 100
+    fakeRepo.response = Result.failure(Exception("Error"))
+
+    viewModel.onQrScanned(validQrCode)
+    advanceUntilIdle()
+
+    assert(!viewModel.state.value.isProcessing)
+  }
+
+  @Test
+  fun processingStateIsClearedAfterRejection() = runTest {
+    val viewModel =
+        ScannerViewModel(
+            eventId = "test-event",
+            repo = fakeRepo,
+            clock = { testScheduler.currentTime },
+            coroutineScope = this,
+            enableAutoCleanup = false)
+
+    fakeRepo.delayMs = 100
+    fakeRepo.response = Result.success(ScanDecision.Rejected(reason = ScanDecision.Reason.REVOKED))
+
+    viewModel.onQrScanned(validQrCode)
+    advanceUntilIdle()
+
+    assert(!viewModel.state.value.isProcessing)
+  }
+
+  @Test
+  fun differentUsersCanBeScannedSimultaneously() = runTest {
+    val viewModel =
+        ScannerViewModel(
+            eventId = "test-event",
+            repo = fakeRepo,
+            clock = { testScheduler.currentTime },
+            coroutineScope = this,
+            enableAutoCleanup = false)
+
+    fakeRepo.response =
+        Result.success(
+            ScanDecision.Accepted(ticketId = "T-1", scannedAtSeconds = 1234567890L, remaining = 10))
+
+    // Scan user1
+    viewModel.onQrScanned(createValidQrCode("user1"))
+    advanceUntilIdle()
+
+    // Scan user2 immédiatement (devrait être accepté car UID différent)
+    viewModel.onQrScanned(createValidQrCode("user2"))
+    advanceUntilIdle()
+
+    assert(fakeRepo.callCount == 2)
   }
 }
 
