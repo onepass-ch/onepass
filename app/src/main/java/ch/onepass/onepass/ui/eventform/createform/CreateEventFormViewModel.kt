@@ -69,7 +69,7 @@ class CreateEventFormViewModel(
                 description = parsed.description,
                 organizerId = organization.id,
                 organizerName = organization.name,
-                status = EventStatus.DRAFT,
+                status = EventStatus.PUBLISHED,
                 location =
                     null, // TODO: Create Location object from location string (requires geocoding)
                 startTime = parsed.startTime,

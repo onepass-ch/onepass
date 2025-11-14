@@ -36,7 +36,7 @@ data class Event(
     val description: String = "",
     val organizerId: String = "",
     val organizerName: String = "",
-    val status: EventStatus = EventStatus.DRAFT,
+    val status: EventStatus = EventStatus.PUBLISHED,
 
     // Location abstraction preserved
     val location: Location? = null,
