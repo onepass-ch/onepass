@@ -6,7 +6,15 @@ import ch.onepass.onepass.model.eventfilters.EventFilters
 /** Shared filtering utility used by Feed and Map screens. */
 object EventFilteringUtils {
 
-  /** Apply filters locally to the given events. */
+  /**
+   * Apply filters locally to the given events.
+   *
+   * Filters events based on region, date range, and availability (hide sold out).
+   *
+   * @param events The list of [Event]s to be filtered.
+   * @param filters The [EventFilters] to apply.
+   * @return The filtered list of [Event]s.
+   */
   fun applyFiltersLocally(events: List<Event>, filters: EventFilters): List<Event> {
     return events.filter { event ->
       val regionMatch =

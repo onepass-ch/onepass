@@ -127,6 +127,7 @@ class MapViewModel(
     _uiState.value = _uiState.value.copy(events = filteredEvents)
   }
 
+  /** Sets the visibility of the filter dialog. */
   fun setShowFilterDialog(show: Boolean) {
     _uiState.update { it.copy(showFilterDialog = show) }
   }
@@ -214,6 +215,7 @@ class MapViewModel(
     internalMapView?.let { enableLocationTracking(it) }
   }
 
+  /** Enables the location component on the map and sets up the indicator listener. */
   private fun enableLocationTracking(mapView: MapView) {
     val locationComponent: LocationComponentPlugin = mapView.location
     locationComponent.updateSettings {

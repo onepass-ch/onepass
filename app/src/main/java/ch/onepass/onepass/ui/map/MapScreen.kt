@@ -54,12 +54,11 @@ private object AnnotationConfig {
  * A Composable function that displays a Mapbox map, covering the entire screen.Includes a floating
  * action button to recenter the camera on the user's location puck.
  *
- * @param mapViewModel The ViewModel responsible for the map's logic and state. It provides the
- *   initial camera options and handles map setup events. Defaults to a new instance provided by
- *   `viewModel()`.
+ * @param modifier Optional modifier for the map screen.
+ * @param mapViewModel The ViewModel responsible for the map's logic and state.
+ * @param filterViewModel The ViewModel responsible for managing and applying event filters.
  * @param isLocationPermissionGranted A boolean flag indicating whether the user has granted
- *   location permissions. This is passed to the ViewModel to determine if the user's location can
- *   be displayed on the map.
+ *   location permissions.
  */
 @Composable
 fun MapScreen(
@@ -175,9 +174,9 @@ fun MapScreen(
 /**
  * Sets up map annotations (pins) for events and configures click listeners.
  *
- * @param mapView The MapView instance to configure
- * @param events List of events to display as annotations
- * @param viewModel ViewModel for handling event selection
+ * @param mapView The [MapView] instance to configure.
+ * @param events List of [Event]s to display as annotations.
+ * @param viewModel [MapViewModel] for handling event selection when an annotation is clicked.
  */
 @SuppressLint("ImplicitSamInstance")
 private fun setupAnnotations(mapView: MapView, events: List<Event>, viewModel: MapViewModel) {

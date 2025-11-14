@@ -101,7 +101,13 @@ fun FilterDialog(
   }
 }
 
-/** Displays a dropdown menu for selecting the event region. */
+/**
+ * Displays a dropdown menu for selecting the event region.
+ *
+ * @param uiState The current UI state containing local filters and dropdown expansion state.
+ * @param onFiltersChanged Callback to update the local [EventFilters] state.
+ * @param onExpandedChange Callback to toggle the expansion state of the region dropdown.
+ */
 @Composable
 private fun RegionFilter(
     uiState: FilterUIState = FilterUIState(),
@@ -144,7 +150,13 @@ private fun RegionFilter(
   }
 }
 
-/** Displays chips for selecting a date range or custom range via date picker. */
+/**
+ * Displays chips for selecting a date range or custom range via date picker.
+ *
+ * @param uiState The current UI state containing local filters and date picker visibility.
+ * @param onFiltersChanged Callback to update the local [EventFilters] state.
+ * @param onShowDatePickerChange Callback to toggle the visibility of the date range picker dialog.
+ */
 @Composable
 private fun DateRangeFilter(
     uiState: FilterUIState = FilterUIState(),
@@ -208,7 +220,13 @@ private fun DateRangeFilter(
   }
 }
 
-/** Shows a checkbox to hide sold out events. */
+/**
+ * Shows a checkbox to hide sold out events.
+ *
+ * @param filters The current local [EventFilters] state.
+ * @param onFiltersChanged Callback to update the local [EventFilters] state when the checkbox is
+ *   toggled.
+ */
 @Composable
 private fun AvailabilityFilter(filters: EventFilters, onFiltersChanged: (EventFilters) -> Unit) {
   FilterSection("Availability") {
@@ -226,7 +244,12 @@ private fun AvailabilityFilter(filters: EventFilters, onFiltersChanged: (EventFi
   }
 }
 
-/** Section wrapper with a title and content. */
+/**
+ * Section wrapper with a title and content.
+ *
+ * @param title The title of the filter section.
+ * @param content The composable content displayed within the section.
+ */
 @Composable
 private fun FilterSection(title: String, content: @Composable () -> Unit) {
   Column(Modifier.fillMaxWidth()) {
@@ -239,7 +262,14 @@ private fun FilterSection(title: String, content: @Composable () -> Unit) {
   }
 }
 
-/** Dialog to pick a custom start and end date for filtering events. */
+/**
+ * Dialog to pick a custom start and end date for filtering events.
+ *
+ * @param onDismiss Callback invoked when the dialog is dismissed (e.g., via Cancel button or
+ *   outside click).
+ * @param onConfirm Callback invoked when the date range is confirmed, receives start and end date
+ *   as timestamps (Long).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateRangePickerDialog(
@@ -293,7 +323,15 @@ fun DateRangePickerDialog(
       dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }
 
-/** Extends a [ClosedRange] to include the full end-of-day time for the end date. */
+/**
+ * Extends a [ClosedRange] of milliseconds to include the full end-of-day time for the end date.
+ *
+ * This ensures that events scheduled throughout the selected end day are included in the filter.
+ *
+ * @return A new [ClosedRange] where the start is the original start and the end is set to
+ *   23:59:59.999 on the original end date.
+ * @receiver The original [ClosedRange] of milliseconds.
+ */
 fun ClosedRange<Long>.inclusiveEndOfDay(): ClosedRange<Long> {
   val cal = Calendar.getInstance().apply { timeInMillis = this@inclusiveEndOfDay.endInclusive }
   cal.set(Calendar.HOUR_OF_DAY, END_OF_DAY_HOUR)
