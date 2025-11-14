@@ -60,7 +60,7 @@ open class ProfileViewModel(private val userRepository: UserRepository = UserRep
   }
 
   /** Fetches the current user profile from Firestore. */
-  private fun loadProfile() {
+  fun loadProfile() {
     viewModelScope.launch {
       try {
         _state.value = _state.value.copy(loading = true)
