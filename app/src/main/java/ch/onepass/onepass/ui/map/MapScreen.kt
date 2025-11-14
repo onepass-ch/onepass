@@ -51,12 +51,14 @@ private object AnnotationConfig {
 }
 
 /**
- * A Composable function that displays a Mapbox map, covering the entire screen.Includes a floating
+ * A Composable function that displays a Mapbox map, covering the entire screen. Includes a floating
  * action button to recenter the camera on the user's location puck.
  *
  * @param modifier Optional modifier for the map screen.
  * @param mapViewModel The ViewModel responsible for the map's logic and state.
  * @param filterViewModel The ViewModel responsible for managing and applying event filters.
+ * @param onNavigateToEvent Callback invoked when an event card is clicked (e.g., in the info
+ *   popup), receives eventId.
  * @param isLocationPermissionGranted A boolean flag indicating whether the user has granted
  *   location permissions.
  */
