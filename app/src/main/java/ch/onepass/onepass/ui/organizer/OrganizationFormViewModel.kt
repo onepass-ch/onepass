@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
+import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.organization.OrganizationStatus
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
@@ -475,13 +476,28 @@ class OrganizationFormViewModel(
         // Update UI state based on result
         result.fold(
             onSuccess = { orgId ->
-              // Update user's organizationIds to reflect the new organization
-              try {
-                userRepository.addOrganizationToUser(ownerId, orgId)
-              } catch (e: Exception) {
-                // Log error but don't fail the flow since the organization was created
-              }
-              _uiState.value = OrganizationFormUiState(successOrganizationId = orgId)
+              // Add the current user as OWNER member to the organization
+              val addMemberResult = repository.addMember(orgId, ownerId, OrganizationRole.OWNER)
+              
+              addMemberResult.fold(
+                  onSuccess = {
+                    // Member added successfully, now update user's organizationIds
+                    try {
+                      userRepository.addOrganizationToUser(ownerId, orgId)
+                      _uiState.value = OrganizationFormUiState(successOrganizationId = orgId)
+                    } catch (e: Exception) {
+                      // Organization created and member added, but failed to update user's org list
+                      _uiState.value = OrganizationFormUiState(
+                          successOrganizationId = orgId,
+                          errorMessage = "Organization created, but failed to update user profile: ${e.message}")
+                    }
+                  },
+                  onFailure = { error ->
+                    // Organization created but failed to add member
+                    _uiState.value = OrganizationFormUiState(
+                        successOrganizationId = orgId,
+                        errorMessage = "Organization created, but failed to add member: ${error.message ?: "Unknown error"}")
+                  })
             },
             onFailure = {
               _uiState.value = OrganizationFormUiState(errorMessage = it.message ?: "Unknown error")
