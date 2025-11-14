@@ -178,7 +178,7 @@ class EventTest {
     assertEquals("", event.description)
     assertEquals("", event.organizerId)
     assertEquals("", event.organizerName)
-    assertEquals(EventStatus.DRAFT, event.status)
+    assertEquals(EventStatus.PUBLISHED, event.status)
     assertNull(event.location)
     assertNull(event.startTime)
     assertNull(event.endTime)
