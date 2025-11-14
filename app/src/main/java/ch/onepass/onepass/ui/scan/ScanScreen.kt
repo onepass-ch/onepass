@@ -135,7 +135,7 @@ private fun ScanContent(viewModel: ScannerViewModel) {
     var lastAnalysisTime = 0L
     val minAnalysisIntervalMs = 300L
 
-    @OptIn(ExperimentalGetImage::class)
+    @androidx.annotation.OptIn(ExperimentalGetImage::class)
     fun analyzeImage(imageProxy: androidx.camera.core.ImageProxy) {
       if (!isActive) {
         imageProxy.close()
