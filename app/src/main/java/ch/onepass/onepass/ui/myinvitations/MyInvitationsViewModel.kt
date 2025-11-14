@@ -246,12 +246,26 @@ class MyInvitationsViewModel(
 
               addMemberResult
                   .onSuccess {
-                    // Both operations succeeded - provide success feedback
-                    _uiState.value =
-                        _uiState.value.copy(
-                            successMessage =
-                                "Invitation accepted successfully. You are now a member.")
-                    // The invitation will automatically disappear from the list via the Flow update
+                    // Step 3: Add organization to user's organization list
+                    try {
+                      userRepository.addOrganizationToUser(user.uid, invitation.orgId)
+                      // All operations succeeded - provide success feedback
+                      _uiState.value =
+                          _uiState.value.copy(
+                              successMessage =
+                                  "Invitation accepted successfully. You are now a member.")
+                      // The invitation will automatically disappear from the list via the Flow
+                      // update
+                    } catch (e: Exception) {
+                      // Member was added but failed to update user's organization list
+                      // This is a critical error - the user is a member but orgId is not in their
+                      // list
+                      _uiState.value =
+                          _uiState.value.copy(
+                              errorMessage =
+                                  "Invitation accepted and you were added as a member, but failed to update your organization list: ${e.message
+                                      ?: "Unknown error"}. Please contact support.")
+                    }
                   }
                   .onFailure { error ->
                     // Invitation status was updated but adding member failed
