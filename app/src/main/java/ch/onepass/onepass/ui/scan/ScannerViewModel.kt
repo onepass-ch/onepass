@@ -191,20 +191,18 @@ class ScannerViewModel(
 
     _state.value = _state.value.copy(isProcessing = true, message = "Validating…")
 
-    repo
-        .validateByPass(qr, eventId)
-        .onSuccess { decision ->
-          if (scope.isActive) {
-            handleDecision(decision, uid)
-            scheduleStateReset()
-          }
-        }
-        .onFailure { error ->
-          if (scope.isActive) {
-            handleError(error, uid)
-            scheduleStateReset()
-          }
-        }
+    val result = repo.validateByPass(qr, eventId)
+
+    if (!scope.isActive) {
+      Log.d(TAG, "Scope cancelled during validation, discarding result")
+      return
+    }
+
+    result.fold(
+        onSuccess = { decision -> handleDecision(decision, uid) },
+        onFailure = { error -> handleError(error, uid) })
+
+    scheduleStateReset()
   }
 
   /**
