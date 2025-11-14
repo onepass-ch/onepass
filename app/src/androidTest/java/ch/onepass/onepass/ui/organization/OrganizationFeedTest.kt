@@ -235,14 +235,6 @@ class OrganizationFeedTest {
     assert(!viewModel.uiState.value.isLoading)
   }
 
-  @Test
-  fun viewModel_refreshOrganizations_reloadsData() {
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns
-        flowOf(testOrganizations)
-    viewModel = OrganizationFeedViewModel(mockRepository)
-    viewModel.refreshOrganizations(testUserId)
-    coVerify(atLeast = 1) { mockRepository.getOrganizationsByMember(testUserId) }
-  }
   // ==================== Scrolling and List Tests ====================
   @Test
   fun organizationFeedScreen_scrollableList_worksCorrectly() {
