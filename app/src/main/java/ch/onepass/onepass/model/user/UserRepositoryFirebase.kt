@@ -1,6 +1,5 @@
 package ch.onepass.onepass.model.user
 
-import android.util.Log
 import ch.onepass.onepass.model.staff.StaffSearchResult
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
@@ -94,7 +93,6 @@ class UserRepositoryFirebase(
     val snapshot = userCollection.document(uid).get().await()
     val user = snapshot.toObject(User::class.java) ?: return false
 
-    Log.w("Bruce-orgIds-Firebase", user.organizationIds.toString())
     return user.organizationIds.isNotEmpty()
   }
 

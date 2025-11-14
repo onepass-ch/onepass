@@ -478,7 +478,7 @@ class OrganizationFormViewModel(
             onSuccess = { orgId ->
               // Add the current user as OWNER member to the organization
               val addMemberResult = repository.addMember(orgId, ownerId, OrganizationRole.OWNER)
-              
+
               addMemberResult.fold(
                   onSuccess = {
                     // Member added successfully, now update user's organizationIds
@@ -487,16 +487,20 @@ class OrganizationFormViewModel(
                       _uiState.value = OrganizationFormUiState(successOrganizationId = orgId)
                     } catch (e: Exception) {
                       // Organization created and member added, but failed to update user's org list
-                      _uiState.value = OrganizationFormUiState(
-                          successOrganizationId = orgId,
-                          errorMessage = "Organization created, but failed to update user profile: ${e.message}")
+                      _uiState.value =
+                          OrganizationFormUiState(
+                              successOrganizationId = orgId,
+                              errorMessage =
+                                  "Organization created, but failed to update user profile: ${e.message}")
                     }
                   },
                   onFailure = { error ->
                     // Organization created but failed to add member
-                    _uiState.value = OrganizationFormUiState(
-                        successOrganizationId = orgId,
-                        errorMessage = "Organization created, but failed to add member: ${error.message ?: "Unknown error"}")
+                    _uiState.value =
+                        OrganizationFormUiState(
+                            successOrganizationId = orgId,
+                            errorMessage =
+                                "Organization created, but failed to add member: ${error.message ?: "Unknown error"}")
                   })
             },
             onFailure = {
