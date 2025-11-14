@@ -11,7 +11,6 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.camera.core.CameraSelector
-import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
@@ -135,7 +134,6 @@ private fun ScanContent(viewModel: ScannerViewModel) {
     var lastAnalysisTime = 0L
     val minAnalysisIntervalMs = 300L
 
-    @androidx.annotation.OptIn(ExperimentalGetImage::class)
     fun analyzeImage(imageProxy: androidx.camera.core.ImageProxy) {
       if (!isActive) {
         imageProxy.close()
@@ -149,7 +147,7 @@ private fun ScanContent(viewModel: ScannerViewModel) {
       }
       lastAnalysisTime = currentTime
 
-      val media = imageProxy.image
+      @Suppress("UnsafeOptInUsageError") val media = imageProxy.image
       if (media == null) {
         imageProxy.close()
         return
