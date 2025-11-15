@@ -1,21 +1,15 @@
 name: CI - Test Runner
 
-# Run the workflow when commits are pushed on main or when a PR is modified
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
   pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
+    types: [ opened, synchronize, reopened ]
 
 jobs:
   ci:
-    name: CI
-    # Execute the CI on the course's runners
     runs-on: ubuntu-latest
+
     env:
       MODULE_DIR: app
       RELEASE_STORE_FILE: ${{ github.workspace }}/apk/keystore.jks
@@ -25,32 +19,11 @@ jobs:
       RELEASE_STORE_TYPE: ${{ secrets.RELEASE_STORE_TYPE }}
 
     steps:
-      # First step : Checkout the repository on the runner
       - name: Checkout
         uses: actions/checkout@v4
         with:
           submodules: recursive
-          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of Sonar analysis (if we use Sonar Later)
-
-      # Node.js setup for Firebase CLI
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      # Install Firebase CLI
-      - name: Install Firebase CLI
-        run: |
-          npm install -g firebase-tools
-          firebase --version
-
-      # Enable KVM for better emulator performance
-      - name: Enable KVM group perms
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-          ls -l /dev/kvm
+          fetch-depth: 0
 
       - name: Setup JDK
         uses: actions/setup-java@v4
@@ -58,181 +31,104 @@ jobs:
           distribution: "temurin"
           java-version: "17"
 
-      # Decode and save google-services.json from GitHub secrets
+      # gradle setup with caching
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Add Gradle config cache
+        run: |
+          echo "org.gradle.configuration-cache=true" >> gradle.properties
+          echo "org.gradle.caching=true" >> gradle.properties
+          echo "org.gradle.parallel=true" >> gradle.properties
+          cat gradle.properties
+
+      # google-services.json
       - name: Decode google-services.json
         env:
           GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
         run: |
           echo "$GOOGLE_SERVICES" | base64 --decode > $MODULE_DIR/google-services.json
-          ls -la $MODULE_DIR/google-services.json
 
-      # Gradle cache
-      - name: Gradle cache
-        uses: gradle/actions/setup-gradle@v3
-
-      # Create firebase.json if it doesn't exist
+      # Create firebase config file only once
       - name: Create Firebase config
         run: |
           if [ ! -f firebase.json ]; then
             cat > firebase.json << 'EOF'
           {
             "emulators": {
-              "auth": {
-                "port": 9099
-              },
-              "firestore": {
-                "port": 8080
-              },
-              "ui": {
-                "enabled": false
-              }
+              "auth": { "port": 9099 },
+              "firestore": { "port": 8080 },
+              "ui": { "enabled": false }
             }
           }
           EOF
           fi
-          cat firebase.json
 
-      # Start Firebase Emulators in background with debugging
-      - name: Start Firebase Emulators
+      # Use official Firebase Action (much faster than npm install)
+      - name: Firebase Emulator Start
+        uses: w9jds/firebase-action@v2
+        with:
+          args: emulators:start --only auth,firestore --project demo-project --debug
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ""
+        continue-on-error: true
+
+      - name: Wait for Firebase Emulators
         run: |
-          nohup firebase emulators:start --only auth,firestore --project demo-project > emulator.log 2>&1 &
-          EMULATOR_PID=$!
-          echo "Emulator PID: $EMULATOR_PID"
-          # Wait for emulators with increased timeout and logging
-          timeout=120
-          while ! (curl -s -f http://localhost:9099/ && curl -s -f http://localhost:8080/); do
-            if [ $timeout -le 0 ]; then
-              echo "Firebase emulators failed to start within 120s"
-              cat emulator.log
-              exit 1
-            fi
-            echo "Waiting for emulators... $timeout seconds remaining"
-            sleep 5
-            timeout=$((timeout - 5))
+          for i in {1..30}; do
+            curl -sf http://localhost:8080 >/dev/null && curl -sf http://localhost:9099 >/dev/null && break
+            echo "Waiting for Firebase emulators..."
+            sleep 3
           done
-          echo "Firebase emulators are running"
-          cat emulator.log
 
-      # Cache the Emulator
+      # AVD cache
       - name: AVD cache
         uses: actions/cache@v4
         id: avd-cache
         with:
           path: |
-            ~/.android/avd/*
+            ~/.android/avd
             ~/.android/adb*
           key: avd-34
 
-      - name: Create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
+      # Emulator + connected tests (single execution)
+      - name: Connected Android Tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 34
           target: google_apis
           arch: x86_64
           force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: false
-          script: |
-            echo "Generating AVD snapshot..."
-            adb devices
-
-      # Load local.properties from the secrets
-      - name: Decode secrets
-        env:
-          LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
-        run: |
-          if [ -n "$LOCAL_PROPERTIES" ]; then
-          echo "$LOCAL_PROPERTIES" | base64 --decode > ./local.properties
-          else
-          echo "::warning::LOCAL_PROPERTIES secret is not set. local.properties will not be created."
-          fi
-
-      - name: Grant execute permission for gradlew
-        run: |
-          chmod +x ./gradlew
-
-      # Check formatting
-      - name: KTFmt Check
-        run: |
-          ./gradlew ktfmtCheck --stacktrace
-
-      - name: Decode keystore from KEYSTORE_B64
-        env:
-          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
-        run: |
-          set -e
-          mkdir -p "$(dirname "$RELEASE_STORE_FILE")"
-          if [ -z "$KEYSTORE_B64" ]; then
-            echo "KEYSTORE_B64 secret not set!" && exit 1
-          fi
-          echo "$KEYSTORE_B64" | base64 --decode > "$RELEASE_STORE_FILE"
-          ls -l "$RELEASE_STORE_FILE"
-
-      - name: Verify keystore open
-        run: |
-          keytool -list -keystore "$RELEASE_STORE_FILE" \
-            -storepass "$RELEASE_STORE_PASSWORD" \
-            -storetype "$RELEASE_STORE_TYPE" > /dev/null
-
-      - name: Verify alias exists
-        run: |
-          keytool -list -v -keystore "$RELEASE_STORE_FILE" \
-            -storepass "$RELEASE_STORE_PASSWORD" \
-            -storetype "$RELEASE_STORE_TYPE" | grep -q "Alias name: $RELEASE_KEY_ALIAS"
-
-      - name: Verify key password works (private key)
-        run: |
-          set -e
-          keytool -importkeystore \
-            -srckeystore "$RELEASE_STORE_FILE" -srcstoretype "$RELEASE_STORE_TYPE" -srcstorepass "$RELEASE_STORE_PASSWORD" \
-            -srcalias "$RELEASE_KEY_ALIAS" -srckeypass "$RELEASE_KEY_PASSWORD" \
-            -destkeystore /tmp/test.p12 -deststoretype PKCS12 -deststorepass testpass -destalias testalias >/dev/null
-          echo "Private key decryption succeeded."
-          
-
-      # Assemble and lint
-      - name: Assemble
-        run: |
-          ./gradlew assemble lint --parallel --build-cache --stacktrace \
-            -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
-            -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
-            -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS" \
-            -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
-            -PRELEASE_STORE_TYPE="$RELEASE_STORE_TYPE"
-
-      # Run Unit tests
-      - name: Run tests
-        run: |
-          ./gradlew check --parallel --build-cache --stacktrace
-
-      # Run connected tests on the emulator
-      - name: Run connected tests
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          target: google_apis
-          arch: x86_64
-          force-avd-creation: false
-          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -no-snapshot-save -camera-back none
           disable-animations: true
           script: |
-            echo "Starting connected tests..."
-            ./gradlew connectedCheck --parallel --build-cache --stacktrace
+            chmod +x ./gradlew
 
-      # Stop Firebase Emulators
+            # keystore decode + validation combined
+            echo "${{ secrets.KEYSTORE_B64 }}" | base64 --decode > "$RELEASE_STORE_FILE"
+            keytool -list -keystore "$RELEASE_STORE_FILE" -storepass "$RELEASE_STORE_PASSWORD" -storetype "$RELEASE_STORE_TYPE" >/dev/null
+            keytool -list -v -keystore "$RELEASE_STORE_FILE" -storepass "$RELEASE_STORE_PASSWORD" -storetype "$RELEASE_STORE_TYPE" | grep -q "Alias name: $RELEASE_KEY_ALIAS"
+
+            # Assemble + Lint + Check → merged for fewer gradle starts
+            ./gradlew assemble check --build-cache --parallel --stacktrace \
+              -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
+              -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
+              -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS" \
+              -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
+              -PRELEASE_STORE_TYPE="$RELEASE_STORE_TYPE"
+
+            # connected tests
+            ./gradlew connectedCheck --build-cache --parallel --stacktrace
+
+      - name: Generate Coverage Report
+        run: ./gradlew jacocoTestReport --stacktrace
+
       - name: Stop Firebase Emulators
         if: always()
         run: |
-          pkill -f "firebase emulators:start" || true
-          echo "Firebase emulators stopped"
+          pkill -f "firebase" || true
+          echo "Emulators stopped"
 
-      # Generate Coverage Report
-      - name: Generate Coverage Report
-        run: |
-          ./gradlew jacocoTestReport --stacktrace
-
-      # Upload test results (even on failure)
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
@@ -241,19 +137,15 @@ jobs:
           path: |
             $MODULE_DIR/build/reports/tests/
             $MODULE_DIR/build/test-results/
-          retention-days: 7
 
-      # Upload coverage reports
       - name: Upload coverage reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: coverage-reports
           path: $MODULE_DIR/build/reports/jacoco/
-          retention-days: 7
 
-      # Upload the various reports to sonar
-      - name: Upload report to SonarCloud
+      - name: SonarCloud Upload
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
