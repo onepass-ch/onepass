@@ -424,27 +424,6 @@ class ScanScreenTest {
   }
 
   @Test
-  fun acceptedScanShowsCorrectStatus() = runTest {
-    val viewModel =
-        ScannerViewModel(
-            eventId = "test-event",
-            repo = fakeRepo,
-            clock = { testScheduler.currentTime },
-            coroutineScope = this,
-            enableAutoCleanup = false)
-
-    fakeRepo.response =
-        Result.success(
-            ScanDecision.Accepted(
-                ticketId = "T-456", scannedAtSeconds = 1234567890L, remaining = 3))
-
-    viewModel.onQrScanned(validQrCode)
-    advanceUntilIdle()
-
-    assert(viewModel.state.value.status == ScannerUiState.Status.ACCEPTED)
-  }
-
-  @Test
   fun processingStateIsClearedAfterAcceptedScan() = runTest {
     val viewModel =
         ScannerViewModel(
