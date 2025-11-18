@@ -359,7 +359,7 @@ class ScanScreenTest {
     assert(collectedEffects[0] is ScannerEffect.Accepted)
     assert(collectedEffects[1] is ScannerEffect.Rejected)
 
-    job.cancel()
+    job.cancel()//
   }
 
   @Test
