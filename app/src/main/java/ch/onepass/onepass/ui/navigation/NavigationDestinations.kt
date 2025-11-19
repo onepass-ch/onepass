@@ -48,6 +48,12 @@ object NavigationDestinations {
       fun route(organizationId: String) = "$BASE_ROUTE/$organizationId"
     }
 
+    object EditEvent : Screen("edit_event/{eventId}", "Edit Event", false) {
+      const val ARG_EVENT_ID = "eventId"
+
+      fun route(eventId: String) = "edit_event/$eventId"
+    }
+
     object BecomeOrganizer : Screen("become_organizer", "Become Organizer", false)
 
     object OrganizationFeed : Screen("organization_feed", "My Organizations", false)
