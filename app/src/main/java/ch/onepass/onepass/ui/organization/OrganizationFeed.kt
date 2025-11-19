@@ -15,7 +15,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -184,85 +183,15 @@ private fun OrganizationListContent(
   }
 }
 
-/** Loading state indicator. */
-@Composable
-private fun LoadingState(modifier: Modifier = Modifier) {
-  CircularProgressIndicator(
-      modifier = modifier.testTag(OrganizationFeedTestTags.LOADING_INDICATOR),
-      color = colorResource(id = R.color.accent_purple))
-}
-
-/** Error state with retry button. */
-@Composable
-private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-  Column(
-      modifier =
-          modifier.fillMaxWidth().padding(32.dp).testTag(OrganizationFeedTestTags.ERROR_MESSAGE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-  ) {
-    Text(
-        text = "Oops!",
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-        color = Color.White,
-    )
-    Spacer(modifier = modifier.height(8.dp))
-    Text(
-        text = error,
-        style = MaterialTheme.typography.bodyMedium,
-        color = colorResource(id = R.color.gray),
-        textAlign = TextAlign.Center,
-    )
-    Spacer(modifier = modifier.height(24.dp))
-    Button(
-        onClick = onRetry,
-        modifier = modifier.testTag(OrganizationFeedTestTags.RETRY_BUTTON),
-        colors =
-            ButtonDefaults.buttonColors(
-                containerColor = colorResource(id = R.color.accent_purple),
-                contentColor = Color.White,
-            ),
-    ) {
-      Text(text = "Try Again", fontWeight = FontWeight.Medium)
-    }
-  }
-}
-
-/** Empty state when no organizations are available. */
-@Composable
-private fun EmptyOrganizationState(modifier: Modifier = Modifier) {
-  Column(
-      modifier =
-          modifier.fillMaxWidth().padding(32.dp).testTag(OrganizationFeedTestTags.EMPTY_STATE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-  ) {
-    Text(
-        text = "No Organizations",
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-        color = Color.White,
-    )
-    Spacer(modifier = modifier.height(8.dp))
-    Text(
-        text = "You haven't joined any organizations yet.",
-        style = MaterialTheme.typography.bodyMedium,
-        color = colorResource(id = R.color.gray),
-        textAlign = TextAlign.Center,
-    )
-  }
-}
-
 @Composable
 private fun AddOrganizationButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
-  FloatingActionButton(
-      modifier = modifier,
-      onClick = onClick,
-      containerColor = colorResource(R.color.accent_purple),
-      contentColor = colorResource(R.color.white)) {
+    FloatingActionButton(
+        modifier = modifier,
+        onClick = onClick,
+        containerColor = colorResource(R.color.accent_purple),
+        contentColor = colorResource(R.color.white)) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
             contentDescription = "Create a new organization")
-      }
+    }
 }

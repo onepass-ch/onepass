@@ -36,7 +36,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.user.UserSearchType
@@ -250,18 +249,4 @@ private fun SearchInputField(
       shape = RoundedCornerShape(10.dp),
       textStyle = MaterialTheme.typography.bodySmall,
       singleLine = true)
-}
-
-@Composable
-private fun EmptyState(message: String, modifier: Modifier = Modifier) {
-  Box(
-      modifier = modifier.testTag(StaffInvitationTestTags.EMPTY_STATE),
-      contentAlignment = Alignment.Center) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = colorResource(id = R.color.staff_tab_unselected),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 32.dp))
-      }
 }
