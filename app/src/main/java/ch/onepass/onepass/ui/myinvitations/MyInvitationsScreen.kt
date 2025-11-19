@@ -15,10 +15,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.model.organization.*
+import ch.onepass.onepass.ui.components.common.EmptyState
+import ch.onepass.onepass.ui.components.common.ErrorState
+import ch.onepass.onepass.ui.components.common.LoadingState
 import kotlinx.coroutines.flow.first
 
 /**
@@ -178,14 +180,19 @@ internal fun MyInvitationsContent(
             contentAlignment = Alignment.Center) {
               when {
                 state.loading -> {
-                  LoadingState()
+                  LoadingState(testTag = MyInvitationsScreenTestTags.LOADING_INDICATOR)
                 }
                 state.errorMessage != null && state.invitations.isEmpty() -> {
-                  val errorMsg = state.errorMessage
-                  ErrorState(error = errorMsg, onRetry = onRetry)
+                  ErrorState(
+                      error = state.errorMessage,
+                      onRetry = onRetry,
+                      testTag = MyInvitationsScreenTestTags.ERROR_MESSAGE)
                 }
                 state.invitations.isEmpty() -> {
-                  EmptyState()
+                  EmptyState(
+                      title = "No Invitations",
+                      message = "You don't have any pending invitations at the moment.",
+                      testTag = MyInvitationsScreenTestTags.EMPTY_STATE)
                 }
                 else -> {
                   InvitationsList(
@@ -196,77 +203,6 @@ internal fun MyInvitationsContent(
                 }
               }
             }
-      }
-}
-
-/** Displays a loading indicator while invitations are being fetched. */
-@Composable
-private fun LoadingState(modifier: Modifier = Modifier) {
-  CircularProgressIndicator(
-      modifier = modifier.testTag(MyInvitationsScreenTestTags.LOADING_INDICATOR),
-      color = Color(0xFF9C6BFF))
-}
-
-/**
- * Displays an error state with a message and retry button.
- *
- * @param error The error message to display.
- * @param onRetry Callback invoked when the retry button is clicked.
- * @param modifier Optional modifier for layout adjustments.
- */
-@Composable
-private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-  Column(
-      modifier =
-          modifier.fillMaxWidth().padding(32.dp).testTag(MyInvitationsScreenTestTags.ERROR_MESSAGE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center) {
-        Text(
-            text = "Oops!",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.White)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = error,
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color(0xFF9CA3AF),
-            textAlign = TextAlign.Center)
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            onClick = onRetry,
-            modifier = Modifier.testTag(MyInvitationsScreenTestTags.RETRY_BUTTON),
-            colors =
-                ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF9C6BFF), contentColor = Color.White)) {
-              Text(text = "Try Again", fontWeight = FontWeight.Medium)
-            }
-      }
-}
-
-/**
- * Displays an empty state when no invitations are available.
- *
- * @param modifier Optional modifier for layout adjustments.
- */
-@Composable
-private fun EmptyState(modifier: Modifier = Modifier) {
-  Column(
-      modifier =
-          modifier.fillMaxWidth().padding(32.dp).testTag(MyInvitationsScreenTestTags.EMPTY_STATE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center) {
-        Text(
-            text = "No Invitations",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.White)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "You don't have any pending invitations at the moment.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color(0xFF9CA3AF),
-            textAlign = TextAlign.Center)
       }
 }
 
