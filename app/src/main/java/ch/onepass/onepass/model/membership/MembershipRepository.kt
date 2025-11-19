@@ -1,7 +1,6 @@
 package ch.onepass.onepass.model.membership
 
 import ch.onepass.onepass.model.organization.OrganizationRole
-import kotlinx.coroutines.flow.Flow
 
 /** Repository interface defining operations for managing user-organization memberships. */
 interface MembershipRepository {
@@ -42,30 +41,29 @@ interface MembershipRepository {
    * Retrieves all users who are members of a specific organization.
    *
    * @param orgId The organization's unique identifier.
-   * @return A [Flow] emitting a list of memberships for that organization.
+   * @return A list of memberships for that organization.
    */
-  fun getUsersByOrganization(orgId: String): Flow<List<Membership>>
+  suspend fun getUsersByOrganization(orgId: String): List<Membership>
 
   /**
    * Retrieves all organizations that a specific user belongs to.
    *
    * @param userId The user's unique identifier.
-   * @return A [Flow] emitting a list of memberships for that user.
+   * @return A list of memberships for that user.
    */
-  fun getOrganizationsByUser(userId: String): Flow<List<Membership>>
+  suspend fun getOrganizationsByUser(userId: String): List<Membership>
 
   /**
    * Checks if a membership exists with the given criteria.
    *
    * @param userId The user's unique identifier.
    * @param orgId The organization's unique identifier.
-   * @param roles Optional list of roles to filter by. If provided, checks if membership exists with
-   *   any of these roles. If empty or null, checks for any membership regardless of role.
-   * @return A [Flow] emitting true if a matching membership exists, false otherwise.
+   * @param roles List of roles to filter by. Defaults to all roles if not specified.
+   * @return true if a matching membership exists, false otherwise.
    */
-  fun hasMembership(
+  suspend fun hasMembership(
       userId: String,
       orgId: String,
-      roles: List<OrganizationRole>? = null
-  ): Flow<Boolean>
+      roles: List<OrganizationRole> = OrganizationRole.entries
+  ): Boolean
 }
