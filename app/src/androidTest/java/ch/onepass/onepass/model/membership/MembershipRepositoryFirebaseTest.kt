@@ -4,6 +4,7 @@ import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.utils.FirebaseEmulator
 import ch.onepass.onepass.utils.FirestoreTestBase
 import junit.framework.TestCase.*
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertNotEquals
@@ -507,5 +508,37 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     assertFalse(
         "User1 in non-existent org should not exist",
         membershipRepository.hasMembership(testUserId1, "org_999"))
+  }
+
+  @Test
+  fun getUsersByOrganizationFlowEmitsUpdates() = runTest {
+    // Start collecting flow
+    val flow = membershipRepository.getUsersByOrganizationFlow(testOrgId)
+    val initialMemberships = flow.first()
+    assertTrue("Initial flow should be empty", initialMemberships.isEmpty())
+
+    // Add a member
+    membershipRepository.addMembership(testUserId1, testOrgId, testRoleMember)
+
+    // Verify flow emits update
+    val updatedMemberships = flow.first()
+    assertEquals("Should have 1 membership", 1, updatedMemberships.size)
+    assertEquals("Should be user1", testUserId1, updatedMemberships[0].userId)
+  }
+
+  @Test
+  fun getOrganizationsByUserFlowEmitsUpdates() = runTest {
+    // Start collecting flow
+    val flow = membershipRepository.getOrganizationsByUserFlow(userId)
+    val initialMemberships = flow.first()
+    assertTrue("Initial flow should be empty", initialMemberships.isEmpty())
+
+    // Add a membership
+    membershipRepository.addMembership(userId, testOrgId, testRoleMember)
+
+    // Verify flow emits update
+    val updatedMemberships = flow.first()
+    assertEquals("Should have 1 membership", 1, updatedMemberships.size)
+    assertEquals("Should be org1", testOrgId, updatedMemberships[0].orgId)
   }
 }
