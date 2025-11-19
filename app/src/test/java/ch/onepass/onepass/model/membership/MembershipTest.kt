@@ -44,14 +44,16 @@ class MembershipTest {
 
   @Test
   fun membershipWithDifferentRoles() {
-    val ownerMembership = Membership(userId = "user1", orgId = "org1", role = OrganizationRole.OWNER)
+    val ownerMembership =
+        Membership(userId = "user1", orgId = "org1", role = OrganizationRole.OWNER)
     assertEquals(OrganizationRole.OWNER, ownerMembership.role)
 
     val memberMembership =
         Membership(userId = "user2", orgId = "org2", role = OrganizationRole.MEMBER)
     assertEquals(OrganizationRole.MEMBER, memberMembership.role)
 
-    val staffMembership = Membership(userId = "user3", orgId = "org3", role = OrganizationRole.STAFF)
+    val staffMembership =
+        Membership(userId = "user3", orgId = "org3", role = OrganizationRole.STAFF)
     assertEquals(OrganizationRole.STAFF, staffMembership.role)
   }
 
@@ -119,9 +121,12 @@ class MembershipTest {
     val ownerMembership = baseMembership.copy(role = OrganizationRole.OWNER)
     val staffMembership = baseMembership.copy(role = OrganizationRole.STAFF)
 
-    assertNotEquals("Different roles should make memberships unequal", baseMembership, ownerMembership)
-    assertNotEquals("Different roles should make memberships unequal", baseMembership, staffMembership)
-    assertNotEquals("Different roles should make memberships unequal", ownerMembership, staffMembership)
+    assertNotEquals(
+        "Different roles should make memberships unequal", baseMembership, ownerMembership)
+    assertNotEquals(
+        "Different roles should make memberships unequal", baseMembership, staffMembership)
+    assertNotEquals(
+        "Different roles should make memberships unequal", ownerMembership, staffMembership)
   }
 
   @Test
@@ -156,7 +161,10 @@ class MembershipTest {
             orgId = "org_789",
             role = OrganizationRole.MEMBER)
 
-    assertEquals("Equal memberships should have same hashCode", membership1.hashCode(), membership2.hashCode())
+    assertEquals(
+        "Equal memberships should have same hashCode",
+        membership1.hashCode(),
+        membership2.hashCode())
   }
 
   @Test
@@ -213,9 +221,15 @@ class MembershipTest {
   fun membershipCanRepresentMultipleUsersInSameOrg() {
     val orgId = "org_123"
 
-    val membership1 = Membership(membershipId = "m1", userId = "user1", orgId = orgId, role = OrganizationRole.OWNER)
-    val membership2 = Membership(membershipId = "m2", userId = "user2", orgId = orgId, role = OrganizationRole.MEMBER)
-    val membership3 = Membership(membershipId = "m3", userId = "user3", orgId = orgId, role = OrganizationRole.STAFF)
+    val membership1 =
+        Membership(
+            membershipId = "m1", userId = "user1", orgId = orgId, role = OrganizationRole.OWNER)
+    val membership2 =
+        Membership(
+            membershipId = "m2", userId = "user2", orgId = orgId, role = OrganizationRole.MEMBER)
+    val membership3 =
+        Membership(
+            membershipId = "m3", userId = "user3", orgId = orgId, role = OrganizationRole.STAFF)
 
     assertEquals(orgId, membership1.orgId)
     assertEquals(orgId, membership2.orgId)
@@ -228,9 +242,15 @@ class MembershipTest {
   fun membershipCanRepresentSameUserInMultipleOrgs() {
     val userId = "user_123"
 
-    val membership1 = Membership(membershipId = "m1", userId = userId, orgId = "org1", role = OrganizationRole.OWNER)
-    val membership2 = Membership(membershipId = "m2", userId = userId, orgId = "org2", role = OrganizationRole.MEMBER)
-    val membership3 = Membership(membershipId = "m3", userId = userId, orgId = "org3", role = OrganizationRole.STAFF)
+    val membership1 =
+        Membership(
+            membershipId = "m1", userId = userId, orgId = "org1", role = OrganizationRole.OWNER)
+    val membership2 =
+        Membership(
+            membershipId = "m2", userId = userId, orgId = "org2", role = OrganizationRole.MEMBER)
+    val membership3 =
+        Membership(
+            membershipId = "m3", userId = userId, orgId = "org3", role = OrganizationRole.STAFF)
 
     assertEquals(userId, membership1.userId)
     assertEquals(userId, membership2.userId)
@@ -239,4 +259,3 @@ class MembershipTest {
     assertNotEquals(membership2.orgId, membership3.orgId)
   }
 }
-

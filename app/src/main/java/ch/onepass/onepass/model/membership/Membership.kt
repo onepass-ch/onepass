@@ -7,8 +7,8 @@ import com.google.firebase.firestore.ServerTimestamp
 /**
  * Represents a membership relationship between a user and an organization in Cloud Firestore.
  *
- * This table defines the many-to-many relationship between users and organizations,
- * allowing users to belong to multiple organizations with different roles in each.
+ * This table defines the many-to-many relationship between users and organizations, allowing users
+ * to belong to multiple organizations with different roles in each.
  *
  * @property membershipId Unique identifier for the membership record (Firestore document ID).
  * @property userId Identifier of the user who is a member of the organization.
@@ -25,4 +25,3 @@ data class Membership(
     @ServerTimestamp val createdAt: Timestamp? = null,
     @ServerTimestamp val updatedAt: Timestamp? = null
 )
-
