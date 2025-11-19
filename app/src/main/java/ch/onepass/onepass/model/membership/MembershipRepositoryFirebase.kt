@@ -130,6 +130,7 @@ class MembershipRepositoryFirebase : MembershipRepository {
             !snapshot.isEmpty
           }
           .getOrDefault(false)
+
   override fun getUsersByOrganizationFlow(orgId: String): Flow<List<Membership>> = firestoreFlow {
     membershipsCollection
         .whereEqualTo("orgId", orgId)
