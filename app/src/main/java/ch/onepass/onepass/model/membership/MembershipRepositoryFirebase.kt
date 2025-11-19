@@ -1,13 +1,12 @@
 package ch.onepass.onepass.model.membership
 
+import ch.onepass.onepass.model.firestore.firestoreFlow
 import ch.onepass.onepass.model.organization.OrganizationRole
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
-import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 /** Firestore-backed implementation of [MembershipRepository]. */
@@ -142,26 +141,4 @@ class MembershipRepositoryFirebase : MembershipRepository {
         .whereEqualTo("userId", userId)
         .orderBy("createdAt", Query.Direction.DESCENDING)
   }
-
-  /**
-   * Helper function to create a [Flow] from a Firestore query using a snapshot listener.
-   *
-   * @param T The type of objects to emit in the Flow
-   * @param queryBuilder Lambda that returns a configured [Query].
-   * @return A [Flow] emitting a list of objects of type [T].
-   */
-  private inline fun <reified T> firestoreFlow(noinline queryBuilder: () -> Query): Flow<List<T>> =
-      callbackFlow {
-        val query = queryBuilder()
-        val listener =
-            query.addSnapshotListener { snap, error ->
-              if (error != null) {
-                close(error)
-                return@addSnapshotListener
-              }
-              val list = snap?.documents?.mapNotNull { it.toObject(T::class.java) } ?: emptyList()
-              trySend(list)
-            }
-        awaitClose { listener.remove() }
-      }
 }

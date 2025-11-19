@@ -1,6 +1,7 @@
 package ch.onepass.onepass.model.organization
 
 import android.util.Log
+import ch.onepass.onepass.model.firestore.firestoreFlow
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
@@ -56,7 +57,7 @@ class OrganizationRepositoryFirebase : OrganizationRepository {
 
   override fun getOrganizationsByMember(userId: String): Flow<List<Organization>> = firestoreFlow {
     organizationsCollection.whereIn(
-        "members.${userId}.role", OrganizationRole.values().map { it.name })
+        "members.${userId}.role", OrganizationRole.entries.map { it.name })
     // Removed orderBy to avoid composite index requirement - sorting done in-memory instead
   }
 
@@ -161,26 +162,4 @@ class OrganizationRepositoryFirebase : OrganizationRepository {
   override suspend fun deleteInvitation(invitationId: String): Result<Unit> = runCatching {
     invitationsCollection.document(invitationId).delete().await()
   }
-
-  /**
-   * Helper function to create a [Flow] from a Firestore query using a snapshot listener.
-   *
-   * @param T The type of objects to emit in the Flow
-   * @param queryBuilder Lambda that returns a configured [Query].
-   * @return A [Flow] emitting a list of objects of type [T].
-   */
-  private inline fun <reified T> firestoreFlow(noinline queryBuilder: () -> Query): Flow<List<T>> =
-      callbackFlow {
-        val query = queryBuilder()
-        val listener =
-            query.addSnapshotListener { snap, error ->
-              if (error != null) {
-                close(error)
-                return@addSnapshotListener
-              }
-              val list = snap?.documents?.mapNotNull { it.toObject(T::class.java) } ?: emptyList()
-              trySend(list)
-            }
-        awaitClose { listener.remove() }
-      }
 }
