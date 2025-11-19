@@ -46,12 +46,28 @@ interface MembershipRepository {
   suspend fun getUsersByOrganization(orgId: String): List<Membership>
 
   /**
+   * Retrieves all users who are members of a specific organization as a Flow.
+   *
+   * @param orgId The organization's unique identifier.
+   * @return A Flow emitting the list of memberships for that organization.
+   */
+  fun getUsersByOrganizationFlow(orgId: String): kotlinx.coroutines.flow.Flow<List<Membership>>
+
+  /**
    * Retrieves all organizations that a specific user belongs to.
    *
    * @param userId The user's unique identifier.
    * @return A list of memberships for that user.
    */
   suspend fun getOrganizationsByUser(userId: String): List<Membership>
+
+  /**
+   * Retrieves all organizations that a specific user belongs to as a Flow.
+   *
+   * @param userId The user's unique identifier.
+   * @return A Flow emitting the list of memberships for that user.
+   */
+  fun getOrganizationsByUserFlow(userId: String): kotlinx.coroutines.flow.Flow<List<Membership>>
 
   /**
    * Checks if a membership exists with the given criteria.
