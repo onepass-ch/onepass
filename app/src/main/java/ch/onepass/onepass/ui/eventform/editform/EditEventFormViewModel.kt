@@ -15,10 +15,8 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.launch
 
 /**
- * ViewModel for the Edit Event Form screen. Manages loading an existing event, editing its data,
- * and updating it.
- *
- * @property eventRepository Repository for event operations
+ * ViewModel for the Edit Event Form screen. Manages the state of the form and handles event update
+ * logic.
  */
 class EditEventFormViewModel(eventRepository: EventRepository = EventRepositoryFirebase()) :
     EventFormViewModel(eventRepository) {
@@ -27,10 +25,9 @@ class EditEventFormViewModel(eventRepository: EventRepository = EventRepositoryF
   private val _uiState = MutableStateFlow<EditEventUiState>(EditEventUiState.Idle)
   val uiState: StateFlow<EditEventUiState> = _uiState.asStateFlow()
 
-  // Store original event for updates
   private var originalEvent: Event? = null
 
-  /** Loads an event by ID and populates the form */
+  /** Loads the event data into the form */
   fun loadEvent(eventId: String) {
     viewModelScope.launch {
       _uiState.value = EditEventUiState.Loading
@@ -84,7 +81,7 @@ class EditEventFormViewModel(eventRepository: EventRepository = EventRepositoryF
               startTime = parsed.startTime,
               endTime = parsed.endTime,
               capacity = parsed.capacity,
-              location = null, // TODO: Create Location object from location string
+              location = parsed.selectedLocation,
               pricingTiers =
                   listOf(
                       PricingTier(
@@ -120,20 +117,20 @@ sealed class EditEventUiState {
   /** Initial state, no operation in progress */
   object Idle : EditEventUiState()
 
-  /** Event is being loaded */
+  /** Event loading in progress */
   object Loading : EditEventUiState()
 
-  /** Failed to load event */
-  data class LoadError(val message: String) : EditEventUiState()
-
-  /** Event update is in progress */
-  object Updating : EditEventUiState()
-
-  /** Event update succeeded */
+  /** Event successfully updated */
   object Success : EditEventUiState()
 
   /** Event update failed */
   data class Error(val message: String) : EditEventUiState()
+
+  /** Event loading failed */
+  data class LoadError(val message: String) : EditEventUiState()
+
+  /** Event updating in progress */
+  object Updating : EditEventUiState()
 }
 
 /** Extension function to convert Event to EventFormState */
@@ -154,5 +151,6 @@ private fun Event.toFormState(): EventFormViewModel.EventFormState {
       date = dateString,
       location = location?.name ?: "",
       price = if (lowestPrice > 0u) lowestPrice.toString() else "0",
-      capacity = capacity.toString())
+      capacity = capacity.toString(),
+      selectedLocation = this.location)
 }

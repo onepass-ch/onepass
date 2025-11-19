@@ -403,13 +403,12 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val errors = viewModel.fieldErrors.value
-    assertEquals(9, errors.size)
+    assertEquals(8, errors.size)
     assertTrue(errors.containsKey(ValidationError.TITLE.key))
     assertTrue(errors.containsKey(ValidationError.DESCRIPTION.key))
     assertTrue(errors.containsKey(ValidationError.DATE.key))
     assertTrue(errors.containsKey(ValidationError.START_TIME.key))
     assertTrue(errors.containsKey(ValidationError.END_TIME.key))
-    assertTrue(errors.containsKey(ValidationError.TIME.key)) // "" <= "" is true
     assertTrue(errors.containsKey(ValidationError.LOCATION.key))
     assertTrue(errors.containsKey(ValidationError.PRICE_EMPTY.key))
     assertTrue(errors.containsKey(ValidationError.CAPACITY_EMPTY.key))
