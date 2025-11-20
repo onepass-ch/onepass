@@ -12,7 +12,7 @@ class MembershipTest {
   fun membershipHasCorrectDefaults() {
     val membership = Membership()
 
-    assertEquals("", membership.membershipId)
+    assertNull(membership.membershipId)
     assertEquals("", membership.userId)
     assertEquals("", membership.orgId)
     assertEquals(OrganizationRole.MEMBER, membership.role)

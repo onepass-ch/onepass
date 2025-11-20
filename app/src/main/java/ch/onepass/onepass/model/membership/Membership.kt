@@ -10,7 +10,8 @@ import com.google.firebase.firestore.ServerTimestamp
  * This table defines the many-to-many relationship between users and organizations, allowing users
  * to belong to multiple organizations with different roles in each.
  *
- * @property membershipId Unique identifier for the membership record (Firestore document ID).
+ * @property membershipId Unique identifier for the membership record (Firestore document ID),
+ *   nullable before the membership is persisted.
  * @property userId Identifier of the user who is a member of the organization.
  * @property orgId Identifier of the organization the user belongs to.
  * @property role Role assigned to the user within the organization (e.g., OWNER, MEMBER, STAFF).
@@ -18,7 +19,7 @@ import com.google.firebase.firestore.ServerTimestamp
  * @property updatedAt Timestamp when the membership was last updated (server-set).
  */
 data class Membership(
-    val membershipId: String = "",
+    val membershipId: String? = null,
     val userId: String = "",
     val orgId: String = "",
     val role: OrganizationRole = OrganizationRole.MEMBER,
