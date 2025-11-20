@@ -37,7 +37,14 @@ import kotlinx.coroutines.launch
  */
 val Context.passDataStore: DataStore<Preferences> by preferencesDataStore(name = "onepass_cache")
 
-/** Data class representing a ticket in the UI. */
+/**
+ * Data class representing a ticket in the UI.
+ *
+ * @param title The title of the event.
+ * @param status The status of the ticket (e.g., CURRENTLY, UPCOMING, EXPIRED).
+ * @param dateTime The display date and time of the event.
+ * @param location The display location of the event.
+ */
 data class Ticket(
     val title: String,
     val status: TicketStatus,
@@ -45,7 +52,11 @@ data class Ticket(
     val location: String,
 )
 
-/** Enum representing the status of a ticket for UI display purposes. */
+/**
+ * Enum representing the status of a ticket for UI display purposes.
+ *
+ * @param colorRes The color resource associated with the status.
+ */
 enum class TicketStatus(@ColorRes val colorRes: Int) {
   CURRENTLY(R.color.status_currently),
   UPCOMING(R.color.status_upcoming),
@@ -53,25 +64,23 @@ enum class TicketStatus(@ColorRes val colorRes: Int) {
 }
 
 /**
- * Unified ViewModel for the "My Events" screen:
- * - Manages tickets (current & expired) enriched with their events
- * - Manages the user's pass (QR) with DataStore cache and offline fallback
+ * ViewModel for managing and displaying the user's tickets.
  *
  * SECURITY NOTE: Cache stores QR in plain text. If a device is compromised, cached QRs could be
  * extracted and replayed until server-side revocation.
  *
  * @param dataStore DataStore for caching QR codes (injected, not via Application)
  * @param passRepository Repository for signed passes
- * @param ticketRepo Repository for tickets (Firebase by default)
- * @param eventRepo Repository for events (Firebase by default)
- * @param userId Optional: if null, FirebaseAuth.currentUser?.uid is used
+ * @param ticketRepo The repository for ticket data (default is Firebase implementation).
+ * @param eventRepo The repository for event data (default is Firebase implementation).
+ * @param userId The ID of the current user whose tickets are being managed.
  */
 class MyEventsViewModel(
     private val dataStore: DataStore<Preferences>,
     private val passRepository: PassRepository,
     private val ticketRepo: TicketRepository = TicketRepositoryFirebase(),
     private val eventRepo: EventRepository = EventRepositoryFirebase(),
-    private val userId: String? = null
+    private val userId: String?
 ) : ViewModel() {
 
   // ---------- Companion Object ----------
@@ -105,33 +114,31 @@ class MyEventsViewModel(
   /**
    * Enriches a list of tickets with their associated event details.
    *
-   * @param tickets List of tickets to enrich
-   * @return Flow emitting enriched tickets with event information
+   * @param tickets List of tickets to enrich.
+   * @return A Flow emitting a list of enriched tickets with event details.
    */
   private fun enrichTickets(
       tickets: List<ch.onepass.onepass.model.ticket.Ticket>
   ): Flow<List<Ticket>> {
     if (tickets.isEmpty()) return flowOf(emptyList())
-
-    val flows =
+    return combine(
         tickets.map { ticket ->
           eventRepo.getEventById(ticket.eventId).map { event -> ticket.toUiTicket(event) }
+        }) {
+          it.toList()
         }
-    return combine(flows) { it.toList() }
   }
 
-  /** StateFlow of the user's current (active) tickets enriched with event details */
+  /** StateFlow of the user's current (active) tickets enriched with event details. */
   val currentTickets: StateFlow<List<Ticket>> =
-      (resolvedUserId?.let { uid ->
-            ticketRepo.getActiveTickets(uid).flatMapLatest { enrichTickets(it) }
-          } ?: flowOf(emptyList()))
+      (userId?.let { uid -> ticketRepo.getActiveTickets(uid).flatMapLatest { enrichTickets(it) } }
+              ?: flowOf(emptyList()))
           .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
-  /** StateFlow of the user's expired or redeemed tickets enriched with event details */
+  /** StateFlow of the user's expired or redeemed tickets enriched with event details. */
   val expiredTickets: StateFlow<List<Ticket>> =
-      (resolvedUserId?.let { uid ->
-            ticketRepo.getExpiredTickets(uid).flatMapLatest { enrichTickets(it) }
-          } ?: flowOf(emptyList()))
+      (userId?.let { uid -> ticketRepo.getExpiredTickets(uid).flatMapLatest { enrichTickets(it) } }
+              ?: flowOf(emptyList()))
           .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
   // ---------- Initialization ----------
