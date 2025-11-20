@@ -41,9 +41,10 @@ interface MembershipRepository {
    * Retrieves all users who are members of a specific organization.
    *
    * @param orgId The organization's unique identifier.
-   * @return A list of memberships for that organization.
+   * @return A [Result] containing a list of memberships for that organization. Empty list indicates
+   *   no members, not an error.
    */
-  suspend fun getUsersByOrganization(orgId: String): List<Membership>
+  suspend fun getUsersByOrganization(orgId: String): Result<List<Membership>>
 
   /**
    * Retrieves all users who are members of a specific organization as a Flow.
@@ -57,9 +58,10 @@ interface MembershipRepository {
    * Retrieves all organizations that a specific user belongs to.
    *
    * @param userId The user's unique identifier.
-   * @return A list of memberships for that user.
+   * @return A [Result] containing a list of memberships for that user. Empty list indicates no
+   *   memberships, not an error.
    */
-  suspend fun getOrganizationsByUser(userId: String): List<Membership>
+  suspend fun getOrganizationsByUser(userId: String): Result<List<Membership>>
 
   /**
    * Retrieves all organizations that a specific user belongs to as a Flow.

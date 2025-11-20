@@ -85,29 +85,27 @@ class MembershipRepositoryFirebase : MembershipRepository {
         .await()
   }
 
-  override suspend fun getUsersByOrganization(orgId: String): List<Membership> =
+  override suspend fun getUsersByOrganization(orgId: String): Result<List<Membership>> =
       runCatching {
-            membershipsCollection
-                .whereEqualTo("orgId", orgId)
-                .orderBy("createdAt", Query.Direction.DESCENDING)
-                .get()
-                .await()
-                .documents
-                .mapNotNull { it.toObject(Membership::class.java) }
-          }
-          .getOrDefault(emptyList())
+        membershipsCollection
+            .whereEqualTo("orgId", orgId)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .get()
+            .await()
+            .documents
+            .mapNotNull { it.toObject(Membership::class.java) }
+      }
 
-  override suspend fun getOrganizationsByUser(userId: String): List<Membership> =
+  override suspend fun getOrganizationsByUser(userId: String): Result<List<Membership>> =
       runCatching {
-            membershipsCollection
-                .whereEqualTo("userId", userId)
-                .orderBy("createdAt", Query.Direction.DESCENDING)
-                .get()
-                .await()
-                .documents
-                .mapNotNull { it.toObject(Membership::class.java) }
-          }
-          .getOrDefault(emptyList())
+        membershipsCollection
+            .whereEqualTo("userId", userId)
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .get()
+            .await()
+            .documents
+            .mapNotNull { it.toObject(Membership::class.java) }
+      }
 
   override suspend fun hasMembership(
       userId: String,
