@@ -19,6 +19,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.resources.C
+import ch.onepass.onepass.ui.components.buttons.CloseButton
+import ch.onepass.onepass.ui.components.buttons.LikeButton
 import ch.onepass.onepass.ui.theme.CardBackground
 import ch.onepass.onepass.ui.theme.CardShadow
 import ch.onepass.onepass.ui.theme.EventCardDimens
