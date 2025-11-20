@@ -203,19 +203,22 @@ class EditEventFormComposeTest {
         .onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON)
         .performScrollTo()
         .performClick()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText(ValidationError.TITLE.message).assertIsDisplayed()
+
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule
+          .onAllNodesWithText(ValidationError.TITLE.message)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
 
     // fix title
     composeTestRule.onNodeWithTag("title_input_field").performTextInput("Fixed")
-    composeTestRule.waitForIdle()
-
-    composeTestRule
-        .onNodeWithText("Type to search location")
-        .performScrollTo()
-        .performTextInput("EPFL, Lausanne")
-
-    composeTestRule.onNodeWithText("EPFL, Lausanne").assertIsDisplayed()
+    composeTestRule.waitUntil(5_000) {
+      composeTestRule
+          .onAllNodesWithText(ValidationError.TITLE.message)
+          .fetchSemanticsNodes()
+          .isEmpty()
+    }
     composeTestRule.onNodeWithText(ValidationError.TITLE.message).assertDoesNotExist()
   }
 

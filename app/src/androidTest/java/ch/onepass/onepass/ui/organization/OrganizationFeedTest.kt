@@ -257,7 +257,13 @@ class OrganizationFeedTest {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
     }
 
-    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      composeTestRule
+          .onAllNodesWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST)
+          .fetchSemanticsNodes()
+          .isNotEmpty() &&
+          composeTestRule.onAllNodesWithText("Organization 1").fetchSemanticsNodes().isNotEmpty()
+    }
     composeTestRule.onNodeWithText("Organization 1").assertExists().assertIsDisplayed()
     composeTestRule
         .onNodeWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST)
