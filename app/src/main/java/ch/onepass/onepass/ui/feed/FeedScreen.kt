@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -98,24 +100,27 @@ fun FeedScreen(
       },
       containerColor = Color(0xFF0A0A0A),
   ) { paddingValues ->
-    Box(
+    val pullState = rememberPullToRefreshState()
+    PullToRefreshBox(
+        isRefreshing = uiState.isRefreshing,
+        onRefresh = viewModel::refreshEvents,
+        state = pullState,
         modifier = Modifier.fillMaxSize().padding(paddingValues),
-        contentAlignment = Alignment.Center,
     ) {
       when {
-        uiState.isLoading && uiState.events.isEmpty() -> {
+        uiState.isLoading && uiState.events.isEmpty() && !uiState.isRefreshing -> {
           LoadingState()
         }
         uiState.error != null && uiState.events.isEmpty() -> {
           ErrorState(error = uiState.error!!, onRetry = { viewModel.refreshEvents() })
         }
-        !uiState.isLoading && uiState.events.isEmpty() -> {
+        !uiState.isLoading && !uiState.isRefreshing && uiState.events.isEmpty() -> {
           EmptyFeedState()
         }
         else -> {
           EventListContent(
               events = uiState.events,
-              isLoadingMore = uiState.isLoading,
+              isLoadingMore = uiState.isLoading && !uiState.isRefreshing,
               onEventClick = onNavigateToEvent,
           )
         }
