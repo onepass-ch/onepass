@@ -138,7 +138,6 @@ fun MapScreen(
             EventCard(
                 event = event,
                 onCardClick = { onNavigateToEvent(event.eventId) },
-                onDismiss = { mapViewModel.clearSelectedEvent() },
                 modifier = modifier.align(Alignment.TopCenter).padding(16.dp),
                 isLiked = likedEvents.contains(event.eventId),
                 onLikeToggle = { eventId -> eventCardViewModel.toggleLike(eventId) })

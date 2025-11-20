@@ -357,4 +357,56 @@ class FullNavigationTest {
       composeRule.waitForIdle()
     }
   }
+
+  @Test
+  fun organization_dashboard_to_edit_event_flow() {
+    setApp(signedIn = true)
+    composeRule.waitForIdle()
+
+    val orgId = "org_flow_edit_test"
+    val eventId = "event_to_edit_id"
+
+    // 1. Navigate to Dashboard
+    composeRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.OrganizationDashboard.route(orgId))
+    }
+    composeRule.waitForIdle()
+    assertEquals(
+        NavigationDestinations.Screen.OrganizationDashboard.route,
+        navController.currentDestination?.route)
+
+    // 2. Navigate to Edit Event (Simulating the user action)
+    composeRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.EditEvent.route(eventId))
+    }
+    composeRule.waitForIdle()
+    assertEquals(
+        NavigationDestinations.Screen.EditEvent.route, navController.currentDestination?.route)
+
+    // 3. Navigate Back
+    composeRule.runOnUiThread { navController.popBackStack() }
+    composeRule.waitForIdle()
+    assertEquals(
+        NavigationDestinations.Screen.OrganizationDashboard.route,
+        navController.currentDestination?.route)
+  }
+
+  @Test
+  fun edit_event_route_handles_ids() {
+    setApp(signedIn = true)
+    composeRule.waitForIdle()
+
+    val ids = listOf("edit_1", "edit-event-id_complex")
+    ids.forEach { id ->
+      composeRule.runOnUiThread {
+        navController.navigate(NavigationDestinations.Screen.EditEvent.route(id))
+      }
+      composeRule.waitForIdle()
+      assertEquals(
+          NavigationDestinations.Screen.EditEvent.route, navController.currentDestination?.route)
+
+      composeRule.runOnUiThread { navController.popBackStack() }
+      composeRule.waitForIdle()
+    }
+  }
 }

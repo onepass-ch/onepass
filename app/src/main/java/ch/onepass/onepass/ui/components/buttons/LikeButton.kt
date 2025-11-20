@@ -1,4 +1,4 @@
-package ch.onepass.onepass.ui.event
+package ch.onepass.onepass.ui.components.buttons
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween

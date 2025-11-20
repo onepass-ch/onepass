@@ -288,29 +288,6 @@ class MapScreenTest {
   }
 
   @Test
-  fun mapScreen_eventCardCloseButtonWorksCorrectly() {
-    every { mockMapViewModel.uiState } returns
-        MutableStateFlow(
-            MapUIState(
-                events = listOf(testEvent1, testEvent2),
-                selectedEvent = testEvent1,
-                showFilterDialog = false))
-
-    composeTestRule.setContent {
-      MapScreen(
-          mapViewModel = mockMapViewModel,
-          filterViewModel = mockFilterViewModel,
-          isLocationPermissionGranted = true)
-    }
-
-    composeTestRule.onNodeWithTag(C.Tag.event_card).assertIsDisplayed()
-
-    composeTestRule.onNodeWithTag(C.Tag.event_card_close_button).performClick()
-
-    verify { mockMapViewModel.clearSelectedEvent() }
-  }
-
-  @Test
   fun mapScreen_filterDialogApplyButtonClosesDialog() {
     every { mockMapViewModel.uiState } returns
         MutableStateFlow(

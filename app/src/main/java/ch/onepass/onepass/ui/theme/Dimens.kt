@@ -21,9 +21,6 @@ object EventCardDimens {
   // Content padding
   val contentHorizontalPadding = 12.dp
   val likeButtonPadding = 12.dp
-
-  val closeButtonPadding = 12.dp
-
   val eventCardPadding = 10.dp
 
   // Text section dimensions

@@ -16,6 +16,5 @@ object C {
     const val event_card_date = "event_card_date"
     const val event_card_location = "event_card_location"
     const val event_card_price = "event_card_price"
-    const val event_card_close_button = "event_card_close_button"
   }
 }

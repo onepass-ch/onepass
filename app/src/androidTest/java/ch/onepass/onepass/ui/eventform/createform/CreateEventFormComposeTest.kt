@@ -82,7 +82,7 @@ class CreateEventFormComposeTest {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Find location field by placeholder
-    composeTestRule.onNodeWithText("Type a location").performTextInput("EPFL, Lausanne")
+    composeTestRule.onNodeWithText("Type to search location").performTextInput("EPFL, Lausanne")
 
     // Verify the input was accepted
     composeTestRule.onNodeWithText("EPFL, Lausanne").assertIsDisplayed()
@@ -136,7 +136,7 @@ class CreateEventFormComposeTest {
     composeTestRule.onNodeWithText("This is amazing..").performTextInput("Test Description")
 
     composeTestRule
-        .onNodeWithText("Type a location")
+        .onNodeWithText("Type to search location")
         .performScrollTo()
         .performTextInput("Test Location")
 
@@ -312,7 +312,7 @@ class CreateEventFormComposeTest {
   }
 
   @Test
-  fun invalidPrice_showsError() = runTest {
+  fun invalidPrice_showsError() {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Fill all fields
@@ -336,11 +336,11 @@ class CreateEventFormComposeTest {
         .assertIsDisplayed()
   }
 }
-// Fixed Helper function - moved outside test class
+
 private fun AndroidComposeTestRule<*, *>.fillAllFields(viewModel: CreateEventFormViewModel) {
   onNodeWithText("Amazing event").performTextInput("Test Event")
   onNodeWithText("This is amazing..").performTextInput("Description")
-  onNodeWithText("Type a location").performScrollTo().performTextInput("Location")
+  onNodeWithText("Type to search location").performScrollTo().performTextInput("Location")
   onNodeWithText("ex: 12").performScrollTo().performTextInput("10")
   onNodeWithText("ex: 100").performScrollTo().performTextInput("50")
 

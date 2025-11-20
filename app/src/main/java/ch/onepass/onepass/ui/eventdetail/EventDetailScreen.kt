@@ -32,8 +32,8 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.organization.Organization
+import ch.onepass.onepass.ui.components.buttons.LikeButton
 import ch.onepass.onepass.ui.event.EventCardViewModel
-import ch.onepass.onepass.ui.event.LikeButton
 import ch.onepass.onepass.ui.organization.OrganizationCard
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import coil.compose.AsyncImage

@@ -1,12 +1,14 @@
 package ch.onepass.onepass.ui.createform
 
 import ch.onepass.onepass.model.event.EventRepository
+import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationStatus
 import ch.onepass.onepass.ui.eventform.EventFormViewModel.ValidationError
 import ch.onepass.onepass.ui.eventform.createform.CreateEventFormViewModel
 import ch.onepass.onepass.ui.eventform.createform.CreateEventUiState
+import com.google.firebase.firestore.GeoPoint
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -40,6 +42,9 @@ class CreateEventFormViewModelTest {
           description = "Test Description",
           ownerId = "test-owner-id",
           status = OrganizationStatus.ACTIVE)
+
+  private val testLocation =
+      Location(coordinates = GeoPoint(46.5197, 6.6323), name = "EPFL", region = "Vaud")
 
   @Before
   fun setUp() {
@@ -302,7 +307,7 @@ class CreateEventFormViewModelTest {
         viewModel.updateDate("25/12/2025")
         viewModel.updateStartTime("14:30")
         viewModel.updateEndTime("16:30")
-        viewModel.updateLocation("EPFL")
+        viewModel.selectLocation(testLocation)
         viewModel.updatePrice("25.50")
         viewModel.updateCapacity("100")
 
@@ -330,7 +335,7 @@ class CreateEventFormViewModelTest {
         viewModel.updateDate("25/12/2025")
         viewModel.updateStartTime("14:30")
         viewModel.updateEndTime("16:30")
-        viewModel.updateLocation("EPFL")
+        viewModel.selectLocation(testLocation)
         viewModel.updatePrice("25")
         viewModel.updateCapacity("100")
 
@@ -403,7 +408,7 @@ class CreateEventFormViewModelTest {
         viewModel.updateDate("25/12/2025")
         viewModel.updateStartTime("14:30")
         viewModel.updateEndTime("16:30")
-        viewModel.updateLocation("EPFL")
+        viewModel.selectLocation(testLocation)
         viewModel.updatePrice("25")
         viewModel.updateCapacity("100")
 
@@ -424,7 +429,7 @@ class CreateEventFormViewModelTest {
         viewModel.updateDate("25/12/2025")
         viewModel.updateStartTime("14:30")
         viewModel.updateEndTime("16:30")
-        viewModel.updateLocation("EPFL")
+        viewModel.selectLocation(testLocation)
         viewModel.updatePrice("25.50")
         viewModel.updateCapacity("100")
 
@@ -444,7 +449,7 @@ class CreateEventFormViewModelTest {
         viewModel.updateDate("25/12/2025")
         viewModel.updateStartTime("14:30")
         viewModel.updateEndTime("16:30")
-        viewModel.updateLocation("EPFL")
+        viewModel.selectLocation(testLocation)
         viewModel.updatePrice("25")
         viewModel.updateCapacity("150")
 
