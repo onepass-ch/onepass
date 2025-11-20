@@ -81,7 +81,8 @@ class StorageRepositoryFirebaseTest {
     assertNotNull("Download URL should not be null", downloadUrl)
     // Firebase Storage URLs encode the path with %2F for slashes
     val encodedPath = URLEncoder.encode(testPath, "UTF-8")
-    assertTrue("Download URL should contain encoded path", downloadUrl?.contains(encodedPath) == true)
+    assertTrue(
+        "Download URL should contain encoded path", downloadUrl?.contains(encodedPath) == true)
 
     uploadedFiles.add(testPath)
 

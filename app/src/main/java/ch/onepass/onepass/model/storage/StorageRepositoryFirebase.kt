@@ -1,7 +1,6 @@
 package ch.onepass.onepass.model.storage
 
 import android.net.Uri
-import ch.onepass.onepass.model.storage.StorageRepository
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageMetadata
@@ -15,9 +14,8 @@ import kotlinx.coroutines.tasks.await
  * This implementation handles uploading, downloading, and deleting image files from Firebase
  * Storage.
  */
-class StorageRepositoryFirebase(
-    private val storage: FirebaseStorage = Firebase.storage
-) : StorageRepository {
+class StorageRepositoryFirebase(private val storage: FirebaseStorage = Firebase.storage) :
+    StorageRepository {
   private val storageRef = storage.reference
 
   companion object {
@@ -58,7 +56,8 @@ class StorageRepositoryFirebase(
     // Validate content type
     if (contentType !in SUPPORTED_IMAGE_TYPES) {
       return Result.failure(
-          IllegalArgumentException("Unsupported image type: $contentType. Supported types: $SUPPORTED_IMAGE_TYPES"))
+          IllegalArgumentException(
+              "Unsupported image type: $contentType. Supported types: $SUPPORTED_IMAGE_TYPES"))
     }
 
     val fileRef = storageRef.child(path)
@@ -198,4 +197,3 @@ class StorageRepositoryFirebase(
     }
   }
 }
-

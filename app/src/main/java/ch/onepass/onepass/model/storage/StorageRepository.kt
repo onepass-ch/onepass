@@ -58,4 +58,3 @@ interface StorageRepository {
    */
   suspend fun deleteDirectory(directoryPath: String): Result<Int>
 }
-

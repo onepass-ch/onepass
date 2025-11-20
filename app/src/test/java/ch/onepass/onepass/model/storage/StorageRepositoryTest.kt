@@ -4,11 +4,11 @@ import android.net.Uri
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 /**
  * Unit tests for StorageRepository using MockK.
@@ -35,7 +35,8 @@ class StorageRepositoryTest {
     val expectedUrl = "https://storage.googleapis.com/bucket/events/event123/image.jpg"
     val testPath = "events/event123/image.jpg"
 
-    coEvery { mockRepository.uploadImage(testUri, testPath, null) } returns Result.success(expectedUrl)
+    coEvery { mockRepository.uploadImage(testUri, testPath, null) } returns
+        Result.success(expectedUrl)
 
     val result = mockRepository.uploadImage(testUri, testPath)
 
@@ -64,12 +65,14 @@ class StorageRepositoryTest {
     val testPath = "events/event123/image.jpg"
     val exception = Exception("Upload failed")
 
-    coEvery { mockRepository.uploadImage(testUri, testPath, null) } returns Result.failure(exception)
+    coEvery { mockRepository.uploadImage(testUri, testPath, null) } returns
+        Result.failure(exception)
 
     val result = mockRepository.uploadImage(testUri, testPath)
 
     assertTrue(result.isFailure, "Upload should fail")
-    assertEquals(exception.message, result.exceptionOrNull()?.message, "Should return correct error")
+    assertEquals(
+        exception.message, result.exceptionOrNull()?.message, "Should return correct error")
   }
 
   @Test
@@ -94,7 +97,8 @@ class StorageRepositoryTest {
     val result = mockRepository.deleteImage(testPath)
 
     assertTrue(result.isFailure, "Delete should fail")
-    assertEquals(exception.message, result.exceptionOrNull()?.message, "Should return correct error")
+    assertEquals(
+        exception.message, result.exceptionOrNull()?.message, "Should return correct error")
   }
 
   @Test
@@ -132,7 +136,8 @@ class StorageRepositoryTest {
     val result = mockRepository.getDownloadUrl(testPath)
 
     assertTrue(result.isFailure, "Get download URL should fail")
-    assertEquals(exception.message, result.exceptionOrNull()?.message, "Should return correct error")
+    assertEquals(
+        exception.message, result.exceptionOrNull()?.message, "Should return correct error")
   }
 
   @Test
@@ -140,7 +145,8 @@ class StorageRepositoryTest {
     val testPath = "events/event123/"
     val expectedDeletedCount = 5
 
-    coEvery { mockRepository.deleteDirectory(testPath) } returns Result.success(expectedDeletedCount)
+    coEvery { mockRepository.deleteDirectory(testPath) } returns
+        Result.success(expectedDeletedCount)
 
     val result = mockRepository.deleteDirectory(testPath)
 
@@ -158,7 +164,7 @@ class StorageRepositoryTest {
     val result = mockRepository.deleteDirectory(testPath)
 
     assertTrue(result.isFailure, "Delete directory should fail")
-    assertEquals(exception.message, result.exceptionOrNull()?.message, "Should return correct error")
+    assertEquals(
+        exception.message, result.exceptionOrNull()?.message, "Should return correct error")
   }
 }
-
