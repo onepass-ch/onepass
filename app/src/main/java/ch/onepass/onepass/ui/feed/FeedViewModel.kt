@@ -43,7 +43,7 @@ class FeedViewModel(
 
   companion object {
     /** Maximum number of loaded events to return */
-    private const val LOADED_EVENTS_LIMIT = 20
+    const val LOADED_EVENTS_LIMIT = 20
   }
 
   private val _uiState = MutableStateFlow(FeedUIState())
