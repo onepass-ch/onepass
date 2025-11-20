@@ -126,4 +126,67 @@ class NominatimLocationRepository(private val client: OkHttpClient = OkHttpClien
           return@withContext emptyList()
         }
       }
+
+  /**
+   * Reverse geocodes coordinates to get location name and details.
+   *
+   * @param latitude Latitude coordinate
+   * @param longitude Longitude coordinate
+   * @return Location object with name and region, or null if lookup fails
+   */
+  override suspend fun reverseGeocode(latitude: Double, longitude: Double): Location? =
+      withContext(Dispatchers.IO) {
+        val url =
+            HttpUrl.Builder()
+                .scheme("https")
+                .host("nominatim.openstreetmap.org")
+                .addPathSegment("reverse")
+                .addQueryParameter("lat", latitude.toString())
+                .addQueryParameter("lon", longitude.toString())
+                .addQueryParameter("format", "json")
+                .addQueryParameter("addressdetails", "1")
+                .build()
+
+        val request =
+            Request.Builder()
+                .url(url)
+                .header("User-Agent", USER_AGENT)
+                .header("Referer", REFERER)
+                .build()
+
+        try {
+          val response = client.newCall(request).execute()
+          response.use {
+            if (!response.isSuccessful) {
+              Log.w(TAG, "Reverse geocoding failed: ${response.code}")
+              return@withContext null
+            }
+
+            val body = response.body?.string()
+            if (body != null) {
+              try {
+                val jsonObject = jsonParser.parseToJsonElement(body).jsonObject
+                val displayName = jsonObject["display_name"]?.jsonPrimitive?.contentOrNull ?: ""
+
+                val address = jsonObject["address"]?.jsonObject
+                val region =
+                    address?.get("state")?.jsonPrimitive?.contentOrNull
+                        ?: address?.get("county")?.jsonPrimitive?.contentOrNull
+
+                return@withContext Location(
+                    coordinates = GeoPoint(latitude, longitude),
+                    name = displayName,
+                    region = region)
+              } catch (e: Exception) {
+                Log.e(TAG, "Error parsing reverse geocode response", e)
+                return@withContext null
+              }
+            }
+            return@withContext null
+          }
+        } catch (e: Exception) {
+          Log.e(TAG, "Error during reverse geocoding", e)
+          return@withContext null
+        }
+      }
 }

@@ -228,4 +228,95 @@ class NominatimLocationRepositoryTest {
       mockClient.newCall(match { it.header("User-Agent") == "OnePass/1.0 (contact@onepass.ch)" })
     }
   }
+
+  @Test
+  fun testReverseGeocodeSuccessful() = runTest {
+    val jsonResponse =
+        """
+            {
+                "lat": "46.5197",
+                "lon": "6.6323",
+                "display_name": "EPFL, Lausanne",
+                "address": {"state": "Vaud"}
+            }
+        """
+            .trimIndent()
+
+    val mockResponse = mockk<Response>()
+    every { mockResponse.isSuccessful } returns true
+    every { mockResponse.body?.string() } returns jsonResponse
+    every { mockResponse.close() } just runs
+    every { mockCall.execute() } returns mockResponse
+    every { mockClient.newCall(any()) } returns mockCall
+
+    val result = repository.reverseGeocode(46.5197, 6.6323)
+
+    assertNotNull(result)
+    assertEquals("EPFL, Lausanne", result?.name)
+    assertEquals("Vaud", result?.region)
+  }
+
+  @Test
+  fun testReverseGeocodeWithoutRegion() = runTest {
+    val jsonResponse =
+        """
+            {
+                "lat": "45.5",
+                "lon": "10.2",
+                "display_name": "Some Location",
+                "address": {}
+            }
+        """
+            .trimIndent()
+
+    val mockResponse = mockk<Response>()
+    every { mockResponse.isSuccessful } returns true
+    every { mockResponse.body?.string() } returns jsonResponse
+    every { mockResponse.close() } just runs
+    every { mockCall.execute() } returns mockResponse
+    every { mockClient.newCall(any()) } returns mockCall
+
+    val result = repository.reverseGeocode(45.5, 10.2)
+
+    assertNotNull(result)
+    assertNull(result?.region)
+  }
+
+  @Test
+  fun testReverseGeocodeUnsuccessful() = runTest {
+    val mockResponse = mockk<Response>()
+    every { mockResponse.isSuccessful } returns false
+    every { mockResponse.code } returns 404
+    every { mockResponse.close() } just runs
+    every { mockCall.execute() } returns mockResponse
+    every { mockClient.newCall(any()) } returns mockCall
+
+    val result = repository.reverseGeocode(999.0, 999.0)
+
+    assertNull(result)
+  }
+
+  @Test
+  fun testReverseGeocodeNetworkError() = runTest {
+    every { mockCall.execute() } throws IOException("Network error")
+    every { mockClient.newCall(any()) } returns mockCall
+
+    val result = repository.reverseGeocode(46.5197, 6.6323)
+
+    assertNull(result)
+  }
+
+  @Test
+  fun testReverseGeocodeNullBody() = runTest {
+    val mockResponse = mockk<Response>()
+    every { mockResponse.isSuccessful } returns true
+    every { mockResponse.body?.string() } returns null
+    every { mockResponse.close() } just runs
+    every { mockCall.execute() } returns mockResponse
+    every { mockClient.newCall(any()) } returns mockCall
+
+    val result = repository.reverseGeocode(46.5197, 6.6323)
+
+    assertNull(result)
+  }
 }
