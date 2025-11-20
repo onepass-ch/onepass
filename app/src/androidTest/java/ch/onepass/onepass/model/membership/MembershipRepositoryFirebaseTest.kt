@@ -143,7 +143,7 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     assertTrue("Update membership should succeed", result.isSuccess)
 
     // Verify role was updated
-    val memberships = membershipRepository.getOrganizationsByUser(userId)
+    val memberships = membershipRepository.getOrganizationsByUser(userId).getOrThrow()
     val membership = memberships.find { it.orgId == testOrgId }
     assertNotNull("Membership should exist", membership)
     assertEquals("Role should be updated", testRoleOwner, membership?.role)
@@ -171,7 +171,7 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     assertTrue("Update to STAFF should succeed", result.isSuccess)
 
     // Verify final role
-    val memberships = membershipRepository.getOrganizationsByUser(userId)
+    val memberships = membershipRepository.getOrganizationsByUser(userId).getOrThrow()
     assertEquals("Role should be STAFF", testRoleStaff, memberships.first().role)
   }
 
@@ -182,7 +182,7 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     membershipRepository.addMembership(testUserId2, testOrgId, testRoleMember)
     membershipRepository.addMembership(testUserId3, testOrgId, testRoleStaff)
 
-    val memberships = membershipRepository.getUsersByOrganization(testOrgId)
+    val memberships = membershipRepository.getUsersByOrganization(testOrgId).getOrThrow()
 
     assertEquals("Should have 3 memberships", 3, memberships.size)
     assertTrue("All should belong to same org", memberships.all { it.orgId == testOrgId })
@@ -196,8 +196,9 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
 
   @Test
   fun getUsersByOrganizationReturnsEmptyListWhenNoMembers() = runTest {
-    val memberships = membershipRepository.getUsersByOrganization(testOrgId)
-
+    val result = membershipRepository.getUsersByOrganization(testOrgId)
+    assertTrue("Should succeed", result.isSuccess)
+    val memberships = result.getOrThrow()
     assertTrue("Should return empty list", memberships.isEmpty())
   }
 
@@ -206,8 +207,8 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     membershipRepository.addMembership(testUserId1, testOrgId, testRoleMember)
     membershipRepository.addMembership(testUserId2, testOrgId2, testRoleMember)
 
-    val org1Members = membershipRepository.getUsersByOrganization(testOrgId)
-    val org2Members = membershipRepository.getUsersByOrganization(testOrgId2)
+    val org1Members = membershipRepository.getUsersByOrganization(testOrgId).getOrThrow()
+    val org2Members = membershipRepository.getUsersByOrganization(testOrgId2).getOrThrow()
 
     assertEquals("Org1 should have 1 member", 1, org1Members.size)
     assertEquals("Org2 should have 1 member", 1, org2Members.size)
@@ -222,7 +223,7 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     membershipRepository.addMembership(userId, testOrgId2, testRoleMember)
     membershipRepository.addMembership(userId, testOrgId3, testRoleStaff)
 
-    val memberships = membershipRepository.getOrganizationsByUser(userId)
+    val memberships = membershipRepository.getOrganizationsByUser(userId).getOrThrow()
 
     assertEquals("Should have 3 memberships", 3, memberships.size)
     assertTrue("All should belong to same user", memberships.all { it.userId == userId })
@@ -233,8 +234,9 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
 
   @Test
   fun getOrganizationsByUserReturnsEmptyListWhenNoMemberships() = runTest {
-    val memberships = membershipRepository.getOrganizationsByUser(userId)
-
+    val result = membershipRepository.getOrganizationsByUser(userId)
+    assertTrue("Should succeed", result.isSuccess)
+    val memberships = result.getOrThrow()
     assertTrue("Should return empty list", memberships.isEmpty())
   }
 
@@ -243,8 +245,8 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     membershipRepository.addMembership(testUserId1, testOrgId, testRoleMember)
     membershipRepository.addMembership(testUserId2, testOrgId, testRoleMember)
 
-    val user1Orgs = membershipRepository.getOrganizationsByUser(testUserId1)
-    val user2Orgs = membershipRepository.getOrganizationsByUser(testUserId2)
+    val user1Orgs = membershipRepository.getOrganizationsByUser(testUserId1).getOrThrow()
+    val user2Orgs = membershipRepository.getOrganizationsByUser(testUserId2).getOrThrow()
 
     assertEquals("User1 should have 1 org", 1, user1Orgs.size)
     assertEquals("User2 should have 1 org", 1, user2Orgs.size)
@@ -312,7 +314,7 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     membershipRepository.addMembership(userId, testOrgId2, testRoleMember)
     membershipRepository.addMembership(userId, testOrgId3, testRoleStaff)
 
-    val memberships = membershipRepository.getOrganizationsByUser(userId)
+    val memberships = membershipRepository.getOrganizationsByUser(userId).getOrThrow()
 
     assertEquals("Should have 3 memberships", 3, memberships.size)
     assertTrue("All should belong to same user", memberships.all { it.userId == userId })
@@ -324,7 +326,7 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     membershipRepository.addMembership(testUserId2, testOrgId, testRoleMember)
     membershipRepository.addMembership(testUserId3, testOrgId, testRoleStaff)
 
-    val memberships = membershipRepository.getUsersByOrganization(testOrgId)
+    val memberships = membershipRepository.getUsersByOrganization(testOrgId).getOrThrow()
 
     assertEquals("Should have 3 memberships", 3, memberships.size)
     assertTrue("All should belong to same org", memberships.all { it.orgId == testOrgId })
@@ -339,7 +341,7 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     kotlinx.coroutines.delay(100)
     membershipRepository.addMembership(testUserId3, testOrgId, testRoleMember)
 
-    val memberships = membershipRepository.getUsersByOrganization(testOrgId)
+    val memberships = membershipRepository.getUsersByOrganization(testOrgId).getOrThrow()
 
     assertEquals("Should have 3 memberships", 3, memberships.size)
     // Most recent should be first (user3)
@@ -355,7 +357,7 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     kotlinx.coroutines.delay(100)
     membershipRepository.addMembership(userId, testOrgId3, testRoleMember)
 
-    val memberships = membershipRepository.getOrganizationsByUser(userId)
+    val memberships = membershipRepository.getOrganizationsByUser(userId).getOrThrow()
 
     assertEquals("Should have 3 memberships", 3, memberships.size)
     // Most recent should be first (org3)
@@ -378,7 +380,7 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     val result = membershipRepository.addMembership(userId, testOrgId, testRoleOwner)
     assertTrue("Should succeed", result.isSuccess)
 
-    val memberships = membershipRepository.getOrganizationsByUser(userId)
+    val memberships = membershipRepository.getOrganizationsByUser(userId).getOrThrow()
     val membership = memberships.find { it.orgId == testOrgId }
 
     assertNotNull("Membership should exist", membership)
@@ -395,7 +397,7 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     assertTrue("Create should succeed", createResult.isSuccess)
 
     // Get original membership
-    val originalMemberships = membershipRepository.getOrganizationsByUser(userId)
+    val originalMemberships = membershipRepository.getOrganizationsByUser(userId).getOrThrow()
     val originalMembership = originalMemberships.find { it.orgId == testOrgId }!!
 
     // Update role
@@ -404,7 +406,7 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     assertTrue("Update should succeed", updateResult.isSuccess)
 
     // Verify updated membership
-    val updatedMemberships = membershipRepository.getOrganizationsByUser(userId)
+    val updatedMemberships = membershipRepository.getOrganizationsByUser(userId).getOrThrow()
     val updatedMembership = updatedMemberships.find { it.orgId == testOrgId }!!
 
     assertEquals("User ID should be preserved", originalMembership.userId, updatedMembership.userId)
@@ -427,7 +429,7 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
       membershipRepository.addMembership("user_$index", testOrgId, testRoleMember)
     }
 
-    val memberships = membershipRepository.getUsersByOrganization(testOrgId)
+    val memberships = membershipRepository.getUsersByOrganization(testOrgId).getOrThrow()
 
     assertEquals("Should have all memberships", userCount, memberships.size)
     assertTrue("All should belong to same org", memberships.all { it.orgId == testOrgId })
@@ -442,7 +444,7 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
       membershipRepository.addMembership(userId, "org_$index", testRoleMember)
     }
 
-    val memberships = membershipRepository.getOrganizationsByUser(userId)
+    val memberships = membershipRepository.getOrganizationsByUser(userId).getOrThrow()
 
     assertEquals("Should have all memberships", orgCount, memberships.size)
     assertTrue("All should belong to same user", memberships.all { it.userId == userId })
@@ -486,10 +488,10 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     membershipRepository.addMembership(testUserId2, testOrgId2, testRoleStaff)
 
     // Verify isolation
-    val user1Orgs = membershipRepository.getOrganizationsByUser(testUserId1)
-    val user2Orgs = membershipRepository.getOrganizationsByUser(testUserId2)
-    val org1Users = membershipRepository.getUsersByOrganization(testOrgId)
-    val org2Users = membershipRepository.getUsersByOrganization(testOrgId2)
+    val user1Orgs = membershipRepository.getOrganizationsByUser(testUserId1).getOrThrow()
+    val user2Orgs = membershipRepository.getOrganizationsByUser(testUserId2).getOrThrow()
+    val org1Users = membershipRepository.getUsersByOrganization(testOrgId).getOrThrow()
+    val org2Users = membershipRepository.getUsersByOrganization(testOrgId2).getOrThrow()
 
     assertEquals("User1 should have 2 orgs", 2, user1Orgs.size)
     assertEquals("User2 should have 2 orgs", 2, user2Orgs.size)
