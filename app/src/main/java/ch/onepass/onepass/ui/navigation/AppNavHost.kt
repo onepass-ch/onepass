@@ -131,7 +131,7 @@ fun AppNavHost(
 
     // ------------------ Tickets (My Events) ------------------
     composable(Screen.Tickets.route) {
-      val uid = FirebaseAuth.getInstance().currentUser?.uid
+      val uid = FirebaseAuth.getInstance().currentUser?.uid ?: "LOCAL_TEST_UID"
 
       val myEventsVm: MyEventsViewModel =
           viewModel(
