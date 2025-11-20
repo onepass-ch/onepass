@@ -156,12 +156,17 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 }
 
 dependencies {
+
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
+    // ------------- Datastore ------------------
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    testImplementation("androidx.datastore:datastore-preferences:1.1.1")
+    androidTestImplementation("androidx.datastore:datastore-preferences:1.1.1")
     // ------------- Firebase ------------------
     implementation(libs.firebase.functions.ktx)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
