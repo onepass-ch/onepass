@@ -98,7 +98,7 @@ fun ScanScreen(
 
 /** Main content: edge-to-edge camera preview with scanning frame and bottom HUD. */
 @Composable
-private fun ScanContent(viewModel: ScannerViewModel) {
+fun ScanContent(viewModel: ScannerViewModel) {
   val context = LocalContext.current
   val lifecycle = LocalLifecycleOwner.current
   val uiState by viewModel.state.collectAsState()
