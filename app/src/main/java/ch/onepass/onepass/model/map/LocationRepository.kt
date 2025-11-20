@@ -1,3 +1,12 @@
 package ch.onepass.onepass.model.map
 
-interface LocationRepository {}
+/** Repository interface for location-based operations. */
+interface LocationRepository {
+  /**
+   * Searches for locations matching the given query.
+   *
+   * @param query Search string
+   * @return List of matching locations
+   */
+  suspend fun search(query: String): List<Location>
+}

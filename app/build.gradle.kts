@@ -219,6 +219,9 @@ dependencies {
     // ---------- Google Sign-In (Credential Manager GoogleID) ------------
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
 
+    // ---------- Networking with OkHttp ----------
+    implementation(libs.okhttp)
+
     // --------- MockK for Mocking (unified version) ---------
     testImplementation("io.mockk:mockk:1.13.10")
     androidTestImplementation("io.mockk:mockk-android:1.13.10")
