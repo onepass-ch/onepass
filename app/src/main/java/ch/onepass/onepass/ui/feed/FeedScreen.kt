@@ -11,12 +11,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
+import ch.onepass.onepass.ui.components.common.EmptyState
+import ch.onepass.onepass.ui.components.common.ErrorState
+import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.event.EventCard
 import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
@@ -100,13 +102,19 @@ fun FeedScreen(
     ) {
       when {
         uiState.isLoading && uiState.events.isEmpty() -> {
-          LoadingState()
+          LoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR)
         }
         uiState.error != null && uiState.events.isEmpty() -> {
-          ErrorState(error = uiState.error!!, onRetry = { viewModel.refreshEvents() })
+          ErrorState(
+              error = uiState.error!!,
+              onRetry = { viewModel.refreshEvents() },
+              testTag = FeedScreenTestTags.ERROR_MESSAGE)
         }
         !uiState.isLoading && uiState.events.isEmpty() -> {
-          EmptyFeedState()
+          EmptyState(
+              title = "No Events Found",
+              message = "Check back later for new events in your area!",
+              testTag = FeedScreenTestTags.EMPTY_STATE)
         }
         else -> {
           EventListContent(
@@ -236,87 +244,4 @@ private fun EventListContent(
           }
         }
       }
-}
-
-/**
- * Loading state indicator.
- *
- * @param modifier Optional modifier for the loading indicator.
- */
-@Composable
-private fun LoadingState(modifier: Modifier = Modifier) {
-  CircularProgressIndicator(
-      modifier = modifier.testTag(FeedScreenTestTags.LOADING_INDICATOR),
-      color = Color(0xFF841DA4),
-  )
-}
-
-/**
- * Error state with retry button.
- *
- * @param error The error message string to display.
- * @param onRetry Callback invoked when the retry button is clicked.
- * @param modifier Optional modifier for the error state composable.
- */
-@Composable
-private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-  Column(
-      modifier = modifier.fillMaxWidth().padding(32.dp).testTag(FeedScreenTestTags.ERROR_MESSAGE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-  ) {
-    Text(
-        text = "Oops!",
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-        color = Color.White,
-    )
-    Spacer(modifier = Modifier.height(8.dp))
-    Text(
-        text = error,
-        style = MaterialTheme.typography.bodyMedium,
-        color = Color(0xFF9CA3AF),
-        textAlign = TextAlign.Center,
-    )
-    Spacer(modifier = Modifier.height(24.dp))
-    Button(
-        onClick = onRetry,
-        modifier = Modifier.testTag(FeedScreenTestTags.RETRY_BUTTON),
-        colors =
-            ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF841DA4),
-                contentColor = Color.White,
-            ),
-    ) {
-      Text(text = "Try Again", fontWeight = FontWeight.Medium)
-    }
-  }
-}
-
-/**
- * Empty state when no events are available.
- *
- * @param modifier Optional modifier for the empty state composable.
- */
-@Composable
-private fun EmptyFeedState(modifier: Modifier = Modifier) {
-  Column(
-      modifier = modifier.fillMaxWidth().padding(32.dp).testTag(FeedScreenTestTags.EMPTY_STATE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-  ) {
-    Text(
-        text = "No Events Found",
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-        color = Color.White,
-    )
-    Spacer(modifier = Modifier.height(8.dp))
-    Text(
-        text = "Check back later for new events in your area!",
-        style = MaterialTheme.typography.bodyMedium,
-        color = Color(0xFF9CA3AF),
-        textAlign = TextAlign.Center,
-    )
-  }
 }

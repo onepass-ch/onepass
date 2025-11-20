@@ -147,7 +147,7 @@ class OrganizationFeedTest {
     composeTestRule.onNodeWithText(errorMessage).assertExists().assertIsDisplayed()
 
     composeTestRule
-        .onNodeWithTag(OrganizationFeedTestTags.RETRY_BUTTON)
+        .onNodeWithTag("${OrganizationFeedTestTags.ERROR_MESSAGE}_retry_button")
         .assertExists()
         .assertIsDisplayed()
   }
@@ -163,7 +163,9 @@ class OrganizationFeedTest {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
     }
     composeTestRule.onNodeWithTag(OrganizationFeedTestTags.ERROR_MESSAGE).assertExists()
-    composeTestRule.onNodeWithTag(OrganizationFeedTestTags.RETRY_BUTTON).performClick()
+    composeTestRule
+        .onNodeWithTag("${OrganizationFeedTestTags.ERROR_MESSAGE}_retry_button")
+        .performClick()
     composeTestRule.waitUntil(timeoutMillis = 3000) {
       composeTestRule
           .onAllNodesWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST)
@@ -348,7 +350,7 @@ class OrganizationFeedTest {
     }
 
     composeTestRule
-        .onNodeWithTag(OrganizationFeedTestTags.RETRY_BUTTON)
+        .onNodeWithTag("${OrganizationFeedTestTags.ERROR_MESSAGE}_retry_button")
         .assertExists()
         .performClick()
 
