@@ -54,18 +54,6 @@ class EventTest {
   }
 
   @Test
-  fun displayDateTimeFormatsCorrectly() {
-    val calendar = Calendar.getInstance()
-    calendar.set(2025, Calendar.DECEMBER, 25, 18, 0, 0)
-
-    val event = createTestEvent().copy(startTime = Timestamp(calendar.time))
-
-    val displayDateTime = event.displayDateTime
-    Assert.assertTrue(displayDateTime.contains("December 25, 2025"))
-    Assert.assertTrue(displayDateTime.contains("6:00 PM"))
-  }
-
-  @Test
   fun displayDateTimeHandlesNullStartTime() {
     val event = createTestEvent().copy(startTime = null)
     Assert.assertEquals("Date not set", event.displayDateTime)

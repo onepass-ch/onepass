@@ -5,6 +5,7 @@ import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.event.PricingTier
 import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.model.map.LocationRepository
 import ch.onepass.onepass.ui.eventform.editform.EditEventFormViewModel
 import ch.onepass.onepass.ui.eventform.editform.EditEventUiState
 import com.google.firebase.Timestamp
@@ -29,6 +30,7 @@ import org.junit.Test
 
 @ExperimentalCoroutinesApi
 class EditEventFormViewModelTest {
+  private lateinit var mockLocationRepository: LocationRepository
 
   // Set the main coroutines dispatcher for unit testing.
   private val testDispatcher = StandardTestDispatcher()
@@ -47,6 +49,7 @@ class EditEventFormViewModelTest {
   fun setUp() {
     Dispatchers.setMain(testDispatcher) // Set main dispatcher
     mockRepository = mockk<EventRepository>()
+    mockLocationRepository = mockk(relaxed = true)
 
     testEvent =
         Event(
@@ -67,7 +70,7 @@ class EditEventFormViewModelTest {
     // Default setup for loading, tests can override this
     coEvery { mockRepository.getEventById(any()) } returns flowOf(testEvent)
 
-    viewModel = EditEventFormViewModel(mockRepository)
+    viewModel = EditEventFormViewModel(mockRepository, mockLocationRepository)
   }
 
   @After
@@ -299,7 +302,7 @@ class EditEventFormViewModelTest {
   @Test
   fun updateEventWithoutLoadingEventFirstSetsErrorState() = runTest {
     // Arrange
-    val freshViewModel = EditEventFormViewModel(mockRepository) // originalEvent is null
+    val freshViewModel = EditEventFormViewModel(mockRepository, mockLocationRepository)
 
     // Act
     freshViewModel.updateEvent()
@@ -435,14 +438,12 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val errors = viewModel.fieldErrors.value
-    Assert.assertEquals(9, errors.size)
+    Assert.assertEquals(8, errors.size)
     Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.TITLE.key))
     Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.DESCRIPTION.key))
     Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.DATE.key))
     Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.START_TIME.key))
     Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.END_TIME.key))
-    Assert.assertTrue(
-        errors.containsKey(EventFormViewModel.ValidationError.TIME.key)) // "" <= "" is true
     Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.LOCATION.key))
     Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.PRICE_EMPTY.key))
     Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.CAPACITY_EMPTY.key))

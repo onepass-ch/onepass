@@ -6,6 +6,8 @@ import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.event.PricingTier
+import ch.onepass.onepass.model.map.LocationRepository
+import ch.onepass.onepass.model.map.NominatimLocationRepository
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import ch.onepass.onepass.ui.eventform.EventFormViewModel
@@ -20,8 +22,9 @@ import kotlinx.coroutines.launch
  */
 class CreateEventFormViewModel(
     eventRepository: EventRepository = EventRepositoryFirebase(),
-    private val organizationRepository: OrganizationRepository = OrganizationRepositoryFirebase()
-) : EventFormViewModel(eventRepository) {
+    private val organizationRepository: OrganizationRepository = OrganizationRepositoryFirebase(),
+    locationRepository: LocationRepository = NominatimLocationRepository()
+) : EventFormViewModel(eventRepository, locationRepository) {
 
   // UI state
   private val _uiState = MutableStateFlow<CreateEventUiState>(CreateEventUiState.Idle)
