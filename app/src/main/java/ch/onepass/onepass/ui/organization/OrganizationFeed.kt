@@ -12,10 +12,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
@@ -84,35 +87,36 @@ fun OrganizationFeedScaffold(
   Scaffold(
       modifier = modifier.fillMaxSize(),
       topBar = { OrganizationFeedTopBar(onNavigateBack = onNavigateBack) },
-      containerColor = Color(0xFF0A0A0A),
-  ) { paddingValues ->
-    Box(
-        modifier = Modifier.fillMaxSize().padding(paddingValues),
-        contentAlignment = Alignment.Center,
-    ) {
-      when {
-        isLoading && organizations.isEmpty() -> {
-          LoadingState(testTag = OrganizationFeedTestTags.LOADING_INDICATOR)
-        }
-        error != null && organizations.isEmpty() -> {
-          ErrorState(
-              error = error, onRetry = onRetry, testTag = OrganizationFeedTestTags.ERROR_MESSAGE)
-        }
-        !isLoading && organizations.isEmpty() -> {
-          EmptyState(
-              title = "No Organizations",
-              message = "You haven't joined any organizations yet.",
-              testTag = OrganizationFeedTestTags.EMPTY_STATE)
-        }
-        else -> {
-          OrganizationListContent(
-              organizations = organizations,
-              onOrganizationClick = onOrganizationClick,
-          )
+      containerColor = colorResource(id = R.color.screen_background)) { paddingValues ->
+        Box(
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            contentAlignment = Alignment.Center,
+        ) {
+          when {
+            isLoading && organizations.isEmpty() -> {
+              LoadingState(testTag = OrganizationFeedTestTags.LOADING_INDICATOR)
+            }
+            error != null && organizations.isEmpty() -> {
+              ErrorState(
+                  error = error,
+                  onRetry = onRetry,
+                  testTag = OrganizationFeedTestTags.ERROR_MESSAGE)
+            }
+            !isLoading && organizations.isEmpty() -> {
+              EmptyState(
+                  title = "No Organizations",
+                  message = "You haven't joined any organizations yet.",
+                  testTag = OrganizationFeedTestTags.EMPTY_STATE)
+            }
+            else -> {
+              OrganizationListContent(
+                  organizations = organizations,
+                  onOrganizationClick = onOrganizationClick,
+              )
+            }
+          }
         }
       }
-    }
-  }
 }
 
 /** Top bar with title and back button. */
@@ -142,7 +146,9 @@ private fun OrganizationFeedTopBar(onNavigateBack: () -> Unit = {}, modifier: Mo
             letterSpacing = 2.sp,
             modifier = modifier.testTag(OrganizationFeedTestTags.ORGANIZATION_FEED_TITLE))
       },
-      colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color(0xFF0A0A0A)))
+      colors =
+          TopAppBarDefaults.centerAlignedTopAppBarColors(
+              containerColor = colorResource(id = R.color.org_feed_top_bar)))
 }
 
 /** Organization list content with scrollable cards. */
@@ -164,5 +170,75 @@ private fun OrganizationListContent(
               Modifier.testTag(
                   OrganizationFeedTestTags.getTestTagForOrganizationItem(organization.id)))
     }
+  }
+}
+
+/** Loading state indicator. */
+@Composable
+private fun LoadingState(modifier: Modifier = Modifier) {
+  CircularProgressIndicator(
+      modifier = modifier.testTag(OrganizationFeedTestTags.LOADING_INDICATOR),
+      color = colorResource(id = R.color.accent_purple))
+}
+
+/** Error state with retry button. */
+@Composable
+private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+  Column(
+      modifier =
+          modifier.fillMaxWidth().padding(32.dp).testTag(OrganizationFeedTestTags.ERROR_MESSAGE),
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.Center,
+  ) {
+    Text(
+        text = "Oops!",
+        style = MaterialTheme.typography.headlineMedium,
+        fontWeight = FontWeight.Bold,
+        color = Color.White,
+    )
+    Spacer(modifier = modifier.height(8.dp))
+    Text(
+        text = error,
+        style = MaterialTheme.typography.bodyMedium,
+        color = colorResource(id = R.color.gray),
+        textAlign = TextAlign.Center,
+    )
+    Spacer(modifier = modifier.height(24.dp))
+    Button(
+        onClick = onRetry,
+        modifier = modifier.testTag(OrganizationFeedTestTags.RETRY_BUTTON),
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = colorResource(id = R.color.accent_purple),
+                contentColor = Color.White,
+            ),
+    ) {
+      Text(text = "Try Again", fontWeight = FontWeight.Medium)
+    }
+  }
+}
+
+/** Empty state when no organizations are available. */
+@Composable
+private fun EmptyOrganizationState(modifier: Modifier = Modifier) {
+  Column(
+      modifier =
+          modifier.fillMaxWidth().padding(32.dp).testTag(OrganizationFeedTestTags.EMPTY_STATE),
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.Center,
+  ) {
+    Text(
+        text = "No Organizations",
+        style = MaterialTheme.typography.headlineMedium,
+        fontWeight = FontWeight.Bold,
+        color = Color.White,
+    )
+    Spacer(modifier = modifier.height(8.dp))
+    Text(
+        text = "You haven't joined any organizations yet.",
+        style = MaterialTheme.typography.bodyMedium,
+        color = colorResource(id = R.color.gray),
+        textAlign = TextAlign.Center,
+    )
   }
 }
