@@ -9,6 +9,7 @@ import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.organization.OrganizationStatus
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
+import ch.onepass.onepass.utils.ValidationUtils
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -153,7 +154,7 @@ class OrganizationFormViewModel(
    */
   private fun validateEmail(value: String): String? {
     if (value.isBlank()) return null
-    return if (!android.util.Patterns.EMAIL_ADDRESS.matcher(value).matches()) {
+    return if (!ValidationUtils.isValidEmail(value)) {
       "Invalid email"
     } else null
   }
@@ -168,7 +169,9 @@ class OrganizationFormViewModel(
     val countryCode = _selectedCountryIndex.value?.let { _countryList.value.getOrNull(it)?.second }
     val fullNumber = if (countryCode != null) "+$countryCode$value" else value
 
-    return if (countryCode == null || value.isBlank() || !REGEX_PHONE.matches(fullNumber)) {
+    return if (countryCode == null ||
+        value.isBlank() ||
+        !ValidationUtils.isValidPhone(fullNumber)) {
       "Invalid phone number"
     } else null
   }
@@ -181,9 +184,7 @@ class OrganizationFormViewModel(
    */
   private fun validateWebsite(value: String): String? {
     if (value.isBlank()) return null
-    val withScheme =
-        if (value.startsWith("http://") || value.startsWith("https://")) value else "https://$value"
-    return if (REGEX_WEBSITE_URL.matches(withScheme)) null else "Invalid website"
+    return if (ValidationUtils.isValidUrl(value)) null else "Invalid website"
   }
 
   /**
