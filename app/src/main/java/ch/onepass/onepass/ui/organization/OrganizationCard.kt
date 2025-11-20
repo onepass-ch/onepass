@@ -27,9 +27,10 @@ import ch.onepass.onepass.ui.organization.OrganizationCardTestTags.getTestTagFor
 import ch.onepass.onepass.ui.theme.CardBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.TextSecondary
+import ch.onepass.onepass.utils.DateTimeUtils
+import ch.onepass.onepass.utils.FormatUtils
 import coil.compose.AsyncImage
 import com.google.firebase.Timestamp
-import java.util.Locale
 
 object OrganizationCardTestTags {
   const val ORGANIZER_IMAGE = "organizerImage"
@@ -127,7 +128,7 @@ private fun OrganizationStatsRow(
                   modifier = Modifier.size(16.dp),
                   tint = TextSecondary)
               Text(
-                  text = formatFollowerCount(followerCount),
+                  text = FormatUtils.formatCompactNumber(followerCount),
                   style = MaterialTheme.typography.bodyMedium,
                   color = Color.White)
             }
@@ -159,7 +160,7 @@ private fun OrganizationStatsRow(
               verticalAlignment = Alignment.CenterVertically,
               modifier = Modifier.testTag(OrganizationCardTestTags.ORGANIZER_CREATED_DATE)) {
                 Text(
-                    text = "since " + formatDate(timestamp),
+                    text = "since " + DateTimeUtils.formatMemberSince(timestamp),
                     style = MaterialTheme.typography.bodyMedium,
                     color = EventDateColor)
               }
@@ -199,38 +200,4 @@ fun OrganizationCard(
                   }
             }
       }
-}
-
-private fun formatDate(timestamp: Timestamp): String {
-  val date = timestamp.toDate()
-  val formatter = java.text.SimpleDateFormat("MMM.yyyy", Locale.getDefault())
-  return formatter.format(date)
-}
-
-@SuppressLint("DefaultLocale")
-private fun formatFollowerCount(count: Int): String {
-  fun format(value: Double, suffix: String, precision: Int): String {
-    val formatted = String.format("%.${precision}f%s", value, suffix)
-    return formatted.replace(Regex("\\.?0+$suffix$"), suffix)
-  }
-
-  return when {
-    count < 1_000 -> count.toString()
-    count < 1_000_000 -> {
-      val k = count / 1_000.0
-      when {
-        count < 10_000 -> format(k, "k", 2)
-        count < 100_000 -> format(k, "k", 1)
-        else -> "${k.toInt()}k"
-      }
-    }
-    else -> {
-      val m = count / 1_000_000.0
-      when {
-        count < 10_000_000 -> format(m, "M", 2)
-        count < 100_000_000 -> format(m, "M", 1)
-        else -> "${m.toInt()}M"
-      }
-    }
-  }
 }

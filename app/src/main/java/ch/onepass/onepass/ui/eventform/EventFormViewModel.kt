@@ -7,9 +7,9 @@ import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.model.map.LocationRepository
 import ch.onepass.onepass.model.map.NominatimLocationRepository
+import ch.onepass.onepass.utils.DateTimeUtils
+import ch.onepass.onepass.utils.ValidationUtils
 import com.google.firebase.Timestamp
-import java.text.SimpleDateFormat
-import java.util.Locale
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -208,17 +208,21 @@ abstract class EventFormViewModel(
     if (state.price.isBlank()) {
       errors += ValidationError.PRICE_EMPTY.toError()
     } else {
-      state.price.toDoubleOrNull()?.let {
-        if (it < 0) errors += ValidationError.PRICE_NEGATIVE.toError()
-      } ?: run { errors += ValidationError.PRICE_INVALID.toError() }
+      if (!ValidationUtils.isPositiveNumber(state.price)) {
+        errors +=
+            if (state.price.toDoubleOrNull() == null) ValidationError.PRICE_INVALID.toError()
+            else ValidationError.PRICE_NEGATIVE.toError()
+      }
     }
 
     if (state.capacity.isBlank()) {
       errors += ValidationError.CAPACITY_EMPTY.toError()
     } else {
-      state.capacity.toIntOrNull()?.let {
-        if (it <= 0) errors += ValidationError.CAPACITY_NEGATIVE.toError()
-      } ?: run { errors += ValidationError.CAPACITY_INVALID.toError() }
+      if (!ValidationUtils.isPositiveInteger(state.capacity)) {
+        errors +=
+            if (state.capacity.toIntOrNull() == null) ValidationError.CAPACITY_INVALID.toError()
+            else ValidationError.CAPACITY_NEGATIVE.toError()
+      }
     }
 
     return errors
@@ -262,17 +266,7 @@ abstract class EventFormViewModel(
    * @return Firebase Timestamp or null if parsing fails
    */
   protected fun parseDateAndTime(dateString: String, timeString: String): Timestamp? {
-    if (dateString.isEmpty() || timeString.isEmpty()) return null
-
-    return try {
-      // Combine date and time: "14/10/2025" + "14:30" = "14/10/2025 14:30"
-      val dateTimeString = "$dateString $timeString"
-      val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-      val date = dateFormat.parse(dateTimeString) ?: return null
-      Timestamp(date)
-    } catch (e: Exception) {
-      null
-    }
+    return DateTimeUtils.parseDateAndTime(dateString, timeString)
   }
 
   protected fun clearFieldError(vararg fieldKeys: String) {
