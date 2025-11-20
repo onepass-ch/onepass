@@ -23,6 +23,8 @@ import ch.onepass.onepass.ui.eventdetail.EventDetailScreen
 import ch.onepass.onepass.ui.eventdetail.EventDetailViewModel
 import ch.onepass.onepass.ui.eventform.createform.CreateEventForm
 import ch.onepass.onepass.ui.eventform.createform.CreateEventFormViewModel
+import ch.onepass.onepass.ui.eventform.editform.EditEventForm
+import ch.onepass.onepass.ui.eventform.editform.EditEventFormViewModel
 import ch.onepass.onepass.ui.feed.FeedScreen
 import ch.onepass.onepass.ui.map.MapScreen
 import ch.onepass.onepass.ui.map.MapViewModel
@@ -205,7 +207,9 @@ fun AppNavHost(
           onNavigateToScanTickets = { eventId ->
             // TODO: Navigate to ticket scanner when implemented
           },
-          onNavigateToEditEvent = { eventId -> navController.navigate(Screen.CreateEvent.route) })
+          onNavigateToEditEvent = { eventId ->
+            navController.navigate(Screen.EditEvent.route(eventId))
+          })
     }
 
     // ------------------ Organization Profile ------------------
@@ -241,6 +245,17 @@ fun AppNavHost(
           viewModel = createEventVm,
           onNavigateBack = { navController.popBackStack() },
           onEventCreated = { navController.popBackStack() })
+    }
+
+    // ------------------ Edit Event ------------------
+    composable(Screen.EditEvent.route) { backStackEntry ->
+      val eventId = backStackEntry.arguments?.getString(Screen.EditEvent.ARG_EVENT_ID) ?: ""
+      val editEventVm: EditEventFormViewModel = viewModel()
+      EditEventForm(
+          eventId = eventId,
+          viewModel = editEventVm,
+          onNavigateBack = { navController.popBackStack() },
+          onEventUpdated = { navController.popBackStack() })
     }
 
     // ------------------ Staff Invitation ------------------
