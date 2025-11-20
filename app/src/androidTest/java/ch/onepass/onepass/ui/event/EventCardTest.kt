@@ -15,7 +15,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.PricingTier
 import ch.onepass.onepass.model.map.Location
-import ch.onepass.onepass.resources.C
 import com.google.firebase.Timestamp
 import java.util.*
 import org.junit.Rule
@@ -164,7 +163,8 @@ class EventCardTest {
       composeTestRule.onNodeWithText(expectedText).assertExists()
     }
   }
-    @Test
+
+  @Test
   fun eventCard_multipleCardsAreIndependent() {
     composeTestRule.setContent {
       Column {

@@ -74,11 +74,7 @@ class FeedScreenTest {
     var clickedEventId: String? = null
 
     composeTestRule.setContent {
-      OnePassTheme {
-        FeedScreen(
-            viewModel = vm,
-            onNavigateToEvent = { clickedEventId = it })
-      }
+      OnePassTheme { FeedScreen(viewModel = vm, onNavigateToEvent = { clickedEventId = it }) }
     }
 
     composeTestRule.waitUntil(timeoutMillis = 5000) {
@@ -91,7 +87,6 @@ class FeedScreenTest {
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TOP_BAR).assertIsDisplayed()
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("WELCOME")
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_LOCATION).assertTextEquals("SWITZERLAND")
-
 
     val firstId = many.first().eventId
     composeTestRule.onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(firstId)).performClick()
