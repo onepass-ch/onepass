@@ -480,9 +480,8 @@ class FeedViewModelTest {
   @Test
   fun feedViewModel_refreshEvents_respectsEventLimit() = runTest {
     // Create more than LOADED_EVENTS_LIMIT events
-    val manyEvents = List(LOADED_EVENTS_LIMIT + 5) { index ->
-      testEvent1.copy(eventId = "event$index")
-    }
+    val manyEvents =
+        List(LOADED_EVENTS_LIMIT + 5) { index -> testEvent1.copy(eventId = "event$index") }
     val mockRepository = MockEventRepository(manyEvents)
     val viewModel = FeedViewModel(mockRepository)
 

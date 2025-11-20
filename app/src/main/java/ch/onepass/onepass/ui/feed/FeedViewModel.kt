@@ -37,7 +37,7 @@ data class FeedUIState(
  *
  * @property repository The event repository for data operations.
  */
-class FeedViewModel(
+open class FeedViewModel(
     private val repository: EventRepository = EventRepositoryFirebase(),
 ) : ViewModel() {
 
@@ -94,7 +94,7 @@ class FeedViewModel(
   }
 
   /** Refreshes the events list. */
-  fun refreshEvents() {
+  open fun refreshEvents() {
     _uiState.update { it.copy(isRefreshing = true, error = null) }
 
     viewModelScope.launch {
