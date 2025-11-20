@@ -1,6 +1,7 @@
 package ch.onepass.onepass.model.storage
 
 import android.net.Uri
+import ch.onepass.onepass.model.storage.StorageRepository
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageMetadata
