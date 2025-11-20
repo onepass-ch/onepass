@@ -55,7 +55,7 @@ class MembershipRepositoryFirebase : MembershipRepository {
             .await()
 
     if (querySnapshot.isEmpty) {
-      throw IllegalStateException("Membership not found for user $userId in organization $orgId")
+      throw NoSuchElementException("Membership not found for user $userId in organization $orgId")
     }
 
     querySnapshot.documents.first().reference.delete().await()
@@ -75,7 +75,7 @@ class MembershipRepositoryFirebase : MembershipRepository {
             .await()
 
     if (querySnapshot.isEmpty) {
-      throw IllegalStateException("Membership not found for user $userId in organization $orgId")
+      throw NoSuchElementException("Membership not found for user $userId in organization $orgId")
     }
 
     querySnapshot.documents

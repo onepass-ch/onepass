@@ -130,7 +130,7 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     val result = membershipRepository.removeMembership(userId, testOrgId)
     assertTrue("Remove should fail", result.isFailure)
     assertTrue(
-        "Should throw IllegalStateException", result.exceptionOrNull() is IllegalStateException)
+        "Should throw NoSuchElementException", result.exceptionOrNull() is NoSuchElementException)
   }
 
   @Test
@@ -154,7 +154,7 @@ class MembershipRepositoryFirebaseTest : FirestoreTestBase() {
     val result = membershipRepository.updateMembership(userId, testOrgId, testRoleOwner)
     assertTrue("Update should fail", result.isFailure)
     assertTrue(
-        "Should throw IllegalStateException", result.exceptionOrNull() is IllegalStateException)
+        "Should throw NoSuchElementException", result.exceptionOrNull() is NoSuchElementException)
   }
 
   @Test
