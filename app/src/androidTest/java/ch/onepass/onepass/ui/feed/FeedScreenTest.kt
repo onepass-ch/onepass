@@ -71,14 +71,12 @@ class FeedScreenTest {
     val many = (1..20).map { idx -> baseEvent.copy(eventId = "e$idx", title = "Event $idx") }
     val repo = MockEventRepository(many)
     val vm = FeedViewModel(repo)
-    var calendarClicked = false
     var clickedEventId: String? = null
 
     composeTestRule.setContent {
       OnePassTheme {
         FeedScreen(
             viewModel = vm,
-            onNavigateToCalendar = { calendarClicked = true },
             onNavigateToEvent = { clickedEventId = it })
       }
     }
@@ -94,8 +92,6 @@ class FeedScreenTest {
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("WELCOME")
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_LOCATION).assertTextEquals("SWITZERLAND")
 
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.CALENDAR_BUTTON).performClick()
-    assert(calendarClicked)
 
     val firstId = many.first().eventId
     composeTestRule.onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(firstId)).performClick()

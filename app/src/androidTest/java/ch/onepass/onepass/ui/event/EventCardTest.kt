@@ -164,33 +164,7 @@ class EventCardTest {
       composeTestRule.onNodeWithText(expectedText).assertExists()
     }
   }
-
-  @Test
-  fun eventCard_handlesCallbacksAndModifiers() {
-    val testTag = "custom_event_card"
-    var cardClicked = false
-    var dismissed = false
-
-    composeTestRule.setContent {
-      MaterialTheme {
-        EventCard(
-            event = createEvent(25u, "Event", "Location", "Organizer"),
-            modifier = Modifier.testTag(testTag),
-            onCardClick = { cardClicked = true },
-            onDismiss = { dismissed = true })
-      }
-    }
-
-    // Test modifier and onCardClick
-    composeTestRule.onNodeWithTag(testTag).assertExists().performClick()
-    assert(cardClicked)
-
-    // Test onDismiss
-    composeTestRule.onNodeWithTag(C.Tag.event_card_close_button).performClick()
-    assert(dismissed)
-  }
-
-  @Test
+    @Test
   fun eventCard_multipleCardsAreIndependent() {
     composeTestRule.setContent {
       Column {

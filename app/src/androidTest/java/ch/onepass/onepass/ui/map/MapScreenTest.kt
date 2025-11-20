@@ -207,18 +207,20 @@ class MapScreenTest {
     stubStates(uiState = uiStateFlow.value)
     setContent()
 
-    composeTestRule.onNodeWithTag(C.Tag.event_card).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(C.Tag.event_card_close_button).performClick()
-    verify { mockMapViewModel.clearSelectedEvent() }
+        composeTestRule.onNodeWithTag(C.Tag.event_card).assertIsDisplayed()
 
-    // Re-display card
-    uiStateFlow.value = uiStateFlow.value.copy(selectedEvent = testEvent1)
-    composeTestRule.onNodeWithTag(C.Tag.event_card_like_button).performClick()
-    composeTestRule.waitUntil(2_000) {
-      eventCardViewModel.likedEvents.value.contains(testEvent1.eventId)
+        // Click the background overlay that calls mapViewModel.clearSelectedEvent()
+        composeTestRule.onNodeWithTag(MapScreenTestTags.EVENT_CARD).performClick()
+        verify { mockMapViewModel.clearSelectedEvent() }
+
+        // Re-display card
+        uiStateFlow.value = uiStateFlow.value.copy(selectedEvent = testEvent1)
+        composeTestRule.onNodeWithTag(C.Tag.event_card_like_button).performClick()
+        composeTestRule.waitUntil(2_000) {
+            eventCardViewModel.likedEvents.value.contains(testEvent1.eventId)
+        }
+        assert(eventCardViewModel.likedEvents.value.contains(testEvent1.eventId))
     }
-    assert(eventCardViewModel.likedEvents.value.contains(testEvent1.eventId))
-  }
 
   @Test
   fun mapScreen_appliesFiltersWhenCurrentFiltersChange() {
