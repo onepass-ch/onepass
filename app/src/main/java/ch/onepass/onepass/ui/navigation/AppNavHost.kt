@@ -103,7 +103,7 @@ fun AppNavHost(
           onNavigateToEvent = { eventId ->
             navController.navigate(Screen.EventDetail.route(eventId))
           },
-          onNavigateToCalendar = { navController.navigate(Screen.ComingSoon.route) })
+      )
     }
 
     // ------------------ Event Detail ------------------

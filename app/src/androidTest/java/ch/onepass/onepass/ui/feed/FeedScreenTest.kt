@@ -95,7 +95,6 @@ class FeedScreenTest {
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TOP_BAR).assertIsDisplayed()
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertIsDisplayed()
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_LOCATION).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.CALENDAR_BUTTON).assertIsDisplayed()
   }
 
   @Test
@@ -127,25 +126,6 @@ class FeedScreenTest {
 
     composeTestRule.onNodeWithTag(FeedScreenTestTags.EMPTY_STATE).assertIsDisplayed()
     composeTestRule.onNodeWithText("No Events Found").assertIsDisplayed()
-  }
-
-  @Test
-  fun feedScreen_calendarButton_isClickable() {
-    val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository)
-    var calendarClicked = false
-
-    composeTestRule.setContent {
-      OnePassTheme {
-        FeedScreen(viewModel = viewModel, onNavigateToCalendar = { calendarClicked = true })
-      }
-    }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.CALENDAR_BUTTON).performClick()
-
-    assert(calendarClicked)
   }
 
   @Test
