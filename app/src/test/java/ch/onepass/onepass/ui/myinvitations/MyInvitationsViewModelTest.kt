@@ -4,9 +4,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.OrganizationInvitation
 import ch.onepass.onepass.model.organization.OrganizationRole
-import ch.onepass.onepass.model.user.FakeUserRepository
 import ch.onepass.onepass.model.user.User
-import ch.onepass.onepass.ui.organization.MockOrganizationRepository
+import ch.onepass.onepass.utils.FakeUserRepository
+import ch.onepass.onepass.utils.MockOrganizationRepository
 import ch.onepass.onepass.utils.OrganizationTestData
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,7 +20,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -165,9 +165,9 @@ class MyInvitationsViewModelTest {
 
     val state = viewModel.state.value
 
-    assertTrue(state.invitations.isEmpty())
-    assertTrue(state.loading)
-    assertNull(state.errorMessage)
+    Assert.assertTrue(state.invitations.isEmpty())
+    Assert.assertTrue(state.loading)
+    Assert.assertNull(state.errorMessage)
   }
 
   // ========================================
@@ -189,12 +189,12 @@ class MyInvitationsViewModelTest {
     // Wait for the state to stabilize
     val state = viewModel.state.filter { !it.loading || it.errorMessage != null }.first()
 
-    assertEquals(2, state.invitations.size)
-    assertTrue(state.invitations.all { it.status == InvitationStatus.PENDING })
-    assertTrue(state.invitations.any { it.id == "invite-1" })
-    assertTrue(state.invitations.any { it.id == "invite-2" })
-    assertFalse(state.loading)
-    assertNull(state.errorMessage)
+    Assert.assertEquals(2, state.invitations.size)
+    Assert.assertTrue(state.invitations.all { it.status == InvitationStatus.PENDING })
+    Assert.assertTrue(state.invitations.any { it.id == "invite-1" })
+    Assert.assertTrue(state.invitations.any { it.id == "invite-2" })
+    Assert.assertFalse(state.loading)
+    Assert.assertNull(state.errorMessage)
   }
 
   @Test
@@ -210,9 +210,9 @@ class MyInvitationsViewModelTest {
 
     val state = viewModel.state.value
 
-    assertTrue(state.invitations.isEmpty())
-    assertFalse(state.loading)
-    assertNull(state.errorMessage)
+    Assert.assertTrue(state.invitations.isEmpty())
+    Assert.assertFalse(state.loading)
+    Assert.assertNull(state.errorMessage)
   }
 
   @Test
@@ -225,9 +225,10 @@ class MyInvitationsViewModelTest {
 
     val state = viewModel.state.value
 
-    assertNotNull("Expected an error message", state.errorMessage)
+    Assert.assertNotNull("Expected an error message", state.errorMessage)
     val errorMessage = state.errorMessage!!
-    assertTrue(errorMessage.contains("User not found") || errorMessage.contains("not logged in"))
+    Assert.assertTrue(
+        errorMessage.contains("User not found") || errorMessage.contains("not logged in"))
   }
 
   @Test
@@ -240,7 +241,7 @@ class MyInvitationsViewModelTest {
 
     val state = viewModel.state.value
 
-    assertNotNull("Expected an error message", state.errorMessage)
+    Assert.assertNotNull("Expected an error message", state.errorMessage)
   }
 
   // ========================================
@@ -258,8 +259,9 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     var state = viewModel.state.value
-    assertNotNull("Expected an error message when user cannot be loaded", state.errorMessage)
-    assertTrue("No invitations should be loaded when user fails", state.invitations.isEmpty())
+    Assert.assertNotNull("Expected an error message when user cannot be loaded", state.errorMessage)
+    Assert.assertTrue(
+        "No invitations should be loaded when user fails", state.invitations.isEmpty())
 
     userRepository.updateCurrentUser(testUser)
     userRepository.updateCreatedUser(testUser)
@@ -268,10 +270,11 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     state = viewModel.state.value
-    assertNull("Error message should be cleared after retry succeeds", state.errorMessage)
-    assertFalse("Loading should be false after retry succeeds", state.loading)
-    assertEquals("Expected invitations to be reloaded after retry", 1, state.invitations.size)
-    assertEquals("invite-1", state.invitations.first().id)
+    Assert.assertNull("Error message should be cleared after retry succeeds", state.errorMessage)
+    Assert.assertFalse("Loading should be false after retry succeeds", state.loading)
+    Assert.assertEquals(
+        "Expected invitations to be reloaded after retry", 1, state.invitations.size)
+    Assert.assertEquals("invite-1", state.invitations.first().id)
   }
 
   @Test
@@ -289,7 +292,7 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     var state = viewModel.state.value
-    assertNotNull("Error message should be set", state.errorMessage)
+    Assert.assertNotNull("Error message should be set", state.errorMessage)
 
     // Set a success message by accepting a valid invitation
     viewModel.acceptInvitation("invite-1")
@@ -302,8 +305,9 @@ class MyInvitationsViewModelTest {
 
     state = viewModel.state.value
     // After retry with a valid user, both messages should be cleared
-    assertNull("Error message should be cleared when retry is called", state.errorMessage)
-    assertNull("Success message should be cleared when retry is called", state.successMessage)
+    Assert.assertNull("Error message should be cleared when retry is called", state.errorMessage)
+    Assert.assertNull(
+        "Success message should be cleared when retry is called", state.successMessage)
   }
 
   @Test
@@ -321,7 +325,8 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     var state = viewModel.state.value
-    assertNotNull("Success message should be set after accepting invitation", state.successMessage)
+    Assert.assertNotNull(
+        "Success message should be set after accepting invitation", state.successMessage)
 
     // Call retry - success message should be cleared
     // Since user exists, loadUserEmail() will succeed and not interfere
@@ -329,7 +334,8 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     state = viewModel.state.value
-    assertNull("Success message should be cleared when retry is called", state.successMessage)
+    Assert.assertNull(
+        "Success message should be cleared when retry is called", state.successMessage)
   }
 
   // ========================================
@@ -349,8 +355,8 @@ class MyInvitationsViewModelTest {
 
     // Verify invitation is initially in the list
     var state = viewModel.state.value
-    assertEquals(1, state.invitations.size)
-    assertEquals("invite-1", state.invitations.first().id)
+    Assert.assertEquals(1, state.invitations.size)
+    Assert.assertEquals("invite-1", state.invitations.first().id)
 
     // Accept the invitation
     viewModel.acceptInvitation("invite-1")
@@ -358,15 +364,15 @@ class MyInvitationsViewModelTest {
 
     // Verify invitation is removed from the list (since it's no longer PENDING)
     state = viewModel.state.value
-    assertTrue("Invitation should be removed after acceptance", state.invitations.isEmpty())
-    assertNull(state.errorMessage)
+    Assert.assertTrue("Invitation should be removed after acceptance", state.invitations.isEmpty())
+    Assert.assertNull(state.errorMessage)
 
     // Verify addMember was called with correct parameters
-    assertEquals("addMember should be called once", 1, orgRepository.addMemberCalls.size)
+    Assert.assertEquals("addMember should be called once", 1, orgRepository.addMemberCalls.size)
     val (orgId, userId, role) = orgRepository.addMemberCalls.first()
-    assertEquals("Organization ID should match", pendingInvitation.orgId, orgId)
-    assertEquals("User ID should match", testUser.uid, userId)
-    assertEquals("Role should match", pendingInvitation.role, role)
+    Assert.assertEquals("Organization ID should match", pendingInvitation.orgId, orgId)
+    Assert.assertEquals("User ID should match", testUser.uid, userId)
+    Assert.assertEquals("Role should match", pendingInvitation.role, role)
   }
 
   @Test
@@ -384,11 +390,11 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     // Verify addMember was called
-    assertEquals("addMember should be called", 1, orgRepository.addMemberCalls.size)
+    Assert.assertEquals("addMember should be called", 1, orgRepository.addMemberCalls.size)
     val (orgId, userId, role) = orgRepository.addMemberCalls.first()
-    assertEquals("Organization ID should match", pendingInvitation.orgId, orgId)
-    assertEquals("User ID should match", testUser.uid, userId)
-    assertEquals("Role should match", pendingInvitation.role, role)
+    Assert.assertEquals("Organization ID should match", pendingInvitation.orgId, orgId)
+    Assert.assertEquals("User ID should match", testUser.uid, userId)
+    Assert.assertEquals("Role should match", pendingInvitation.role, role)
   }
 
   @Test
@@ -407,14 +413,14 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertNotNull("Expected an error message when addMember fails", state.errorMessage)
-    assertTrue(
+    Assert.assertNotNull("Expected an error message when addMember fails", state.errorMessage)
+    Assert.assertTrue(
         "Error message should mention addMember failure",
         state.errorMessage!!.contains("add you as a member") ||
             state.errorMessage!!.contains("Failed to add member"))
 
     // Verify addMember was still called (even though it failed)
-    assertEquals("addMember should be called", 1, orgRepository.addMemberCalls.size)
+    Assert.assertEquals("addMember should be called", 1, orgRepository.addMemberCalls.size)
   }
 
   @Test
@@ -433,8 +439,8 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertNotNull("Expected an error message", state.errorMessage)
-    assertTrue(state.errorMessage!!.contains("Failed"))
+    Assert.assertNotNull("Expected an error message", state.errorMessage)
+    Assert.assertTrue(state.errorMessage!!.contains("Failed"))
   }
 
   @Test
@@ -450,13 +456,13 @@ class MyInvitationsViewModelTest {
 
     // Should show error message for invitation not found
     val state = viewModel.state.value
-    assertNotNull("Expected an error message", state.errorMessage)
-    assertTrue(
+    Assert.assertNotNull("Expected an error message", state.errorMessage)
+    Assert.assertTrue(
         "Error should mention invitation not found",
         state.errorMessage!!.contains("not found") || state.errorMessage!!.contains("removed"))
 
     // addMember should not be called if invitation is not found
-    assertEquals("addMember should not be called", 0, orgRepository.addMemberCalls.size)
+    Assert.assertEquals("addMember should not be called", 0, orgRepository.addMemberCalls.size)
   }
 
   @Test
@@ -474,13 +480,13 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertNotNull("Expected an error message when user is not found", state.errorMessage)
-    assertTrue(
+    Assert.assertNotNull("Expected an error message when user is not found", state.errorMessage)
+    Assert.assertTrue(
         "Error should mention user not found",
         state.errorMessage!!.contains("User not found") || state.errorMessage!!.contains("log in"))
 
     // addMember should not be called if user is not found
-    assertEquals("addMember should not be called", 0, orgRepository.addMemberCalls.size)
+    Assert.assertEquals("addMember should not be called", 0, orgRepository.addMemberCalls.size)
   }
 
   // ========================================
@@ -500,8 +506,8 @@ class MyInvitationsViewModelTest {
 
     // Verify invitation is initially in the list
     var state = viewModel.state.value
-    assertEquals(1, state.invitations.size)
-    assertEquals("invite-1", state.invitations.first().id)
+    Assert.assertEquals(1, state.invitations.size)
+    Assert.assertEquals("invite-1", state.invitations.first().id)
 
     // Reject the invitation
     viewModel.rejectInvitation("invite-1")
@@ -509,8 +515,8 @@ class MyInvitationsViewModelTest {
 
     // Verify invitation is removed from the list (since it's no longer PENDING)
     state = viewModel.state.value
-    assertTrue("Invitation should be removed after rejection", state.invitations.isEmpty())
-    assertNull(state.errorMessage)
+    Assert.assertTrue("Invitation should be removed after rejection", state.invitations.isEmpty())
+    Assert.assertNull(state.errorMessage)
   }
 
   @Test
@@ -529,8 +535,8 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertNotNull("Expected an error message", state.errorMessage)
-    assertTrue(state.errorMessage!!.contains("Failed"))
+    Assert.assertNotNull("Expected an error message", state.errorMessage)
+    Assert.assertTrue(state.errorMessage!!.contains("Failed"))
   }
 
   @Test
@@ -546,7 +552,7 @@ class MyInvitationsViewModelTest {
 
     // Should not crash, but may or may not set an error depending on implementation
     val state = viewModel.state.value
-    assertNotNull(state)
+    Assert.assertNotNull(state)
   }
 
   // ========================================
@@ -567,7 +573,7 @@ class MyInvitationsViewModelTest {
 
     // Verify both invitations are in the list
     var state = viewModel.state.value
-    assertEquals(2, state.invitations.size)
+    Assert.assertEquals(2, state.invitations.size)
 
     // Accept only the first invitation
     viewModel.acceptInvitation("invite-1")
@@ -575,8 +581,8 @@ class MyInvitationsViewModelTest {
 
     // Verify only invitation2 remains
     state = viewModel.state.value
-    assertEquals(1, state.invitations.size)
-    assertEquals("invite-2", state.invitations.first().id)
+    Assert.assertEquals(1, state.invitations.size)
+    Assert.assertEquals("invite-2", state.invitations.first().id)
   }
 
   @Test
@@ -593,7 +599,7 @@ class MyInvitationsViewModelTest {
 
     // Verify both invitations are in the list
     var state = viewModel.state.value
-    assertEquals(2, state.invitations.size)
+    Assert.assertEquals(2, state.invitations.size)
 
     // Reject only the first invitation
     viewModel.rejectInvitation("invite-1")
@@ -601,8 +607,8 @@ class MyInvitationsViewModelTest {
 
     // Verify only invitation2 remains
     state = viewModel.state.value
-    assertEquals(1, state.invitations.size)
-    assertEquals("invite-2", state.invitations.first().id)
+    Assert.assertEquals(1, state.invitations.size)
+    Assert.assertEquals("invite-2", state.invitations.first().id)
   }
 
   // ========================================
@@ -626,7 +632,7 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertNotNull("Expected an error message", state.errorMessage)
+    Assert.assertNotNull("Expected an error message", state.errorMessage)
     // Note: In a real scenario, we'd need to recreate the ViewModel with a new repository
     // to test error clearing, but for this test we're just verifying that error is set
   }
@@ -648,7 +654,7 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertNotNull("Expected an error message", state.errorMessage)
+    Assert.assertNotNull("Expected an error message", state.errorMessage)
   }
 
   // ========================================
@@ -670,9 +676,9 @@ class MyInvitationsViewModelTest {
     // Directly access invitations StateFlow
     val invitations = viewModel.invitations.value
 
-    assertEquals(1, invitations.size)
-    assertEquals("invite-1", invitations.first().id)
-    assertEquals(InvitationStatus.PENDING, invitations.first().status)
+    Assert.assertEquals(1, invitations.size)
+    Assert.assertEquals("invite-1", invitations.first().id)
+    Assert.assertEquals(InvitationStatus.PENDING, invitations.first().status)
   }
 
   @Test
@@ -686,7 +692,7 @@ class MyInvitationsViewModelTest {
     // Directly access invitations StateFlow when email is null
     val invitations = viewModel.invitations.value
 
-    assertTrue(invitations.isEmpty())
+    Assert.assertTrue(invitations.isEmpty())
   }
 
   // ========================================
@@ -703,9 +709,9 @@ class MyInvitationsViewModelTest {
 
     val state = viewModel.state.value
 
-    assertNotNull("Expected an error message when exception is thrown", state.errorMessage)
+    Assert.assertNotNull("Expected an error message when exception is thrown", state.errorMessage)
     val errorMessage = state.errorMessage!!
-    assertTrue(
+    Assert.assertTrue(
         errorMessage.contains("Failed to load user information") || errorMessage.contains("boom"))
   }
 
@@ -725,9 +731,9 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertNotNull("Expected an error message when exception is thrown", state.errorMessage)
+    Assert.assertNotNull("Expected an error message when exception is thrown", state.errorMessage)
     val errorMessage = state.errorMessage!!
-    assertTrue(
+    Assert.assertTrue(
         errorMessage.contains("Failed to accept invitation") ||
             errorMessage.contains("Update invitation status failed"))
   }
@@ -748,9 +754,9 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertNotNull("Expected an error message when exception is thrown", state.errorMessage)
+    Assert.assertNotNull("Expected an error message when exception is thrown", state.errorMessage)
     val errorMessage = state.errorMessage!!
-    assertTrue(
+    Assert.assertTrue(
         errorMessage.contains("Failed to reject invitation") ||
             errorMessage.contains("Update invitation status failed"))
   }
@@ -768,8 +774,8 @@ class MyInvitationsViewModelTest {
 
     val state = viewModel.state.value
 
-    assertNotNull("Expected an error message", state.errorMessage)
-    assertEquals("Failed to load invitations", state.errorMessage!!)
+    Assert.assertNotNull("Expected an error message", state.errorMessage)
+    Assert.assertEquals("Failed to load invitations", state.errorMessage!!)
   }
 
   @Test
@@ -783,9 +789,10 @@ class MyInvitationsViewModelTest {
 
     val state = viewModel.state.value
 
-    assertNotNull("Expected an error message for blank email", state.errorMessage)
+    Assert.assertNotNull("Expected an error message for blank email", state.errorMessage)
     val errorMessage = state.errorMessage!!
-    assertTrue(errorMessage.contains("User not found") || errorMessage.contains("not logged in"))
+    Assert.assertTrue(
+        errorMessage.contains("User not found") || errorMessage.contains("not logged in"))
   }
 
   @Test
@@ -805,8 +812,8 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertNotNull("Expected an error message", state.errorMessage)
-    assertEquals("Failed to accept invitation", state.errorMessage!!)
+    Assert.assertNotNull("Expected an error message", state.errorMessage)
+    Assert.assertEquals("Failed to accept invitation", state.errorMessage!!)
   }
 
   @Test
@@ -826,8 +833,8 @@ class MyInvitationsViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.state.value
-    assertNotNull("Expected an error message", state.errorMessage)
-    assertEquals("Failed to reject invitation", state.errorMessage!!)
+    Assert.assertNotNull("Expected an error message", state.errorMessage)
+    Assert.assertEquals("Failed to reject invitation", state.errorMessage!!)
   }
 
   // ========================================
@@ -851,7 +858,8 @@ class MyInvitationsViewModelTest {
 
     // Verify success message is set
     var state = viewModel.state.value
-    assertNotNull("Expected a success message after accepting invitation", state.successMessage)
+    Assert.assertNotNull(
+        "Expected a success message after accepting invitation", state.successMessage)
 
     // Clear the success message
     viewModel.clearSuccessMessage()
@@ -859,7 +867,7 @@ class MyInvitationsViewModelTest {
 
     // Verify success message is cleared
     state = viewModel.state.value
-    assertNull("Success message should be cleared", state.successMessage)
+    Assert.assertNull("Success message should be cleared", state.successMessage)
   }
 
   @Test
@@ -875,7 +883,7 @@ class MyInvitationsViewModelTest {
 
     // Verify initial state has no success message
     var state = viewModel.state.value
-    assertNull("Initial state should have no success message", state.successMessage)
+    Assert.assertNull("Initial state should have no success message", state.successMessage)
 
     // Clear success message when it's already null
     viewModel.clearSuccessMessage()
@@ -883,7 +891,7 @@ class MyInvitationsViewModelTest {
 
     // Verify state is still valid and success message is still null
     state = viewModel.state.value
-    assertNull("Success message should still be null", state.successMessage)
+    Assert.assertNull("Success message should still be null", state.successMessage)
   }
 
   @Test
@@ -903,8 +911,9 @@ class MyInvitationsViewModelTest {
 
     // Verify success message is set
     var state = viewModel.state.value
-    assertNotNull("Expected a success message after rejecting invitation", state.successMessage)
-    assertTrue(
+    Assert.assertNotNull(
+        "Expected a success message after rejecting invitation", state.successMessage)
+    Assert.assertTrue(
         "Success message should mention rejection", state.successMessage!!.contains("rejected"))
 
     // Clear the success message
@@ -913,7 +922,7 @@ class MyInvitationsViewModelTest {
 
     // Verify success message is cleared
     state = viewModel.state.value
-    assertNull("Success message should be cleared", state.successMessage)
+    Assert.assertNull("Success message should be cleared", state.successMessage)
   }
 
   @Test
@@ -944,10 +953,11 @@ class MyInvitationsViewModelTest {
 
     // Verify other state properties are unchanged
     val stateAfter = viewModel.state.value
-    assertEquals("Invitations should not change", invitationsBefore, stateAfter.invitations)
-    assertEquals("Loading should not change", loadingBefore, stateAfter.loading)
-    assertEquals("Error message should not change", errorMessageBefore, stateAfter.errorMessage)
-    assertEquals("User email should not change", userEmailBefore, stateAfter.userEmail)
-    assertNull("Success message should be cleared", stateAfter.successMessage)
+    Assert.assertEquals("Invitations should not change", invitationsBefore, stateAfter.invitations)
+    Assert.assertEquals("Loading should not change", loadingBefore, stateAfter.loading)
+    Assert.assertEquals(
+        "Error message should not change", errorMessageBefore, stateAfter.errorMessage)
+    Assert.assertEquals("User email should not change", userEmailBefore, stateAfter.userEmail)
+    Assert.assertNull("Success message should be cleared", stateAfter.successMessage)
   }
 }

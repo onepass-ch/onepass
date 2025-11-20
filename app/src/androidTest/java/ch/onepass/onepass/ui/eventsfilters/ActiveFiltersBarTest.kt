@@ -1,10 +1,13 @@
-package ch.onepass.onepass.ui.eventfilters
+package ch.onepass.onepass.ui.eventsfilters
 
+import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.eventfilters.DateRangePresets
 import ch.onepass.onepass.model.eventfilters.EventFilters
+import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
+import ch.onepass.onepass.ui.eventfilters.formatDateRange
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import java.time.Instant
 import junit.framework.Assert.assertNull
@@ -16,7 +19,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class ActiveFiltersBarTest {
 
-  @get:Rule val composeTestRule = createComposeRule()
+  @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
   @Test
   fun activeFiltersBar_displaysRegionFilter() {
@@ -79,7 +82,6 @@ class ActiveFiltersBarTest {
     composeTestRule.onNodeWithText("Bern").assertIsDisplayed()
     composeTestRule.onNodeWithText("Next 7 Days").assertIsDisplayed() // Updated from "Date Range"
     composeTestRule.onNodeWithText("Available Only").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Clear All").assertIsDisplayed()
   }
 
   @Test
@@ -97,35 +99,21 @@ class ActiveFiltersBarTest {
   }
 
   @Test
-  fun activeFiltersBar_clearAllButton_clickTriggersCallback() {
+  fun activeFiltersBar_clearAllButton_behavior() {
     var callbackCount = 0
     val filters = EventFilters(region = "Zurich", hideSoldOut = true)
     composeTestRule.setContent {
       OnePassTheme { ActiveFiltersBar(filters = filters, onClearFilters = { callbackCount++ }) }
     }
-    composeTestRule.onNodeWithText("Clear All").performClick()
+
+    val clearNode = composeTestRule.onNodeWithText("Clear All")
+    clearNode.assertIsDisplayed().assertHasClickAction()
+
+    clearNode.performClick()
     assertEquals(1, callbackCount)
-  }
 
-  @Test
-  fun activeFiltersBar_clearAllButton_multipleClicks() {
-    var callbackCount = 0
-    val filters = EventFilters(region = "Zurich", dateRange = DateRangePresets.getTodayRange())
-    composeTestRule.setContent {
-      OnePassTheme { ActiveFiltersBar(filters = filters, onClearFilters = { callbackCount++ }) }
-    }
-    repeat(3) { composeTestRule.onNodeWithText("Clear All").performClick() }
+    repeat(2) { clearNode.performClick() }
     assertEquals(3, callbackCount)
-  }
-
-  @Test
-  fun activeFiltersBar_clearAllButton_isClickable() {
-    val filters = EventFilters(hideSoldOut = true)
-
-    composeTestRule.setContent {
-      OnePassTheme { ActiveFiltersBar(filters = filters, onClearFilters = {}) }
-    }
-    composeTestRule.onNodeWithText("Clear All").assertHasClickAction()
   }
 
   @Test

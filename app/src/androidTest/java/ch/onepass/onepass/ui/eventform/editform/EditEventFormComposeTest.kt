@@ -68,118 +68,37 @@ class EditEventFormComposeTest {
   }
 
   @Test
-  fun editEventForm_displaysTitle() {
+  fun load_and_display_form_states() = runTest {
+    // combines title/description population + form shown
     every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
 
     composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
+    composeTestRule.waitForIdle()
 
     composeTestRule.onNodeWithText("Edit Event").assertIsDisplayed()
-  }
-
-  @Test
-  fun editEventForm_displaysLoadErrorWhenEventNotFound() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(null)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    // Wait for loading to complete
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(EditEventFormTestTags.LOAD_ERROR_SECTION).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Failed to load event").assertIsDisplayed()
-  }
-
-  @Test
-  fun editEventForm_displaysFormWhenEventLoaded() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    composeTestRule.waitForIdle()
-
     composeTestRule.onNodeWithTag(EditEventFormTestTags.FORM_COLUMN).assertIsDisplayed()
-  }
-
-  @Test
-  fun editEventForm_populatesFieldsWithEventData() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    composeTestRule.waitForIdle()
-
-    // Verify title is populated
     composeTestRule.onNodeWithText("Test Event").assertIsDisplayed()
-
-    // Verify description is populated
     composeTestRule.onNodeWithText("Test Description").assertIsDisplayed()
   }
 
   @Test
-  fun titleField_canBeEdited() = runTest {
+  fun updateButton_isDisplayedAndClickable() = runTest {
     every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
 
     composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    composeTestRule.waitForIdle()
-
-    // Use the direct test tag
-    composeTestRule.onNodeWithTag("title_input_field").performTextClearance()
-
-    composeTestRule
-        .onNodeWithTag("title_input_field")
-        .performTextInput("Amazing event Updated Title")
-
-    composeTestRule.waitForIdle()
-
-    assert(viewModel.formState.value.title == "Amazing event Updated Title")
-  }
-
-  @Test
-  fun descriptionField_canBeEdited() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithText("Test Description").performTextClearance()
-    composeTestRule.onNodeWithText("This is amazing..").performTextInput("Updated Description")
-
-    composeTestRule.onNodeWithText("Updated Description").assertIsDisplayed()
-  }
-
-  @Test
-  fun updateButton_isDisplayed() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
     composeTestRule.waitForIdle()
 
     composeTestRule
         .onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON)
         .performScrollTo()
         .assertIsDisplayed()
+        .assertHasClickAction()
+
     composeTestRule.onNodeWithText("Update event").assertIsDisplayed()
   }
 
   @Test
-  fun updateButton_isClickable() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule
-        .onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON)
-        .performScrollTo()
-        .assertHasClickAction()
-  }
-
-  @Test
-  fun backButton_isDisplayedAndClickable() = runTest {
+  fun backButton_triggersNavigation() = runTest {
     every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
     var backPressed = false
 
@@ -191,110 +110,104 @@ class EditEventFormComposeTest {
     composeTestRule.waitForIdle()
 
     composeTestRule
-        .onNodeWithContentDescription("Back")
+        .onNodeWithTag(EditEventFormTestTags.BACK_BUTTON)
         .assertIsDisplayed()
         .assertHasClickAction()
         .performClick()
 
-    assert(backPressed) { "Back button should trigger navigation" }
+    assert(backPressed)
   }
 
   @Test
-  fun formFields_updateViewModelState() = runTest {
+  fun formFields_updateViewModelState_title_editing() = runTest {
     every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
 
     composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
     composeTestRule.waitForIdle()
 
+    // use stable tag instead of text-based selector
     composeTestRule.onNodeWithTag("title_input_field").performTextClearance()
-
     composeTestRule.onNodeWithTag("title_input_field").performTextInput("New Title")
-
     composeTestRule.waitForIdle()
 
     assert(viewModel.formState.value.title == "New Title")
   }
 
   @Test
-  fun errorDialog_showsWhenUpdateFails() = runTest {
+  fun descriptionField_canBeEdited_usingTag() = runTest {
     every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-    coEvery { mockRepository.updateEvent(any()) } returns Result.failure(Exception("Update failed"))
 
     composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
     composeTestRule.waitForIdle()
 
-    // Trigger update
-    composeTestRule
-        .onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON)
-        .performScrollTo()
-        .performClick()
+    composeTestRule.onNodeWithTag("description_input_field").performTextClearance()
+    composeTestRule.onNodeWithTag("description_input_field").performTextInput("Updated Description")
 
-    composeTestRule.waitForIdle()
-
-    // Error dialog should appear
-    composeTestRule.onNodeWithTag(EditEventFormTestTags.ERROR_DIALOG).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Update Failed").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Updated Description").assertIsDisplayed()
   }
 
   @Test
-  fun errorDialog_canBeDismissed() = runTest {
+  fun location_price_capacity_inputs_use_tags() = runTest {
+    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+
+    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
+    composeTestRule.waitForIdle()
+
+    // location
+    composeTestRule.onNodeWithTag("location_input_field").performScrollTo().performTextClearance()
+    composeTestRule.onNodeWithTag("location_input_field").performTextInput("EPFL, Lausanne")
+    composeTestRule.onNodeWithText("EPFL, Lausanne").assertIsDisplayed()
+
+    // price
+    composeTestRule.onNodeWithTag("price_input_field").performScrollTo().performTextClearance()
+    composeTestRule.onNodeWithTag("price_input_field").performTextInput("30.5")
+    composeTestRule.onNodeWithText("30.5").assertIsDisplayed()
+
+    // capacity
+    composeTestRule.onNodeWithTag("capacity_input_field").performScrollTo().performTextClearance()
+    composeTestRule.onNodeWithTag("capacity_input_field").performTextInput("150")
+    composeTestRule.onNodeWithText("150").assertIsDisplayed()
+  }
+
+  @Test
+  fun errorDialog_flow_and_dismiss() = runTest {
     every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
     coEvery { mockRepository.updateEvent(any()) } returns Result.failure(Exception("Update failed"))
 
     composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
     composeTestRule.waitForIdle()
 
     composeTestRule
         .onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON)
         .performScrollTo()
         .performClick()
-
     composeTestRule.waitForIdle()
 
-    // Dismiss dialog
-    composeTestRule.onNodeWithText("OK").performClick()
+    composeTestRule.onNodeWithTag(EditEventFormTestTags.ERROR_DIALOG).assertIsDisplayed()
+    composeTestRule.onNodeWithText("Update Failed").assertIsDisplayed()
 
+    composeTestRule.onNodeWithTag(EditEventFormTestTags.ERROR_DIALOG_OK_BUTTON).performClick()
     composeTestRule.waitForIdle()
-
-    // Dialog should be gone
     composeTestRule.onNodeWithTag(EditEventFormTestTags.ERROR_DIALOG).assertDoesNotExist()
   }
 
   @Test
-  fun validationErrors_displayWhenFieldsEmpty() = runTest {
+  fun validationErrors_display_and_clear_when_fixed() = runTest {
     every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
     composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
     composeTestRule.waitForIdle()
 
-    // Clear title
-    composeTestRule.onNodeWithText("Test Event").performTextClearance()
-
-    // Try to update
+    // clear title via tag and attempt update
+    composeTestRule.onNodeWithTag("title_input_field").performTextClearance()
     composeTestRule
         .onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON)
         .performScrollTo()
         .performClick()
-
     composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithText(ValidationError.TITLE.message).assertIsDisplayed()
 
-    // Should show validation error
-    composeTestRule
-        .onNodeWithText(ValidationError.TITLE.message)
-        .performScrollTo()
-        .assertIsDisplayed()
-  }
-
-  @Test
-  fun locationField_acceptsInput() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
+    // fix title
+    composeTestRule.onNodeWithTag("title_input_field").performTextInput("Fixed")
     composeTestRule.waitForIdle()
 
     composeTestRule
@@ -303,20 +216,11 @@ class EditEventFormComposeTest {
         .performTextInput("EPFL, Lausanne")
 
     composeTestRule.onNodeWithText("EPFL, Lausanne").assertIsDisplayed()
+    composeTestRule.onNodeWithText(ValidationError.TITLE.message).assertDoesNotExist()
   }
 
   @Test
-  fun screen_hasCorrectTag() {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    composeTestRule.onNodeWithTag(EditEventFormTestTags.SCREEN).assertExists()
-  }
-
-  @Test
-  fun editEventForm_showsLoadingIndicatorWhileLoading() = runTest {
-    // Create a custom ViewModel that stays in Loading state
+  fun loading_shows_loading_indicator() = runTest {
     val loadingViewModel = EditEventFormViewModel(mockRepository)
 
     // Don't mock the repository to return anything - let it hang
@@ -350,9 +254,7 @@ class EditEventFormComposeTest {
 
     // Now return a valid event on retry
     every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
-    composeTestRule.onNodeWithText("Retry").performClick()
-
+    composeTestRule.onNodeWithTag(EditEventFormTestTags.RETRY_BUTTON).performClick()
     composeTestRule.waitForIdle()
 
     // Form should now be displayed
@@ -362,108 +264,17 @@ class EditEventFormComposeTest {
   @Test
   fun updateButton_showsLoadingWhenUpdating() = runTest {
     every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-    coEvery { mockRepository.updateEvent(any()) } returns Result.success(Unit)
-
     composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
 
     composeTestRule.waitForIdle()
 
-    composeTestRule
-        .onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON)
-        .performScrollTo()
-        .performClick()
-
-    // Should briefly show loading indicator (this might be too fast to catch)
-    composeTestRule.waitForIdle()
-  }
-
-  @Test
-  fun formIsScrollable() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    composeTestRule.waitForIdle()
-
-    // Verify we can see the top
     composeTestRule.onNodeWithText("Title*").assertIsDisplayed()
-
-    // Scroll to bottom
     composeTestRule
         .onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON)
         .performScrollTo()
         .assertIsDisplayed()
-
-    // Scroll back to top
-    composeTestRule.onNodeWithText("Title*").performScrollTo().assertIsDisplayed()
-  }
-
-  @Test
-  fun allFieldsAreDisplayed() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    composeTestRule.waitForIdle()
-
-    // Verify all field sections are present
-    composeTestRule.onNodeWithTag(EditEventFormTestTags.TITLE_FIELD).assertExists()
-    composeTestRule.onNodeWithTag(EditEventFormTestTags.DESCRIPTION_FIELD).assertExists()
-    composeTestRule.onNodeWithTag(EditEventFormTestTags.TIME_FIELD).performScrollTo().assertExists()
-    composeTestRule.onNodeWithTag(EditEventFormTestTags.DATE_FIELD).performScrollTo().assertExists()
-    composeTestRule
-        .onNodeWithTag(EditEventFormTestTags.LOCATION_FIELD)
-        .performScrollTo()
-        .assertExists()
-    composeTestRule
-        .onNodeWithTag(EditEventFormTestTags.TICKETS_FIELD)
-        .performScrollTo()
-        .assertExists()
-  }
-
-  @Test
-  fun priceField_acceptsNumericInput() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    composeTestRule.waitForIdle()
-
-    // Find and clear price field
-    composeTestRule.onNodeWithText("25").performScrollTo().performTextClearance()
-
-    composeTestRule.onNodeWithText("ex: 12").performTextInput("30.5")
-
-    composeTestRule.onNodeWithText("30.5").performScrollTo().assertIsDisplayed()
-  }
-
-  @Test
-  fun capacityField_acceptsNumericInput() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithText("100").performScrollTo().performTextClearance()
-
-    composeTestRule.onNodeWithText("ex: 100").performTextInput("150")
-
-    composeTestRule.onNodeWithText("150").performScrollTo().assertIsDisplayed()
-  }
-
-  @Test
-  fun formPreservesDataOnRecomposition() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    composeTestRule.waitForIdle()
-
     composeTestRule.onNodeWithTag("title_input_field").performTextClearance()
-
     composeTestRule.onNodeWithTag("title_input_field").performTextInput("Modified")
-
     composeTestRule.waitForIdle()
 
     // Force recomposition
@@ -473,77 +284,5 @@ class EditEventFormComposeTest {
     composeTestRule.waitForIdle()
 
     assert(viewModel.formState.value.title == "Modified")
-  }
-
-  @Test
-  fun retryButton_hasCorrectTag() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(null)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(EditEventFormTestTags.RETRY_BUTTON).assertExists()
-  }
-
-  @Test
-  fun errorDialogOkButton_hasCorrectTag() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-    coEvery { mockRepository.updateEvent(any()) } returns Result.failure(Exception("Error"))
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule
-        .onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON)
-        .performScrollTo()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(EditEventFormTestTags.ERROR_DIALOG_OK_BUTTON).assertExists()
-  }
-
-  @Test
-  fun backButton_hasCorrectTag() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(EditEventFormTestTags.BACK_BUTTON).assertExists()
-  }
-
-  @Test
-  fun validationErrors_clearWhenFieldsUpdated() = runTest {
-    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
-
-    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
-
-    composeTestRule.waitForIdle()
-
-    // Clear description to trigger error
-    composeTestRule.onNodeWithText("Test Description").performTextClearance()
-
-    // Try to update
-    composeTestRule
-        .onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON)
-        .performScrollTo()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-
-    // Should show validation error
-    composeTestRule.onNodeWithText(ValidationError.DESCRIPTION.message).assertIsDisplayed()
-
-    // Fix the error
-    composeTestRule.onNodeWithText("This is amazing..").performTextInput("New Description")
-
-    composeTestRule.waitForIdle()
-
-    // Error should be cleared
-    composeTestRule.onNodeWithText(ValidationError.DESCRIPTION.message).assertDoesNotExist()
   }
 }

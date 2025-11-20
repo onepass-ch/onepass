@@ -8,17 +8,18 @@ import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.ui.feed.FeedViewModel.Companion.LOADED_EVENTS_LIMIT
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
-import java.util.*
+import java.util.Calendar
+import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.*
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -110,10 +111,10 @@ class FeedViewModelTest {
 
     val state = viewModel.uiState.value
 
-    assertEquals(emptyList<Event>(), state.events)
-    assertFalse(state.isLoading)
-    assertNull(state.error)
-    assertEquals("SWITZERLAND", state.location)
+    Assert.assertEquals(emptyList<Event>(), state.events)
+    Assert.assertFalse(state.isLoading)
+    Assert.assertNull(state.error)
+    Assert.assertEquals("SWITZERLAND", state.location)
   }
 
   @Test
@@ -127,9 +128,9 @@ class FeedViewModelTest {
 
     val state = viewModel.uiState.value
 
-    assertEquals(events, state.events)
-    assertFalse(state.isLoading)
-    assertNull(state.error)
+    Assert.assertEquals(events, state.events)
+    Assert.assertFalse(state.isLoading)
+    Assert.assertNull(state.error)
   }
 
   @Test
@@ -140,12 +141,12 @@ class FeedViewModelTest {
     viewModel.loadEvents()
 
     val stateWhileLoading = viewModel.uiState.value
-    assertTrue(stateWhileLoading.isLoading)
+    Assert.assertTrue(stateWhileLoading.isLoading)
 
     testDispatcher.scheduler.advanceUntilIdle()
 
     val finalState = viewModel.uiState.value
-    assertFalse(finalState.isLoading)
+    Assert.assertFalse(finalState.isLoading)
   }
 
   @Test
@@ -158,9 +159,9 @@ class FeedViewModelTest {
 
     val state = viewModel.uiState.value
 
-    assertEquals(emptyList<Event>(), state.events)
-    assertFalse(state.isLoading)
-    assertEquals("Test error", state.error)
+    Assert.assertEquals(emptyList<Event>(), state.events)
+    Assert.assertFalse(state.isLoading)
+    Assert.assertEquals("Test error", state.error)
   }
 
   @Test
@@ -174,9 +175,9 @@ class FeedViewModelTest {
 
     val state = viewModel.uiState.value
 
-    assertEquals(events, state.events)
-    assertFalse(state.isLoading)
-    assertNull(state.error)
+    Assert.assertEquals(events, state.events)
+    Assert.assertFalse(state.isLoading)
+    Assert.assertNull(state.error)
   }
 
   @Test
@@ -188,11 +189,11 @@ class FeedViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     // Verify error exists
-    assertTrue(viewModel.uiState.value.error != null)
+    Assert.assertTrue(viewModel.uiState.value.error != null)
 
     viewModel.clearError()
 
-    assertNull(viewModel.uiState.value.error)
+    Assert.assertNull(viewModel.uiState.value.error)
   }
 
   @Test
@@ -203,7 +204,7 @@ class FeedViewModelTest {
     val newLocation = "GENEVA"
     viewModel.setLocation(newLocation)
 
-    assertEquals(newLocation, viewModel.uiState.value.location)
+    Assert.assertEquals(newLocation, viewModel.uiState.value.location)
   }
 
   @Test
@@ -218,9 +219,9 @@ class FeedViewModelTest {
 
     val state = viewModel.uiState.value
 
-    assertEquals(1, state.events.size)
-    assertEquals(publishedEvent.eventId, state.events.first().eventId)
-    assertEquals(EventStatus.PUBLISHED, state.events.first().status)
+    Assert.assertEquals(1, state.events.size)
+    Assert.assertEquals(publishedEvent.eventId, state.events.first().eventId)
+    Assert.assertEquals(EventStatus.PUBLISHED, state.events.first().status)
   }
 
   @Test
@@ -237,9 +238,9 @@ class FeedViewModelTest {
 
     val state = viewModel.uiState.value
 
-    assertEquals(events, state.events)
-    assertFalse(state.isLoading)
-    assertNull(state.error)
+    Assert.assertEquals(events, state.events)
+    Assert.assertFalse(state.isLoading)
+    Assert.assertNull(state.error)
   }
 
   @Test
@@ -252,9 +253,9 @@ class FeedViewModelTest {
 
     val state = viewModel.uiState.value
 
-    assertEquals(emptyList<Event>(), state.events)
-    assertFalse(state.isLoading)
-    assertNull(state.error)
+    Assert.assertEquals(emptyList<Event>(), state.events)
+    Assert.assertFalse(state.isLoading)
+    Assert.assertNull(state.error)
   }
 
   @Test
@@ -276,8 +277,8 @@ class FeedViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val filteredState = viewModel.uiState.value
-    assertEquals(1, filteredState.events.size)
-    assertEquals("Lausanne", filteredState.events.first().location?.name)
+    Assert.assertEquals(1, filteredState.events.size)
+    Assert.assertEquals("Lausanne", filteredState.events.first().location?.name)
   }
 
   @Test
@@ -308,8 +309,8 @@ class FeedViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val filteredState = viewModel.uiState.value
-    assertEquals(1, filteredState.events.size)
-    assertEquals(testEvent1.eventId, filteredState.events.first().eventId)
+    Assert.assertEquals(1, filteredState.events.size)
+    Assert.assertEquals(testEvent1.eventId, filteredState.events.first().eventId)
   }
 
   @Test
@@ -331,8 +332,8 @@ class FeedViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val filteredState = viewModel.uiState.value
-    assertEquals(1, filteredState.events.size)
-    assertEquals(testEvent2.eventId, filteredState.events.first().eventId)
+    Assert.assertEquals(1, filteredState.events.size)
+    Assert.assertEquals(testEvent2.eventId, filteredState.events.first().eventId)
   }
 
   @Test
@@ -360,8 +361,8 @@ class FeedViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val filteredState = viewModel.uiState.value
-    assertEquals(1, filteredState.events.size)
-    assertEquals(testEvent2.eventId, filteredState.events.first().eventId)
+    Assert.assertEquals(1, filteredState.events.size)
+    Assert.assertEquals(testEvent2.eventId, filteredState.events.first().eventId)
   }
 
   @Test
@@ -383,7 +384,7 @@ class FeedViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val finalState = viewModel.uiState.value
-    assertEquals(2, finalState.events.size)
+    Assert.assertEquals(2, finalState.events.size)
   }
 
   @Test

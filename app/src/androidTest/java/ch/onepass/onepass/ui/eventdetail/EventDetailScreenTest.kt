@@ -16,12 +16,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
-/**
- * UI tests for EventDetailScreen.
- *
- * Tests the screen UI, user interactions, and different states (loading, error, success) using
- * mocked repositories.
- */
 class EventDetailScreenTest {
 
   @get:Rule val composeTestRule = createComposeRule()
@@ -48,12 +42,14 @@ class EventDetailScreenTest {
   }
 
   @Test
-  fun eventDetailScreen_displaysErrorState() {
+  fun eventDetailScreen_displaysErrorState_and_goBackWorks() {
+    var backClicked = false
+
     composeTestRule.setContent {
       OnePassTheme {
         EventDetailScreenContent(
             uiState = EventDetailUiState(errorMessage = "Network error"),
-            onBack = {},
+            onBack = { backClicked = true },
             onLikeToggle = {},
             onNavigateToMap = {},
             onBuyTicket = {})
@@ -66,37 +62,18 @@ class EventDetailScreenTest {
     composeTestRule
         .onNodeWithText("Network error", substring = true, useUnmergedTree = true)
         .assertIsDisplayed()
-    composeTestRule.onNodeWithText("Go Back", useUnmergedTree = true).assertIsDisplayed()
-  }
-
-  @Test
-  fun eventDetailScreen_errorState_goBackButtonWorks() {
-    var backClicked = false
-
-    composeTestRule.setContent {
-      OnePassTheme {
-        EventDetailScreenContent(
-            uiState = EventDetailUiState(errorMessage = "Test error"),
-            onBack = { backClicked = true },
-            onLikeToggle = {},
-            onNavigateToMap = {},
-            onBuyTicket = {})
-      }
-    }
-
     composeTestRule.onNodeWithText("Go Back", useUnmergedTree = true).performClick()
-
     assertTrue(backClicked)
   }
 
   @Test
-  fun eventDetailScreen_displaysEventTitle() {
+  fun eventDetailScreen_displaysMainEventElements_and_interactions() {
     val testEvent = createTestEvent(title = "Amazing Event")
 
     composeTestRule.setContent {
       OnePassTheme {
         EventDetailScreenContent(
-            uiState = EventDetailUiState(event = testEvent),
+            uiState = EventDetailUiState(event = testEvent, isLiked = false),
             onBack = {},
             onLikeToggle = {},
             onNavigateToMap = {},
@@ -104,149 +81,38 @@ class EventDetailScreenTest {
       }
     }
 
+    // Main elements
     composeTestRule
         .onNodeWithTag(EventDetailTestTags.EVENT_TITLE, useUnmergedTree = true)
         .assertIsDisplayed()
     composeTestRule.onNodeWithText("Amazing Event", useUnmergedTree = true).assertIsDisplayed()
-  }
-
-  @Test
-  fun eventDetailScreen_hidesRatingWhenZero() {
-    // Given: organization with zero rating
-    val testEvent = createTestEvent()
-    val testOrganization = createTestOrganization(averageRating = 0f)
-
-    composeTestRule.setContent {
-      OnePassTheme {
-        EventDetailScreenContent(
-            uiState = EventDetailUiState(event = testEvent, organization = testOrganization),
-            onBack = {},
-            onLikeToggle = {},
-            onNavigateToMap = {},
-            onBuyTicket = {})
-      }
-    }
-
     composeTestRule
-        .onNodeWithTag(EventDetailTestTags.ORGANIZER_RATING, useUnmergedTree = true)
-        .assertDoesNotExist()
-  }
-
-  @Test
-  fun eventDetailScreen_displaysAboutEventSection() {
-    // Given: event with description
-    val testEvent = createTestEvent(description = "This is a great event!")
-
-    composeTestRule.setContent {
-      OnePassTheme {
-        EventDetailScreenContent(
-            uiState = EventDetailUiState(event = testEvent),
-            onBack = {},
-            onLikeToggle = {},
-            onNavigateToMap = {},
-            onBuyTicket = {})
-      }
-    }
-
+        .onNodeWithTag(EventDetailTestTags.EVENT_IMAGE, useUnmergedTree = true)
+        .assertIsDisplayed()
     composeTestRule
-        .onNodeWithTag(EventDetailTestTags.ABOUT_EVENT, useUnmergedTree = true)
-        .assertExists()
-    composeTestRule.onNodeWithText("This is a great event!", useUnmergedTree = true).assertExists()
-  }
+        .onNodeWithTag(EventDetailTestTags.LIKE_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
 
-  @Test
-  fun eventDetailScreen_displaysDefaultDescriptionWhenEmpty() {
-    // Given: event with empty description
-    val testEvent = createTestEvent(description = "")
-
-    composeTestRule.setContent {
-      OnePassTheme {
-        EventDetailScreenContent(
-            uiState = EventDetailUiState(event = testEvent),
-            onBack = {},
-            onLikeToggle = {},
-            onNavigateToMap = {},
-            onBuyTicket = {})
-      }
-    }
-
-    composeTestRule
-        .onNodeWithText("No description available.", useUnmergedTree = true)
-        .assertExists()
-  }
-
-  @Test
-  fun eventDetailScreen_displaysEventDate() {
-    // Given: event with specific date
-    val testEvent = createTestEvent()
-
-    composeTestRule.setContent {
-      OnePassTheme {
-        EventDetailScreenContent(
-            uiState = EventDetailUiState(event = testEvent),
-            onBack = {},
-            onLikeToggle = {},
-            onNavigateToMap = {},
-            onBuyTicket = {})
-      }
-    }
-
+    // Date & location elements
     composeTestRule
         .onNodeWithTag(EventDetailTestTags.EVENT_DATE, useUnmergedTree = true)
         .assertExists()
-  }
-
-  @Test
-  fun eventDetailScreen_displaysEventLocation() {
-    // Given: event with location
-    val testEvent = createTestEvent()
-
-    composeTestRule.setContent {
-      OnePassTheme {
-        EventDetailScreenContent(
-            uiState = EventDetailUiState(event = testEvent),
-            onBack = {},
-            onLikeToggle = {},
-            onNavigateToMap = {},
-            onBuyTicket = {})
-      }
-    }
-
     composeTestRule
         .onNodeWithTag(EventDetailTestTags.EVENT_LOCATION, useUnmergedTree = true)
         .assertExists()
     composeTestRule.onNodeWithText("Test Location", useUnmergedTree = true).assertExists()
-  }
 
-  @Test
-  fun eventDetailScreen_mapButtonIsClickable() {
-    // Given: event data and mock callback
-    val testEvent = createTestEvent()
-
-    composeTestRule.setContent {
-      OnePassTheme {
-        EventDetailScreenContent(
-            uiState = EventDetailUiState(event = testEvent),
-            onBack = {},
-            onLikeToggle = {},
-            onNavigateToMap = {},
-            onBuyTicket = {})
-      }
-    }
-
-    composeTestRule.waitForIdle()
+    // Map button clickable
     composeTestRule
         .onNodeWithTag(EventDetailTestTags.MAP_BUTTON)
         .assertExists()
         .assertHasClickAction()
-
-    // Ensure clicking does not throw, though we do not rely on callback side-effects
-    composeTestRule.onNodeWithTag(EventDetailTestTags.MAP_BUTTON).performClick()
+        .performClick()
   }
 
   @Test
-  fun eventDetailScreen_buyTicketButtonIsClickable() {
-    // Given: event data and mock callback
+  fun eventDetailScreen_buyTicketButtonIsClickable_and_displaysPrices() {
+    // Buy button clickable
     val testEvent = createTestEvent()
     var buyClicked = false
 
@@ -264,38 +130,17 @@ class EventDetailScreenTest {
     composeTestRule
         .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
         .performClick()
-
     assertTrue(buyClicked)
   }
 
   @Test
-  fun eventDetailScreen_displaysFreePrice() {
-    // Given: free event
-    val testEvent = createTestEvent(lowestPrice = 0u)
+  fun eventDetailScreen_displaysPaidPriceFormat() {
+    val paidEvent = createTestEvent(lowestPrice = 35u)
 
     composeTestRule.setContent {
       OnePassTheme {
         EventDetailScreenContent(
-            uiState = EventDetailUiState(event = testEvent),
-            onBack = {},
-            onLikeToggle = {},
-            onNavigateToMap = {},
-            onBuyTicket = {})
-      }
-    }
-
-    composeTestRule.onNodeWithText("FREE", useUnmergedTree = true).assertIsDisplayed()
-  }
-
-  @Test
-  fun eventDetailScreen_displaysPaidPrice() {
-    // Given: paid event
-    val testEvent = createTestEvent(lowestPrice = 35u)
-
-    composeTestRule.setContent {
-      OnePassTheme {
-        EventDetailScreenContent(
-            uiState = EventDetailUiState(event = testEvent),
+            uiState = EventDetailUiState(event = paidEvent),
             onBack = {},
             onLikeToggle = {},
             onNavigateToMap = {},
@@ -309,14 +154,13 @@ class EventDetailScreenTest {
   }
 
   @Test
-  fun eventDetailScreen_likeButtonIsDisplayed() {
-    // Given: event data
-    val testEvent = createTestEvent()
+  fun eventDetailScreen_displaysFreePriceFormat() {
+    val freeEvent = createTestEvent(lowestPrice = 0u)
 
     composeTestRule.setContent {
       OnePassTheme {
         EventDetailScreenContent(
-            uiState = EventDetailUiState(event = testEvent),
+            uiState = EventDetailUiState(event = freeEvent),
             onBack = {},
             onLikeToggle = {},
             onNavigateToMap = {},
@@ -324,20 +168,18 @@ class EventDetailScreenTest {
       }
     }
 
-    composeTestRule
-        .onNodeWithTag(EventDetailTestTags.LIKE_BUTTON, useUnmergedTree = true)
-        .assertIsDisplayed()
+    composeTestRule.onNodeWithText("FREE", useUnmergedTree = true).assertIsDisplayed()
   }
 
   @Test
-  fun eventDetailScreen_eventImageIsDisplayed() {
-    // Given: event data
-    val testEvent = createTestEvent()
+  fun eventDetailScreen_hidesRatingWhenZero_and_descriptionFallback() {
+    val testEvent = createTestEvent(description = "")
+    val testOrganization = createTestOrganization(averageRating = 0f)
 
     composeTestRule.setContent {
       OnePassTheme {
         EventDetailScreenContent(
-            uiState = EventDetailUiState(event = testEvent),
+            uiState = EventDetailUiState(event = testEvent, organization = testOrganization),
             onBack = {},
             onLikeToggle = {},
             onNavigateToMap = {},
@@ -346,8 +188,11 @@ class EventDetailScreenTest {
     }
 
     composeTestRule
-        .onNodeWithTag(EventDetailTestTags.EVENT_IMAGE, useUnmergedTree = true)
-        .assertIsDisplayed()
+        .onNodeWithTag(EventDetailTestTags.ORGANIZER_RATING, useUnmergedTree = true)
+        .assertDoesNotExist()
+    composeTestRule
+        .onNodeWithText("No description available.", useUnmergedTree = true)
+        .assertExists()
   }
 
   // Helper function to create a test event

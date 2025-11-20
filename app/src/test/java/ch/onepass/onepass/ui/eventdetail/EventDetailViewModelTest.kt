@@ -11,14 +11,16 @@ import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
 import io.mockk.every
 import io.mockk.mockk
-import java.util.*
+import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.test.*
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
@@ -88,10 +90,10 @@ class EventDetailViewModelTest {
             organizationRepository = mockOrganizationRepository)
 
     // Check initial state before flow emits
-    assertTrue(viewModel.isLoading.value)
-    assertNull(viewModel.event.value)
-    assertNull(viewModel.organization.value)
-    assertNull(viewModel.error.value)
+    Assert.assertTrue(viewModel.isLoading.value)
+    Assert.assertNull(viewModel.event.value)
+    Assert.assertNull(viewModel.organization.value)
+    Assert.assertNull(viewModel.error.value)
   }
 
   @Test
@@ -110,16 +112,16 @@ class EventDetailViewModelTest {
             organizationRepository = mockOrganizationRepository)
 
     // Verify event is loaded
-    assertEquals(testEvent, viewModel.event.value)
+    Assert.assertEquals(testEvent, viewModel.event.value)
 
     // Verify organization is loaded
-    assertEquals(testOrganization, viewModel.organization.value)
+    Assert.assertEquals(testOrganization, viewModel.organization.value)
 
     // Verify loading is complete
-    assertFalse(viewModel.isLoading.value)
+    Assert.assertFalse(viewModel.isLoading.value)
 
     // Verify no errors
-    assertNull(viewModel.error.value)
+    Assert.assertNull(viewModel.error.value)
   }
 
   @Test
@@ -134,16 +136,16 @@ class EventDetailViewModelTest {
             organizationRepository = mockOrganizationRepository)
 
     // Verify event is null
-    assertNull(viewModel.event.value)
+    Assert.assertNull(viewModel.event.value)
 
     // Verify organization is not loaded
-    assertNull(viewModel.organization.value)
+    Assert.assertNull(viewModel.organization.value)
 
     // Verify loading is complete
-    assertFalse(viewModel.isLoading.value)
+    Assert.assertFalse(viewModel.isLoading.value)
 
     // Verify no error is set for missing event
-    assertNull(viewModel.error.value)
+    Assert.assertNull(viewModel.error.value)
   }
 
   @Test
@@ -159,16 +161,16 @@ class EventDetailViewModelTest {
             organizationRepository = mockOrganizationRepository)
 
     // Verify error is set
-    assertEquals("Network error", viewModel.error.value)
+    Assert.assertEquals("Network error", viewModel.error.value)
 
     // Verify loading is complete
-    assertFalse(viewModel.isLoading.value)
+    Assert.assertFalse(viewModel.isLoading.value)
 
     // Verify event is null
-    assertNull(viewModel.event.value)
+    Assert.assertNull(viewModel.event.value)
 
     // Verify organization is null
-    assertNull(viewModel.organization.value)
+    Assert.assertNull(viewModel.organization.value)
   }
 
   @Test
@@ -183,10 +185,10 @@ class EventDetailViewModelTest {
             organizationRepository = mockOrganizationRepository)
 
     // Verify default error message is set
-    assertEquals("Failed to load event", viewModel.error.value)
+    Assert.assertEquals("Failed to load event", viewModel.error.value)
 
     // Verify loading is complete
-    assertFalse(viewModel.isLoading.value)
+    Assert.assertFalse(viewModel.isLoading.value)
   }
 
   @Test
@@ -205,16 +207,16 @@ class EventDetailViewModelTest {
             organizationRepository = mockOrganizationRepository)
 
     // Verify event is loaded
-    assertEquals(testEvent, viewModel.event.value)
+    Assert.assertEquals(testEvent, viewModel.event.value)
 
     // Verify organization is null (error was caught)
-    assertNull(viewModel.organization.value)
+    Assert.assertNull(viewModel.organization.value)
 
     // Verify loading is complete
-    assertFalse(viewModel.isLoading.value)
+    Assert.assertFalse(viewModel.isLoading.value)
 
     // Verify no error is set (organization errors are silent)
-    assertNull(viewModel.error.value)
+    Assert.assertNull(viewModel.error.value)
   }
 
   @Test
@@ -232,16 +234,16 @@ class EventDetailViewModelTest {
             organizationRepository = mockOrganizationRepository)
 
     // Verify event is loaded
-    assertEquals(eventWithBlankOrganizer, viewModel.event.value)
+    Assert.assertEquals(eventWithBlankOrganizer, viewModel.event.value)
 
     // Verify organization is not loaded
-    assertNull(viewModel.organization.value)
+    Assert.assertNull(viewModel.organization.value)
 
     // Verify loading is complete
-    assertFalse(viewModel.isLoading.value)
+    Assert.assertFalse(viewModel.isLoading.value)
 
     // Verify no error
-    assertNull(viewModel.error.value)
+    Assert.assertNull(viewModel.error.value)
   }
 
   @Test
@@ -260,16 +262,16 @@ class EventDetailViewModelTest {
             organizationRepository = mockOrganizationRepository)
 
     // Verify event is loaded
-    assertEquals(eventWithWhitespaceOrganizer, viewModel.event.value)
+    Assert.assertEquals(eventWithWhitespaceOrganizer, viewModel.event.value)
 
     // Verify organization is not loaded
-    assertNull(viewModel.organization.value)
+    Assert.assertNull(viewModel.organization.value)
 
     // Verify loading is complete
-    assertFalse(viewModel.isLoading.value)
+    Assert.assertFalse(viewModel.isLoading.value)
 
     // Verify no error
-    assertNull(viewModel.error.value)
+    Assert.assertNull(viewModel.error.value)
   }
 
   @Test
@@ -287,7 +289,7 @@ class EventDetailViewModelTest {
             eventRepository = mockEventRepository,
             organizationRepository = mockOrganizationRepository)
 
-    assertEquals("Event 1", viewModel1.event.value?.title)
+    Assert.assertEquals("Event 1", viewModel1.event.value?.title)
 
     // Mock for event-2
     every { mockEventRepository.getEventById("event-2") } returns flowOf(event2)
@@ -298,7 +300,7 @@ class EventDetailViewModelTest {
             eventRepository = mockEventRepository,
             organizationRepository = mockOrganizationRepository)
 
-    assertEquals("Event 2", viewModel2.event.value?.title)
+    Assert.assertEquals("Event 2", viewModel2.event.value?.title)
   }
 
   @Test
@@ -322,8 +324,8 @@ class EventDetailViewModelTest {
             organizationRepository = mockOrganizationRepository)
 
     // Verify organization load was called after event loaded
-    assertTrue(organizationLoadCalled)
-    assertEquals(testOrganization, viewModel.organization.value)
+    Assert.assertTrue(organizationLoadCalled)
+    Assert.assertEquals(testOrganization, viewModel.organization.value)
   }
 
   @Test
@@ -351,8 +353,8 @@ class EventDetailViewModelTest {
             organizationRepository = mockOrganizationRepository)
 
     // Verify correct organization is loaded
-    assertEquals(organization2, viewModel.organization.value)
-    assertEquals("Second Organization", viewModel.organization.value?.name)
+    Assert.assertEquals(organization2, viewModel.organization.value)
+    Assert.assertEquals("Second Organization", viewModel.organization.value?.name)
   }
 
   @Test
@@ -371,9 +373,9 @@ class EventDetailViewModelTest {
     // so loading should already be complete by the time we check
 
     // Loading should be complete
-    assertFalse(viewModel.isLoading.value)
-    assertEquals(testEvent, viewModel.event.value)
-    assertEquals(testOrganization, viewModel.organization.value)
+    Assert.assertFalse(viewModel.isLoading.value)
+    Assert.assertEquals(testEvent, viewModel.event.value)
+    Assert.assertEquals(testOrganization, viewModel.organization.value)
   }
 
   @Test
@@ -410,12 +412,12 @@ class EventDetailViewModelTest {
             organizationRepository = mockOrganizationRepository)
 
     val loadedEvent = viewModel.event.value
-    assertNotNull(loadedEvent)
-    assertEquals("Full Event", loadedEvent?.title)
-    assertEquals("Complete Description", loadedEvent?.description)
-    assertEquals(200, loadedEvent?.capacity)
-    assertEquals(2, loadedEvent?.images?.size)
-    assertEquals(2, loadedEvent?.tags?.size)
+    Assert.assertNotNull(loadedEvent)
+    Assert.assertEquals("Full Event", loadedEvent?.title)
+    Assert.assertEquals("Complete Description", loadedEvent?.description)
+    Assert.assertEquals(200, loadedEvent?.capacity)
+    Assert.assertEquals(2, loadedEvent?.images?.size)
+    Assert.assertEquals(2, loadedEvent?.tags?.size)
   }
 
   @Test
@@ -431,10 +433,10 @@ class EventDetailViewModelTest {
             organizationRepository = mockOrganizationRepository)
 
     // Verify StateFlows can be collected
-    assertNotNull(viewModel.event)
-    assertNotNull(viewModel.organization)
-    assertNotNull(viewModel.isLoading)
-    assertNotNull(viewModel.error)
+    Assert.assertNotNull(viewModel.event)
+    Assert.assertNotNull(viewModel.organization)
+    Assert.assertNotNull(viewModel.isLoading)
+    Assert.assertNotNull(viewModel.error)
   }
 
   @Test
@@ -449,15 +451,15 @@ class EventDetailViewModelTest {
             organizationRepository = mockOrganizationRepository)
 
     // Verify event is loaded
-    assertEquals(testEvent, viewModel.event.value)
+    Assert.assertEquals(testEvent, viewModel.event.value)
 
     // Verify organization is null
-    assertNull(viewModel.organization.value)
+    Assert.assertNull(viewModel.organization.value)
 
     // Verify loading is complete
-    assertFalse(viewModel.isLoading.value)
+    Assert.assertFalse(viewModel.isLoading.value)
 
     // Verify no error
-    assertNull(viewModel.error.value)
+    Assert.assertNull(viewModel.error.value)
   }
 }

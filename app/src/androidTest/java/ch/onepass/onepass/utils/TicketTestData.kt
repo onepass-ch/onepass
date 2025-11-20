@@ -15,7 +15,7 @@ object TicketTestData {
       state: TicketState = TicketState.ISSUED,
       tierId: String = "general",
       purchasePrice: Double = 25.0,
-      issuedAt: Timestamp? = Timestamp.now(),
+      issuedAt: Timestamp? = Timestamp.Companion.now(),
       expiresAt: Timestamp? = createFutureTimestamp(daysFromNow = 7),
       transferLock: Boolean = false,
       version: Int = 1,

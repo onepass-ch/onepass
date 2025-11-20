@@ -29,21 +29,19 @@ class MyEventsScreenTest {
   }
 
   @Test
-  fun tabsAreDisplayed_correctly() {
+  fun tabs_exist_and_switchingTabs_showsCorrectTickets() {
     setContent()
+
+    // --- Verify tabs exist (replaces the old test 'tabsAreDisplayed_correctly')
     composeTestRule.onNodeWithTag(MyEventsTestTags.TABS_ROW).assertIsDisplayed()
     composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_CURRENT).assertIsDisplayed()
     composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_EXPIRED).assertIsDisplayed()
-  }
 
-  @Test
-  fun switchingTabs_showsCorrectTickets() {
-    setContent()
-    // Current tickets visible
+    // --- Default state: current tab selected
     composeTestRule.onNodeWithText("Lausanne Party").assertIsDisplayed()
     composeTestRule.onNodeWithText("Morges Party").assertDoesNotExist()
 
-    // Switch to Expired
+    // --- Switch to Expired tab
     composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_EXPIRED).performClick()
     composeTestRule.waitForIdle()
 
