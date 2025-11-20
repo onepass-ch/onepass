@@ -5,6 +5,7 @@ import android.net.Uri
 import androidx.test.core.app.ApplicationProvider
 import ch.onepass.onepass.utils.FirebaseEmulator
 import java.io.File
+import java.net.URLEncoder
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertTrue
@@ -78,7 +79,9 @@ class StorageRepositoryFirebaseTest {
     assertTrue("Upload should succeed", result.isSuccess)
     val downloadUrl = result.getOrNull()
     assertNotNull("Download URL should not be null", downloadUrl)
-    assertTrue("Download URL should contain path", downloadUrl?.contains(testPath) == true)
+    // Firebase Storage URLs encode the path with %2F for slashes
+    val encodedPath = URLEncoder.encode(testPath, "UTF-8")
+    assertTrue("Download URL should contain encoded path", downloadUrl?.contains(encodedPath) == true)
 
     uploadedFiles.add(testPath)
 
