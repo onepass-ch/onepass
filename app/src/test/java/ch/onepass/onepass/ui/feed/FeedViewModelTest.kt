@@ -397,15 +397,15 @@ class FeedViewModelTest {
 
     // Check that isRefreshing is set to true immediately
     val stateWhileRefreshing = viewModel.uiState.value
-    assertTrue(stateWhileRefreshing.isRefreshing)
-    assertFalse(stateWhileRefreshing.isLoading)
+    Assert.assertTrue(stateWhileRefreshing.isRefreshing)
+    Assert.assertFalse(stateWhileRefreshing.isLoading)
 
     testDispatcher.scheduler.advanceUntilIdle()
 
     // Check that isRefreshing is set to false after completion
     val finalState = viewModel.uiState.value
-    assertFalse(finalState.isRefreshing)
-    assertFalse(finalState.isLoading)
+    Assert.assertFalse(finalState.isRefreshing)
+    Assert.assertFalse(finalState.isLoading)
   }
 
   @Test
@@ -418,9 +418,9 @@ class FeedViewModelTest {
 
     val state = viewModel.uiState.value
 
-    assertEquals(emptyList<Event>(), state.events)
-    assertFalse(state.isRefreshing)
-    assertEquals("Test error", state.error)
+    Assert.assertEquals(emptyList<Event>(), state.events)
+    Assert.assertFalse(state.isRefreshing)
+    Assert.assertEquals("Test error", state.error)
   }
 
   @Test
@@ -431,12 +431,12 @@ class FeedViewModelTest {
     viewModel.refreshEvents()
 
     // Verify refreshing state is set initially
-    assertTrue(viewModel.uiState.value.isRefreshing)
+    Assert.assertTrue(viewModel.uiState.value.isRefreshing)
 
     testDispatcher.scheduler.advanceUntilIdle()
 
     // Verify refreshing state is cleared even on error
-    assertFalse(viewModel.uiState.value.isRefreshing)
+    Assert.assertFalse(viewModel.uiState.value.isRefreshing)
   }
 
   @Test
@@ -447,17 +447,17 @@ class FeedViewModelTest {
     // First load with error
     viewModel.loadEvents()
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(viewModel.uiState.value.error != null)
+    Assert.assertTrue(viewModel.uiState.value.error != null)
 
     // Refresh should clear error initially
     viewModel.refreshEvents()
-    assertNull(viewModel.uiState.value.error)
-    assertTrue(viewModel.uiState.value.isRefreshing)
+    Assert.assertNull(viewModel.uiState.value.error)
+    Assert.assertTrue(viewModel.uiState.value.isRefreshing)
 
     testDispatcher.scheduler.advanceUntilIdle()
 
     // Error should be set again if refresh fails
-    assertTrue(viewModel.uiState.value.error != null)
+    Assert.assertTrue(viewModel.uiState.value.error != null)
   }
 
   @Test
@@ -473,9 +473,9 @@ class FeedViewModelTest {
 
     val state = viewModel.uiState.value
 
-    assertEquals(events, state.events)
-    assertFalse(state.isRefreshing)
-    assertNull(state.error)
+    Assert.assertEquals(events, state.events)
+    Assert.assertFalse(state.isRefreshing)
+    Assert.assertNull(state.error)
   }
 
   @Test
@@ -492,9 +492,9 @@ class FeedViewModelTest {
     val state = viewModel.uiState.value
 
     // Should only load up to LOADED_EVENTS_LIMIT events
-    assertEquals(LOADED_EVENTS_LIMIT, state.events.size)
-    assertFalse(state.isRefreshing)
-    assertNull(state.error)
+    Assert.assertEquals(LOADED_EVENTS_LIMIT, state.events.size)
+    Assert.assertFalse(state.isRefreshing)
+    Assert.assertNull(state.error)
   }
 
   @Test
@@ -512,9 +512,9 @@ class FeedViewModelTest {
     val state = viewModel.uiState.value
 
     // Should end up with valid state regardless of order
-    assertEquals(events, state.events)
-    assertFalse(state.isLoading)
-    assertFalse(state.isRefreshing)
-    assertNull(state.error)
+    Assert.assertEquals(events, state.events)
+    Assert.assertFalse(state.isLoading)
+    Assert.assertFalse(state.isRefreshing)
+    Assert.assertNull(state.error)
   }
 }
