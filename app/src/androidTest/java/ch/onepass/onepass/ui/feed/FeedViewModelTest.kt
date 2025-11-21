@@ -5,6 +5,7 @@ import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.ui.feed.FeedViewModel.Companion.LOADED_EVENTS_LIMIT
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
 import java.util.*
@@ -383,5 +384,136 @@ class FeedViewModelTest {
 
     val finalState = viewModel.uiState.value
     assertEquals(2, finalState.events.size)
+  }
+
+  @Test
+  fun feedViewModel_refreshEvents_setsRefreshingState() = runTest {
+    val events = listOf(testEvent1, testEvent2)
+    val mockRepository = MockEventRepository(events)
+    val viewModel = FeedViewModel(mockRepository)
+
+    viewModel.refreshEvents()
+
+    // Check that isRefreshing is set to true immediately
+    val stateWhileRefreshing = viewModel.uiState.value
+    assertTrue(stateWhileRefreshing.isRefreshing)
+    assertFalse(stateWhileRefreshing.isLoading)
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Check that isRefreshing is set to false after completion
+    val finalState = viewModel.uiState.value
+    assertFalse(finalState.isRefreshing)
+    assertFalse(finalState.isLoading)
+  }
+
+  @Test
+  fun feedViewModel_refreshEvents_handlesError() = runTest {
+    val mockRepository = MockEventRepository(shouldThrowError = true)
+    val viewModel = FeedViewModel(mockRepository)
+
+    viewModel.refreshEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.uiState.value
+
+    assertEquals(emptyList<Event>(), state.events)
+    assertFalse(state.isRefreshing)
+    assertEquals("Test error", state.error)
+  }
+
+  @Test
+  fun feedViewModel_refreshEvents_clearsRefreshingStateOnError() = runTest {
+    val mockRepository = MockEventRepository(shouldThrowError = true)
+    val viewModel = FeedViewModel(mockRepository)
+
+    viewModel.refreshEvents()
+
+    // Verify refreshing state is set initially
+    assertTrue(viewModel.uiState.value.isRefreshing)
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Verify refreshing state is cleared even on error
+    assertFalse(viewModel.uiState.value.isRefreshing)
+  }
+
+  @Test
+  fun feedViewModel_refreshEvents_resetsErrorState() = runTest {
+    val mockRepository = MockEventRepository(shouldThrowError = true)
+    val viewModel = FeedViewModel(mockRepository)
+
+    // First load with error
+    viewModel.loadEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+    assertTrue(viewModel.uiState.value.error != null)
+
+    // Refresh should clear error initially
+    viewModel.refreshEvents()
+    assertNull(viewModel.uiState.value.error)
+    assertTrue(viewModel.uiState.value.isRefreshing)
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Error should be set again if refresh fails
+    assertTrue(viewModel.uiState.value.error != null)
+  }
+
+  @Test
+  fun feedViewModel_refreshEvents_timeoutHandling() = runTest {
+    // This test verifies that the timeout in refreshEvents doesn't cause issues
+    // in normal operation (events load faster than timeout)
+    val events = listOf(testEvent1)
+    val mockRepository = MockEventRepository(events)
+    val viewModel = FeedViewModel(mockRepository)
+
+    viewModel.refreshEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.uiState.value
+
+    assertEquals(events, state.events)
+    assertFalse(state.isRefreshing)
+    assertNull(state.error)
+  }
+
+  @Test
+  fun feedViewModel_refreshEvents_respectsEventLimit() = runTest {
+    // Create more than LOADED_EVENTS_LIMIT events
+    val manyEvents =
+        List(LOADED_EVENTS_LIMIT + 5) { index -> testEvent1.copy(eventId = "event$index") }
+    val mockRepository = MockEventRepository(manyEvents)
+    val viewModel = FeedViewModel(mockRepository)
+
+    viewModel.refreshEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.uiState.value
+
+    // Should only load up to LOADED_EVENTS_LIMIT events
+    assertEquals(LOADED_EVENTS_LIMIT, state.events.size)
+    assertFalse(state.isRefreshing)
+    assertNull(state.error)
+  }
+
+  @Test
+  fun feedViewModel_concurrentLoadAndRefresh_handledCorrectly() = runTest {
+    val events = listOf(testEvent1, testEvent2)
+    val mockRepository = MockEventRepository(events)
+    val viewModel = FeedViewModel(mockRepository)
+
+    // Start both operations
+    viewModel.loadEvents()
+    viewModel.refreshEvents()
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.uiState.value
+
+    // Should end up with valid state regardless of order
+    assertEquals(events, state.events)
+    assertFalse(state.isLoading)
+    assertFalse(state.isRefreshing)
+    assertNull(state.error)
   }
 }
