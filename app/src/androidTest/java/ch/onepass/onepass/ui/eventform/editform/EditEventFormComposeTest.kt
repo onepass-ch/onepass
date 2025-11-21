@@ -298,7 +298,7 @@ class EditEventFormComposeTest {
     composeTestRule.waitForIdle()
 
     composeTestRule
-        .onNodeWithText("Type a location")
+        .onNodeWithText("Type to search location")
         .performScrollTo()
         .performTextInput("EPFL, Lausanne")
 

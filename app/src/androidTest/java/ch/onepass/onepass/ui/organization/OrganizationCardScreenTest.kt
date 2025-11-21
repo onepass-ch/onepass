@@ -114,7 +114,7 @@ class OrganizationCardTest {
         .assertExists()
         .assertIsDisplayed()
 
-    composeTestRule.onNodeWithText("1.5k", substring = true).assertExists()
+    composeTestRule.onNodeWithText("1.5K", substring = true).assertExists()
   }
 
   @Test
@@ -130,7 +130,7 @@ class OrganizationCardTest {
     composeTestRule.setContent {
       OnePassTheme { OrganizationCard(organization = organization, onClick = {}) }
     }
-    composeTestRule.onNodeWithText("5k", substring = true).assertExists()
+    composeTestRule.onNodeWithText("5K", substring = true).assertExists()
   }
 
   @Test

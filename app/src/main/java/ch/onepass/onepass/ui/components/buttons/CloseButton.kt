@@ -1,7 +1,8 @@
-package ch.onepass.onepass.ui.event
+package ch.onepass.onepass.ui.components.buttons
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,10 +36,7 @@ fun CloseButton(onDismiss: () -> Unit, modifier: Modifier = Modifier) {
               .clip(RoundedCornerShape(12.dp))
               .background(color = Color.Black.copy(alpha = 0.7f), shape = RoundedCornerShape(12.dp))
               .clickable(
-                  interactionSource =
-                      remember {
-                        androidx.compose.foundation.interaction.MutableInteractionSource()
-                      },
+                  interactionSource = remember { MutableInteractionSource() },
                   indication = null,
               ) {
                 onDismiss()

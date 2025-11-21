@@ -1,4 +1,4 @@
-package ch.onepass.onepass.ui.organizer
+package ch.onepass.onepass.ui.components.forms
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column

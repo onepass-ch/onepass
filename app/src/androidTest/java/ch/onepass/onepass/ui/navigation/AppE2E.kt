@@ -209,10 +209,6 @@ class AppE2E {
       compose.waitForIdle()
     }
 
-    // Open Event Detail and Back
-    compose.onNodeWithTag(FeedScreenTestTags.CALENDAR_BUTTON).assertIsDisplayed().performClick()
-    compose.waitForIdle()
-
     // Ensure Event Detail is displayed
     compose.onNodeWithText("Go Back", useUnmergedTree = true).assertIsDisplayed().performClick()
     compose.waitForIdle()

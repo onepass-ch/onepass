@@ -1,10 +1,9 @@
 package ch.onepass.onepass.model.event
 
 import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.utils.DateTimeUtils
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.ServerTimestamp
-import java.text.SimpleDateFormat
-import java.util.Locale
 
 /**
  * Event data model for Cloud Firestore.
@@ -76,12 +75,7 @@ data class Event(
    * @return Formatted date-time string, or "Date not set" if [startTime] is null.
    */
   val displayDateTime: String
-    get() {
-      val startTimeDate = startTime?.toDate() ?: return "Date not set"
-      val dateFormatter = SimpleDateFormat("MMMM dd, yyyy", Locale.getDefault())
-      val timeFormatter = SimpleDateFormat("h:mm a", Locale.getDefault())
-      return "${dateFormatter.format(startTimeDate)} • ${timeFormatter.format(startTimeDate)}"
-    }
+    get() = DateTimeUtils.formatDisplayDate(startTime)
 
   /**
    * Returns the lowest price among all pricing tiers as an unsigned integer (in cents or smallest
@@ -141,7 +135,5 @@ data class PricingTier(
  * @receiver Timestamp? The Firestore timestamp to format (nullable).
  */
 fun Timestamp?.formatAsDisplayDate(): String {
-  val date = this?.toDate() ?: return "Date not set"
-  val dateFormatter = SimpleDateFormat("MMMM dd, yyyy • h:mm a", Locale.getDefault())
-  return dateFormatter.format(date)
+  return DateTimeUtils.formatDisplayDate(this)
 }

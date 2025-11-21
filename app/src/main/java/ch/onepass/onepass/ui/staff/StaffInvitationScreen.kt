@@ -14,7 +14,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,10 +36,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.user.UserSearchType
+import ch.onepass.onepass.ui.components.common.EmptyState
+import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.theme.DefaultBackground
 
 object StaffInvitationTestTags {
@@ -169,19 +169,22 @@ fun StaffInvitationScreen(
                 when {
                   uiState.isLoading -> {
                     Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                      CircularProgressIndicator(
-                          modifier = Modifier.testTag(StaffInvitationTestTags.LOADING_INDICATOR))
+                      LoadingState(testTag = StaffInvitationTestTags.LOADING_INDICATOR)
                     }
                   }
                   uiState.searchQuery.isBlank() -> {
                     EmptyState(
+                        title = "Search Users",
                         message = "Enter a search query to find users",
-                        modifier = Modifier.fillMaxSize())
+                        modifier = Modifier.fillMaxSize(),
+                        testTag = StaffInvitationTestTags.EMPTY_STATE)
                   }
                   uiState.searchResults.isEmpty() -> {
                     EmptyState(
-                        message = "No users found. Try a different search query.",
-                        modifier = Modifier.fillMaxSize())
+                        title = "No Users Found",
+                        message = "Try a different search query.",
+                        modifier = Modifier.fillMaxSize(),
+                        testTag = StaffInvitationTestTags.EMPTY_STATE)
                   }
                   else -> {
                     LazyColumn(
@@ -245,18 +248,4 @@ private fun SearchInputField(
       shape = RoundedCornerShape(10.dp),
       textStyle = MaterialTheme.typography.bodySmall,
       singleLine = true)
-}
-
-@Composable
-private fun EmptyState(message: String, modifier: Modifier = Modifier) {
-  Box(
-      modifier = modifier.testTag(StaffInvitationTestTags.EMPTY_STATE),
-      contentAlignment = Alignment.Center) {
-        Text(
-            text = message,
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color(0xFF9CA3AF),
-            textAlign = TextAlign.Center,
-            modifier = Modifier.padding(horizontal = 32.dp))
-      }
 }

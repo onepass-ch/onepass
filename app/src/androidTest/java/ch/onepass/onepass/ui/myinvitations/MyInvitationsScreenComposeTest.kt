@@ -130,7 +130,9 @@ class MyInvitationsScreenComposeTest {
     composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
     composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
     composeTestRule.onNodeWithText("Failed to load invitations").assertIsDisplayed()
-    composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.RETRY_BUTTON).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag("${MyInvitationsScreenTestTags.ERROR_MESSAGE}_retry_button")
+        .assertIsDisplayed()
   }
 
   @Test
@@ -142,8 +144,12 @@ class MyInvitationsScreenComposeTest {
     var retryCalled = false
     setContent(state = state, onRetry = { retryCalled = true })
 
-    composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.RETRY_BUTTON).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.RETRY_BUTTON).performClick()
+    composeTestRule
+        .onNodeWithTag("${MyInvitationsScreenTestTags.ERROR_MESSAGE}_retry_button")
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag("${MyInvitationsScreenTestTags.ERROR_MESSAGE}_retry_button")
+        .performClick()
     composeTestRule.waitForIdle()
 
     assert(retryCalled) { "Retry callback should be called" }

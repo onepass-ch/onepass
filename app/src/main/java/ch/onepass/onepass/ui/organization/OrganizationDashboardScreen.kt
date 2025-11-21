@@ -28,6 +28,8 @@ import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.organization.OrganizationMember
 import ch.onepass.onepass.model.organization.OrganizationRole
+import ch.onepass.onepass.ui.components.common.ErrorState
+import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.TextSecondary
@@ -136,17 +138,16 @@ fun OrganizationDashboardScreen(
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
           when {
             uiState.isLoading -> {
-              CircularProgressIndicator(
-                  modifier =
-                      Modifier.align(Alignment.Center)
-                          .testTag(OrganizationDashboardTestTags.LOADING_INDICATOR),
-                  color = EventDateColor)
+              LoadingState(
+                  modifier = Modifier.align(Alignment.Center),
+                  testTag = OrganizationDashboardTestTags.LOADING_INDICATOR)
             }
             uiState.error != null -> {
               ErrorState(
                   error = uiState.error!!,
                   onRetry = { viewModel.loadOrganization(organizationId) },
-                  modifier = Modifier.align(Alignment.Center))
+                  modifier = Modifier.align(Alignment.Center),
+                  testTag = OrganizationDashboardTestTags.ERROR_MESSAGE)
             }
             uiState.organization != null -> {
               DashboardContent(
@@ -672,45 +673,4 @@ private fun StaffItem(
       }
 
   HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
-}
-
-/**
- * Displays a generic error state with a title, message, and retry button.
- *
- * @param error The error message to display.
- * @param onRetry Callback invoked when the "Try Again" button is clicked.
- * @param modifier Optional [Modifier] for layout adjustments.
- */
-@Composable
-private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-  Column(
-      modifier =
-          modifier
-              .fillMaxWidth()
-              .padding(32.dp)
-              .testTag(OrganizationDashboardTestTags.ERROR_MESSAGE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center) {
-        Text(
-            text = "Oops!",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text(
-            text = error,
-            style = MaterialTheme.typography.bodyMedium,
-            color = TextSecondary,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center)
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = onRetry,
-            colors = ButtonDefaults.buttonColors(containerColor = EventDateColor)) {
-              Text(text = "Try Again", fontWeight = FontWeight.Medium)
-            }
-      }
 }

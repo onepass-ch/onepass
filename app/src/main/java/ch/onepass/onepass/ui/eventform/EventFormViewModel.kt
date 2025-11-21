@@ -1,14 +1,22 @@
 package ch.onepass.onepass.ui.eventform
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
+import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.model.map.LocationRepository
+import ch.onepass.onepass.model.map.NominatimLocationRepository
+import ch.onepass.onepass.utils.DateTimeUtils
+import ch.onepass.onepass.utils.ValidationUtils
 import com.google.firebase.Timestamp
-import java.text.SimpleDateFormat
-import java.util.Locale
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 
 /**
  * Base ViewModel for event form handling. Contains common logic for form state management,
@@ -17,7 +25,8 @@ import kotlinx.coroutines.flow.asStateFlow
  * @property eventRepository Repository for event operations
  */
 abstract class EventFormViewModel(
-    protected val eventRepository: EventRepository = EventRepositoryFirebase()
+    protected val eventRepository: EventRepository = EventRepositoryFirebase(),
+    protected val locationRepository: LocationRepository = NominatimLocationRepository()
 ) : ViewModel() {
 
   enum class ValidationError(val key: String, val message: String) {
@@ -28,6 +37,7 @@ abstract class EventFormViewModel(
     END_TIME("endTime", "End time cannot be empty"),
     TIME("time", "End time must be after start time"),
     LOCATION("location", "Location cannot be empty"),
+    LOCATION_SELECT("location", "Please select a location from the suggestions"),
     PRICE_EMPTY("price", "Price cannot be empty"),
     PRICE_INVALID("price", "Invalid price format"),
     PRICE_NEGATIVE("price", "Price must be positive"),
@@ -46,17 +56,18 @@ abstract class EventFormViewModel(
       val date: String = "",
       val location: String = "",
       val price: String = "",
-      val capacity: String = ""
+      val capacity: String = "",
+      val selectedLocation: Location? = null
   )
 
   data class ParsedFormData(
       val title: String,
       val description: String,
-      val location: String,
       val price: Double,
       val capacity: Int,
       val startTime: Timestamp,
-      val endTime: Timestamp
+      val endTime: Timestamp,
+      val selectedLocation: Location?
   )
 
   protected val _formState = MutableStateFlow(EventFormState())
@@ -64,6 +75,16 @@ abstract class EventFormViewModel(
 
   protected val _fieldErrors = MutableStateFlow<Map<String, String>>(emptyMap())
   val fieldErrors: StateFlow<Map<String, String>> = _fieldErrors.asStateFlow()
+
+  // Location search state
+  private val _locationSearchResults = MutableStateFlow<List<Location>>(emptyList())
+  val locationSearchResults: StateFlow<List<Location>> = _locationSearchResults.asStateFlow()
+
+  private val _isSearchingLocation = MutableStateFlow(false)
+  val isSearchingLocation: StateFlow<Boolean> = _isSearchingLocation.asStateFlow()
+
+  private var locationSearchJob: Job? = null
+  private val searchDebounceMs = 300L
 
   /** Updates the event title */
   fun updateTitle(title: String) {
@@ -98,7 +119,46 @@ abstract class EventFormViewModel(
   /** Updates the event location */
   fun updateLocation(location: String) {
     _formState.value = _formState.value.copy(location = location)
-    clearFieldError(ValidationError.LOCATION.key)
+
+    locationSearchJob?.cancel()
+
+    // Clear selected location when user types
+    if (_formState.value.selectedLocation != null) {
+      _formState.value = _formState.value.copy(selectedLocation = null)
+    }
+
+    clearFieldError(ValidationError.LOCATION.key, ValidationError.LOCATION_SELECT.key)
+
+    // Start debounced search
+    if (location.isNotBlank()) {
+      locationSearchJob =
+          viewModelScope.launch {
+            delay(searchDebounceMs)
+            searchLocation(location)
+          }
+    } else {
+      _locationSearchResults.value = emptyList()
+    }
+  }
+
+  /** Searches for locations using the location repository */
+  private suspend fun searchLocation(query: String) {
+    _isSearchingLocation.value = true
+    try {
+      val results = locationRepository.search(query)
+      _locationSearchResults.value = results
+    } catch (e: Exception) {
+      _locationSearchResults.value = emptyList()
+    } finally {
+      _isSearchingLocation.value = false
+    }
+  }
+
+  /** Selects a location from search results */
+  fun selectLocation(location: Location) {
+    _formState.value = _formState.value.copy(location = location.name, selectedLocation = location)
+    _locationSearchResults.value = emptyList()
+    clearFieldError(ValidationError.LOCATION.key, ValidationError.LOCATION_SELECT.key)
   }
 
   /** Updates the ticket price */
@@ -134,23 +194,35 @@ abstract class EventFormViewModel(
     if (state.startTime.isBlank()) errors += ValidationError.START_TIME.toError()
     if (state.endTime.isBlank()) errors += ValidationError.END_TIME.toError()
 
-    if (state.endTime <= state.startTime) errors += ValidationError.TIME.toError()
-    if (state.location.isBlank()) errors += ValidationError.LOCATION.toError()
+    if (state.startTime.isNotBlank() &&
+        state.endTime.isNotBlank() &&
+        state.endTime <= state.startTime)
+        errors += ValidationError.TIME.toError()
+
+    if (state.location.isBlank()) {
+      errors += ValidationError.LOCATION.toError()
+    } else if (state.selectedLocation == null) {
+      errors += ValidationError.LOCATION_SELECT.toError()
+    }
 
     if (state.price.isBlank()) {
       errors += ValidationError.PRICE_EMPTY.toError()
     } else {
-      state.price.toDoubleOrNull()?.let {
-        if (it < 0) errors += ValidationError.PRICE_NEGATIVE.toError()
-      } ?: run { errors += ValidationError.PRICE_INVALID.toError() }
+      if (!ValidationUtils.isPositiveNumber(state.price)) {
+        errors +=
+            if (state.price.toDoubleOrNull() == null) ValidationError.PRICE_INVALID.toError()
+            else ValidationError.PRICE_NEGATIVE.toError()
+      }
     }
 
     if (state.capacity.isBlank()) {
       errors += ValidationError.CAPACITY_EMPTY.toError()
     } else {
-      state.capacity.toIntOrNull()?.let {
-        if (it <= 0) errors += ValidationError.CAPACITY_NEGATIVE.toError()
-      } ?: run { errors += ValidationError.CAPACITY_INVALID.toError() }
+      if (!ValidationUtils.isPositiveInteger(state.capacity)) {
+        errors +=
+            if (state.capacity.toIntOrNull() == null) ValidationError.CAPACITY_INVALID.toError()
+            else ValidationError.CAPACITY_NEGATIVE.toError()
+      }
     }
 
     return errors
@@ -179,11 +251,11 @@ abstract class EventFormViewModel(
     return ParsedFormData(
         title = state.title,
         description = state.description,
-        location = state.location,
         price = price,
         capacity = capacity,
         startTime = startTimestamp,
-        endTime = endTimestamp)
+        endTime = endTimestamp,
+        selectedLocation = state.selectedLocation)
   }
 
   /**
@@ -194,25 +266,13 @@ abstract class EventFormViewModel(
    * @return Firebase Timestamp or null if parsing fails
    */
   protected fun parseDateAndTime(dateString: String, timeString: String): Timestamp? {
-    if (dateString.isEmpty() || timeString.isEmpty()) return null
-
-    return try {
-      // Combine date and time: "14/10/2025" + "14:30" = "14/10/2025 14:30"
-      val dateTimeString = "$dateString $timeString"
-
-      // Parse using SimpleDateFormat
-      val dateFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault())
-      val date = dateFormat.parse(dateTimeString) ?: return null
-
-      // Convert Java Date to Firebase Timestamp
-      Timestamp(date)
-    } catch (_: Exception) {
-      null // Return null if parsing fails
-    }
+    return DateTimeUtils.parseDateAndTime(dateString, timeString)
   }
 
-  protected fun clearFieldError(vararg keys: String) {
-    _fieldErrors.value = _fieldErrors.value.filterKeys { it !in keys }
+  protected fun clearFieldError(vararg fieldKeys: String) {
+    _fieldErrors.update { currentErrors ->
+      currentErrors.toMutableMap().apply { fieldKeys.forEach { remove(it) } }
+    }
   }
 
   /** Resets the form to initial state */

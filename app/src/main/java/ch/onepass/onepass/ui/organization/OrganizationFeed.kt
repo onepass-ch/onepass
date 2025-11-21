@@ -13,11 +13,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.model.organization.Organization
+import ch.onepass.onepass.ui.components.common.EmptyState
+import ch.onepass.onepass.ui.components.common.ErrorState
+import ch.onepass.onepass.ui.components.common.LoadingState
 
 object OrganizationFeedTestTags {
   const val ORGANIZATION_FEED_SCREEN = "organizationFeedScreen"
@@ -90,13 +92,17 @@ fun OrganizationFeedScaffold(
     ) {
       when {
         isLoading && organizations.isEmpty() -> {
-          LoadingState()
+          LoadingState(testTag = OrganizationFeedTestTags.LOADING_INDICATOR)
         }
         error != null && organizations.isEmpty() -> {
-          ErrorState(error = error, onRetry = onRetry)
+          ErrorState(
+              error = error, onRetry = onRetry, testTag = OrganizationFeedTestTags.ERROR_MESSAGE)
         }
         !isLoading && organizations.isEmpty() -> {
-          EmptyOrganizationState()
+          EmptyState(
+              title = "No Organizations",
+              message = "You haven't joined any organizations yet.",
+              testTag = OrganizationFeedTestTags.EMPTY_STATE)
         }
         else -> {
           OrganizationListContent(
@@ -158,76 +164,5 @@ private fun OrganizationListContent(
               Modifier.testTag(
                   OrganizationFeedTestTags.getTestTagForOrganizationItem(organization.id)))
     }
-  }
-}
-
-/** Loading state indicator. */
-@Composable
-private fun LoadingState(modifier: Modifier = Modifier) {
-  CircularProgressIndicator(
-      modifier = modifier.testTag(OrganizationFeedTestTags.LOADING_INDICATOR),
-      color = Color(0xFF841DA4),
-  )
-}
-
-/** Error state with retry button. */
-@Composable
-private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-  Column(
-      modifier =
-          modifier.fillMaxWidth().padding(32.dp).testTag(OrganizationFeedTestTags.ERROR_MESSAGE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-  ) {
-    Text(
-        text = "Oops!",
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-        color = Color.White,
-    )
-    Spacer(modifier = modifier.height(8.dp))
-    Text(
-        text = error,
-        style = MaterialTheme.typography.bodyMedium,
-        color = Color(0xFF9CA3AF),
-        textAlign = TextAlign.Center,
-    )
-    Spacer(modifier = modifier.height(24.dp))
-    Button(
-        onClick = onRetry,
-        modifier = modifier.testTag(OrganizationFeedTestTags.RETRY_BUTTON),
-        colors =
-            ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF841DA4),
-                contentColor = Color.White,
-            ),
-    ) {
-      Text(text = "Try Again", fontWeight = FontWeight.Medium)
-    }
-  }
-}
-
-/** Empty state when no organizations are available. */
-@Composable
-private fun EmptyOrganizationState(modifier: Modifier = Modifier) {
-  Column(
-      modifier =
-          modifier.fillMaxWidth().padding(32.dp).testTag(OrganizationFeedTestTags.EMPTY_STATE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-  ) {
-    Text(
-        text = "No Organizations",
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-        color = Color.White,
-    )
-    Spacer(modifier = modifier.height(8.dp))
-    Text(
-        text = "You haven't joined any organizations yet.",
-        style = MaterialTheme.typography.bodyMedium,
-        color = Color(0xFF9CA3AF),
-        textAlign = TextAlign.Center,
-    )
   }
 }
