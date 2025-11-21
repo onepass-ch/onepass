@@ -1,5 +1,7 @@
 package ch.onepass.onepass.ui.organizer
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.organization.Organization
@@ -39,6 +41,7 @@ data class FieldState(
  * @param description The organization description field state.
  * @param contactEmail The contact email field state.
  * @param contactPhone The contact phone field state.
+ * @param phonePrefix The phone prefix field state.
  * @param website The organization website field state.
  * @param instagram The organization Instagram field state.
  * @param facebook The organization Facebook field state.
@@ -50,6 +53,7 @@ data class OrganizationFormState(
     val description: FieldState = FieldState(),
     val contactEmail: FieldState = FieldState(),
     val contactPhone: FieldState = FieldState(),
+    val contactPhonePrefix: MutableState<String> = mutableStateOf(""),
     val website: FieldState = FieldState(),
     val instagram: FieldState = FieldState(),
     val facebook: FieldState = FieldState(),
@@ -441,6 +445,15 @@ class OrganizationFormViewModel(
             phoneField.error,
             websiteField.error)
         .all { it == null }
+  }
+
+  /**
+   * Updates the form state
+   *
+   * @param newState the new organisation form state
+   */
+  fun updateFormState(newState: OrganizationFormState) {
+    _formState.value = newState
   }
 
   /**

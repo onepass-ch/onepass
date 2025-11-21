@@ -299,7 +299,8 @@ fun AppNavHost(
       EditOrganizationScreen(
           organizationId = organizationId,
           viewModel = editVm,
-          onOrganizationUpdated = { navController.popBackStack() })
+          onOrganizationUpdated = { navController.popBackStack() },
+          onNavigateBack = { navController.popBackStack() })
     }
 
     // ------------------ Placeholders ------------------
