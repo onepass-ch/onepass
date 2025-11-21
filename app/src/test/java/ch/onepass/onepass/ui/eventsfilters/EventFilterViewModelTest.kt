@@ -1,8 +1,9 @@
-package ch.onepass.onepass.ui.eventfilters
+package ch.onepass.onepass.ui.eventsfilters
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.eventfilters.DateRangePresets
 import ch.onepass.onepass.model.eventfilters.EventFilters
+import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -10,7 +11,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -34,11 +35,11 @@ class EventFilterViewModelTest {
   @Test
   fun initial_uiState_and_currentFilters_areDefault() = runTest {
     val viewModel = EventFilterViewModel()
-    assertEquals(EventFilters(), viewModel.uiState.value.localFilters)
-    assertEquals(EventFilters(), viewModel.currentFilters.value)
-    assertFalse(viewModel.uiState.value.expandedRegion)
-    assertFalse(viewModel.uiState.value.expandedDateRangePresets)
-    assertFalse(viewModel.uiState.value.showDatePicker)
+    Assert.assertEquals(EventFilters(), viewModel.uiState.value.localFilters)
+    Assert.assertEquals(EventFilters(), viewModel.currentFilters.value)
+    Assert.assertFalse(viewModel.uiState.value.expandedRegion)
+    Assert.assertFalse(viewModel.uiState.value.expandedDateRangePresets)
+    Assert.assertFalse(viewModel.uiState.value.showDatePicker)
   }
 
   @Test
@@ -55,10 +56,11 @@ class EventFilterViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val updatedState = viewModel.currentFilters.value
-    assertEquals("Region should be updated", "Vaud", updatedState.region)
-    assertEquals("Date range should be updated", newFilters.dateRange, updatedState.dateRange)
-    assertTrue("Hide sold out should be true", updatedState.hideSoldOut)
-    assertTrue("Should have active filters", updatedState.hasActiveFilters)
+    Assert.assertEquals("Region should be updated", "Vaud", updatedState.region)
+    Assert.assertEquals(
+        "Date range should be updated", newFilters.dateRange, updatedState.dateRange)
+    Assert.assertTrue("Hide sold out should be true", updatedState.hideSoldOut)
+    Assert.assertTrue("Should have active filters", updatedState.hasActiveFilters)
   }
 
   @Test
@@ -66,8 +68,8 @@ class EventFilterViewModelTest {
     val viewModel = EventFilterViewModel()
     val filters = EventFilters(region = "Bern", hideSoldOut = true)
     viewModel.updateLocalFilters(filters)
-    assertEquals(filters, viewModel.uiState.value.localFilters)
-    assertEquals(EventFilters(), viewModel.currentFilters.value)
+    Assert.assertEquals(filters, viewModel.uiState.value.localFilters)
+    Assert.assertEquals(EventFilters(), viewModel.currentFilters.value)
   }
 
   @Test
@@ -75,16 +77,16 @@ class EventFilterViewModelTest {
     val viewModel = EventFilterViewModel()
 
     viewModel.toggleRegionDropdown(true)
-    assertTrue(viewModel.uiState.value.expandedRegion)
+    Assert.assertTrue(viewModel.uiState.value.expandedRegion)
 
     viewModel.toggleRegionDropdown(false)
-    assertFalse(viewModel.uiState.value.expandedRegion)
+    Assert.assertFalse(viewModel.uiState.value.expandedRegion)
 
     viewModel.toggleDatePicker(true)
-    assertTrue(viewModel.uiState.value.showDatePicker)
+    Assert.assertTrue(viewModel.uiState.value.showDatePicker)
 
     viewModel.toggleDatePicker(false)
-    assertFalse(viewModel.uiState.value.showDatePicker)
+    Assert.assertFalse(viewModel.uiState.value.showDatePicker)
   }
 
   @Test
@@ -92,7 +94,7 @@ class EventFilterViewModelTest {
     val viewModel = EventFilterViewModel()
     viewModel.updateLocalFilters(EventFilters(region = "Vaud", hideSoldOut = true))
     viewModel.resetLocalFilters()
-    assertEquals(EventFilters(), viewModel.uiState.value.localFilters)
+    Assert.assertEquals(EventFilters(), viewModel.uiState.value.localFilters)
   }
 
   @Test
@@ -110,10 +112,10 @@ class EventFilterViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val clearedState = viewModel.currentFilters.value
-    assertNull("Region should be cleared", clearedState.region)
-    assertNull("Date range should be cleared", clearedState.dateRange)
-    assertFalse("Hide sold out should be false", clearedState.hideSoldOut)
-    assertFalse("Should have no active filters", clearedState.hasActiveFilters)
+    Assert.assertNull("Region should be cleared", clearedState.region)
+    Assert.assertNull("Date range should be cleared", clearedState.dateRange)
+    Assert.assertFalse("Hide sold out should be false", clearedState.hideSoldOut)
+    Assert.assertFalse("Should have no active filters", clearedState.hasActiveFilters)
   }
 
   @Test
@@ -121,17 +123,19 @@ class EventFilterViewModelTest {
     val viewModel = EventFilterViewModel()
 
     // Test no filters
-    assertFalse("No filters should return false", viewModel.currentFilters.value.hasActiveFilters)
+    Assert.assertFalse(
+        "No filters should return false", viewModel.currentFilters.value.hasActiveFilters)
 
     // Test region filter only
     viewModel.applyFilters(EventFilters(region = "Bern"))
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue("Region filter should return true", viewModel.currentFilters.value.hasActiveFilters)
+    Assert.assertTrue(
+        "Region filter should return true", viewModel.currentFilters.value.hasActiveFilters)
 
     // Test date range filter only
     viewModel.applyFilters(EventFilters(dateRange = DateRangePresets.getNextWeekendRange()))
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(
+    Assert.assertTrue(
         "Date range filter should return true",
         viewModel.currentFilters.value.hasActiveFilters,
     )
@@ -139,7 +143,7 @@ class EventFilterViewModelTest {
     // Test hide sold out only
     viewModel.applyFilters(EventFilters(hideSoldOut = true))
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(
+    Assert.assertTrue(
         "Hide sold out filter should return true",
         viewModel.currentFilters.value.hasActiveFilters,
     )
@@ -152,7 +156,8 @@ class EventFilterViewModelTest {
             hideSoldOut = true,
         ))
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue("All filters should return true", viewModel.currentFilters.value.hasActiveFilters)
+    Assert.assertTrue(
+        "All filters should return true", viewModel.currentFilters.value.hasActiveFilters)
   }
 
   @Test
@@ -162,15 +167,15 @@ class EventFilterViewModelTest {
     val end = 5000L
 
     viewModel.toggleDatePicker(true)
-    assertTrue(viewModel.uiState.value.showDatePicker)
+    Assert.assertTrue(viewModel.uiState.value.showDatePicker)
 
     viewModel.confirmDateRange(start, end)
 
     val updatedRange = viewModel.uiState.value.localFilters.dateRange
-    assertNotNull(updatedRange)
-    assertEquals(start, updatedRange!!.start)
-    assertEquals(end, updatedRange.endInclusive)
-    assertFalse(viewModel.uiState.value.showDatePicker)
+    Assert.assertNotNull(updatedRange)
+    Assert.assertEquals(start, updatedRange!!.start)
+    Assert.assertEquals(end, updatedRange.endInclusive)
+    Assert.assertFalse(viewModel.uiState.value.showDatePicker)
   }
 
   @Test
@@ -182,7 +187,7 @@ class EventFilterViewModelTest {
     vm.confirmDateRange(start, end)
 
     // Expect range to still be the default (no update) since start > end
-    assertNull(vm.uiState.value.localFilters.dateRange)
+    Assert.assertNull(vm.uiState.value.localFilters.dateRange)
   }
 
   @Test
@@ -196,33 +201,33 @@ class EventFilterViewModelTest {
 
     val newState = viewModel.uiState.value
     // should not have changed
-    assertEquals(initialState.localFilters, newState.localFilters)
-    assertEquals(initialState.showDatePicker, newState.showDatePicker)
+    Assert.assertEquals(initialState.localFilters, newState.localFilters)
+    Assert.assertEquals(initialState.showDatePicker, newState.showDatePicker)
   }
 
   @Test
   fun cancelingDatePickerClearsTemporarySelection() = runTest {
     val vm = EventFilterViewModel()
     vm.toggleDatePicker(true)
-    assertTrue(vm.uiState.value.showDatePicker)
+    Assert.assertTrue(vm.uiState.value.showDatePicker)
 
     // simulate cancel (dismiss)
     vm.toggleDatePicker(false)
-    assertFalse(vm.uiState.value.showDatePicker)
+    Assert.assertFalse(vm.uiState.value.showDatePicker)
 
-    assertNull(vm.uiState.value.localFilters.dateRange)
+    Assert.assertNull(vm.uiState.value.localFilters.dateRange)
   }
 
   @Test
   fun regionDropdown_dismissMenuWithoutSelection() {
     val viewModel = EventFilterViewModel()
 
-    assertFalse(viewModel.uiState.value.expandedRegion)
+    Assert.assertFalse(viewModel.uiState.value.expandedRegion)
 
     viewModel.toggleRegionDropdown(true)
-    assertTrue(viewModel.uiState.value.expandedRegion)
+    Assert.assertTrue(viewModel.uiState.value.expandedRegion)
 
     viewModel.toggleRegionDropdown(false)
-    assertFalse(viewModel.uiState.value.expandedRegion)
+    Assert.assertFalse(viewModel.uiState.value.expandedRegion)
   }
 }

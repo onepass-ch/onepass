@@ -2,6 +2,7 @@ package ch.onepass.onepass.ui.createform
 
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.model.map.LocationRepository
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationStatus
@@ -33,6 +34,7 @@ class CreateEventFormViewModelTest {
   private lateinit var viewModel: CreateEventFormViewModel
   private lateinit var mockEventRepository: EventRepository
   private lateinit var mockOrganizationRepository: OrganizationRepository
+  private lateinit var mockLocationRepository: LocationRepository
   private val testDispatcher = UnconfinedTestDispatcher()
 
   private val testOrganization =
@@ -51,12 +53,17 @@ class CreateEventFormViewModelTest {
     Dispatchers.setMain(testDispatcher)
     mockEventRepository = mockk(relaxed = true)
     mockOrganizationRepository = mockk(relaxed = true)
+    mockLocationRepository = mockk(relaxed = true)
 
     // Mock the organization repository to return a test organization
     coEvery { mockOrganizationRepository.getOrganizationById(any()) } returns
         flowOf(testOrganization)
 
-    viewModel = CreateEventFormViewModel(mockEventRepository, mockOrganizationRepository)
+    viewModel =
+        CreateEventFormViewModel(
+            eventRepository = mockEventRepository,
+            organizationRepository = mockOrganizationRepository,
+            locationRepository = mockLocationRepository)
 
     // Set the organization ID for the viewModel
     viewModel.setOrganizationId("test-org-id")

@@ -262,7 +262,7 @@ class MapViewModel(
     compassPlugin?.updateSettings { enabled = true }
   }
 
-  override fun onCleared() {
+  public override fun onCleared() {
     indicatorListener?.let { listener ->
       internalMapView?.location?.removeOnIndicatorPositionChangedListener(listener)
     }

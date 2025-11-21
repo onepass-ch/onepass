@@ -257,11 +257,23 @@ class OrganizationFeedTest {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
     }
 
+    composeTestRule.waitUntil(timeoutMillis = 10_000) {
+      composeTestRule
+          .onAllNodesWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST)
+          .fetchSemanticsNodes()
+          .isNotEmpty() ||
+          composeTestRule.onAllNodesWithText("Organization 1").fetchSemanticsNodes().isNotEmpty()
+    }
     composeTestRule.waitForIdle()
+
     composeTestRule.onNodeWithText("Organization 1").assertExists().assertIsDisplayed()
     composeTestRule
         .onNodeWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST)
         .performScrollToNode(hasText("Organization 10"))
+
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      composeTestRule.onAllNodesWithText("Organization 10").fetchSemanticsNodes().isNotEmpty()
+    }
     composeTestRule.onNodeWithText("Organization 10").assertExists().assertIsDisplayed()
   }
 

@@ -266,4 +266,28 @@ class OrganizationCardTest {
         .onNodeWithTag(OrganizationCardTestTags.ORGANIZER_CREATED_DATE, useUnmergedTree = true)
         .assertExists()
   }
+
+  @Test
+  fun handlesNullData() {
+    val organization =
+        Organization(
+            id = "org-null",
+            name = "Maybe Null Org",
+            description = "Test null fields",
+            profileImageUrl = null, // null image
+            createdAt = null, // null date
+            averageRating = 0f, // rating hidden
+            followerCount = 0, // should show "0"
+            status = OrganizationStatus.ACTIVE,
+            verified = false)
+
+    composeTestRule.setContent {
+      OnePassTheme { OrganizationCard(organization = organization, onClick = {}) }
+    }
+
+    // Verify it doesn't crash and renders key values
+    composeTestRule.onNodeWithText("Maybe Null Org").assertExists().assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizationCardTestTags.ORGANIZER_RATING).assertDoesNotExist()
+    composeTestRule.onNodeWithText("0").assertExists()
+  }
 }

@@ -27,6 +27,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -356,6 +357,42 @@ class FullNavigationTest {
       composeRule.runOnUiThread { navController.popBackStack() }
       composeRule.waitForIdle()
     }
+  }
+
+  @Test
+  fun real_signin_removes_auth_from_backstack() {
+    setApp(signedIn = false)
+
+    composeRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.Events.route) {
+        popUpTo(NavigationDestinations.Screen.Auth.route) { inclusive = true }
+      }
+    }
+    composeRule.waitForIdle()
+
+    composeRule.runOnUiThread { navController.popBackStack() }
+    composeRule.waitForIdle()
+
+    assertNotEquals(
+        NavigationDestinations.Screen.Auth.route, navController.currentDestination?.route)
+  }
+
+  @Test
+  fun eventDetail_navigates_to_organizer_profile() {
+    setApp(signedIn = true)
+    composeRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.EventDetail.route("ev-9"))
+    }
+    composeRule.waitForIdle()
+
+    composeRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.OrganizationProfile.route("org-22"))
+    }
+    composeRule.waitForIdle()
+
+    assertEquals(
+        NavigationDestinations.Screen.OrganizationProfile.route,
+        navController.currentDestination?.route)
   }
 
   @Test

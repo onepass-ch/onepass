@@ -1,11 +1,13 @@
-package ch.onepass.onepass.ui.eventform.editform
+package ch.onepass.onepass.ui.eventform
 
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.event.PricingTier
 import ch.onepass.onepass.model.map.Location
-import ch.onepass.onepass.ui.eventform.EventFormViewModel.ValidationError
+import ch.onepass.onepass.model.map.LocationRepository
+import ch.onepass.onepass.ui.eventform.editform.EditEventFormViewModel
+import ch.onepass.onepass.ui.eventform.editform.EditEventUiState
 import com.google.firebase.Timestamp
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -22,12 +24,13 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
 class EditEventFormViewModelTest {
+  private lateinit var mockLocationRepository: LocationRepository
 
   // Set the main coroutines dispatcher for unit testing.
   private val testDispatcher = StandardTestDispatcher()
@@ -46,6 +49,7 @@ class EditEventFormViewModelTest {
   fun setUp() {
     Dispatchers.setMain(testDispatcher) // Set main dispatcher
     mockRepository = mockk<EventRepository>()
+    mockLocationRepository = mockk(relaxed = true)
 
     testEvent =
         Event(
@@ -66,7 +70,7 @@ class EditEventFormViewModelTest {
     // Default setup for loading, tests can override this
     coEvery { mockRepository.getEventById(any()) } returns flowOf(testEvent)
 
-    viewModel = EditEventFormViewModel(mockRepository)
+    viewModel = EditEventFormViewModel(mockRepository, mockLocationRepository)
   }
 
   @After
@@ -81,16 +85,16 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle() // Ensure coroutine completes
 
     // Assert
-    assertEquals(EditEventUiState.Idle, viewModel.uiState.value)
+    Assert.assertEquals(EditEventUiState.Idle, viewModel.uiState.value)
     val form = viewModel.formState.value
-    assertEquals("Original Title", form.title)
-    assertEquals("Original Description", form.description)
-    assertEquals("Original Location", form.location)
-    assertEquals("25/12/2025", form.date)
-    assertEquals("14:30", form.startTime)
-    assertEquals("16:30", form.endTime)
-    assertEquals("25", form.price)
-    assertEquals("100", form.capacity)
+    Assert.assertEquals("Original Title", form.title)
+    Assert.assertEquals("Original Description", form.description)
+    Assert.assertEquals("Original Location", form.location)
+    Assert.assertEquals("25/12/2025", form.date)
+    Assert.assertEquals("14:30", form.startTime)
+    Assert.assertEquals("16:30", form.endTime)
+    Assert.assertEquals("25", form.price)
+    Assert.assertEquals("100", form.capacity)
   }
 
   @Test
@@ -104,8 +108,8 @@ class EditEventFormViewModelTest {
 
     // Assert
     val state = viewModel.uiState.value
-    assertTrue(state is EditEventUiState.LoadError)
-    assertEquals("Event not found", (state as EditEventUiState.LoadError).message)
+    Assert.assertTrue(state is EditEventUiState.LoadError)
+    Assert.assertEquals("Event not found", (state as EditEventUiState.LoadError).message)
   }
 
   @Test
@@ -121,8 +125,9 @@ class EditEventFormViewModelTest {
     viewModel.updateTitle("New Title")
 
     // Assert
-    assertEquals("New Title", viewModel.formState.value.title)
-    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.TITLE.key))
+    Assert.assertEquals("New Title", viewModel.formState.value.title)
+    Assert.assertFalse(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.TITLE.key))
   }
 
   @Test
@@ -132,11 +137,13 @@ class EditEventFormViewModelTest {
     viewModel.updateDescription("") // Set invalid
     viewModel.updateEvent()
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(viewModel.fieldErrors.value.containsKey(ValidationError.DESCRIPTION.key))
+    Assert.assertTrue(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.DESCRIPTION.key))
 
     viewModel.updateDescription("New Desc")
-    assertEquals("New Desc", viewModel.formState.value.description)
-    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.DESCRIPTION.key))
+    Assert.assertEquals("New Desc", viewModel.formState.value.description)
+    Assert.assertFalse(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.DESCRIPTION.key))
   }
 
   @Test
@@ -146,11 +153,13 @@ class EditEventFormViewModelTest {
     viewModel.updateStartTime("")
     viewModel.updateEvent()
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(viewModel.fieldErrors.value.containsKey(ValidationError.START_TIME.key))
+    Assert.assertTrue(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.START_TIME.key))
 
     viewModel.updateStartTime("10:00")
-    assertEquals("10:00", viewModel.formState.value.startTime)
-    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.START_TIME.key))
+    Assert.assertEquals("10:00", viewModel.formState.value.startTime)
+    Assert.assertFalse(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.START_TIME.key))
   }
 
   @Test
@@ -160,11 +169,13 @@ class EditEventFormViewModelTest {
     viewModel.updateEndTime("")
     viewModel.updateEvent()
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(viewModel.fieldErrors.value.containsKey(ValidationError.END_TIME.key))
+    Assert.assertTrue(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.END_TIME.key))
 
     viewModel.updateEndTime("20:00")
-    assertEquals("20:00", viewModel.formState.value.endTime)
-    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.END_TIME.key))
+    Assert.assertEquals("20:00", viewModel.formState.value.endTime)
+    Assert.assertFalse(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.END_TIME.key))
   }
 
   @Test
@@ -174,11 +185,13 @@ class EditEventFormViewModelTest {
     viewModel.updateDate("")
     viewModel.updateEvent()
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(viewModel.fieldErrors.value.containsKey(ValidationError.DATE.key))
+    Assert.assertTrue(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.DATE.key))
 
     viewModel.updateDate("01/01/2026")
-    assertEquals("01/01/2026", viewModel.formState.value.date)
-    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.DATE.key))
+    Assert.assertEquals("01/01/2026", viewModel.formState.value.date)
+    Assert.assertFalse(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.DATE.key))
   }
 
   @Test
@@ -188,11 +201,13 @@ class EditEventFormViewModelTest {
     viewModel.updateLocation("")
     viewModel.updateEvent()
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(viewModel.fieldErrors.value.containsKey(ValidationError.LOCATION.key))
+    Assert.assertTrue(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.LOCATION.key))
 
     viewModel.updateLocation("New Location")
-    assertEquals("New Location", viewModel.formState.value.location)
-    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.LOCATION.key))
+    Assert.assertEquals("New Location", viewModel.formState.value.location)
+    Assert.assertFalse(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.LOCATION.key))
   }
 
   @Test
@@ -202,13 +217,19 @@ class EditEventFormViewModelTest {
     viewModel.updatePrice("")
     viewModel.updateEvent()
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(viewModel.fieldErrors.value.containsKey(ValidationError.PRICE_EMPTY.key))
+    Assert.assertTrue(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.PRICE_EMPTY.key))
 
     viewModel.updatePrice("50")
-    assertEquals("50", viewModel.formState.value.price)
-    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.PRICE_EMPTY.key))
-    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.PRICE_INVALID.key))
-    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.PRICE_NEGATIVE.key))
+    Assert.assertEquals("50", viewModel.formState.value.price)
+    Assert.assertFalse(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.PRICE_EMPTY.key))
+    Assert.assertFalse(
+        viewModel.fieldErrors.value.containsKey(
+            EventFormViewModel.ValidationError.PRICE_INVALID.key))
+    Assert.assertFalse(
+        viewModel.fieldErrors.value.containsKey(
+            EventFormViewModel.ValidationError.PRICE_NEGATIVE.key))
   }
 
   @Test
@@ -218,13 +239,21 @@ class EditEventFormViewModelTest {
     viewModel.updateCapacity("")
     viewModel.updateEvent()
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(viewModel.fieldErrors.value.containsKey(ValidationError.CAPACITY_EMPTY.key))
+    Assert.assertTrue(
+        viewModel.fieldErrors.value.containsKey(
+            EventFormViewModel.ValidationError.CAPACITY_EMPTY.key))
 
     viewModel.updateCapacity("50")
-    assertEquals("50", viewModel.formState.value.capacity)
-    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.CAPACITY_EMPTY.key))
-    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.CAPACITY_INVALID.key))
-    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.CAPACITY_NEGATIVE.key))
+    Assert.assertEquals("50", viewModel.formState.value.capacity)
+    Assert.assertFalse(
+        viewModel.fieldErrors.value.containsKey(
+            EventFormViewModel.ValidationError.CAPACITY_EMPTY.key))
+    Assert.assertFalse(
+        viewModel.fieldErrors.value.containsKey(
+            EventFormViewModel.ValidationError.CAPACITY_INVALID.key))
+    Assert.assertFalse(
+        viewModel.fieldErrors.value.containsKey(
+            EventFormViewModel.ValidationError.CAPACITY_NEGATIVE.key))
   }
 
   @Test
@@ -239,10 +268,12 @@ class EditEventFormViewModelTest {
     // Assert
     val errors = viewModel.fieldErrors.value
     val state = viewModel.uiState.value
-    assertTrue(errors.containsKey(ValidationError.TITLE.key))
-    assertEquals(ValidationError.TITLE.message, errors[ValidationError.TITLE.key])
-    assertTrue(state is EditEventUiState.Error)
-    assertEquals("Please fix validation errors", (state as EditEventUiState.Error).message)
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.TITLE.key))
+    Assert.assertEquals(
+        EventFormViewModel.ValidationError.TITLE.message,
+        errors[EventFormViewModel.ValidationError.TITLE.key])
+    Assert.assertTrue(state is EditEventUiState.Error)
+    Assert.assertEquals("Please fix validation errors", (state as EditEventUiState.Error).message)
   }
 
   @Test
@@ -263,15 +294,15 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     // Assert
-    assertEquals(EditEventUiState.Success, viewModel.uiState.value)
-    assertTrue(viewModel.fieldErrors.value.isEmpty())
+    Assert.assertEquals(EditEventUiState.Success, viewModel.uiState.value)
+    Assert.assertTrue(viewModel.fieldErrors.value.isEmpty())
     coVerify { mockRepository.updateEvent(match { it.title == newTitle }) }
   }
 
   @Test
   fun updateEventWithoutLoadingEventFirstSetsErrorState() = runTest {
     // Arrange
-    val freshViewModel = EditEventFormViewModel(mockRepository) // originalEvent is null
+    val freshViewModel = EditEventFormViewModel(mockRepository, mockLocationRepository)
 
     // Act
     freshViewModel.updateEvent()
@@ -279,8 +310,8 @@ class EditEventFormViewModelTest {
 
     // Assert
     val state = freshViewModel.uiState.value
-    assertTrue(state is EditEventUiState.Error)
-    assertEquals("Original event not loaded", (state as EditEventUiState.Error).message)
+    Assert.assertTrue(state is EditEventUiState.Error)
+    Assert.assertEquals("Original event not loaded", (state as EditEventUiState.Error).message)
   }
 
   @Test
@@ -291,13 +322,13 @@ class EditEventFormViewModelTest {
     viewModel.updateTitle("")
     viewModel.updateEvent() // Puts state in Error
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(viewModel.uiState.value is EditEventUiState.Error)
+    Assert.assertTrue(viewModel.uiState.value is EditEventUiState.Error)
 
     // Act
     viewModel.clearError()
 
     // Assert
-    assertEquals(EditEventUiState.Idle, viewModel.uiState.value)
+    Assert.assertEquals(EditEventUiState.Idle, viewModel.uiState.value)
   }
 
   @Test
@@ -312,8 +343,8 @@ class EditEventFormViewModelTest {
 
     // Assert
     val state = viewModel.uiState.value
-    assertTrue(state is EditEventUiState.LoadError)
-    assertEquals("Database error", (state as EditEventUiState.LoadError).message)
+    Assert.assertTrue(state is EditEventUiState.LoadError)
+    Assert.assertEquals("Database error", (state as EditEventUiState.LoadError).message)
   }
 
   @Test
@@ -327,7 +358,7 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     // Assert
-    assertEquals("", viewModel.formState.value.location)
+    Assert.assertEquals("", viewModel.formState.value.location)
   }
 
   @Test
@@ -341,7 +372,7 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     // Assert
-    assertEquals("0", viewModel.formState.value.price)
+    Assert.assertEquals("0", viewModel.formState.value.price)
   }
 
   @Test
@@ -355,7 +386,7 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     // Assert
-    assertEquals("0", viewModel.formState.value.price)
+    Assert.assertEquals("0", viewModel.formState.value.price)
   }
 
   @Test
@@ -366,10 +397,12 @@ class EditEventFormViewModelTest {
     viewModel.updateEndTime("10:00")
     viewModel.updateEvent()
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(viewModel.fieldErrors.value.containsKey(ValidationError.TIME.key))
+    Assert.assertTrue(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.TIME.key))
 
     viewModel.updateStartTime("09:00")
-    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.TIME.key))
+    Assert.assertFalse(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.TIME.key))
   }
 
   @Test
@@ -380,10 +413,12 @@ class EditEventFormViewModelTest {
     viewModel.updateEndTime("10:00")
     viewModel.updateEvent()
     testDispatcher.scheduler.advanceUntilIdle()
-    assertTrue(viewModel.fieldErrors.value.containsKey(ValidationError.TIME.key))
+    Assert.assertTrue(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.TIME.key))
 
     viewModel.updateEndTime("21:00")
-    assertFalse(viewModel.fieldErrors.value.containsKey(ValidationError.TIME.key))
+    Assert.assertFalse(
+        viewModel.fieldErrors.value.containsKey(EventFormViewModel.ValidationError.TIME.key))
   }
 
   @Test
@@ -403,15 +438,15 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val errors = viewModel.fieldErrors.value
-    assertEquals(8, errors.size)
-    assertTrue(errors.containsKey(ValidationError.TITLE.key))
-    assertTrue(errors.containsKey(ValidationError.DESCRIPTION.key))
-    assertTrue(errors.containsKey(ValidationError.DATE.key))
-    assertTrue(errors.containsKey(ValidationError.START_TIME.key))
-    assertTrue(errors.containsKey(ValidationError.END_TIME.key))
-    assertTrue(errors.containsKey(ValidationError.LOCATION.key))
-    assertTrue(errors.containsKey(ValidationError.PRICE_EMPTY.key))
-    assertTrue(errors.containsKey(ValidationError.CAPACITY_EMPTY.key))
+    Assert.assertEquals(8, errors.size)
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.TITLE.key))
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.DESCRIPTION.key))
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.DATE.key))
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.START_TIME.key))
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.END_TIME.key))
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.LOCATION.key))
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.PRICE_EMPTY.key))
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.CAPACITY_EMPTY.key))
   }
 
   @Test
@@ -425,7 +460,7 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val errors = viewModel.fieldErrors.value
-    assertTrue(errors.containsKey(ValidationError.TIME.key))
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.TIME.key))
   }
 
   @Test
@@ -439,7 +474,7 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val errors = viewModel.fieldErrors.value
-    assertTrue(errors.containsKey(ValidationError.TIME.key))
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.TIME.key))
   }
 
   @Test
@@ -452,7 +487,7 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val errors = viewModel.fieldErrors.value
-    assertTrue(errors.containsKey(ValidationError.PRICE_INVALID.key))
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.PRICE_INVALID.key))
   }
 
   @Test
@@ -465,7 +500,7 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val errors = viewModel.fieldErrors.value
-    assertTrue(errors.containsKey(ValidationError.PRICE_NEGATIVE.key))
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.PRICE_NEGATIVE.key))
   }
 
   @Test
@@ -478,7 +513,7 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val errors = viewModel.fieldErrors.value
-    assertTrue(errors.containsKey(ValidationError.CAPACITY_INVALID.key))
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.CAPACITY_INVALID.key))
   }
 
   @Test
@@ -491,7 +526,7 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val errors = viewModel.fieldErrors.value
-    assertTrue(errors.containsKey(ValidationError.CAPACITY_NEGATIVE.key))
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.CAPACITY_NEGATIVE.key))
   }
 
   @Test
@@ -504,7 +539,7 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val errors = viewModel.fieldErrors.value
-    assertTrue(errors.containsKey(ValidationError.CAPACITY_NEGATIVE.key))
+    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.CAPACITY_NEGATIVE.key))
   }
 
   @Test
@@ -520,8 +555,8 @@ class EditEventFormViewModelTest {
 
     // Assert
     val state = viewModel.uiState.value
-    assertTrue(state is EditEventUiState.Error)
-    assertEquals("Failed to process form data", (state as EditEventUiState.Error).message)
+    Assert.assertTrue(state is EditEventUiState.Error)
+    Assert.assertEquals("Failed to process form data", (state as EditEventUiState.Error).message)
   }
 
   @Test
@@ -537,8 +572,8 @@ class EditEventFormViewModelTest {
 
     // Assert
     val state = viewModel.uiState.value
-    assertTrue(state is EditEventUiState.Error)
-    assertEquals("Failed to process form data", (state as EditEventUiState.Error).message)
+    Assert.assertTrue(state is EditEventUiState.Error)
+    Assert.assertEquals("Failed to process form data", (state as EditEventUiState.Error).message)
   }
 
   @Test
@@ -560,8 +595,8 @@ class EditEventFormViewModelTest {
 
     // Assert
     val state = viewModel.uiState.value
-    assertTrue(state is EditEventUiState.Error)
-    assertEquals("DB write failed", (state as EditEventUiState.Error).message)
+    Assert.assertTrue(state is EditEventUiState.Error)
+    Assert.assertEquals("DB write failed", (state as EditEventUiState.Error).message)
   }
 
   @Test
@@ -580,10 +615,10 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.runCurrent() // Run queued launch to set Updating and suspend at delay
 
     // Assert - state should be Updating
-    assertEquals(EditEventUiState.Updating, viewModel.uiState.value)
+    Assert.assertEquals(EditEventUiState.Updating, viewModel.uiState.value)
 
     testDispatcher.scheduler.advanceUntilIdle()
-    assertEquals(EditEventUiState.Success, viewModel.uiState.value)
+    Assert.assertEquals(EditEventUiState.Success, viewModel.uiState.value)
   }
 
   @Test
@@ -591,13 +626,13 @@ class EditEventFormViewModelTest {
     // Arrange
     viewModel.loadEvent("test-event-id") // Puts state in Loading, then Idle
     testDispatcher.scheduler.advanceUntilIdle()
-    assertEquals(EditEventUiState.Idle, viewModel.uiState.value)
+    Assert.assertEquals(EditEventUiState.Idle, viewModel.uiState.value)
 
     // Act
     viewModel.clearError()
 
     // Assert
-    assertEquals(EditEventUiState.Idle, viewModel.uiState.value)
+    Assert.assertEquals(EditEventUiState.Idle, viewModel.uiState.value)
   }
 
   @Test
@@ -611,8 +646,8 @@ class EditEventFormViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     // Assert
-    assertEquals("", viewModel.formState.value.date)
-    assertEquals("", viewModel.formState.value.startTime)
-    assertEquals("", viewModel.formState.value.endTime)
+    Assert.assertEquals("", viewModel.formState.value.date)
+    Assert.assertEquals("", viewModel.formState.value.startTime)
+    Assert.assertEquals("", viewModel.formState.value.endTime)
   }
 }

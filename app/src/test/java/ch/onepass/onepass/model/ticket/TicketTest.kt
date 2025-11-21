@@ -1,11 +1,7 @@
 package ch.onepass.onepass.model.ticket
 
 import com.google.firebase.Timestamp
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotEquals
-import org.junit.Assert.assertNull
-import org.junit.Assert.assertTrue
+import org.junit.Assert
 import org.junit.Test
 
 /** Unit tests for the Ticket data class and its related functionality. */
@@ -19,7 +15,7 @@ class TicketTest {
       state: TicketState = TicketState.ISSUED,
       tierId: String = "general",
       purchasePrice: Double = 25.0,
-      issuedAt: Timestamp? = Timestamp.now(),
+      issuedAt: Timestamp? = Timestamp.Companion.now(),
       expiresAt: Timestamp? = null,
       transferLock: Boolean = false,
       version: Int = 1,
@@ -43,28 +39,28 @@ class TicketTest {
   fun ticketHasCorrectDefaults() {
     val ticket = Ticket()
 
-    assertEquals("", ticket.ticketId)
-    assertEquals("", ticket.eventId)
-    assertEquals("", ticket.ownerId)
-    assertEquals(TicketState.ISSUED, ticket.state)
-    assertEquals("", ticket.tierId)
-    assertEquals(0.0, ticket.purchasePrice, 0.01)
-    assertNull(ticket.issuedAt)
-    assertNull(ticket.expiresAt)
-    assertFalse(ticket.transferLock)
-    assertEquals(1, ticket.version)
-    assertNull(ticket.deletedAt)
+    Assert.assertEquals("", ticket.ticketId)
+    Assert.assertEquals("", ticket.eventId)
+    Assert.assertEquals("", ticket.ownerId)
+    Assert.assertEquals(TicketState.ISSUED, ticket.state)
+    Assert.assertEquals("", ticket.tierId)
+    Assert.assertEquals(0.0, ticket.purchasePrice, 0.01)
+    Assert.assertNull(ticket.issuedAt)
+    Assert.assertNull(ticket.expiresAt)
+    Assert.assertFalse(ticket.transferLock)
+    Assert.assertEquals(1, ticket.version)
+    Assert.assertNull(ticket.deletedAt)
   }
 
   @Test
   fun ticketStateEnumHasAllExpectedValues() {
     val states = TicketState.values()
-    assertEquals(5, states.size)
-    assertTrue(states.contains(TicketState.ISSUED))
-    assertTrue(states.contains(TicketState.LISTED))
-    assertTrue(states.contains(TicketState.TRANSFERRED))
-    assertTrue(states.contains(TicketState.REDEEMED))
-    assertTrue(states.contains(TicketState.REVOKED))
+    Assert.assertEquals(5, states.size)
+    Assert.assertTrue(states.contains(TicketState.ISSUED))
+    Assert.assertTrue(states.contains(TicketState.LISTED))
+    Assert.assertTrue(states.contains(TicketState.TRANSFERRED))
+    Assert.assertTrue(states.contains(TicketState.REDEEMED))
+    Assert.assertTrue(states.contains(TicketState.REVOKED))
   }
 
   @Test
@@ -73,7 +69,7 @@ class TicketTest {
 
     activeStates.forEach { state ->
       val ticket = createTestTicket(state = state)
-      assertTrue(
+      Assert.assertTrue(
           "Ticket with state $state should be active",
           ticket.state in listOf(TicketState.ISSUED, TicketState.LISTED, TicketState.TRANSFERRED))
     }
@@ -85,7 +81,7 @@ class TicketTest {
 
     expiredStates.forEach { state ->
       val ticket = createTestTicket(state = state)
-      assertTrue(
+      Assert.assertTrue(
           "Ticket with state $state should be expired",
           ticket.state in listOf(TicketState.REDEEMED, TicketState.REVOKED))
     }
@@ -94,21 +90,21 @@ class TicketTest {
   @Test
   fun canTransferReturnsTrueWhenNotLockedAndActive() {
     val transferableTicket = createTestTicket(state = TicketState.ISSUED, transferLock = false)
-    assertTrue(
+    Assert.assertTrue(
         "Should be transferable",
         !transferableTicket.transferLock &&
             transferableTicket.state in
                 listOf(TicketState.ISSUED, TicketState.LISTED, TicketState.TRANSFERRED))
 
     val lockedTicket = createTestTicket(state = TicketState.ISSUED, transferLock = true)
-    assertFalse(
+    Assert.assertFalse(
         "Should not be transferable when locked",
         !lockedTicket.transferLock &&
             lockedTicket.state in
                 listOf(TicketState.ISSUED, TicketState.LISTED, TicketState.TRANSFERRED))
 
     val redeemedTicket = createTestTicket(state = TicketState.REDEEMED, transferLock = false)
-    assertFalse(
+    Assert.assertFalse(
         "Should not be transferable when redeemed",
         !redeemedTicket.transferLock &&
             redeemedTicket.state in
@@ -124,10 +120,10 @@ class TicketTest {
         original.copy(
             state = TicketState.LISTED, purchasePrice = 30.0, version = original.version + 1)
 
-    assertEquals("Ticket ID should remain same", "original", updated.ticketId)
-    assertEquals("State should be updated", TicketState.LISTED, updated.state)
-    assertEquals("Price should be updated", 30.0, updated.purchasePrice, 0.01)
-    assertEquals("Version should be incremented", 2, updated.version)
+    Assert.assertEquals("Ticket ID should remain same", "original", updated.ticketId)
+    Assert.assertEquals("State should be updated", TicketState.LISTED, updated.state)
+    Assert.assertEquals("Price should be updated", 30.0, updated.purchasePrice, 0.01)
+    Assert.assertEquals("Version should be incremented", 2, updated.version)
   }
 
   @Test
@@ -136,8 +132,8 @@ class TicketTest {
     val ticket2 = createTestTicket(ticketId = "same_id")
     val ticket3 = createTestTicket(ticketId = "different_id")
 
-    assertEquals("Tickets with same ID should be equal", ticket1, ticket2)
-    assertNotEquals("Tickets with different IDs should not be equal", ticket1, ticket3)
+    Assert.assertEquals("Tickets with same ID should be equal", ticket1, ticket2)
+    Assert.assertNotEquals("Tickets with different IDs should not be equal", ticket1, ticket3)
   }
 
   @Test
@@ -147,8 +143,8 @@ class TicketTest {
 
     val stringRepresentation = ticket.toString()
 
-    assertTrue("Should include ticket ID", stringRepresentation.contains("test_123"))
-    assertTrue("Should include event ID", stringRepresentation.contains("event_456"))
-    assertTrue("Should include state", stringRepresentation.contains("ISSUED"))
+    Assert.assertTrue("Should include ticket ID", stringRepresentation.contains("test_123"))
+    Assert.assertTrue("Should include event ID", stringRepresentation.contains("event_456"))
+    Assert.assertTrue("Should include state", stringRepresentation.contains("ISSUED"))
   }
 }

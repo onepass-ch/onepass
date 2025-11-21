@@ -5,6 +5,8 @@ import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.event.PricingTier
+import ch.onepass.onepass.model.map.LocationRepository
+import ch.onepass.onepass.model.map.NominatimLocationRepository
 import ch.onepass.onepass.ui.eventform.EventFormViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -18,8 +20,10 @@ import kotlinx.coroutines.launch
  * ViewModel for the Edit Event Form screen. Manages the state of the form and handles event update
  * logic.
  */
-class EditEventFormViewModel(eventRepository: EventRepository = EventRepositoryFirebase()) :
-    EventFormViewModel(eventRepository) {
+class EditEventFormViewModel(
+    eventRepository: EventRepository = EventRepositoryFirebase(),
+    locationRepository: LocationRepository = NominatimLocationRepository()
+) : EventFormViewModel(eventRepository, locationRepository) {
 
   // UI state
   private val _uiState = MutableStateFlow<EditEventUiState>(EditEventUiState.Idle)

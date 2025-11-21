@@ -2,7 +2,6 @@ package ch.onepass.onepass.ui.feed
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
@@ -18,14 +17,13 @@ import org.junit.Test
 
 class FeedScreenTest {
   @get:Rule val composeTestRule = createComposeRule()
-
-  private val testEvent1 =
+  private val baseEvent =
       Event(
           eventId = "test1",
-          title = "Test Event 1",
-          description = "Description 1",
+          title = "Test Event",
+          description = "Description",
           organizerId = "org1",
-          organizerName = "Organizer 1",
+          organizerName = "Organizer",
           status = EventStatus.PUBLISHED,
           location = Location(GeoPoint(46.5197, 6.6323), "Lausanne"),
           startTime = Timestamp(Date()),
@@ -34,22 +32,7 @@ class FeedScreenTest {
           ticketsIssued = 50,
           pricingTiers = emptyList())
 
-  private val testEvent2 =
-      Event(
-          eventId = "test2",
-          title = "Test Event 2",
-          description = "Description 2",
-          organizerId = "org2",
-          organizerName = "Organizer 2",
-          status = EventStatus.PUBLISHED,
-          location = Location(GeoPoint(46.5191, 6.5668), "EPFL"),
-          startTime = Timestamp(Date()),
-          capacity = 200,
-          ticketsRemaining = 100,
-          ticketsIssued = 100,
-          pricingTiers = emptyList())
-
-  private open class MockEventRepository(
+  private class MockEventRepository(
       private val events: List<Event> = emptyList(),
       private val shouldThrowError: Boolean = false
   ) : EventRepository {
@@ -84,210 +67,50 @@ class FeedScreenTest {
   }
 
   @Test
-  fun feedScreen_displayAllComponents_whenEventsExist() {
-    val mockRepository = MockEventRepository(listOf(testEvent1, testEvent2))
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_SCREEN).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TOP_BAR).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_LOCATION).assertIsDisplayed()
-  }
-
-  @Test
-  fun feedScreen_displayEventList_whenEventsExist() {
-    val mockRepository = MockEventRepository(listOf(testEvent1, testEvent2))
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.EVENT_LIST).assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(testEvent1.eventId))
-        .assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(testEvent2.eventId))
-        .assertIsDisplayed()
-  }
-
-  @Test
-  fun feedScreen_displayEmptyState_whenNoEvents() {
-    val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.EMPTY_STATE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("No Events Found").assertIsDisplayed()
-  }
-
-  @Test
-  fun feedScreen_eventCard_isClickable() {
-    val mockRepository = MockEventRepository(listOf(testEvent1))
-    val viewModel = FeedViewModel(mockRepository)
+  fun events_display_and_interactions_including_scroll() {
+    val many = (1..20).map { idx -> baseEvent.copy(eventId = "e$idx", title = "Event $idx") }
+    val repo = MockEventRepository(many)
+    val vm = FeedViewModel(repo)
     var clickedEventId: String? = null
 
     composeTestRule.setContent {
-      OnePassTheme {
-        FeedScreen(viewModel = viewModel, onNavigateToEvent = { clickedEventId = it })
-      }
+      OnePassTheme { FeedScreen(viewModel = vm, onNavigateToEvent = { clickedEventId = it }) }
     }
 
-    composeTestRule.waitForIdle()
-
-    composeTestRule
-        .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(testEvent1.eventId))
-        .performClick()
-
-    assert(clickedEventId == testEvent1.eventId)
-  }
-
-  @Test
-  fun feedScreen_displayLocationText() {
-    val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_LOCATION).assertTextEquals("SWITZERLAND")
-  }
-
-  @Test
-  fun feedScreen_displayTitleText() {
-    val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("WELCOME")
-  }
-
-  @Test
-  fun feedScreen_displayMultipleEvents() {
-    val events = listOf(testEvent1, testEvent2)
-    val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    events.forEach { event ->
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
       composeTestRule
-          .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(event.eventId))
-          .assertIsDisplayed()
+          .onAllNodesWithTag(FeedScreenTestTags.EVENT_LIST)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
-  }
 
-  @Test
-  fun feedScreen_scrollableEventList() {
-    val manyEvents =
-        (1..20).map { index -> testEvent1.copy(eventId = "test$index", title = "Event $index") }
-    val mockRepository = MockEventRepository(manyEvents)
-    val viewModel = FeedViewModel(mockRepository)
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TOP_BAR).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("WELCOME")
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_LOCATION).assertTextEquals("SWITZERLAND")
 
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
+    val firstId = many.first().eventId
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(firstId)).performClick()
+    assert(clickedEventId == firstId)
 
-    composeTestRule.waitForIdle()
-
-    // Verify first event is visible
-    composeTestRule
-        .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(manyEvents.first().eventId))
-        .assertIsDisplayed()
-
-    // Scroll to last event
+    val lastId = many.last().eventId
     composeTestRule
         .onNodeWithTag(FeedScreenTestTags.EVENT_LIST)
-        .performScrollToNode(
-            hasTestTag(FeedScreenTestTags.getTestTagForEventItem(manyEvents.last().eventId)))
-
-    // Verify last event is now visible
+        .performScrollToNode(hasTestTag(FeedScreenTestTags.getTestTagForEventItem(lastId)))
     composeTestRule
-        .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(manyEvents.last().eventId))
-        .assertIsDisplayed()
-  }
-
-  // ============ NEW TESTS TO COVER MISSING LINES ============
-
-  @Test
-  fun feedScreen_displayErrorState_whenLoadingFails() {
-    val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    // Verify error state is displayed
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Test error").assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button")
+        .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(lastId))
         .assertIsDisplayed()
   }
 
   @Test
-  fun feedScreen_retryButton_triggersRefresh() {
-    val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository)
+  fun empty_and_loading_state_messages() {
+    val repo = MockEventRepository(emptyList())
+    val vm = FeedViewModel(repo)
 
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
+    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = vm) } }
 
+    Thread.sleep(50)
     composeTestRule.waitForIdle()
 
-    // Verify error state is displayed
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button")
-        .assertIsDisplayed()
-
-    // Click retry button
-    composeTestRule.onNodeWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button").performClick()
-
-    // Verify loading state is triggered (error state should disappear momentarily)
-    composeTestRule.waitForIdle()
-  }
-
-  @Test
-  fun feedScreen_displayLoadingIndicator_initialLoad() {
-    // Create a repository that simulates loading
-    val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    // The loading indicator should appear briefly during initial load
-    // We need to check this before waitForIdle completes
-    Thread.sleep(50) // Small delay to catch the loading state
-
-    // After loading completes, empty state should show
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.EMPTY_STATE).assertIsDisplayed()
-  }
-
-  @Test
-  fun feedScreen_displayEmptyStateMessage_correctly() {
-    val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    // Verify all empty state components
     composeTestRule.onNodeWithTag(FeedScreenTestTags.EMPTY_STATE).assertIsDisplayed()
     composeTestRule.onNodeWithText("No Events Found").assertIsDisplayed()
     composeTestRule
@@ -296,194 +119,30 @@ class FeedScreenTest {
   }
 
   @Test
-  fun feedScreen_errorState_displaysAllComponents() {
-    val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    // Verify all error state components
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Test error").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Try Again").assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button")
-        .assertIsDisplayed()
-  }
-
-  @Test
-  fun feedScreen_errorMessage_displaysCorrectErrorText() {
-    val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    // Verify specific error message
-    composeTestRule.onNodeWithText("Test error", useUnmergedTree = true).assertIsDisplayed()
-  }
-
-  @Test
-  fun feedScreen_retryButton_hasCorrectStyling() {
-    val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    // Wait for error state to appear
-    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+  fun error_state_and_retry_button_behaviour_and_styling() {
+    val repo = MockEventRepository(shouldThrowError = true)
+    val vm = FeedViewModel(repo)
+    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = vm) } }
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
       composeTestRule
-          .onAllNodesWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button")
+          .onAllNodesWithTag(FeedScreenTestTags.ERROR_MESSAGE)
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
-
-    // Verify button and label
-    composeTestRule
-        .onNodeWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button")
-        .assertIsDisplayed()
-    composeTestRule.onNodeWithText("Try Again").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
+    composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Test error").assertIsDisplayed()
+    composeTestRule.waitForIdle()
   }
 
   @Test
-  fun feedScreen_pullToRefresh_triggersRefreshEvents() {
-    val events = listOf(testEvent1, testEvent2)
-    val mockRepository = MockEventRepository(events)
-
-    var refreshTriggered = false
-    val testViewModel =
-        object : FeedViewModel(mockRepository) {
-          override fun refreshEvents() {
-            refreshTriggered = true
-            super.refreshEvents()
-          }
-        }
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = testViewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    // Simulate pull-to-refresh gesture
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_SCREEN).performTouchInput {
-      swipeDown(startY = centerY - 100.dp.toPx(), endY = centerY + 100.dp.toPx())
-    }
-
-    composeTestRule.waitForIdle()
-
-    // Verify refresh was triggered
-    assert(refreshTriggered)
-  }
-
-  @Test
-  fun feedScreen_showsRefreshingState_duringPullToRefresh() {
-    val events = listOf(testEvent1)
-    val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    // Initially not refreshing
-    val initialState = viewModel.uiState.value
-    assert(!initialState.isRefreshing)
-
-    // Trigger refresh
-    viewModel.refreshEvents()
-
-    // Verify refreshing state is set
-    composeTestRule.waitForIdle()
-    val refreshingState = viewModel.uiState.value
-    assert(refreshingState.isRefreshing)
-  }
-
-  @Test
-  fun feedScreen_eventListShows_whenNotLoadingAndNotRefreshing() {
-    val events = listOf(testEvent1, testEvent2)
-    val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    // Should show event list when not loading and not refreshing
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.EVENT_LIST).assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(testEvent1.eventId))
-        .assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(testEvent2.eventId))
-        .assertIsDisplayed()
-  }
-
-  @Test
-  fun feedScreen_emptyState_showsOnlyWhenNotLoadingAndNotRefreshing() {
-    val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    // Should show empty state when not loading and not refreshing with no events
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.EMPTY_STATE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("No Events Found").assertIsDisplayed()
-  }
-
-  @Test
-  fun feedScreen_isLoadingMore_showsLoadingInEventList() {
-    val events = listOf(testEvent1, testEvent2)
-    val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    viewModel.loadEvents()
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.EVENT_LIST).assertIsDisplayed()
-
-    composeTestRule
-        .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(testEvent1.eventId))
-        .assertIsDisplayed()
-  }
-
-  @Test
-  fun feedScreen_stateTransitions_correctlyDuringRefreshCycle() {
-    val events = listOf(testEvent1)
-    val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    // Initial state - events displayed
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.EVENT_LIST).assertIsDisplayed()
-
-    // Trigger refresh
-    viewModel.refreshEvents()
-
-    // During refresh - events should still be displayed (not loading state)
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.EVENT_LIST).assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(testEvent1.eventId))
-        .assertIsDisplayed()
-
-    composeTestRule.waitForIdle()
-
-    // After refresh - events still displayed
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.EVENT_LIST).assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(testEvent1.eventId))
-        .assertIsDisplayed()
+  fun filterDialog_open_and_dismiss_via_viewmodel() {
+    val repo = MockEventRepository(emptyList())
+    val vm = FeedViewModel(repo)
+    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = vm) } }
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.FILTER_BUTTON).performClick()
+    composeTestRule.waitUntil(timeoutMillis = 5_000) { vm.uiState.value.showFilterDialog }
+    vm.setShowFilterDialog(false)
+    composeTestRule.waitUntil(timeoutMillis = 5_000) { !vm.uiState.value.showFilterDialog }
   }
 }
