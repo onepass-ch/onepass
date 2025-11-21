@@ -42,6 +42,7 @@ object FeedScreenTestTags {
   const val LOADING_INDICATOR = "loadingIndicator"
   const val ERROR_MESSAGE = "errorMessage"
   const val EMPTY_STATE = "emptyState"
+  const val RETRY_BUTTON = "retryButton"
   const val ACTIVE_FILTERS_BAR = "activeFiltersBar"
 
   fun getTestTagForEventItem(eventId: String) = "eventItem_$eventId"
