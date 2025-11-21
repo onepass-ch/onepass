@@ -70,16 +70,31 @@ fun EditOrganizationScreen(
   val snackbarHostState = remember { SnackbarHostState() }
   val scope = rememberCoroutineScope()
   var prefixDropdownExpanded by remember { mutableStateOf(false) }
-  var prefixDisplayText by remember { mutableStateOf("") }
 
   // Load organization data when the screen is first displayed
   LaunchedEffect(organizationId) { viewModel.loadOrganizationById(organizationId) }
 
-  // Initialize form fields when organization data is loaded
   LaunchedEffect(uiState.organization) {
     uiState.organization?.let { org ->
-      formViewModel.initializeFrom(org)
-      org.contactPhone?.let { prefixDisplayText = it.takeWhile { c -> c == '+' || c.isDigit() } }
+      // Update the form state with the organization values.
+      // For each field, we copy the existing form state and set the value from `org`.
+      formViewModel.updateFormState(
+          formViewModel.formState.value.copy(
+              name = formViewModel.formState.value.name.copy(value = org.name),
+              description = formViewModel.formState.value.description.copy(value = org.description),
+              contactEmail =
+                  formViewModel.formState.value.contactEmail.copy(value = org.contactEmail ?: ""),
+              contactPhone =
+                  formViewModel.formState.value.contactPhone.copy(
+                      value = org.contactPhone?.removePrefix(org.phonePrefix ?: "") ?: ""),
+              website = formViewModel.formState.value.website.copy(value = org.website ?: ""),
+              instagram = formViewModel.formState.value.instagram.copy(value = org.instagram ?: ""),
+              facebook = formViewModel.formState.value.facebook.copy(value = org.facebook ?: ""),
+              tiktok = formViewModel.formState.value.tiktok.copy(value = org.tiktok ?: ""),
+              address = formViewModel.formState.value.address.copy(value = org.address ?: "")))
+
+      // Set only prefix separately
+      formViewModel.formState.value.contactPhonePrefix.value = org.phonePrefix ?: ""
     }
   }
 
@@ -132,12 +147,12 @@ fun EditOrganizationScreen(
                     title = "Edit Organization",
                     formState = formState,
                     countryList = countryList,
-                    prefixDisplayText = prefixDisplayText,
+                    prefixDisplayText = formState.contactPhonePrefix.value,
                     prefixError = formState.contactPhone.error,
                     dropdownExpanded = prefixDropdownExpanded,
                     onCountrySelected = {
                       formViewModel.updateCountryIndex(it)
-                      prefixDisplayText = "+${countryList[it].second}"
+                      formState.contactPhonePrefix.value = "+${countryList[it].second}"
                       prefixDropdownExpanded = false
                     },
                     onPrefixClick = { prefixDropdownExpanded = true },
