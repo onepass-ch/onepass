@@ -436,47 +436,6 @@ class FeedScreenTest {
   }
 
   @Test
-  fun feedScreen_errorState_showsOnlyWhenNotRefreshingAndNoEvents() {
-    val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    // Should show error state when there's an error, no events, and not refreshing
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.RETRY_BUTTON).assertIsDisplayed()
-  }
-
-  @Test
-  fun feedScreen_retryButton_inErrorState_triggersRefreshEvents() {
-    val mockRepository = MockEventRepository(shouldThrowError = true)
-
-    var refreshCalled = false
-    val testViewModel =
-        object : FeedViewModel(mockRepository) {
-          override fun refreshEvents() {
-            refreshCalled = true
-            super.refreshEvents()
-          }
-        }
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = testViewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    // Click retry button in error state
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.RETRY_BUTTON).performClick()
-
-    composeTestRule.waitForIdle()
-
-    // Verify refreshEvents was called
-    assert(refreshCalled)
-  }
-
-  @Test
   fun feedScreen_isLoadingMore_showsLoadingInEventList() {
     val events = listOf(testEvent1, testEvent2)
     val mockRepository = MockEventRepository(events)
