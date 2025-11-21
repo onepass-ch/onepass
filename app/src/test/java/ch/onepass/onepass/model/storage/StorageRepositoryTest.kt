@@ -167,4 +167,59 @@ class StorageRepositoryTest {
     assertEquals(
         exception.message, result.exceptionOrNull()?.message, "Should return correct error")
   }
+
+  @Test
+  fun uploadImage_fileSizeExceedsLimit_returnsError() = runTest {
+    val testPath = "events/event123/large-image.jpg"
+    val exception =
+        IllegalArgumentException("Image size (11MB) exceeds maximum allowed size (10MB)")
+
+    coEvery { mockRepository.uploadImage(testUri, testPath, null) } returns
+        Result.failure(exception)
+
+    val result = mockRepository.uploadImage(testUri, testPath)
+
+    assertTrue(result.isFailure, "Upload should fail for oversized file")
+    assertTrue(
+        result.exceptionOrNull() is IllegalArgumentException,
+        "Should return IllegalArgumentException")
+    assertTrue(
+        result.exceptionOrNull()?.message?.contains("exceeds maximum allowed size") == true,
+        "Error message should mention size limit")
+  }
+
+  @Test
+  fun uploadImage_unsupportedImageType_returnsError() = runTest {
+    val testPath = "events/event123/image.bmp"
+    val exception =
+        IllegalArgumentException(
+            "Unsupported image type: image/bmp. Supported types: [image/jpeg, image/jpg, image/png, image/gif, image/webp]")
+
+    coEvery { mockRepository.uploadImage(testUri, testPath, null) } returns
+        Result.failure(exception)
+
+    val result = mockRepository.uploadImage(testUri, testPath)
+
+    assertTrue(result.isFailure, "Upload should fail for unsupported image type")
+    assertTrue(
+        result.exceptionOrNull() is IllegalArgumentException,
+        "Should return IllegalArgumentException")
+    assertTrue(
+        result.exceptionOrNull()?.message?.contains("Unsupported image type") == true,
+        "Error message should mention unsupported type")
+  }
+
+  @Test
+  fun deleteImageByUrl_failure_returnsError() = runTest {
+    val testUrl = "https://storage.googleapis.com/bucket/events/event123/image.jpg"
+    val exception = Exception("Delete by URL failed")
+
+    coEvery { mockRepository.deleteImageByUrl(testUrl) } returns Result.failure(exception)
+
+    val result = mockRepository.deleteImageByUrl(testUrl)
+
+    assertTrue(result.isFailure, "Delete by URL should fail")
+    assertEquals(
+        exception.message, result.exceptionOrNull()?.message, "Should return correct error")
+  }
 }

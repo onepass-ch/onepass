@@ -252,39 +252,295 @@ class StorageRepositoryFirebaseTest {
     testFile2.delete()
   }
 
+  @Test
+  fun uploadImage_fileTooLarge_returnsError() = runTest {
+    // Create a file that exceeds the 10MB limit
+    val largeFile = File(context.cacheDir, "large-image-${System.currentTimeMillis()}.jpg")
+    // Write 11MB of data (10MB limit + 1MB)
+    val largeData = ByteArray(11 * 1024 * 1024)
+    largeFile.writeBytes(largeData)
+
+    val testUri = Uri.fromFile(largeFile)
+    val testPath = "test/images/large-image-${System.currentTimeMillis()}.jpg"
+
+    val result = repository.uploadImage(testUri, testPath)
+
+    assertTrue("Upload should fail for oversized file", result.isFailure)
+    assertTrue(
+        "Should throw IllegalArgumentException",
+        result.exceptionOrNull() is IllegalArgumentException)
+    assertTrue(
+        "Error message should mention size limit",
+        result.exceptionOrNull()?.message?.contains("exceeds maximum allowed size") == true)
+
+    // Clean up
+    largeFile.delete()
+  }
+
+  @Test
+  fun uploadImage_pngFormat_success() = runTest {
+    val testFile = createTestImageFile("png")
+    val testUri = Uri.fromFile(testFile)
+    val testPath = "test/images/test-image-${System.currentTimeMillis()}.png"
+
+    val result = repository.uploadImage(testUri, testPath)
+
+    assertTrue("Upload should succeed for PNG", result.isSuccess)
+    assertNotNull("Download URL should not be null", result.getOrNull())
+
+    uploadedFiles.add(testPath)
+    testFile.delete()
+  }
+
+  @Test
+  fun uploadImage_webpFormat_success() = runTest {
+    val testFile = createTestImageFile("webp")
+    val testUri = Uri.fromFile(testFile)
+    val testPath = "test/images/test-image-${System.currentTimeMillis()}.webp"
+
+    val result = repository.uploadImage(testUri, testPath)
+
+    assertTrue("Upload should succeed for WEBP", result.isSuccess)
+    assertNotNull("Download URL should not be null", result.getOrNull())
+
+    uploadedFiles.add(testPath)
+    testFile.delete()
+  }
+
+  @Test
+  fun uploadImage_gifFormat_success() = runTest {
+    val testFile = createTestImageFile("gif")
+    val testUri = Uri.fromFile(testFile)
+    val testPath = "test/images/test-image-${System.currentTimeMillis()}.gif"
+
+    val result = repository.uploadImage(testUri, testPath)
+
+    assertTrue("Upload should succeed for GIF", result.isSuccess)
+    assertNotNull("Download URL should not be null", result.getOrNull())
+
+    uploadedFiles.add(testPath)
+    testFile.delete()
+  }
+
+  @Test
+  fun uploadImage_nonExistentFile_returnsError() = runTest {
+    // Create a URI to a file that doesn't exist
+    val nonExistentFile = File(context.cacheDir, "non-existent-${System.currentTimeMillis()}.jpg")
+    val testUri = Uri.fromFile(nonExistentFile)
+    val testPath = "test/images/non-existent-${System.currentTimeMillis()}.jpg"
+
+    val result = repository.uploadImage(testUri, testPath)
+
+    assertTrue("Upload should fail for non-existent file", result.isFailure)
+    assertTrue(
+        "Should throw IllegalArgumentException",
+        result.exceptionOrNull() is IllegalArgumentException)
+    assertTrue(
+        "Error message should mention file doesn't exist",
+        result.exceptionOrNull()?.message?.contains("does not exist") == true)
+  }
+
   /**
    * Creates a temporary test image file for testing uploads.
    *
+   * @param extension The file extension (jpg, png, gif, webp)
    * @return A temporary File containing test image data.
    */
-  private fun createTestImageFile(): File {
-    val file = File(context.cacheDir, "test-image-${System.currentTimeMillis()}.jpg")
-    // Create a minimal JPEG file (1x1 pixel)
-    val jpegHeader =
-        byteArrayOf(
-            0xFF.toByte(),
-            0xD8.toByte(),
-            0xFF.toByte(),
-            0xE0.toByte(),
-            0x00,
-            0x10,
-            0x4A,
-            0x46,
-            0x49,
-            0x46,
-            0x00,
-            0x01,
-            0x01,
-            0x00,
-            0x00,
-            0x01,
-            0x00,
-            0x01,
-            0x00,
-            0x00,
-            0xFF.toByte(),
-            0xD9.toByte())
-    file.writeBytes(jpegHeader)
+  private fun createTestImageFile(extension: String = "jpg"): File {
+    val file = File(context.cacheDir, "test-image-${System.currentTimeMillis()}.$extension")
+
+    // Create minimal valid image data based on format
+    val imageData =
+        when (extension.lowercase()) {
+          "jpg",
+          "jpeg" -> {
+            // Minimal JPEG file (1x1 pixel)
+            byteArrayOf(
+                0xFF.toByte(),
+                0xD8.toByte(),
+                0xFF.toByte(),
+                0xE0.toByte(),
+                0x00,
+                0x10,
+                0x4A,
+                0x46,
+                0x49,
+                0x46,
+                0x00,
+                0x01,
+                0x01,
+                0x00,
+                0x00,
+                0x01,
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                0xFF.toByte(),
+                0xD9.toByte())
+          }
+          "png" -> {
+            // Minimal PNG file (1x1 pixel)
+            byteArrayOf(
+                0x89.toByte(),
+                0x50,
+                0x4E,
+                0x47,
+                0x0D,
+                0x0A,
+                0x1A,
+                0x0A,
+                0x00,
+                0x00,
+                0x00,
+                0x0D,
+                0x49,
+                0x48,
+                0x44,
+                0x52,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x08,
+                0x06,
+                0x00,
+                0x00,
+                0x00,
+                0x1F.toByte(),
+                0x15.toByte(),
+                0xC4.toByte(),
+                0x89.toByte(),
+                0x00,
+                0x00,
+                0x00,
+                0x0A,
+                0x49,
+                0x44,
+                0x41,
+                0x54,
+                0x78,
+                0x9C.toByte(),
+                0x63,
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                0x05,
+                0x00,
+                0x01,
+                0x0D,
+                0x0A,
+                0x2D,
+                0xB4.toByte(),
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x49,
+                0x45,
+                0x4E,
+                0x44,
+                0xAE.toByte(),
+                0x42,
+                0x60,
+                0x82.toByte())
+          }
+          "gif" -> {
+            // Minimal GIF file (1x1 pixel)
+            byteArrayOf(
+                0x47,
+                0x49,
+                0x46,
+                0x38,
+                0x39,
+                0x61,
+                0x01,
+                0x00,
+                0x01,
+                0x00,
+                0x80.toByte(),
+                0x00,
+                0x00,
+                0xFF.toByte(),
+                0xFF.toByte(),
+                0xFF.toByte(),
+                0x00,
+                0x00,
+                0x00,
+                0x21.toByte(),
+                0xF9.toByte(),
+                0x04,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x2C,
+                0x00,
+                0x00,
+                0x00,
+                0x00,
+                0x01,
+                0x00,
+                0x01,
+                0x00,
+                0x00,
+                0x02,
+                0x02,
+                0x44,
+                0x01,
+                0x00,
+                0x3B)
+          }
+          "webp" -> {
+            // Minimal WEBP file (1x1 pixel)
+            byteArrayOf(
+                0x52,
+                0x49,
+                0x46,
+                0x46,
+                0x1A,
+                0x00,
+                0x00,
+                0x00,
+                0x57,
+                0x45,
+                0x42,
+                0x50,
+                0x56,
+                0x50,
+                0x38,
+                0x20,
+                0x0E,
+                0x00,
+                0x00,
+                0x00,
+                0x30,
+                0x01,
+                0x00,
+                0x9D.toByte(),
+                0x01,
+                0x2A,
+                0x01,
+                0x00,
+                0x01,
+                0x00,
+                0x35,
+                0xA4.toByte(),
+                0x00,
+                0x03,
+                0x70,
+                0x00)
+          }
+          else -> throw IllegalArgumentException("Unsupported format: $extension")
+        }
+
+    file.writeBytes(imageData)
     return file
   }
 }
