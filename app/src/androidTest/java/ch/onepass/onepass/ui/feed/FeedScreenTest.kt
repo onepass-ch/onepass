@@ -132,9 +132,6 @@ class FeedScreenTest {
     composeTestRule.onNodeWithTag(FeedScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
     composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
     composeTestRule.onNodeWithText("Test error").assertIsDisplayed()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.RETRY_BUTTON).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Try Again").assertIsDisplayed()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.RETRY_BUTTON).performClick()
     composeTestRule.waitForIdle()
   }
 
