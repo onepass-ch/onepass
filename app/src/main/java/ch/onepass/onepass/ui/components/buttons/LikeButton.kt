@@ -17,7 +17,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 
 /**
  * Like button component with heart icon that toggles between liked and unliked states
@@ -49,7 +51,7 @@ fun LikeButton(isLiked: Boolean, onLikeToggle: (Boolean) -> Unit, modifier: Modi
         Icon(
             imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
             contentDescription = if (isLiked) "Unlike" else "Like",
-            tint = if (isLiked) Color(0xFFE91E63) else Color.White,
+            tint = if (isLiked) colorResource(id = R.color.heart_liked) else Color.White,
             modifier = Modifier.size(24.dp).scale(scale))
       }
 }

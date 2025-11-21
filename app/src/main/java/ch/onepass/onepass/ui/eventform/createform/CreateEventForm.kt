@@ -15,11 +15,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.eventform.EventFormFields
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
+import com.mapbox.maps.extension.style.expressions.dsl.generated.color
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -65,10 +68,16 @@ fun CreateEventButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
               .fillMaxWidth()
               .height(48.dp)
               .padding(start = 63.dp, top = 14.dp, end = 63.dp, bottom = 14.dp)
-              .background(color = Color(0xFF683F88), shape = RoundedCornerShape(size = 5.dp))
-              .background(color = Color(0x94333333), shape = RoundedCornerShape(size = 5.dp))
+              .background(
+                  color = colorResource(id = R.color.eventform_bg_purple),
+                  shape = RoundedCornerShape(size = 5.dp))
+              .background(
+                  color = colorResource(id = R.color.eventform_bg_overlay),
+                  shape = RoundedCornerShape(size = 5.dp))
               .border(
-                  width = 1.dp, color = Color(0xFF242424), shape = RoundedCornerShape(size = 5.dp)),
+                  width = 1.dp,
+                  color = colorResource(id = R.color.eventform_border),
+                  shape = RoundedCornerShape(size = 5.dp)),
       shape = RoundedCornerShape(5.dp),
       colors =
           ButtonDefaults.buttonColors(

@@ -36,6 +36,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.user.UserSearchType
@@ -81,7 +82,7 @@ fun StaffInvitationScreen(
             title = {
               Text(
                   text = "Add staff",
-                  color = Color.White,
+                  color = colorResource(R.color.white),
                   style = MaterialTheme.typography.titleLarge,
                   modifier = Modifier.testTag(StaffInvitationTestTags.TITLE))
             },
@@ -92,7 +93,7 @@ fun StaffInvitationScreen(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = Color.White)
+                        tint = colorResource(R.color.white))
                   }
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = DefaultBackground),
@@ -156,7 +157,7 @@ fun StaffInvitationScreen(
               uiState.errorMessage?.let { error ->
                 Text(
                     text = error,
-                    color = Color.Red,
+                    color = colorResource(id = R.color.error_red),
                     style = MaterialTheme.typography.bodySmall,
                     modifier =
                         Modifier.fillMaxWidth()
@@ -228,24 +229,39 @@ private fun SearchInputField(
       placeholder = {
         Text(
             text = placeholder,
-            style = MaterialTheme.typography.bodyMedium.copy(color = Color.Gray))
+            style = MaterialTheme.typography.bodyMedium.copy(color = colorResource(R.color.gray)))
       },
       modifier =
           modifier
               .fillMaxWidth()
-              .border(1.dp, Color(0xFF404040), RoundedCornerShape(10.dp))
+              .border(
+                  1.dp, colorResource(id = R.color.staff_search_border), RoundedCornerShape(10.dp))
               .heightIn(min = 50.dp)
               .testTag(StaffInvitationTestTags.SEARCH_FIELD),
       colors =
           TextFieldDefaults.colors(
-              focusedContainerColor = Color(0xFF1C1C1C),
-              unfocusedContainerColor = Color(0xFF1C1C1C),
+              focusedContainerColor = colorResource(R.color.staff_search_container),
+              unfocusedContainerColor = colorResource(R.color.staff_search_container),
               focusedIndicatorColor = Color.Transparent,
               unfocusedIndicatorColor = Color.Transparent,
-              focusedTextColor = Color.White,
-              unfocusedTextColor = Color.White,
+              focusedTextColor = colorResource(R.color.white),
+              unfocusedTextColor = colorResource(R.color.white),
           ),
       shape = RoundedCornerShape(10.dp),
       textStyle = MaterialTheme.typography.bodySmall,
       singleLine = true)
+}
+
+@Composable
+private fun EmptyState(message: String, modifier: Modifier = Modifier) {
+  Box(
+      modifier = modifier.testTag(StaffInvitationTestTags.EMPTY_STATE),
+      contentAlignment = Alignment.Center) {
+        Text(
+            text = message,
+            style = MaterialTheme.typography.bodyMedium,
+            color = colorResource(id = R.color.staff_tab_unselected),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.padding(horizontal = 32.dp))
+      }
 }

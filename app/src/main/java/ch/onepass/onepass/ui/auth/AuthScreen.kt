@@ -17,6 +17,7 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -60,7 +61,7 @@ fun AuthScreen(onSignedIn: () -> Unit = {}, authViewModel: AuthViewModel = AuthV
                           .offset(x = (-190).dp, y = (-380).dp),
                   size = 481.dp,
                   blurRadius = 40.dp,
-                  color = Color(0xFF683F88))
+                  color = colorResource(id = R.color.blur_circle_top))
 
               BlurCircle(
                   modifier =
@@ -68,8 +69,7 @@ fun AuthScreen(onSignedIn: () -> Unit = {}, authViewModel: AuthViewModel = AuthV
                           .offset(x = (200).dp, y = (130).dp),
                   size = 200.dp,
                   blurRadius = 40.dp,
-                  color = Color(0xFF4B210A),
-              )
+                  color = colorResource(id = R.color.blur_circle_bottom))
 
               Logo(
                   modifier =

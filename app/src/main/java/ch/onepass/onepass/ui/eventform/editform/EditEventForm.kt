@@ -14,8 +14,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.eventform.EventFormFields
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
@@ -52,12 +54,16 @@ fun UpdateEventButton(
               .fillMaxWidth()
               .height(48.dp)
               .padding(start = 63.dp, top = 14.dp, end = 63.dp, bottom = 14.dp)
-              .background(color = Color(0xFF683F88), shape = RoundedCornerShape(size = 5.dp))
-              .background(color = Color(0x94333333), shape = RoundedCornerShape(size = 5.dp)),
+              .background(
+                  color = colorResource(id = R.color.edit_update_btn_bg_primary),
+                  shape = RoundedCornerShape(size = 5.dp))
+              .background(
+                  color = colorResource(id = R.color.edit_update_btn_bg_overlay),
+                  shape = RoundedCornerShape(size = 5.dp)),
       shape = RoundedCornerShape(5.dp),
       colors =
           ButtonDefaults.buttonColors(
-              containerColor = Color.Transparent, contentColor = Color.White),
+              containerColor = Color.Transparent, contentColor = colorResource(id = R.color.white)),
       contentPadding = PaddingValues(0.dp),
       elevation = ButtonDefaults.buttonElevation(0.dp),
       enabled = !isLoading) {
@@ -67,7 +73,9 @@ fun UpdateEventButton(
             verticalAlignment = Alignment.CenterVertically) {
               if (isLoading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp), color = Color.White, strokeWidth = 2.dp)
+                    modifier = Modifier.size(16.dp),
+                    color = colorResource(id = R.color.white),
+                    strokeWidth = 2.dp)
               } else {
                 Icon(
                     imageVector = Icons.Default.Edit,
@@ -122,7 +130,7 @@ fun EditEventForm(
       modifier = Modifier.testTag(EditEventFormTestTags.SCREEN),
       topBar = {
         TopAppBar(
-            title = { Text(text = "Edit Event", color = Color.White) },
+            title = { Text(text = "Edit Event", color = colorResource(id = R.color.white)) },
             navigationIcon = {
               IconButton(
                   onClick = onNavigateBack,
@@ -130,7 +138,7 @@ fun EditEventForm(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = Color.White)
+                        tint = colorResource(id = R.color.white))
                   }
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = DefaultBackground))
@@ -154,12 +162,12 @@ fun EditEventForm(
                     Text(
                         text = "Failed to load event",
                         style = MaterialTheme.typography.titleMedium,
-                        color = Color.White)
+                        color = colorResource(id = R.color.white))
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = (uiState as EditEventUiState.LoadError).message,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color.Gray)
+                        color = colorResource(id = R.color.gray))
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
                         onClick = { viewModel.loadEvent(eventId) },

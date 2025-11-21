@@ -7,10 +7,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -94,7 +95,7 @@ fun FeedScreen(
           }
         }
       },
-      containerColor = Color(0xFF0A0A0A),
+      containerColor = colorResource(id = R.color.screen_background),
   ) { paddingValues ->
     Box(
         modifier = Modifier.fillMaxSize().padding(paddingValues),
@@ -159,7 +160,7 @@ private fun FeedTopBar(
 ) {
   Surface(
       modifier = modifier.fillMaxWidth().testTag(FeedScreenTestTags.FEED_TOP_BAR),
-      color = Color(0xFF0A0A0A),
+      color = colorResource(id = R.color.screen_background),
       tonalElevation = 0.dp,
   ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)) {
@@ -173,14 +174,14 @@ private fun FeedTopBar(
               text = currentDateRange,
               style = MaterialTheme.typography.headlineLarge,
               fontWeight = FontWeight.Bold,
-              color = Color.White,
+              color = colorResource(id = R.color.white),
               letterSpacing = 2.sp,
               modifier = Modifier.testTag(FeedScreenTestTags.FEED_TITLE),
           )
           Text(
               text = currentLocation.uppercase(),
               style = MaterialTheme.typography.bodyMedium,
-              color = Color(0xFF9CA3AF),
+              color = colorResource(id = R.color.gray),
               modifier = Modifier.padding(top = 4.dp).testTag(FeedScreenTestTags.FEED_LOCATION),
           )
         }
@@ -196,7 +197,7 @@ private fun FeedTopBar(
             Icon(
                 painter = painterResource(id = R.drawable.filter_icon),
                 contentDescription = "Filter events",
-                tint = Color.White,
+                tint = colorResource(id = R.color.white),
                 modifier = Modifier.size(24.dp),
             )
           }
@@ -244,4 +245,87 @@ private fun EventListContent(
           }
         }
       }
+}
+
+/**
+ * Loading state indicator.
+ *
+ * @param modifier Optional modifier for the loading indicator.
+ */
+@Composable
+private fun LoadingState(modifier: Modifier = Modifier) {
+  CircularProgressIndicator(
+      modifier = modifier.testTag(FeedScreenTestTags.LOADING_INDICATOR),
+      color = colorResource(id = R.color.accent_purple),
+  )
+}
+
+/**
+ * Error state with retry button.
+ *
+ * @param error The error message string to display.
+ * @param onRetry Callback invoked when the retry button is clicked.
+ * @param modifier Optional modifier for the error state composable.
+ */
+@Composable
+private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
+  Column(
+      modifier = modifier.fillMaxWidth().padding(32.dp).testTag(FeedScreenTestTags.ERROR_MESSAGE),
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.Center,
+  ) {
+    Text(
+        text = "Oops!",
+        style = MaterialTheme.typography.headlineMedium,
+        fontWeight = FontWeight.Bold,
+        color = colorResource(id = R.color.white),
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(
+        text = error,
+        style = MaterialTheme.typography.bodyMedium,
+        color = colorResource(id = R.color.gray),
+        textAlign = TextAlign.Center,
+    )
+    Spacer(modifier = Modifier.height(24.dp))
+    Button(
+        onClick = onRetry,
+        modifier = Modifier.testTag(FeedScreenTestTags.RETRY_BUTTON),
+        colors =
+            ButtonDefaults.buttonColors(
+                containerColor = colorResource(id = R.color.accent_purple),
+                contentColor = colorResource(id = R.color.white),
+            ),
+    ) {
+      Text(text = "Try Again", fontWeight = FontWeight.Medium)
+    }
+  }
+}
+
+/**
+ * Empty state when no events are available.
+ *
+ * @param modifier Optional modifier for the empty state composable.
+ */
+@Composable
+private fun EmptyFeedState(modifier: Modifier = Modifier) {
+  Column(
+      modifier = modifier.fillMaxWidth().padding(32.dp).testTag(FeedScreenTestTags.EMPTY_STATE),
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.Center,
+  ) {
+    Text(
+        text = "No Events Found",
+        style = MaterialTheme.typography.headlineMedium,
+        fontWeight = FontWeight.Bold,
+        color = colorResource(id = R.color.white),
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+    Text(
+        text = "Check back later for new events in your area!",
+        style = MaterialTheme.typography.bodyMedium,
+        color = colorResource(id = R.color.gray),
+        textAlign = TextAlign.Center,
+    )
+  }
 }

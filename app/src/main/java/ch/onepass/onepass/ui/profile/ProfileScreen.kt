@@ -34,6 +34,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -41,6 +42,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import kotlinx.coroutines.flow.collectLatest
 
 object ProfileTestTags {
@@ -62,16 +64,6 @@ object ProfileTestTags {
   const val SETTINGS_PAYMENTS = "profile_settings_payments"
   const val SETTINGS_HELP = "profile_settings_help"
   const val SETTINGS_SIGN_OUT = "profile_settings_sign_out"
-}
-
-// Centralized colors to avoid name clash with Material3.Surface
-private object ProfileColors {
-  val Background = Color(0xFF111111)
-  val Card = Color(0xFF1B1B1B)
-  val Accent = Color(0xFF9C6BFF)
-  val TextPrimary = Color.White
-  val TextSecondary = Color(0xFFB0B0B0)
-  val Divider = Color(0xFF2A2A2A)
 }
 
 @Composable
@@ -106,15 +98,15 @@ private fun ProfileContent(
     Box(
         modifier =
             Modifier.fillMaxSize()
-                .background(ProfileColors.Background)
+                .background(colorResource(id = R.color.profile_background))
                 .testTag(ProfileTestTags.LOADING),
         contentAlignment = Alignment.Center) {
-          CircularProgressIndicator(color = ProfileColors.Accent)
+          CircularProgressIndicator(color = colorResource(id = R.color.profile_accent))
         }
     return
   }
 
-  Scaffold(containerColor = ProfileColors.Background) { padding ->
+  Scaffold(containerColor = colorResource(id = R.color.profile_background)) { padding ->
     Column(
         modifier =
             Modifier.fillMaxSize()
@@ -132,7 +124,7 @@ private fun ProfileContent(
 
           Text(
               text = "ORGANIZER SETTINGS",
-              color = ProfileColors.TextSecondary,
+              color = colorResource(id = R.color.white),
               style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
               modifier = Modifier.testTag(ProfileTestTags.ORG_SECTION_TITLE))
 
@@ -144,38 +136,40 @@ private fun ProfileContent(
           Spacer(Modifier.height(12.dp))
 
           HorizontalDivider(
-              modifier = Modifier.alpha(0.2f), thickness = 1.dp, color = ProfileColors.Divider)
+              modifier = Modifier.alpha(0.2f),
+              thickness = 1.dp,
+              color = colorResource(id = R.color.profile_divider))
 
           Spacer(Modifier.height(8.dp))
 
           SettingsItem(
               icon = Icons.Outlined.Diversity3,
               title = "My Invitations",
-              titleColor = ProfileColors.TextPrimary,
+              titleColor = colorResource(id = R.color.white),
               onClick = onInvitations,
               testTag = ProfileTestTags.SETTINGS_INVITATIONS)
           SettingsItem(
               icon = Icons.Outlined.AccountCircle,
               title = "Account Settings",
-              titleColor = ProfileColors.TextPrimary,
+              titleColor = colorResource(id = R.color.white),
               onClick = onAccountSettings,
               testTag = ProfileTestTags.SETTINGS_ACCOUNT)
           SettingsItem(
               icon = Icons.Outlined.Settings,
               title = "Payment Methods",
-              titleColor = ProfileColors.TextPrimary,
+              titleColor = colorResource(id = R.color.white),
               onClick = onPaymentMethods,
               testTag = ProfileTestTags.SETTINGS_PAYMENTS)
           SettingsItem(
               icon = Icons.Outlined.Info,
               title = "Help & Support",
-              titleColor = ProfileColors.TextPrimary,
+              titleColor = colorResource(id = R.color.white),
               onClick = onHelp,
               testTag = ProfileTestTags.SETTINGS_HELP)
           SettingsItem(
               icon = Icons.AutoMirrored.Outlined.ExitToApp,
               title = "Sign Out",
-              titleColor = Color(0xFFD33A2C),
+              titleColor = colorResource(id = R.color.profile_sign_out_red),
               onClick = onSignOut,
               testTag = ProfileTestTags.SETTINGS_SIGN_OUT)
         }
@@ -213,7 +207,7 @@ private fun HeaderBlock(initials: String, name: String, email: String) {
             modifier =
                 Modifier.size(72.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF2B2B2B))
+                    .background(colorResource(id = R.color.profile_header_avatar_bg))
                     .testTag(ProfileTestTags.HEADER_INITIALS),
             contentAlignment = Alignment.Center) {
               Text(initials, color = Color.White, fontWeight = FontWeight.Bold)
@@ -224,7 +218,7 @@ private fun HeaderBlock(initials: String, name: String, email: String) {
         Column(Modifier.weight(1f)) {
           Text(
               text = name,
-              color = ProfileColors.TextPrimary,
+              color = colorResource(id = R.color.white),
               style =
                   MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
               maxLines = 1,
@@ -232,7 +226,7 @@ private fun HeaderBlock(initials: String, name: String, email: String) {
               modifier = Modifier.testTag(ProfileTestTags.HEADER_NAME))
           Text(
               text = email,
-              color = ProfileColors.TextSecondary,
+              color = colorResource(id = R.color.profile_text_secondary),
               style = MaterialTheme.typography.bodyMedium,
               modifier = Modifier.testTag(ProfileTestTags.HEADER_EMAIL))
         }
@@ -243,7 +237,7 @@ private fun HeaderBlock(initials: String, name: String, email: String) {
 @Composable
 private fun StatCard(value: Int, label: String, modifier: Modifier = Modifier) {
   Surface(
-      color = ProfileColors.Card,
+      color = colorResource(id = R.color.profile_card),
       shape = RoundedCornerShape(16.dp),
       tonalElevation = 0.dp,
       modifier = modifier.height(96.dp)) {
@@ -252,11 +246,11 @@ private fun StatCard(value: Int, label: String, modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally) {
               Text(
                   value.toString(),
-                  color = ProfileColors.Accent,
+                  color = colorResource(id = R.color.profile_accent),
                   style = MaterialTheme.typography.headlineSmall)
               Text(
                   label,
-                  color = ProfileColors.TextSecondary,
+                  color = colorResource(id = R.color.profile_text_secondary),
                   style = MaterialTheme.typography.bodyMedium)
             }
       }
@@ -265,11 +259,11 @@ private fun StatCard(value: Int, label: String, modifier: Modifier = Modifier) {
 /** Card for the organizer section. */
 @Composable
 private fun OrganizerCard(isOrganizer: Boolean, onOrganizationButton: () -> Unit) {
-  Surface(color = ProfileColors.Card, shape = RoundedCornerShape(16.dp)) {
+  Surface(color = colorResource(id = R.color.profile_card), shape = RoundedCornerShape(16.dp)) {
     Column(Modifier.padding(16.dp).testTag(ProfileTestTags.ORG_CARD)) {
       Text(
           text = if (isOrganizer) "Organization Management" else "Start Your Journey",
-          color = ProfileColors.TextPrimary,
+          color = colorResource(id = R.color.white),
           style = MaterialTheme.typography.titleMedium)
 
       Spacer(Modifier.height(8.dp))
@@ -278,7 +272,7 @@ private fun OrganizerCard(isOrganizer: Boolean, onOrganizationButton: () -> Unit
           text =
               if (isOrganizer) "Create and manage your organizations."
               else "Create epic events, build your community, and grow your audience.",
-          color = ProfileColors.TextSecondary,
+          color = colorResource(id = R.color.profile_text_secondary),
           style = MaterialTheme.typography.bodyMedium)
 
       Spacer(Modifier.height(16.dp))
@@ -287,7 +281,9 @@ private fun OrganizerCard(isOrganizer: Boolean, onOrganizationButton: () -> Unit
           onClick = onOrganizationButton,
           modifier = Modifier.fillMaxWidth().testTag(ProfileTestTags.ORG_CTA),
           shape = RoundedCornerShape(10.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = ProfileColors.Accent)) {
+          colors =
+              ButtonDefaults.buttonColors(
+                  containerColor = colorResource(id = R.color.profile_accent))) {
             Icon(imageVector = Icons.Filled.Add, contentDescription = null, tint = Color.White)
             Spacer(Modifier.width(8.dp))
             Text(
@@ -319,7 +315,10 @@ private fun SettingsItem(
               .padding(horizontal = 6.dp)
               .testTag(testTag),
       verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = Color(0xFF9B9B9B))
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = colorResource(id = R.color.profile_settings_icon))
         Spacer(Modifier.width(16.dp))
         Text(title, color = titleColor, style = MaterialTheme.typography.bodyLarge)
       }

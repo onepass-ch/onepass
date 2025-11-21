@@ -28,9 +28,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -44,6 +44,7 @@ import ch.onepass.onepass.ui.myevents.TicketStatus
 import ch.onepass.onepass.ui.theme.Typography
 import ch.onepass.onepass.ui.theme.White
 import com.google.firebase.Timestamp
+import com.mapbox.maps.extension.style.expressions.dsl.generated.color
 import kotlinx.coroutines.flow.collectLatest
 
 object OrganizerProfileTestTags {
@@ -81,7 +82,7 @@ fun OrganizerHeaderSection(
     modifier: Modifier = Modifier
 ) {
   Column(
-      verticalArrangement = Arrangement.spacedBy(-49.dp, Alignment.Top),
+      verticalArrangement = Arrangement.spacedBy((-49).dp, Alignment.Top),
       horizontalAlignment = Alignment.CenterHorizontally,
       modifier =
           modifier.width(392.dp).height(310.dp).testTag(OrganizerProfileTestTags.HEADER_SECTION)) {
@@ -103,7 +104,9 @@ fun OrganizerHeaderSection(
             modifier =
                 Modifier.width(98.dp)
                     .height(98.dp)
-                    .background(color = Color(0xFF262626), shape = RoundedCornerShape(50.dp))
+                    .background(
+                        color = colorResource(id = R.color.profile_accent),
+                        shape = RoundedCornerShape(50.dp))
                     .clip(RoundedCornerShape(50.dp))
                     .testTag(OrganizerProfileTestTags.PROFILE_IMAGE))
       }
@@ -124,7 +127,9 @@ fun OrganizerInfoSection(name: String, description: String, modifier: Modifier =
         Text(
             text = description,
             style =
-                Typography.bodySmall.copy(color = Color(0xFFC4C4C4), textAlign = TextAlign.Center),
+                Typography.bodySmall.copy(
+                    color = colorResource(id = R.color.profile_description_text),
+                    textAlign = TextAlign.Center),
             modifier =
                 Modifier.padding(horizontal = 20.dp)
                     .testTag(OrganizerProfileTestTags.DESCRIPTION_TEXT))
@@ -184,7 +189,9 @@ fun SocialMediaSection(
                     text = "Website",
                     style =
                         Typography.bodyMedium.copy(
-                            color = Color(0xFFA3A3A3), fontSize = 15.sp, lineHeight = 20.sp),
+                            color = colorResource(id = R.color.profile_website_text),
+                            fontSize = 15.sp,
+                            lineHeight = 20.sp),
                     modifier = Modifier.testTag(OrganizerProfileTestTags.WEBSITE_TEXT))
                 Image(
                     painter = painterResource(id = R.drawable.link_icon),
@@ -253,10 +260,11 @@ fun FollowSection(
                       Modifier.width(182.dp)
                           .height(42.dp)
                           .background(
-                              color = Color(0xFF4A3857), shape = RoundedCornerShape(size = 5.dp))
+                              color = colorResource(id = R.color.profile_follow_button_bg),
+                              shape = RoundedCornerShape(size = 5.dp))
                           .border(
                               width = 1.dp,
-                              color = Color(0xFF242424),
+                              color = colorResource(id = R.color.profile_follow_button_border),
                               shape = RoundedCornerShape(size = 5.dp))
                           .clickable { onFollowClick() }
                           .testTag(OrganizerProfileTestTags.FOLLOW_BUTTON)) {
@@ -287,7 +295,8 @@ fun FollowSection(
                       .testTag(OrganizerProfileTestTags.EDIT_ORGANIZATION_BUTTON),
               colors =
                   ButtonDefaults.buttonColors(
-                      containerColor = Color(0xFF4A3857), contentColor = White),
+                      containerColor = colorResource(id = R.color.profile_follow_button_bg),
+                      contentColor = White),
               shape = RoundedCornerShape(5.dp)) {
                 Text(text = "EDIT ORGANIZATION", style = Typography.titleMedium)
               }
@@ -305,8 +314,8 @@ fun Tab(
     testTag: String,
     modifier: Modifier = Modifier
 ) {
-  val selectedColor = Color(0xFF8F60A0)
-  val unselectedColor = Color(0xFF808080)
+  val selectedColor = colorResource(id = R.color.profile_tab_selected)
+  val unselectedColor = colorResource(id = R.color.profile_tab_unselected)
   val isSelected = selectedTab == tab
 
   Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = modifier) {
@@ -437,7 +446,7 @@ fun OrganizerProfileContent(
       horizontalAlignment = Alignment.CenterHorizontally,
       modifier =
           Modifier.fillMaxSize()
-              .background(color = Color(0xFF1A1A1A)) // TODO change to theme
+              .background(color = colorResource(id = R.color.profile_background))
               .verticalScroll(rememberScrollState())
               .padding(start = 10.dp, top = 20.dp, end = 10.dp, bottom = 12.dp)
               .testTag(OrganizerProfileTestTags.SCREEN)) {
@@ -494,7 +503,9 @@ fun PostsTabContent(modifier: Modifier = Modifier) {
       horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = "No posts yet",
-            style = Typography.bodyMedium.copy(color = Color(0xFF808080)),
+            style =
+                Typography.bodyMedium.copy(
+                    color = colorResource(id = R.color.profile_tab_unselected)),
             modifier = Modifier.padding(32.dp))
       }
 }
@@ -520,7 +531,9 @@ fun UpcomingTabContent(
         if (events.isEmpty()) {
           Text(
               text = "No upcoming events",
-              style = Typography.bodyMedium.copy(color = Color(0xFF808080)),
+              style =
+                  Typography.bodyMedium.copy(
+                      color = colorResource(id = R.color.profile_tab_unselected)),
               modifier = Modifier.padding(32.dp))
         } else {
           events
@@ -555,7 +568,9 @@ fun PastTabContent(
         if (events.isEmpty()) {
           Text(
               text = "No past events",
-              style = Typography.bodyMedium.copy(color = Color(0xFF808080)),
+              style =
+                  Typography.bodyMedium.copy(
+                      color = colorResource(id = R.color.profile_tab_unselected)),
               modifier = Modifier.padding(32.dp))
         } else {
           events

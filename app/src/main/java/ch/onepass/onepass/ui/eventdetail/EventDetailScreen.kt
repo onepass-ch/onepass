@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -168,8 +169,7 @@ private fun BuyButton(
           shape = RoundedCornerShape(5.dp),
           colors =
               ButtonDefaults.buttonColors(
-                  containerColor = Color(0xFF413857) // Purple from design
-                  )) {
+                  containerColor = colorResource(id = R.color.event_buy_button_bg))) {
             Text(
                 text = priceText,
                 style =
@@ -187,7 +187,7 @@ private fun BackSection(onBack: () -> Unit) {
   Row(
       modifier =
           Modifier.fillMaxWidth()
-              .background(Color(0xFF1A1A1A)) // Semi-transparent black
+              .background(colorResource(id = R.color.event_back_section_bg))
               .height(79.dp)
               .padding(start = 22.dp, top = 55.dp, end = 22.dp, bottom = 6.dp)
               .testTag(EventDetailTestTags.TITLE),
@@ -360,7 +360,7 @@ private fun EventDetailsSection(
                 imageVector = Icons.Default.CalendarToday,
                 contentDescription = null,
                 modifier = Modifier.size(26.dp),
-                tint = Color(0xFFA3A3A3))
+                tint = colorResource(id = R.color.event_icon_gray))
             Text(
                 text = event.displayDateTime,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
@@ -377,7 +377,7 @@ private fun EventDetailsSection(
                 imageVector = Icons.Default.LocationCity,
                 contentDescription = null,
                 modifier = Modifier.size(26.dp),
-                tint = Color(0xFFA3A3A3))
+                tint = colorResource(id = R.color.event_icon_gray))
             Text(
                 text = event.displayLocation,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
@@ -390,7 +390,8 @@ private fun EventDetailsSection(
     Row(
         modifier =
             Modifier.fillMaxWidth()
-                .border(1.dp, Color(0xFF242424), RoundedCornerShape(0.dp))
+                .border(
+                    1.dp, colorResource(id = R.color.event_border_gray), RoundedCornerShape(0.dp))
                 .clickable(onClick = onNavigateToMap)
                 .padding(vertical = 14.dp, horizontal = 16.dp)
                 .testTag(EventDetailTestTags.MAP_BUTTON),

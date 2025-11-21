@@ -9,9 +9,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.map.Location
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -43,7 +45,7 @@ fun LocationSearchField(
             text = "Location*",
             style =
                 MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFFFFFFFF), textAlign = TextAlign.Center),
+                    color = colorResource(id = R.color.white), textAlign = TextAlign.Center),
             modifier = Modifier.fillMaxWidth())
 
         ExposedDropdownMenuBox(
@@ -58,14 +60,19 @@ fun LocationSearchField(
                   onValueChange = onQueryChange,
                   modifier =
                       Modifier.fillMaxWidth()
-                          .border(1.dp, Color(0xFF404040), RoundedCornerShape(10.dp))
+                          .border(
+                              1.dp,
+                              colorResource(id = R.color.location_field_border),
+                              RoundedCornerShape(10.dp))
                           .heightIn(min = 50.dp)
                           .menuAnchor()
                           .testTag(testTag),
                   placeholder = {
                     Text(
                         "Type to search location",
-                        style = MaterialTheme.typography.bodySmall.copy(color = Color.Gray))
+                        style =
+                            MaterialTheme.typography.bodySmall.copy(
+                                color = colorResource(id = R.color.gray)))
                   },
                   trailingIcon = {
                     if (isLoading) {
@@ -74,12 +81,14 @@ fun LocationSearchField(
                   },
                   colors =
                       TextFieldDefaults.colors(
-                          focusedContainerColor = Color(0xFF1C1C1C),
-                          unfocusedContainerColor = Color(0xFF1C1C1C),
+                          focusedContainerColor =
+                              colorResource(id = R.color.location_field_container),
+                          unfocusedContainerColor =
+                              colorResource(id = R.color.location_field_container),
                           focusedIndicatorColor = Color.Transparent,
                           unfocusedIndicatorColor = Color.Transparent,
-                          focusedTextColor = Color.White,
-                          unfocusedTextColor = Color.White,
+                          focusedTextColor = colorResource(id = R.color.white),
+                          unfocusedTextColor = colorResource(id = R.color.white),
                       ),
                   shape = RoundedCornerShape(10.dp),
                   textStyle = MaterialTheme.typography.bodySmall,
