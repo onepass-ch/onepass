@@ -157,4 +157,16 @@ interface OrganizationRepository {
    * @return A [Result] indicating success or failure.
    */
   suspend fun deleteInvitation(invitationId: String): Result<Unit>
+
+  /**
+   * Updates the profile image URL for an organization.
+   *
+   * This is a convenience method to update only the profileImageUrl field without
+   * needing to update the entire organization object.
+   *
+   * @param organizationId The organization's ID.
+   * @param imageUrl The new profile image URL, or null to remove the image.
+   * @return A [Result] indicating success or failure.
+   */
+  suspend fun updateProfileImage(organizationId: String, imageUrl: String?): Result<Unit>
 }

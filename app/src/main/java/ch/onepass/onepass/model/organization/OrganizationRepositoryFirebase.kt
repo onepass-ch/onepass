@@ -162,4 +162,15 @@ class OrganizationRepositoryFirebase : OrganizationRepository {
   override suspend fun deleteInvitation(invitationId: String): Result<Unit> = runCatching {
     invitationsCollection.document(invitationId).delete().await()
   }
+
+  override suspend fun updateProfileImage(
+      organizationId: String,
+      imageUrl: String?
+  ): Result<Unit> = runCatching {
+    organizationsCollection
+        .document(organizationId)
+        .update(
+            mapOf("profileImageUrl" to imageUrl, "updatedAt" to FieldValue.serverTimestamp()))
+        .await()
+  }
 }
