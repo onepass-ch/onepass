@@ -8,7 +8,6 @@ import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.ui.map.MapViewModel.Companion.CameraConfig
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
-import com.mapbox.maps.MapView
 import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
@@ -159,13 +158,22 @@ class MapViewModelUnitTest {
   }
 
   @Test
-  fun setLocationPermissionCallsEnableLocationTrackingWhenGranted() {
-    val mockMapView = mockk<MapView>(relaxed = true)
-    viewModel.onMapReady(mockMapView, false)
+  fun setLocationPermissionUpdatesStateToTrue() {
+    assertFalse(viewModel.uiState.value.hasLocationPermission)
 
     viewModel.setLocationPermission(true)
 
     assertTrue(viewModel.uiState.value.hasLocationPermission)
+  }
+
+  @Test
+  fun setLocationPermissionUpdatesStateToFalse() {
+    viewModel.setLocationPermission(true)
+    assertTrue(viewModel.uiState.value.hasLocationPermission)
+
+    viewModel.setLocationPermission(false)
+
+    assertFalse(viewModel.uiState.value.hasLocationPermission)
   }
 
   @Test
