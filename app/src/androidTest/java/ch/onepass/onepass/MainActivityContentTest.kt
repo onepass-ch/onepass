@@ -20,8 +20,7 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class MainActivityContentTest {
 
-  @get:Rule
-  val composeTestRule = createComposeRule()
+  @get:Rule val composeTestRule = createComposeRule()
 
   private lateinit var mockMapViewModel: MapViewModel
   private lateinit var mockContext: Context
@@ -48,17 +47,11 @@ class MainActivityContentTest {
 
     // Mock the static method to return PERMISSION_DENIED
     every {
-      ContextCompat.checkSelfPermission(
-        mockContext,
-        Manifest.permission.ACCESS_FINE_LOCATION
-      )
+      ContextCompat.checkSelfPermission(mockContext, Manifest.permission.ACCESS_FINE_LOCATION)
     } returns PackageManager.PERMISSION_DENIED
 
     composeTestRule.setContent {
-      MainActivityContent(
-        mapViewModel = mockMapViewModel,
-        context = mockContext
-      )
+      MainActivityContent(mapViewModel = mockMapViewModel, context = mockContext)
     }
 
     composeTestRule.waitForIdle()
@@ -73,17 +66,11 @@ class MainActivityContentTest {
 
     // Mock the static method to return PERMISSION_GRANTED
     every {
-      ContextCompat.checkSelfPermission(
-        mockContext,
-        Manifest.permission.ACCESS_FINE_LOCATION
-      )
+      ContextCompat.checkSelfPermission(mockContext, Manifest.permission.ACCESS_FINE_LOCATION)
     } returns PackageManager.PERMISSION_GRANTED
 
     composeTestRule.setContent {
-      MainActivityContent(
-        mapViewModel = mockMapViewModel,
-        context = mockContext
-      )
+      MainActivityContent(mapViewModel = mockMapViewModel, context = mockContext)
     }
 
     composeTestRule.waitForIdle()
@@ -97,10 +84,7 @@ class MainActivityContentTest {
     every { mockMapViewModel.uiState } returns uiStateFlow
 
     composeTestRule.setContent {
-      MainActivityContent(
-        mapViewModel = mockMapViewModel,
-        context = mockContext
-      )
+      MainActivityContent(mapViewModel = mockMapViewModel, context = mockContext)
     }
 
     composeTestRule.waitForIdle()
