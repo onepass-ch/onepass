@@ -1,6 +1,7 @@
 package ch.onepass.onepass
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -45,12 +46,6 @@ class MainActivity : ComponentActivity() {
   // Map screen ViewModel (for lifecycle delegation)
   private val mapViewModel: MapViewModel by viewModels()
 
-  // Location permission launcher
-  private val requestPermissionLauncher =
-      registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        if (isGranted) mapViewModel.enableLocationTracking()
-      }
-
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
@@ -58,38 +53,46 @@ class MainActivity : ComponentActivity() {
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
 
     setContent {
-      OnePassTheme {
-        val uiState by mapViewModel.uiState.collectAsState()
+      OnePassTheme { MainActivityContent(mapViewModel = mapViewModel, context = this@MainActivity) }
+    }
+  }
+}
 
-        val launcher =
-            rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
-                isGranted ->
-              mapViewModel.setLocationPermission(isGranted)
-            }
+/**
+ * Root composable for the main activity content, responsible for setting up permission handling,
+ * ViewModel state collection, and theming for the app.
+ *
+ * @param mapViewModel The [MapViewModel] instance controlling map UI state and logic.
+ * @param context The [Context] used for permission checks and launching permission requests.
+ */
+@Composable
+internal fun MainActivityContent(mapViewModel: MapViewModel, context: Context) {
+  val uiState by mapViewModel.uiState.collectAsState()
 
-        LaunchedEffect(Unit) {
-          if (!uiState.hasLocationPermission) {
-            val hasPermission =
-                ContextCompat.checkSelfPermission(
-                    this@MainActivity, Manifest.permission.ACCESS_FINE_LOCATION) ==
-                    PackageManager.PERMISSION_GRANTED
+  val launcher =
+      rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        mapViewModel.setLocationPermission(isGranted)
+      }
 
-            mapViewModel.setLocationPermission(hasPermission)
+  LaunchedEffect(Unit) {
+    if (!uiState.hasLocationPermission) {
+      val hasPermission =
+          ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+              PackageManager.PERMISSION_GRANTED
 
-            if (!hasPermission) {
-              launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-          }
-        }
+      mapViewModel.setLocationPermission(hasPermission)
 
-        Surface(
-            modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
-            color = MaterialTheme.colorScheme.background) {
-              OnePassApp(mapViewModel = mapViewModel)
-            }
+      if (!hasPermission) {
+        launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
       }
     }
   }
+
+  Surface(
+      modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
+      color = MaterialTheme.colorScheme.background) {
+        OnePassApp(mapViewModel = mapViewModel)
+      }
 }
 
 /**
