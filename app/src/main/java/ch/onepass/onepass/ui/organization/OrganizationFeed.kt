@@ -6,6 +6,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -34,6 +35,7 @@ object OrganizationFeedTestTags {
   const val RETRY_BUTTON = "retryButton"
   const val EMPTY_STATE = "emptyState"
   const val BACK_BUTTON = "backButton"
+  const val ADD_ORG_FAB = "addButton"
 
   fun getTestTagForOrganizationItem(orgId: String) = "organizationItem_$orgId"
 }
@@ -51,6 +53,7 @@ fun OrganizationFeedScreen(
     modifier: Modifier = Modifier,
     onNavigateToOrganization: (String) -> Unit = {},
     onNavigateBack: () -> Unit = {},
+    onFabClick: () -> Unit = {},
     viewModel: OrganizationFeedViewModel = viewModel(),
 ) {
   val uiState by viewModel.uiState.collectAsState()
@@ -64,6 +67,7 @@ fun OrganizationFeedScreen(
       isLoading = uiState.isLoading,
       error = uiState.error,
       onOrganizationClick = onNavigateToOrganization,
+      onFabClick = onFabClick,
       onNavigateBack = onNavigateBack,
       onRetry = { viewModel.refreshOrganizations(userId) })
 }
@@ -80,6 +84,7 @@ fun OrganizationFeedScaffold(
     isLoading: Boolean,
     error: String?,
     onOrganizationClick: (String) -> Unit = {},
+    onFabClick: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
     onRetry: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -115,6 +120,12 @@ fun OrganizationFeedScaffold(
               )
             }
           }
+          AddOrganizationButton(
+              modifier =
+                  Modifier.align(Alignment.BottomEnd)
+                      .padding(16.dp)
+                      .testTag(OrganizationFeedTestTags.ADD_ORG_FAB),
+              onClick = onFabClick)
         }
       }
 }
@@ -241,4 +252,15 @@ private fun EmptyOrganizationState(modifier: Modifier = Modifier) {
         textAlign = TextAlign.Center,
     )
   }
+}
+
+@Composable
+private fun AddOrganizationButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
+  FloatingActionButton(
+      modifier = modifier.testTag(OrganizationFeedTestTags.ADD_ORG_FAB),
+      onClick = onClick,
+      containerColor = colorResource(R.color.accent_purple),
+      contentColor = colorResource(R.color.white)) {
+        Icon(imageVector = Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null)
+      }
 }

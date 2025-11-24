@@ -446,4 +446,54 @@ class FullNavigationTest {
       composeRule.waitForIdle()
     }
   }
+
+  @Test
+  fun organization_feed_fab_visible_for_organizer_and_navigates_to_become_organizer() {
+    val fakeVM = mockk<ProfileViewModel>(relaxed = true)
+
+    val stateFlow =
+        MutableStateFlow(
+            ProfileUiState(
+                displayName = "Org User",
+                email = "org@example.com",
+                isOrganizer = true,
+                loading = false))
+    every { fakeVM.state } returns stateFlow
+
+    val effectsFlow = MutableSharedFlow<ProfileEffect>(extraBufferCapacity = 1)
+    every { fakeVM.effects } returns effectsFlow
+
+    val dummyJob = Job()
+    every { fakeVM.onOrganizationButton() } answers
+        {
+          effectsFlow.tryEmit(ProfileEffect.NavigateToMyOrganizations)
+          dummyJob
+        }
+
+    injectedProfileVMFactory = viewModelFactory { initializer { fakeVM } }
+
+    // Start app as signed in
+    setApp(signedIn = true)
+    composeRule.waitForIdle()
+    composeRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.Profile.route)
+    }
+    composeRule.waitForIdle()
+
+    composeRule.onNodeWithTag(ProfileTestTags.ORG_CTA).assertIsDisplayed()
+    composeRule.onNodeWithTag(ProfileTestTags.ORG_CTA).performClick()
+    composeRule.waitForIdle()
+    assertEquals(
+        NavigationDestinations.Screen.OrganizationFeed.route,
+        navController.currentDestination?.route)
+    composeRule
+        .onNodeWithTag(ch.onepass.onepass.ui.organization.OrganizationFeedTestTags.ADD_ORG_FAB)
+        .assertIsDisplayed()
+        .performClick()
+    composeRule.waitForIdle()
+
+    assertEquals(
+        NavigationDestinations.Screen.BecomeOrganizer.route,
+        navController.currentDestination?.route)
+  }
 }
