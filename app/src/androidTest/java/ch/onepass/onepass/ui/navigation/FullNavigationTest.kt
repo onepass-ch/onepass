@@ -79,7 +79,6 @@ class FullNavigationTest {
       OnePassApp(
           navController = navController,
           mapViewModel = MapViewModel(),
-          isLocationPermissionGranted = true,
           testAuthButtonTag = if (!signedIn) TEST_LOGIN_BUTTON else null,
           authViewModelFactory = authVmFactory,
           profileViewModelFactory = injectedProfileVMFactory)

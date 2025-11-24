@@ -72,12 +72,9 @@ class MapScreenTest {
     every { mockFilterViewModel.uiState } returns MutableStateFlow(filterUiState)
   }
 
-  private fun setContent(isLocationPermissionGranted: Boolean = true) {
+  private fun setContent() {
     composeTestRule.setContent {
-      MapScreen(
-          mapViewModel = mockMapViewModel,
-          filterViewModel = mockFilterViewModel,
-          isLocationPermissionGranted = isLocationPermissionGranted)
+      MapScreen(mapViewModel = mockMapViewModel, filterViewModel = mockFilterViewModel)
     }
   }
 
@@ -117,8 +114,14 @@ class MapScreenTest {
   }
 
   @Test
-  fun mapScreen_onMapReady_called_when_permission_granted() {
-    stubStates()
+  fun mapScreen_onMapReady_called_with_permission_state_from_viewModel() {
+    val uiStateFlow =
+        MutableStateFlow(
+            MapUIState(events = listOf(testEvent1, testEvent2), hasLocationPermission = true))
+    every { mockMapViewModel.uiState } returns uiStateFlow
+    every { mockMapViewModel.allEvents } returns MutableStateFlow(listOf(testEvent1, testEvent2))
+    every { mockFilterViewModel.currentFilters } returns MutableStateFlow(EventFilters())
+    every { mockFilterViewModel.uiState } returns MutableStateFlow(FilterUIState())
 
     var called = false
     every { mockMapViewModel.onMapReady(any(), any()) } answers
@@ -126,20 +129,26 @@ class MapScreenTest {
           called = it.invocation.args[1] as Boolean
         }
 
-    setContent(isLocationPermissionGranted = true)
+    setContent()
 
     composeTestRule.waitUntil(5_000) { called }
     verify { mockMapViewModel.onMapReady(any(), true) }
   }
 
   @Test
-  fun mapScreen_onMapReady_called_when_permission_denied() {
-    stubStates()
+  fun mapScreen_onMapReady_called_when_permission_denied_in_viewModel() {
+    val uiStateFlow =
+        MutableStateFlow(
+            MapUIState(events = listOf(testEvent1, testEvent2), hasLocationPermission = false))
+    every { mockMapViewModel.uiState } returns uiStateFlow
+    every { mockMapViewModel.allEvents } returns MutableStateFlow(listOf(testEvent1, testEvent2))
+    every { mockFilterViewModel.currentFilters } returns MutableStateFlow(EventFilters())
+    every { mockFilterViewModel.uiState } returns MutableStateFlow(FilterUIState())
 
     var deniedCalled = false
     every { mockMapViewModel.onMapReady(any(), false) } answers { deniedCalled = true }
 
-    setContent(isLocationPermissionGranted = false)
+    setContent()
 
     composeTestRule.waitUntil(5_000) { deniedCalled }
     verify { mockMapViewModel.onMapReady(any(), false) }
