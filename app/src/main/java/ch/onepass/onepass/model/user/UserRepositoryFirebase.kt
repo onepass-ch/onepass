@@ -87,15 +87,6 @@ class UserRepositoryFirebase(
     }
   }
 
-  override suspend fun isOrganizer(): Boolean {
-    val firebaseUser = auth.currentUser ?: return false
-    val uid = firebaseUser.uid
-
-    val snapshot = membershipCollection.whereEqualTo("userId", uid).get().await()
-
-    return !snapshot.isEmpty
-  }
-
   override suspend fun addOrganizationToUser(userId: String, orgId: String) {
     userCollection.document(userId).update("organizationIds", FieldValue.arrayUnion(orgId)).await()
   }

@@ -19,11 +19,6 @@ class FakeUserRepository(
 
   private val userOrganizations = mutableMapOf<String, MutableList<String>>()
 
-  override suspend fun isOrganizer(): Boolean {
-    val user = currentUser ?: return false
-    return user.organizationIds.isNotEmpty()
-  }
-
   override suspend fun addOrganizationToUser(userId: String, orgId: String) {
     val orgs = userOrganizations.getOrPut(userId) { mutableListOf() }
     if (!orgs.contains(orgId)) {

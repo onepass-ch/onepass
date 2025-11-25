@@ -25,7 +25,6 @@ data class ProfileUiState(
     val avatarUrl: String? = null,
     val initials: String = "",
     val stats: ProfileStats = ProfileStats(),
-    val isOrganizer: Boolean = false,
     val loading: Boolean = true,
     val errorMessage: String? = null,
 )

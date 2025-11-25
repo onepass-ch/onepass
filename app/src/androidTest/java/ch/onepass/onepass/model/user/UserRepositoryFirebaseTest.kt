@@ -112,34 +112,6 @@ class UserRepositoryFirebaseTest : FirestoreTestBase() {
   }
 
   @Test
-  fun isOrganizer_returnsTrueWhenUserHasOrganizations() = runTest {
-    val user = userRepository.getOrCreateUser()
-    assertNotNull(user)
-
-    val uid = user!!.uid
-    val orgId = "org123"
-
-    // Add organization to user
-    userRepository.addOrganizationToUser(uid, orgId)
-
-    val isOrganizer = userRepository.isOrganizer()
-    assertTrue("User with organizations should be an organizer", isOrganizer)
-  }
-
-  @Test
-  fun isOrganizer_returnsFalseWhenUserHasNoOrganizations() = runTest {
-    val user = userRepository.getOrCreateUser()
-    assertNotNull(user)
-
-    // Ensure user has no organizations
-    val uid = user!!.uid
-    db.collection("users").document(uid).update("organizationIds", emptyList<String>()).await()
-
-    val isOrganizer = userRepository.isOrganizer()
-    assertFalse("User without organizations should not be an organizer", isOrganizer)
-  }
-
-  @Test
   fun addOrganizationToUser_addsOrgIdToUser() = runTest {
     val user = userRepository.getOrCreateUser()
     assertNotNull(user)

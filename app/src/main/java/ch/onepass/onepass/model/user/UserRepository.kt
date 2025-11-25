@@ -23,8 +23,6 @@ interface UserRepository {
       organizationId: String? = null
   ): Result<List<StaffSearchResult>>
 
-  suspend fun isOrganizer(): Boolean
-
   /**
    * Adds the organization of ID `orgId` to the `organizationIds` list of user with Id `userId`
    *
