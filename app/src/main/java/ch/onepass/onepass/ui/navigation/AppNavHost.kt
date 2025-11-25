@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.navigation
 
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
@@ -8,6 +9,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.lifecycle.ViewModelProvider
@@ -51,17 +53,10 @@ import ch.onepass.onepass.ui.staff.StaffInvitationScreen
 import ch.onepass.onepass.ui.staff.StaffInvitationViewModel
 import com.google.firebase.auth.FirebaseAuth
 
-/**
- * Navigation host that registers all app routes and wires view models to screens.
- *
- * @param navController NavHostController used to drive navigation.
- * @param modifier Modifier applied to the NavHost container.
- * @param mapViewModel Map screen ViewModel instance to pass into MapScreen.
- * @param testAuthButtonTag Optional test tag; when provided a simple login button is shown for
- *   testing.
- * @param authViewModelFactory Factory used to create the shared AuthViewModel instance.
- * @param profileViewModelFactory Factory used to create ProfileViewModel instances.
- */
+// Screens that can be accessed via bottom navigation / swiping
+// The order here should match the order in BottomNavBar
+val swipeScreens = listOf(Screen.Events, Screen.Tickets, Screen.Map, Screen.Profile)
+
 @Composable
 fun AppNavHost(
     navController: NavHostController,
@@ -109,11 +104,13 @@ fun AppNavHost(
 
     // ------------------ Events (Feed) ------------------
     composable(Screen.Events.route) {
-      FeedScreen(
-          onNavigateToEvent = { eventId ->
-            navController.navigate(Screen.EventDetail.route(eventId))
-          },
-      )
+      SwipeWrapper(navController = navController, currentScreen = Screen.Events) {
+        FeedScreen(
+            onNavigateToEvent = { eventId ->
+              navController.navigate(Screen.EventDetail.route(eventId))
+            },
+        )
+      }
     }
 
     // ------------------ Event Detail ------------------
@@ -135,50 +132,57 @@ fun AppNavHost(
 
     // ------------------ Tickets (My Events) ------------------
     composable(Screen.Tickets.route) {
-      val uid = FirebaseAuth.getInstance().currentUser?.uid ?: "LOCAL_TEST_UID"
+      SwipeWrapper(navController = navController, currentScreen = Screen.Tickets) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid ?: "LOCAL_TEST_UID"
 
-      val myEventsVm: MyEventsViewModel =
-          viewModel(factory = viewModelFactory { initializer { MyEventsViewModel(userId = uid) } })
-      MyEventsScreen(viewModel = myEventsVm, userQrData = "USER-QR-DEMO")
+        val myEventsVm: MyEventsViewModel =
+            viewModel(
+                factory = viewModelFactory { initializer { MyEventsViewModel(userId = uid) } })
+        MyEventsScreen(viewModel = myEventsVm, userQrData = "USER-QR-DEMO")
+      }
     }
 
     // ------------------ Map ------------------
     composable(Screen.Map.route) {
-      MapScreen(
-          mapViewModel = mapViewModel,
-          onNavigateToEvent = { eventId ->
-            navController.navigate(Screen.EventDetail.route(eventId))
-          })
+      SwipeWrapper(navController = navController, currentScreen = Screen.Map) {
+        MapScreen(
+            mapViewModel = mapViewModel,
+            onNavigateToEvent = { eventId ->
+              navController.navigate(Screen.EventDetail.route(eventId))
+            })
+      }
     }
 
     // ------------------ Profile ------------------
     composable(Screen.Profile.route) {
-      val profileVm: ProfileViewModel = viewModel(factory = profileViewModelFactory)
-      ProfileScreen(
-          viewModel = profileVm,
-          onEffect = { effect ->
-            when (effect) {
-              ProfileEffect.NavigateToBecomeOrganizer ->
-                  navController.navigate(Screen.BecomeOrganizer.route)
-              ProfileEffect.NavigateToMyOrganizations ->
-                  navController.navigate(Screen.OrganizationFeed.route)
-              ProfileEffect.NavigateToAccountSettings ->
-                  navController.navigate(Screen.ComingSoon.route)
-              ProfileEffect.NavigateToPaymentMethods ->
-                  navController.navigate(Screen.ComingSoon.route)
-              ProfileEffect.NavigateToHelp -> navController.navigate(Screen.ComingSoon.route)
-              ProfileEffect.SignOut -> {
-                authViewModel.signOut()
-                navController.navigate(Screen.Auth.route) {
-                  popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                  launchSingleTop = true
+      SwipeWrapper(navController = navController, currentScreen = Screen.Profile) {
+        val profileVm: ProfileViewModel = viewModel(factory = profileViewModelFactory)
+        ProfileScreen(
+            viewModel = profileVm,
+            onEffect = { effect ->
+              when (effect) {
+                ProfileEffect.NavigateToBecomeOrganizer ->
+                    navController.navigate(Screen.BecomeOrganizer.route)
+                ProfileEffect.NavigateToMyOrganizations ->
+                    navController.navigate(Screen.OrganizationFeed.route)
+                ProfileEffect.NavigateToAccountSettings ->
+                    navController.navigate(Screen.ComingSoon.route)
+                ProfileEffect.NavigateToPaymentMethods ->
+                    navController.navigate(Screen.ComingSoon.route)
+                ProfileEffect.NavigateToHelp -> navController.navigate(Screen.ComingSoon.route)
+                ProfileEffect.SignOut -> {
+                  authViewModel.signOut()
+                  navController.navigate(Screen.Auth.route) {
+                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    launchSingleTop = true
+                  }
+                }
+                ProfileEffect.NavigateToMyInvitations -> {
+                  navController.navigate(Screen.MyInvitations.route)
                 }
               }
-              ProfileEffect.NavigateToMyInvitations -> {
-                navController.navigate(Screen.MyInvitations.route)
-              }
-            }
-          })
+            })
+      }
     }
 
     // ------------------ Organization Feed ------------------
@@ -318,4 +322,33 @@ fun AppNavHost(
       ComingSoonScreen(onBack = { navController.popBackStack() })
     }
   }
+}
+
+@Composable
+fun SwipeWrapper(
+    navController: NavHostController,
+    currentScreen: Screen,
+    content: @Composable () -> Unit
+) {
+  val currentIndex = swipeScreens.indexOf(currentScreen)
+
+  Box(
+      modifier =
+          Modifier.fillMaxSize().pointerInput(currentIndex) {
+            detectHorizontalDragGestures { _, dragAmount ->
+              if (dragAmount > 50f && currentIndex > 0) {
+                // Swipe right → previous screen
+                navController.navigate(swipeScreens[currentIndex - 1].route) {
+                  launchSingleTop = true
+                }
+              } else if (dragAmount < -50f && currentIndex < swipeScreens.lastIndex) {
+                // Swipe left → next screen
+                navController.navigate(swipeScreens[currentIndex + 1].route) {
+                  launchSingleTop = true
+                }
+              }
+            }
+          }) {
+        content()
+      }
 }
