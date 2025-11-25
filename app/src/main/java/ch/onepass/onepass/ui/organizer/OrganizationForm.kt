@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -15,6 +17,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
+import ch.onepass.onepass.ui.components.buttons.UploadImageButton
 import ch.onepass.onepass.ui.components.forms.FormTextField
 import ch.onepass.onepass.ui.components.forms.PrefixPhoneRow
 import ch.onepass.onepass.ui.components.forms.SubmitButton
@@ -141,7 +144,43 @@ fun OrganizerForm(
             testTag = testTagsField(testTags, "ADDRESS_FIELD"))
 
         Spacer(Modifier.height(32.dp))
-
+        
+        // Upload profile Image
+        UploadImageButton(
+            imageDescription = "Profile image",
+            onImageSelected = { uri -> viewModel.selectProfileImage(uri) }
+        )
+        
+        // Display profile image selection status
+        if (formState.profileImageUri != null) {
+          Spacer(modifier = Modifier.height(8.dp))
+          Text(
+              text = "✓ Profile image selected",
+              style = MaterialTheme.typography.bodySmall,
+              color = colorResource(id = R.color.white),
+              modifier = Modifier.padding(start = 8.dp))
+        }
+        
+        Spacer(Modifier.height(16.dp))
+        
+        // Upload banner image
+        UploadImageButton(
+            imageDescription = "Banner image",
+            onImageSelected = { uri -> viewModel.selectCoverImage(uri) }
+        )
+        
+        // Display cover image selection status
+        if (formState.coverImageUri != null) {
+          Spacer(modifier = Modifier.height(8.dp))
+          Text(
+              text = "✓ Banner image selected",
+              style = MaterialTheme.typography.bodySmall,
+              color = colorResource(id = R.color.white),
+              modifier = Modifier.padding(start = 8.dp))
+        }
+        
+        Spacer(Modifier.height(16.dp))
+        
         // Submit Button
         SubmitButton(
             onClick = onSubmit,

@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.organizer
 
+import android.net.Uri
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -9,6 +10,8 @@ import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.organization.OrganizationStatus
+import ch.onepass.onepass.model.storage.StorageRepository
+import ch.onepass.onepass.model.storage.StorageRepositoryFirebase
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import ch.onepass.onepass.utils.ValidationUtils
@@ -47,6 +50,8 @@ data class FieldState(
  * @param facebook The organization Facebook field state.
  * @param tiktok The organization TikTok field state.
  * @param address The organization address field state.
+ * @param profileImageUri The URI of the selected profile image.
+ * @param coverImageUri The URI of the selected cover image.
  */
 data class OrganizationFormState(
     val name: FieldState = FieldState(),
@@ -58,7 +63,9 @@ data class OrganizationFormState(
     val instagram: FieldState = FieldState(),
     val facebook: FieldState = FieldState(),
     val tiktok: FieldState = FieldState(),
-    val address: FieldState = FieldState()
+    val address: FieldState = FieldState(),
+    val profileImageUri: Uri? = null,
+    val coverImageUri: Uri? = null
 )
 
 /**
@@ -77,10 +84,12 @@ class OrganizationFormUiState(
  *
  * @param repository The organization repository for data operations.
  * @param userRepository The user repository for updating user data.
+ * @param storageRepository The storage repository for image upload operations.
  */
 class OrganizationFormViewModel(
     private val repository: OrganizationRepository = OrganizationRepositoryFirebase(),
-    private val userRepository: UserRepository = UserRepositoryFirebase()
+    private val userRepository: UserRepository = UserRepositoryFirebase(),
+    private val storageRepository: StorageRepository = StorageRepositoryFirebase()
 ) : ViewModel() {
 
   /** Private form state */
@@ -335,6 +344,60 @@ class OrganizationFormViewModel(
   }
 
   /**
+   * Updates the selected profile image URI
+   *
+   * @param uri The URI of the selected profile image
+   */
+  fun selectProfileImage(uri: Uri) {
+    _formState.value = _formState.value.copy(profileImageUri = uri)
+  }
+
+  /**
+   * Updates the selected cover image URI
+   *
+   * @param uri The URI of the selected cover image
+   */
+  fun selectCoverImage(uri: Uri) {
+    _formState.value = _formState.value.copy(coverImageUri = uri)
+  }
+
+  /**
+   * Uploads the profile image to storage
+   *
+   * @param organizationId The organization ID to use for the storage path
+   * @return Result containing the uploaded image URL or error
+   */
+  private suspend fun uploadProfileImage(organizationId: String): Result<String?> {
+    val imageUri = _formState.value.profileImageUri ?: return Result.success(null)
+
+    val storagePath = "organizations/$organizationId/profile_image.jpg"
+    return storageRepository.uploadImage(imageUri, storagePath)
+        .map { url -> url }
+        .fold(
+            onSuccess = { Result.success(it) },
+            onFailure = { Result.failure(Exception("Failed to upload profile image: ${it.message}")) }
+        )
+  }
+
+  /**
+   * Uploads the cover image to storage
+   *
+   * @param organizationId The organization ID to use for the storage path
+   * @return Result containing the uploaded image URL or error
+   */
+  private suspend fun uploadCoverImage(organizationId: String): Result<String?> {
+    val imageUri = _formState.value.coverImageUri ?: return Result.success(null)
+
+    val storagePath = "organizations/$organizationId/cover_image.jpg"
+    return storageRepository.uploadImage(imageUri, storagePath)
+        .map { url -> url }
+        .fold(
+            onSuccess = { Result.success(it) },
+            onFailure = { Result.failure(Exception("Failed to upload cover image: ${it.message}")) }
+        )
+  }
+
+  /**
    * Handles focus change for the name field
    *
    * @param focused Whether the field is focused
@@ -471,9 +534,24 @@ class OrganizationFormViewModel(
       val s = _formState.value
       _uiState.value = OrganizationFormUiState()
       try {
-        // Construct organization object
+        // Generate organization ID first for image uploads
+        val orgId = java.util.UUID.randomUUID().toString()
+
+        // Upload images to storage if any selected
+        val profileImageUrl = uploadProfileImage(orgId).getOrElse {
+          _uiState.value = OrganizationFormUiState(errorMessage = it.message ?: "Failed to upload profile image")
+          return@launch
+        }
+
+        val coverImageUrl = uploadCoverImage(orgId).getOrElse {
+          _uiState.value = OrganizationFormUiState(errorMessage = it.message ?: "Failed to upload cover image")
+          return@launch
+        }
+
+        // Construct organization object with uploaded image URLs
         val org =
             Organization(
+                id = orgId,
                 name = s.name.value,
                 description = s.description.value,
                 ownerId = ownerId,
@@ -484,26 +562,28 @@ class OrganizationFormViewModel(
                 instagram = s.instagram.value,
                 facebook = s.facebook.value,
                 tiktok = s.tiktok.value,
-                address = s.address.value)
+                address = s.address.value,
+                profileImageUrl = profileImageUrl,
+                coverImageUrl = coverImageUrl)
         val result = repository.createOrganization(org)
 
         // Update UI state based on result
         result.fold(
-            onSuccess = { orgId ->
+            onSuccess = { createdOrgId ->
               // Add the current user as OWNER member to the organization
-              val addMemberResult = repository.addMember(orgId, ownerId, OrganizationRole.OWNER)
+              val addMemberResult = repository.addMember(createdOrgId, ownerId, OrganizationRole.OWNER)
 
               addMemberResult.fold(
                   onSuccess = {
                     // Member added successfully, now update user's organizationIds
                     try {
-                      userRepository.addOrganizationToUser(ownerId, orgId)
-                      _uiState.value = OrganizationFormUiState(successOrganizationId = orgId)
+                      userRepository.addOrganizationToUser(ownerId, createdOrgId)
+                      _uiState.value = OrganizationFormUiState(successOrganizationId = createdOrgId)
                     } catch (e: Exception) {
                       // Organization created and member added, but failed to update user's org list
                       _uiState.value =
                           OrganizationFormUiState(
-                              successOrganizationId = orgId,
+                              successOrganizationId = createdOrgId,
                               errorMessage =
                                   "Organization created, but failed to update user profile: ${e.message}")
                     }
@@ -512,7 +592,7 @@ class OrganizationFormViewModel(
                     // Organization created but failed to add member
                     _uiState.value =
                         OrganizationFormUiState(
-                            successOrganizationId = orgId,
+                            successOrganizationId = createdOrgId,
                             errorMessage =
                                 "Organization created, but failed to add member: ${error.message ?: "Unknown error"}")
                   })

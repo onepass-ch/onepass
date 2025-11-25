@@ -15,6 +15,7 @@ import java.util.Locale
  * @property members Map of user IDs to their member information.
  * @property verified Whether the organization has been verified by an admin.
  * @property profileImageUrl Optional URL to the organization's profile image.
+ * @property coverImageUrl Optional URL to the organization's cover/banner image.
  * @property website Optional public website link.
  * @property instagram Optional Instagram profile link or handle.
  * @property tiktok Optional TikTok profile link or handle.
@@ -37,6 +38,7 @@ data class Organization(
     val members: Map<String, OrganizationMember> = emptyMap(),
     val verified: Boolean = false,
     val profileImageUrl: String? = null,
+    val coverImageUrl: String? = null,
     val website: String? = null,
     val instagram: String? = null,
     val tiktok: String? = null,

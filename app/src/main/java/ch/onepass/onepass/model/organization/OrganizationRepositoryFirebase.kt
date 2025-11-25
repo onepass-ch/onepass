@@ -173,4 +173,15 @@ class OrganizationRepositoryFirebase : OrganizationRepository {
             mapOf("profileImageUrl" to imageUrl, "updatedAt" to FieldValue.serverTimestamp()))
         .await()
   }
+
+  override suspend fun updateCoverImage(
+      organizationId: String,
+      imageUrl: String?
+  ): Result<Unit> = runCatching {
+    organizationsCollection
+        .document(organizationId)
+        .update(
+            mapOf("coverImageUrl" to imageUrl, "updatedAt" to FieldValue.serverTimestamp()))
+        .await()
+  }
 }

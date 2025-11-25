@@ -169,4 +169,16 @@ interface OrganizationRepository {
    * @return A [Result] indicating success or failure.
    */
   suspend fun updateProfileImage(organizationId: String, imageUrl: String?): Result<Unit>
+
+  /**
+   * Updates the cover image URL for an organization.
+   *
+   * This is a convenience method to update only the coverImageUrl field without
+   * needing to update the entire organization object.
+   *
+   * @param organizationId The organization's ID.
+   * @param imageUrl The new cover image URL, or null to remove the image.
+   * @return A [Result] indicating success or failure.
+   */
+  suspend fun updateCoverImage(organizationId: String, imageUrl: String?): Result<Unit>
 }

@@ -1,10 +1,13 @@
 package ch.onepass.onepass.ui.organizer
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
+import ch.onepass.onepass.model.storage.StorageRepository
+import ch.onepass.onepass.model.storage.StorageRepositoryFirebase
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -40,6 +43,8 @@ data class OrganizationEditorUiState(
  * @property facebook Optional Facebook profile link or handle.
  * @property tiktok Optional TikTok profile link or handle.
  * @property address Optional physical address of the organization.
+ * @property profileImageUri Optional URI of the selected profile image.
+ * @property coverImageUri Optional URI of the selected cover image.
  */
 data class OrganizationEditorData(
     val id: String,
@@ -52,7 +57,9 @@ data class OrganizationEditorData(
     val instagram: String?,
     val facebook: String?,
     val tiktok: String?,
-    val address: String?
+    val address: String?,
+    val profileImageUri: Uri?,
+    val coverImageUri: Uri?
 ) {
   companion object {
     /**
@@ -74,7 +81,9 @@ data class OrganizationEditorData(
           instagram = formState.instagram.value.ifBlank { null },
           facebook = formState.facebook.value.ifBlank { null },
           tiktok = formState.tiktok.value.ifBlank { null },
-          address = formState.address.value.ifBlank { null })
+          address = formState.address.value.ifBlank { null },
+          profileImageUri = formState.profileImageUri,
+          coverImageUri = formState.coverImageUri)
     }
   }
 }
@@ -83,9 +92,11 @@ data class OrganizationEditorData(
  * ViewModel for editing organization details.
  *
  * @property repository The [OrganizationRepository] used for data operations.
+ * @property storageRepository The [StorageRepository] used for image upload operations.
  */
 class OrganizationEditorViewModel(
-    private val repository: OrganizationRepository = OrganizationRepositoryFirebase()
+    private val repository: OrganizationRepository = OrganizationRepositoryFirebase(),
+    private val storageRepository: StorageRepository = StorageRepositoryFirebase()
 ) : ViewModel() {
 
   /** The UI state exposed to the Composable. */
@@ -120,6 +131,48 @@ class OrganizationEditorViewModel(
   }
 
   /**
+   * Uploads the profile image to storage if a new one is selected.
+   *
+   * @param organizationId The organization ID to use for the storage path.
+   * @param imageUri The URI of the image to upload, or null if no new image selected.
+   * @return Result containing the uploaded image URL or null if no upload needed.
+   */
+  private suspend fun uploadProfileImage(organizationId: String, imageUri: Uri?): Result<String?> {
+    if (imageUri == null) {
+      return Result.success(null)
+    }
+
+    val storagePath = "organizations/$organizationId/profile_image.jpg"
+    return storageRepository.uploadImage(imageUri, storagePath)
+        .map { url -> url }
+        .fold(
+            onSuccess = { Result.success(it) },
+            onFailure = { Result.failure(Exception("Failed to upload profile image: ${it.message}")) }
+        )
+  }
+
+  /**
+   * Uploads the cover image to storage if a new one is selected.
+   *
+   * @param organizationId The organization ID to use for the storage path.
+   * @param imageUri The URI of the image to upload, or null if no new image selected.
+   * @return Result containing the uploaded image URL or null if no upload needed.
+   */
+  private suspend fun uploadCoverImage(organizationId: String, imageUri: Uri?): Result<String?> {
+    if (imageUri == null) {
+      return Result.success(null)
+    }
+
+    val storagePath = "organizations/$organizationId/cover_image.jpg"
+    return storageRepository.uploadImage(imageUri, storagePath)
+        .map { url -> url }
+        .fold(
+            onSuccess = { Result.success(it) },
+            onFailure = { Result.failure(Exception("Failed to upload cover image: ${it.message}")) }
+        )
+  }
+
+  /**
    * Update organization details.
    *
    * @param data The [OrganizationEditorData] containing updated fields.
@@ -136,6 +189,22 @@ class OrganizationEditorViewModel(
     viewModelScope.launch {
       _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, success = false)
       try {
+        // Upload new images if selected
+        val profileImageUrl = uploadProfileImage(data.id, data.profileImageUri).getOrElse {
+          _uiState.value = _uiState.value.copy(
+              isLoading = false,
+              errorMessage = it.message ?: "Failed to upload profile image")
+          return@launch
+        }
+
+        val coverImageUrl = uploadCoverImage(data.id, data.coverImageUri).getOrElse {
+          _uiState.value = _uiState.value.copy(
+              isLoading = false,
+              errorMessage = it.message ?: "Failed to upload cover image")
+          return@launch
+        }
+
+        // Update organization with new data and uploaded image URLs if new images were selected
         val org =
             currentOrg.copy(
                 id = data.id,
@@ -151,6 +220,8 @@ class OrganizationEditorViewModel(
                 facebook = data.facebook,
                 tiktok = data.tiktok,
                 address = data.address,
+                profileImageUrl = profileImageUrl ?: currentOrg.profileImageUrl,
+                coverImageUrl = coverImageUrl ?: currentOrg.coverImageUrl,
                 createdAt = currentOrg.createdAt ?: Timestamp.now() // fallback if null
                 )
 
