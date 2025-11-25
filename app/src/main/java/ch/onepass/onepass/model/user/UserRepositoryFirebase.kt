@@ -15,6 +15,7 @@ class UserRepositoryFirebase(
     private val functions: FirebaseFunctions = Firebase.functions
 ) : UserRepository {
   private val userCollection = db.collection("users")
+  private val membershipCollection = db.collection("memberships")
 
   // get the current user from Firebase Authentication
   override suspend fun getCurrentUser(): User? {
@@ -90,10 +91,9 @@ class UserRepositoryFirebase(
     val firebaseUser = auth.currentUser ?: return false
     val uid = firebaseUser.uid
 
-    val snapshot = userCollection.document(uid).get().await()
-    val user = snapshot.toObject(User::class.java) ?: return false
+    val snapshot = membershipCollection.whereEqualTo("userId", uid).get().await()
 
-    return user.organizationIds.isNotEmpty()
+    return !snapshot.isEmpty
   }
 
   override suspend fun addOrganizationToUser(userId: String, orgId: String) {
