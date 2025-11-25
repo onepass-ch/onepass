@@ -185,13 +185,13 @@ private fun OrganizationListContent(
 
 @Composable
 private fun AddOrganizationButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
-    FloatingActionButton(
-        modifier = modifier,
-        onClick = onClick,
-        containerColor = colorResource(R.color.accent_purple),
-        contentColor = colorResource(R.color.white)) {
+  FloatingActionButton(
+      modifier = modifier,
+      onClick = onClick,
+      containerColor = colorResource(R.color.accent_purple),
+      contentColor = colorResource(R.color.white)) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
             contentDescription = "Create a new organization")
-    }
+      }
 }
