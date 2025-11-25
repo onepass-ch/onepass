@@ -10,6 +10,8 @@ import ch.onepass.onepass.model.map.LocationRepository
 import ch.onepass.onepass.model.map.NominatimLocationRepository
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
+import ch.onepass.onepass.model.storage.StorageRepository
+import ch.onepass.onepass.model.storage.StorageRepositoryFirebase
 import ch.onepass.onepass.ui.eventform.EventFormViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,11 +22,12 @@ import kotlinx.coroutines.launch
  * ViewModel for the Create Event Form screen. Manages the state of the form and handles event
  * creation logic.
  */
-class CreateEventFormViewModel(
+open class CreateEventFormViewModel(
     eventRepository: EventRepository = EventRepositoryFirebase(),
     private val organizationRepository: OrganizationRepository = OrganizationRepositoryFirebase(),
-    locationRepository: LocationRepository = NominatimLocationRepository()
-) : EventFormViewModel(eventRepository, locationRepository) {
+    locationRepository: LocationRepository = NominatimLocationRepository(),
+    storageRepository: StorageRepository = StorageRepositoryFirebase()
+) : EventFormViewModel(eventRepository, locationRepository, storageRepository) {
 
   // UI state
   private val _uiState = MutableStateFlow<CreateEventUiState>(CreateEventUiState.Idle)
@@ -65,9 +68,24 @@ class CreateEventFormViewModel(
           return@collect
         }
 
-        // Build new Event from parsed data with real organization data
+        // Set loading state
+        _uiState.value = CreateEventUiState.Loading
+
+        // Generate event ID first for image uploads
+        val eventId = java.util.UUID.randomUUID().toString()
+
+        // Upload images to storage if any selected
+        val imageUploadResult = uploadSelectedImages(eventId)
+        val imageUrls =
+            imageUploadResult.getOrElse {
+              _uiState.value = CreateEventUiState.Error(it.message ?: "Failed to upload images")
+              return@collect
+            }
+
+        // Build new Event from parsed data with real organization data and uploaded images
         val event =
             Event(
+                eventId = eventId,
                 title = parsed.title,
                 description = parsed.description,
                 organizerId = organization.id,
@@ -88,17 +106,16 @@ class CreateEventFormViewModel(
                             price = parsed.price,
                             quantity = parsed.capacity,
                             remaining = parsed.capacity)),
-                images = emptyList(),
+                images = imageUrls,
                 tags = emptyList())
-
-        // Set loading state
-        _uiState.value = CreateEventUiState.Loading
 
         // Create event in repository
         val result = eventRepository.createEvent(event)
 
         result.fold(
-            onSuccess = { eventId -> _uiState.value = CreateEventUiState.Success(eventId) },
+            onSuccess = { createdEventId -> 
+              _uiState.value = CreateEventUiState.Success(createdEventId) 
+            },
             onFailure = { error ->
               _uiState.value = CreateEventUiState.Error(error.message ?: "Failed to create event")
             })

@@ -7,6 +7,8 @@ import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.event.PricingTier
 import ch.onepass.onepass.model.map.LocationRepository
 import ch.onepass.onepass.model.map.NominatimLocationRepository
+import ch.onepass.onepass.model.storage.StorageRepository
+import ch.onepass.onepass.model.storage.StorageRepositoryFirebase
 import ch.onepass.onepass.ui.eventform.EventFormViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -22,8 +24,9 @@ import kotlinx.coroutines.launch
  */
 class EditEventFormViewModel(
     eventRepository: EventRepository = EventRepositoryFirebase(),
-    locationRepository: LocationRepository = NominatimLocationRepository()
-) : EventFormViewModel(eventRepository, locationRepository) {
+    locationRepository: LocationRepository = NominatimLocationRepository(),
+    storageRepository: StorageRepository = StorageRepositoryFirebase()
+) : EventFormViewModel(eventRepository, locationRepository, storageRepository) {
 
   // UI state
   private val _uiState = MutableStateFlow<EditEventUiState>(EditEventUiState.Idle)
@@ -77,6 +80,17 @@ class EditEventFormViewModel(
 
       _uiState.value = EditEventUiState.Updating
 
+      // Upload new images if any selected
+      val imageUploadResult = uploadSelectedImages(original.eventId)
+      val newImageUrls =
+          imageUploadResult.getOrElse {
+            _uiState.value = EditEventUiState.Error(it.message ?: "Failed to upload images")
+            return@launch
+          }
+
+      // Combine existing images with newly uploaded ones
+      val allImageUrls = original.images + newImageUrls
+
       // Create updated event from parsed data
       val updatedEvent =
           original.copy(
@@ -86,6 +100,7 @@ class EditEventFormViewModel(
               endTime = parsed.endTime,
               capacity = parsed.capacity,
               location = parsed.selectedLocation,
+              images = allImageUrls,
               pricingTiers =
                   listOf(
                       PricingTier(
@@ -156,5 +171,7 @@ private fun Event.toFormState(): EventFormViewModel.EventFormState {
       location = location?.name ?: "",
       price = if (lowestPrice > 0u) lowestPrice.toString() else "0",
       capacity = capacity.toString(),
-      selectedLocation = this.location)
+      selectedLocation = this.location,
+      selectedImageUris = emptyList() // Existing images are in Event.images, not form state
+      )
 }
