@@ -35,7 +35,7 @@ object OrganizationFeedTestTags {
   const val RETRY_BUTTON = "retryButton"
   const val EMPTY_STATE = "emptyState"
   const val BACK_BUTTON = "backButton"
-  const val ADD_ORG_FAB = "addButton"
+  const val ADD_ORG_FAB = "addOrgFab"
 
   fun getTestTagForOrganizationItem(orgId: String) = "organizationItem_$orgId"
 }
@@ -257,10 +257,12 @@ private fun EmptyOrganizationState(modifier: Modifier = Modifier) {
 @Composable
 private fun AddOrganizationButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
   FloatingActionButton(
-      modifier = modifier.testTag(OrganizationFeedTestTags.ADD_ORG_FAB),
+      modifier = modifier,
       onClick = onClick,
       containerColor = colorResource(R.color.accent_purple),
       contentColor = colorResource(R.color.white)) {
-        Icon(imageVector = Icons.AutoMirrored.Filled.PlaylistAdd, contentDescription = null)
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
+            contentDescription = "Create a new organization")
       }
 }
