@@ -85,9 +85,7 @@ open class ProfileViewModel(private val userRepository: UserRepository = UserRep
    * - Otherwise, navigates to Become an Organizer onboarding.
    */
   fun onOrganizationButton() =
-    viewModelScope.launch {
-       _effects.emit(ProfileEffect.NavigateToMyOrganizations)
-    }
+      viewModelScope.launch { _effects.emit(ProfileEffect.NavigateToMyOrganizations) }
 
   // --- Placeholder stubs to avoid navigating to non-existent screens ---
 
