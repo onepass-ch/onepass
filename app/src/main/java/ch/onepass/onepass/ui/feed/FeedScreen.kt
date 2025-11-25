@@ -7,6 +7,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -162,47 +163,52 @@ private fun FeedTopBar(
       color = colorResource(id = R.color.screen_background),
       tonalElevation = 0.dp,
   ) {
-    Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)) {
-      Row(
-          modifier = Modifier.fillMaxWidth(),
-          horizontalArrangement = Arrangement.SpaceBetween,
-          verticalAlignment = Alignment.CenterVertically,
-      ) {
-        Column {
-          Text(
-              text = currentDateRange,
-              style = MaterialTheme.typography.headlineLarge,
-              fontWeight = FontWeight.Bold,
-              color = colorResource(id = R.color.white),
-              letterSpacing = 2.sp,
-              modifier = Modifier.testTag(FeedScreenTestTags.FEED_TITLE),
-          )
-          Text(
-              text = currentLocation.uppercase(),
-              style = MaterialTheme.typography.bodyMedium,
-              color = colorResource(id = R.color.gray),
-              modifier = Modifier.padding(top = 4.dp).testTag(FeedScreenTestTags.FEED_LOCATION),
-          )
-        }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-          // Filter Button
-          IconButton(
-              onClick = onFilterClick,
-              modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.FILTER_BUTTON),
+    Column(
+        modifier =
+            Modifier.fillMaxWidth()
+                .pointerInput(
+                    Unit) {} // consumes nothing, just prevents parent swipe from stealing taps
+                .padding(horizontal = 20.dp, vertical = 16.dp)) {
+          Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.CenterVertically,
           ) {
-            Icon(
-                painter = painterResource(id = R.drawable.filter_icon),
-                contentDescription = "Filter events",
-                tint = colorResource(id = R.color.white),
-                modifier = Modifier.size(24.dp),
-            )
+            Column {
+              Text(
+                  text = currentDateRange,
+                  style = MaterialTheme.typography.headlineLarge,
+                  fontWeight = FontWeight.Bold,
+                  color = colorResource(id = R.color.white),
+                  letterSpacing = 2.sp,
+                  modifier = Modifier.testTag(FeedScreenTestTags.FEED_TITLE),
+              )
+              Text(
+                  text = currentLocation.uppercase(),
+                  style = MaterialTheme.typography.bodyMedium,
+                  color = colorResource(id = R.color.gray),
+                  modifier = Modifier.padding(top = 4.dp).testTag(FeedScreenTestTags.FEED_LOCATION),
+              )
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+              // Filter Button
+              IconButton(
+                  onClick = onFilterClick,
+                  modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.FILTER_BUTTON),
+              ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.filter_icon),
+                    contentDescription = "Filter events",
+                    tint = colorResource(id = R.color.white),
+                    modifier = Modifier.size(24.dp),
+                )
+              }
+            }
           }
         }
-      }
-    }
   }
 }
 

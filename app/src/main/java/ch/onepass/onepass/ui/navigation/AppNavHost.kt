@@ -1,6 +1,5 @@
 package ch.onepass.onepass.ui.navigation
 
-import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
@@ -9,7 +8,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.lifecycle.ViewModelProvider
@@ -335,16 +336,23 @@ fun SwipeWrapper(
   Box(
       modifier =
           Modifier.fillMaxSize().pointerInput(currentIndex) {
-            detectHorizontalDragGestures { _, dragAmount ->
-              if (dragAmount > 50f && currentIndex > 0) {
-                // Swipe right → previous screen
-                navController.navigate(swipeScreens[currentIndex - 1].route) {
-                  launchSingleTop = true
-                }
-              } else if (dragAmount < -50f && currentIndex < swipeScreens.lastIndex) {
-                // Swipe left → next screen
-                navController.navigate(swipeScreens[currentIndex + 1].route) {
-                  launchSingleTop = true
+            awaitPointerEventScope {
+              while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+                val drag = event.changes.firstOrNull()
+                drag?.let {
+                  if (it.positionChange().x > 50f && currentIndex > 0) {
+                    navController.navigate(swipeScreens[currentIndex - 1].route) {
+                      launchSingleTop = true
+                    }
+                    it.consume() // Only consume after a swipe
+                  } else if (it.positionChange().x < -50f &&
+                      currentIndex < swipeScreens.lastIndex) {
+                    navController.navigate(swipeScreens[currentIndex + 1].route) {
+                      launchSingleTop = true
+                    }
+                    it.consume()
+                  }
                 }
               }
             }
