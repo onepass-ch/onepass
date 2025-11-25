@@ -115,14 +115,10 @@ class MapScreenTest {
 
   @Test
   fun mapScreen_onMapReady_called_with_permission_state_from_viewModel() {
-    val uiStateFlow =
-        MutableStateFlow(
-            MapUIState(events = listOf(testEvent1, testEvent2), hasLocationPermission = true))
-    every { mockMapViewModel.uiState } returns uiStateFlow
-    every { mockMapViewModel.allEvents } returns MutableStateFlow(listOf(testEvent1, testEvent2))
-    every { mockFilterViewModel.currentFilters } returns MutableStateFlow(EventFilters())
-    every { mockFilterViewModel.uiState } returns MutableStateFlow(FilterUIState())
+    stubStates(
+        uiState = MapUIState(events = listOf(testEvent1, testEvent2), hasLocationPermission = true))
 
+    // Need to capture the actual call asynchronously before verify can succeed.
     var called = false
     every { mockMapViewModel.onMapReady(any(), any()) } answers
         {
@@ -137,14 +133,11 @@ class MapScreenTest {
 
   @Test
   fun mapScreen_onMapReady_called_when_permission_denied_in_viewModel() {
-    val uiStateFlow =
-        MutableStateFlow(
+    stubStates(
+        uiState =
             MapUIState(events = listOf(testEvent1, testEvent2), hasLocationPermission = false))
-    every { mockMapViewModel.uiState } returns uiStateFlow
-    every { mockMapViewModel.allEvents } returns MutableStateFlow(listOf(testEvent1, testEvent2))
-    every { mockFilterViewModel.currentFilters } returns MutableStateFlow(EventFilters())
-    every { mockFilterViewModel.uiState } returns MutableStateFlow(FilterUIState())
 
+    // onMapReady is called asynchronously, so we wait for the callback before verify
     var deniedCalled = false
     every { mockMapViewModel.onMapReady(any(), false) } answers { deniedCalled = true }
 
