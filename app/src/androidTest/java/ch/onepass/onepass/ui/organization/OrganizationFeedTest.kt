@@ -10,6 +10,7 @@ import com.google.firebase.Timestamp
 import io.mockk.*
 import kotlinx.coroutines.flow.flowOf
 import org.junit.After
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -419,5 +420,28 @@ class OrganizationFeedTest {
     composeTestRule
         .onNodeWithTag(OrganizationFeedTestTags.getTestTagForOrganizationItem("org-3"))
         .assertExists()
+  }
+
+  @Test
+  fun fab_is_displayed_and_click_triggers_callback() {
+    var clicked = false
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        OrganizationFeedScaffold(
+            organizations = emptyList(),
+            isLoading = false,
+            error = null,
+            onOrganizationClick = {},
+            onFabClick = { clicked = true },
+            onNavigateBack = {},
+            onRetry = {})
+      }
+    }
+
+    composeTestRule.onNodeWithTag(OrganizationFeedTestTags.ADD_ORG_FAB).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizationFeedTestTags.ADD_ORG_FAB).performClick()
+
+    composeTestRule.runOnIdle { assertTrue("FAB click should trigger callback", clicked) }
   }
 }

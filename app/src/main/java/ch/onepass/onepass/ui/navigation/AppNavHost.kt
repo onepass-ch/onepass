@@ -181,7 +181,8 @@ fun AppNavHost(
           onNavigateToOrganization = { organizationId ->
             navController.navigate(Screen.OrganizationDashboard.route(organizationId))
           },
-          onNavigateBack = { navController.popBackStack() })
+          onNavigateBack = { navController.popBackStack() },
+          onFabClick = { navController.navigate(Screen.BecomeOrganizer.route) })
     }
 
     // ------------------ Organization Dashboard ------------------
