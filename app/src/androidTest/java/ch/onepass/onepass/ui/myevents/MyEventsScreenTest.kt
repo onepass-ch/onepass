@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.myevents
 
+import androidx.compose.foundation.layout.height
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import ch.onepass.onepass.ui.theme.OnePassTheme
@@ -69,12 +70,20 @@ class MyEventsScreenTest {
   }
 
   @Test
-  fun clickingQrCode_showsDialog() {
+  fun qrCodeCard_expandsOnClick() {
     setContent()
-    // Click QR icon card
-    composeTestRule.onNodeWithTag(MyEventsTestTags.QR_CODE_ICON).performClick()
+
+    val qrCard = composeTestRule.onNodeWithTag(MyEventsTestTags.QR_CODE_CARD)
+
+    val initialHeight = qrCard.fetchSemanticsNode().boundsInRoot.height
+
+    qrCard.performClick()
     composeTestRule.waitForIdle()
 
-    composeTestRule.onNodeWithTag(MyEventsTestTags.QR_CODE_DIALOG).assertIsDisplayed()
+    val expandedHeight = qrCard.fetchSemanticsNode().boundsInRoot.height
+
+    assert(expandedHeight > initialHeight) {
+      "QR card did not expand (initial=$initialHeight, expanded=$expandedHeight)"
+    }
   }
 }
