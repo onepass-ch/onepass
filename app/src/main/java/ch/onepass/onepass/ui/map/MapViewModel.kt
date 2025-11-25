@@ -88,7 +88,20 @@ class MapViewModel(
   private var pointAnnotationManager: PointAnnotationManager? = null
 
   // --- Mapbox references ---
+  /**
+   * Holds reference to MapView for plugin access and camera control.
+   *
+   * **Memory Leak Safety:** StaticFieldLeak suppression is safe here because:
+   * 1. Reference is explicitly nulled in onCleared() (line 285)
+   * 2. All listeners are removed before clearing (lines 281-283)
+   * 3. Annotation manager is cleaned up (line 284)
+   *
+   * This ensures no Context leaks persist beyond ViewModel lifecycle.
+   *
+   * @see onCleared for cleanup implementation
+   */
   @SuppressLint("StaticFieldLeak") private var internalMapView: MapView? = null
+
   private var lastKnownPoint: Point? = null
   private var indicatorListener: OnIndicatorPositionChangedListener? = null
   private val defaultCenterPoint =
@@ -300,13 +313,27 @@ class MapViewModel(
     compassPlugin?.updateSettings { enabled = true }
   }
 
-  /** Cleans up listeners and releases MapView-related resources when ViewModel is cleared. */
+  /**
+   * Cleans up listeners and releases MapView-related resources when ViewModel is cleared.
+   *
+   * This prevents memory leaks by:
+   * 1. Removing location indicator listener to break callback chain
+   * 2. Clearing annotation manager and all its annotations
+   * 3. Nulling MapView reference to release Context
+   */
   public override fun onCleared() {
+    // Remove listener to break callback chain
     indicatorListener?.let { listener ->
       internalMapView?.location?.removeOnIndicatorPositionChangedListener(listener)
     }
+    indicatorListener = null
+
+    // Clear annotation manager and its resources
     clearAnnotationManager()
+
+    // Release MapView reference (prevents Context leak)
     internalMapView = null
+
     super.onCleared()
   }
 }
