@@ -28,8 +28,8 @@ class MainActivityContentTest {
   @Before
   fun setup() {
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
-    mockMapViewModel = mockk(relaxed = true)
-    mockContext = mockk(relaxed = true)
+    mockMapViewModel = mockk()
+    mockContext = mockk()
 
     // Mock the static ContextCompat method
     mockkStatic(ContextCompat::class)
@@ -41,9 +41,10 @@ class MainActivityContentTest {
   }
 
   @Test
-  fun mainActivityContent_whenPermissionNotGranted_callsSetLocationPermission() {
+  fun mainActivityContent_whenPermissionDenied_updatesViewModelState() {
     val uiStateFlow = MutableStateFlow(MapUIState(hasLocationPermission = false))
     every { mockMapViewModel.uiState } returns uiStateFlow
+    every { mockMapViewModel.setLocationPermission(any()) } just Runs
 
     // Mock the static method to return PERMISSION_DENIED
     every {
@@ -63,6 +64,7 @@ class MainActivityContentTest {
   fun mainActivityContent_whenPermissionGranted_callsSetLocationPermissionTrue() {
     val uiStateFlow = MutableStateFlow(MapUIState(hasLocationPermission = false))
     every { mockMapViewModel.uiState } returns uiStateFlow
+    every { mockMapViewModel.setLocationPermission(any()) } just Runs
 
     // Mock the static method to return PERMISSION_GRANTED
     every {
