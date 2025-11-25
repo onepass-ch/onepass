@@ -37,7 +37,7 @@ object MyEventsTestTags {
   const val TAB_CURRENT = "TabCurrent"
   const val TAB_EXPIRED = "TabExpired"
   const val QR_CODE_ICON = "QrCodeIcon"
-  const val QR_CODE_DIALOG = "QrCodeDialog"
+  const val QR_CODE_CARD = "QrCodeCard"
   const val TICKET_CARD = "TicketCard"
   const val TICKET_TITLE = "TicketTitle"
   const val TICKET_STATUS = "TicketStatus"
@@ -122,8 +122,7 @@ fun MyEventsContent(
                   modifier = if (tabTestTag != null) Modifier.testTag(tabTestTag) else Modifier)
             }
           }
-      QrCodeComponent(
-          modifier = Modifier.fillMaxWidth().height(150.dp).padding(16.dp), qrData = userQrData)
+      QrCodeComponent(modifier = Modifier.fillMaxWidth().padding(16.dp), qrData = userQrData)
 
       LazyColumn(
           modifier = Modifier.fillMaxWidth().weight(1f),
