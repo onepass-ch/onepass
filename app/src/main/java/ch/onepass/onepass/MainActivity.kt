@@ -74,6 +74,7 @@ internal fun MainActivityContent(mapViewModel: MapViewModel, context: Context) {
         mapViewModel.setLocationPermission(isGranted)
       }
 
+  // Runs only once when MainActivityContent first appears (because of Unit key)
   LaunchedEffect(Unit) {
     if (!uiState.hasLocationPermission) {
       val hasPermission =
