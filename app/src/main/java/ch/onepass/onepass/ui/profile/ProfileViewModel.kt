@@ -2,6 +2,9 @@ package ch.onepass.onepass.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ch.onepass.onepass.model.membership.MembershipRepository
+import ch.onepass.onepass.model.membership.MembershipRepositoryFirebase
+import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
@@ -25,6 +28,7 @@ data class ProfileUiState(
     val avatarUrl: String? = null,
     val initials: String = "",
     val stats: ProfileStats = ProfileStats(),
+    val isOrganizer: Boolean = false,
     val loading: Boolean = true,
     val errorMessage: String? = null,
 )
@@ -45,8 +49,10 @@ sealed interface ProfileEffect {
   object NavigateToBecomeOrganizer : ProfileEffect
 }
 
-open class ProfileViewModel(private val userRepository: UserRepository = UserRepositoryFirebase()) :
-    ViewModel() {
+open class ProfileViewModel(
+    private val userRepository: UserRepository = UserRepositoryFirebase(),
+    private val membershipRepository: MembershipRepository = MembershipRepositoryFirebase()
+) : ViewModel() {
 
   private val _state = MutableStateFlow(ProfileUiState())
   open val state: StateFlow<ProfileUiState> = _state.asStateFlow()
@@ -66,7 +72,9 @@ open class ProfileViewModel(private val userRepository: UserRepository = UserRep
         val user = userRepository.getCurrentUser() ?: userRepository.getOrCreateUser()
 
         if (user != null) {
-          _state.value = user.toUiState()
+          val isOrganizer =
+              membershipRepository.hasMembership(user.uid, "", listOf(OrganizationRole.OWNER))
+          _state.value = user.toUiState(isOrganizer)
         } else {
           _state.value =
               _state.value.copy(loading = false, errorMessage = "User not found or not logged in")
@@ -114,7 +122,7 @@ open class ProfileViewModel(private val userRepository: UserRepository = UserRep
 }
 
 // --- Extension: Map User model to UI state ---
-private fun User.toUiState(): ProfileUiState {
+private fun User.toUiState(isOrganizer: Boolean): ProfileUiState {
   val initials =
       displayName
           .split(" ")
@@ -128,5 +136,6 @@ private fun User.toUiState(): ProfileUiState {
       avatarUrl = avatarUrl,
       initials = initials,
       stats = ProfileStats(events = 0, upcoming = 0, saved = 0),
+      isOrganizer = isOrganizer,
       loading = false)
 }
