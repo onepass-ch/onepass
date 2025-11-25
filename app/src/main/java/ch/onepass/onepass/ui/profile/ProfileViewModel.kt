@@ -133,6 +133,5 @@ private fun User.toUiState(): ProfileUiState {
       avatarUrl = avatarUrl,
       initials = initials,
       stats = ProfileStats(events = 0, upcoming = 0, saved = 0),
-      isOrganizer = this.isOrganizer,
       loading = false)
 }
