@@ -15,7 +15,6 @@ class UserRepositoryFirebase(
     private val functions: FirebaseFunctions = Firebase.functions
 ) : UserRepository {
   private val userCollection = db.collection("users")
-  private val membershipCollection = db.collection("memberships")
 
   // get the current user from Firebase Authentication
   override suspend fun getCurrentUser(): User? {
