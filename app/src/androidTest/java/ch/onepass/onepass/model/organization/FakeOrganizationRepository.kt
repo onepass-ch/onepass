@@ -145,6 +145,13 @@ class FakeOrganizationRepository(
     return Result.success(Unit)
   }
 
+  override suspend fun updateProfileImage(
+    organizationId: String,
+    imageUrl: String?
+  ): Result<Unit> {
+    TODO("Not yet implemented")
+  }
+
   /** Helper method to add test invitations directly (for test setup). */
   fun addTestInvitation(invitation: OrganizationInvitation) {
     val id = invitation.id.ifEmpty { "inv_${invitations.size + 1}" }
