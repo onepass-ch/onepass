@@ -5,7 +5,7 @@ import { getActiveKey, signPayload } from "./crypto";
 
 const db = admin.firestore();
 
-export const generateUserPass = functions.https.onCall(async (data, context) => {
+export const generateUserPass = functions.https.onCall(async (data: any, context: any) => {
   const uid = context.auth?.uid;
   if (!uid) {
     throw new functions.https.HttpsError("unauthenticated", "Authentication required");
