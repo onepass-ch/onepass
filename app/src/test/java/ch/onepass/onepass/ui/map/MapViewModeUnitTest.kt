@@ -145,6 +145,19 @@ class MapViewModelUnitTest {
   }
 
   @Test
+  fun setLocationPermissionUpdatesPermissionState() {
+    assertFalse(viewModel.uiState.value.hasLocationPermission)
+
+    viewModel.setLocationPermission(true)
+
+    assertTrue(viewModel.uiState.value.hasLocationPermission)
+
+    viewModel.setLocationPermission(false)
+
+    assertFalse(viewModel.uiState.value.hasLocationPermission)
+  }
+
+  @Test
   fun applyFiltersToCurrentEventsFiltersEventsByRegion() = runTest {
     advanceUntilIdle()
 
@@ -205,6 +218,7 @@ class MapViewModelUnitTest {
     assertTrue(initialState.events.isEmpty())
     assertNull(initialState.selectedEvent)
     assertFalse(initialState.showFilterDialog)
+    assertFalse(initialState.hasLocationPermission)
   }
 
   @Test

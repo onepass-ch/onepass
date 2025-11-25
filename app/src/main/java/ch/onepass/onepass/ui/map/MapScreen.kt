@@ -59,8 +59,6 @@ private object AnnotationConfig {
  * @param filterViewModel The ViewModel responsible for managing and applying event filters.
  * @param onNavigateToEvent Callback invoked when an event card is clicked (e.g., in the info
  *   popup), receives eventId.
- * @param isLocationPermissionGranted A boolean flag indicating whether the user has granted
- *   location permissions.
  */
 @Composable
 fun MapScreen(
@@ -68,7 +66,6 @@ fun MapScreen(
     mapViewModel: MapViewModel = viewModel(),
     filterViewModel: EventFilterViewModel = viewModel(),
     onNavigateToEvent: (String) -> Unit = {},
-    isLocationPermissionGranted: Boolean
 ) {
   val uiState by mapViewModel.uiState.collectAsState()
   val eventCardViewModel = EventCardViewModel.getInstance()
@@ -84,7 +81,7 @@ fun MapScreen(
     ) {
       // MapEffect bridges the Compose Mapbox API with the MapView
       MapEffect(Unit) { mapView: MapView ->
-        mapViewModel.onMapReady(mapView, isLocationPermissionGranted)
+        mapViewModel.onMapReady(mapView, uiState.hasLocationPermission)
         mapViewModel.getOrCreatePointAnnotationManager(mapView)
       }
       MapEffect(uiState.events) { mapView: MapView ->

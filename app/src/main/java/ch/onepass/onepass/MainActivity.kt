@@ -1,9 +1,11 @@
 package ch.onepass.onepass
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -13,10 +15,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -37,16 +38,13 @@ import ch.onepass.onepass.ui.profile.ProfileViewModel
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.mapbox.common.MapboxOptions
 
+/**
+ * Main Activity that sets up Mapbox, the OnePass theme and hosts the root composable navigation.
+ */
 class MainActivity : ComponentActivity() {
 
   // Map screen ViewModel (for lifecycle delegation)
   private val mapViewModel: MapViewModel by viewModels()
-
-  // Location permission launcher
-  private val requestPermissionLauncher =
-      registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        if (isGranted) mapViewModel.enableLocationTracking()
-      }
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -55,41 +53,62 @@ class MainActivity : ComponentActivity() {
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
 
     setContent {
-      OnePassTheme {
-        // Track permission state once (saveable across config changes)
-        var hasLocationPermission by rememberSaveable {
-          mutableStateOf(
-              ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
-                  PackageManager.PERMISSION_GRANTED)
-        }
-
-        // Ask for permission if not granted; enable tracking otherwise
-        if (!hasLocationPermission) {
-          requestPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-          // The launcher callback will call enableLocationTracking() if granted
-        } else {
-          mapViewModel.enableLocationTracking()
-        }
-
-        Surface(
-            modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
-            color = MaterialTheme.colorScheme.background) {
-              OnePassApp(
-                  mapViewModel = mapViewModel, isLocationPermissionGranted = hasLocationPermission)
-            }
-      }
+      OnePassTheme { MainActivityContent(mapViewModel = mapViewModel, context = this@MainActivity) }
     }
   }
 }
 
 /**
+ * Root composable for the main activity content, responsible for setting up permission handling,
+ * ViewModel state collection, and theming for the app.
+ *
+ * @param mapViewModel The [MapViewModel] instance controlling map UI state and logic.
+ * @param context The [Context] used for permission checks and launching permission requests.
+ */
+@Composable
+internal fun MainActivityContent(mapViewModel: MapViewModel, context: Context) {
+  val uiState by mapViewModel.uiState.collectAsState()
+
+  val launcher =
+      rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        mapViewModel.setLocationPermission(isGranted)
+      }
+
+  // Runs only once when MainActivityContent first appears (because of Unit key)
+  LaunchedEffect(Unit) {
+    if (!uiState.hasLocationPermission) {
+      val hasPermission =
+          ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+              PackageManager.PERMISSION_GRANTED
+
+      mapViewModel.setLocationPermission(hasPermission)
+
+      if (!hasPermission) {
+        launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+      }
+    }
+  }
+
+  Surface(
+      modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
+      color = MaterialTheme.colorScheme.background) {
+        OnePassApp(mapViewModel = mapViewModel)
+      }
+}
+
+/**
  * Root composable wiring navigation + bottom bar. Uses NavigationActions/NavigationDestinations and
  * AppNavHost.
+ *
+ * @param mapViewModel ViewModel used by the Map screen to handle lifecycle and map state.
+ * @param testAuthButtonTag Optional test tag to display a simplified login button for tests.
+ * @param authViewModelFactory Factory that creates the AuthViewModel instance for the auth flow.
+ * @param navController Navigation controller used for navigation within the app.
+ * @param profileViewModelFactory Optional factory to create the ProfileViewModel instance.
  */
 @Composable
 fun OnePassApp(
     mapViewModel: MapViewModel,
-    isLocationPermissionGranted: Boolean,
     testAuthButtonTag: String? = null,
     authViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
       initializer { ch.onepass.onepass.ui.auth.AuthViewModel() }
@@ -121,7 +140,6 @@ fun OnePassApp(
             navController = navController,
             modifier = Modifier.padding(padding),
             mapViewModel = mapViewModel,
-            isLocationPermissionGranted = isLocationPermissionGranted,
             testAuthButtonTag = testAuthButtonTag,
             authViewModelFactory = authViewModelFactory,
             profileViewModelFactory = profileViewModelFactory)

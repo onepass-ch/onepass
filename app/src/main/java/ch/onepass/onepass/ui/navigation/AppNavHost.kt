@@ -51,12 +51,22 @@ import ch.onepass.onepass.ui.staff.StaffInvitationScreen
 import ch.onepass.onepass.ui.staff.StaffInvitationViewModel
 import com.google.firebase.auth.FirebaseAuth
 
+/**
+ * Navigation host that registers all app routes and wires view models to screens.
+ *
+ * @param navController NavHostController used to drive navigation.
+ * @param modifier Modifier applied to the NavHost container.
+ * @param mapViewModel Map screen ViewModel instance to pass into MapScreen.
+ * @param testAuthButtonTag Optional test tag; when provided a simple login button is shown for
+ *   testing.
+ * @param authViewModelFactory Factory used to create the shared AuthViewModel instance.
+ * @param profileViewModelFactory Factory used to create ProfileViewModel instances.
+ */
 @Composable
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
     mapViewModel: MapViewModel,
-    isLocationPermissionGranted: Boolean,
     testAuthButtonTag: String? = null,
     authViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
       initializer { AuthViewModel() }
@@ -136,7 +146,6 @@ fun AppNavHost(
     composable(Screen.Map.route) {
       MapScreen(
           mapViewModel = mapViewModel,
-          isLocationPermissionGranted = isLocationPermissionGranted,
           onNavigateToEvent = { eventId ->
             navController.navigate(Screen.EventDetail.route(eventId))
           })

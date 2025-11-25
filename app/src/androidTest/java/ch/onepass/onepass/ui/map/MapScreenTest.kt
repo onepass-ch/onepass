@@ -72,12 +72,9 @@ class MapScreenTest {
     every { mockFilterViewModel.uiState } returns MutableStateFlow(filterUiState)
   }
 
-  private fun setContent(isLocationPermissionGranted: Boolean = true) {
+  private fun setContent() {
     composeTestRule.setContent {
-      MapScreen(
-          mapViewModel = mockMapViewModel,
-          filterViewModel = mockFilterViewModel,
-          isLocationPermissionGranted = isLocationPermissionGranted)
+      MapScreen(mapViewModel = mockMapViewModel, filterViewModel = mockFilterViewModel)
     }
   }
 
@@ -117,29 +114,34 @@ class MapScreenTest {
   }
 
   @Test
-  fun mapScreen_onMapReady_called_when_permission_granted() {
-    stubStates()
+  fun mapScreen_onMapReady_called_with_permission_state_from_viewModel() {
+    stubStates(
+        uiState = MapUIState(events = listOf(testEvent1, testEvent2), hasLocationPermission = true))
 
+    // Need to capture the actual call asynchronously before verify can succeed.
     var called = false
     every { mockMapViewModel.onMapReady(any(), any()) } answers
         {
           called = it.invocation.args[1] as Boolean
         }
 
-    setContent(isLocationPermissionGranted = true)
+    setContent()
 
     composeTestRule.waitUntil(5_000) { called }
     verify { mockMapViewModel.onMapReady(any(), true) }
   }
 
   @Test
-  fun mapScreen_onMapReady_called_when_permission_denied() {
-    stubStates()
+  fun mapScreen_onMapReady_called_when_permission_denied_in_viewModel() {
+    stubStates(
+        uiState =
+            MapUIState(events = listOf(testEvent1, testEvent2), hasLocationPermission = false))
 
+    // onMapReady is called asynchronously, so we wait for the callback before verify
     var deniedCalled = false
     every { mockMapViewModel.onMapReady(any(), false) } answers { deniedCalled = true }
 
-    setContent(isLocationPermissionGranted = false)
+    setContent()
 
     composeTestRule.waitUntil(5_000) { deniedCalled }
     verify { mockMapViewModel.onMapReady(any(), false) }
