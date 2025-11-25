@@ -3,6 +3,8 @@ package ch.onepass.onepass.ui.feed
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -35,6 +37,7 @@ object FeedScreenTestTags {
   const val FEED_TITLE = "feedTitle"
   const val FEED_LOCATION = "feedLocation"
   const val FILTER_BUTTON = "filterButton"
+  const val NOTIFICATION_BUTTON = "notificationButton" // Added tag
   const val EVENT_LIST = "eventList"
   const val LOADING_INDICATOR = "loadingIndicator"
   const val ERROR_MESSAGE = "errorMessage"
@@ -50,6 +53,7 @@ object FeedScreenTestTags {
  *
  * @param modifier Optional modifier for the screen.
  * @param onNavigateToEvent Callback when an event card is clicked, receives eventId.
+ * @param onNavigateToNotifications Callback when the notification button is clicked.
  * @param viewModel FeedViewModel instance, can be overridden for testing.
  * @param filterViewModel EventFilterViewModel instance, providing filter logic.
  */
@@ -58,6 +62,7 @@ object FeedScreenTestTags {
 fun FeedScreen(
     modifier: Modifier = Modifier,
     onNavigateToEvent: (String) -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
     viewModel: FeedViewModel = viewModel(),
     filterViewModel: EventFilterViewModel = viewModel(),
 ) {
@@ -81,7 +86,7 @@ fun FeedScreen(
               currentLocation = uiState.location,
               currentDateRange = "WELCOME",
               onFilterClick = { viewModel.setShowFilterDialog(true) },
-          )
+              onNotificationClick = onNavigateToNotifications)
           if (currentFilters.hasActiveFilters) {
             ActiveFiltersBar(
                 filters = currentFilters,
@@ -148,6 +153,7 @@ fun FeedScreen(
  * @param currentLocation The string representing the current user location or selected region.
  * @param currentDateRange The string representing the current date range filter.
  * @param onFilterClick Callback invoked when the filter button is clicked.
+ * @param onNotificationClick Callback invoked when the notification button is clicked.
  * @param modifier Optional modifier for the top bar.
  */
 @Composable
@@ -155,6 +161,7 @@ private fun FeedTopBar(
     currentLocation: String,
     currentDateRange: String,
     onFilterClick: () -> Unit,
+    onNotificationClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
   Surface(
@@ -188,6 +195,17 @@ private fun FeedTopBar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+          // Notification Button
+          IconButton(
+              onClick = onNotificationClick,
+              modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.NOTIFICATION_BUTTON)) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Notifications",
+                    tint = colorResource(id = R.color.white),
+                    modifier = Modifier.size(24.dp),
+                )
+              }
           // Filter Button
           IconButton(
               onClick = onFilterClick,
