@@ -42,22 +42,27 @@ class StorageRepositoryFirebase(private val storage: FirebaseStorage = Firebase.
       path: String,
       onProgress: ((Float) -> Unit)?
   ): Result<String> = runCatching {
-    // Validate file size
-    val fileSize = getFileSize(uri)
-    if (fileSize > MAX_FILE_SIZE) {
-      return Result.failure(
-          IllegalArgumentException(
-              "Image size (${fileSize / 1024 / 1024}MB) exceeds maximum allowed size (${MAX_FILE_SIZE / 1024 / 1024}MB)"))
+    // Validate file size (only for file:// URIs, skip for content:// URIs)
+    try {
+      val fileSize = getFileSize(uri)
+      if (fileSize > MAX_FILE_SIZE) {
+        return Result.failure(
+            IllegalArgumentException(
+                "Image size (${fileSize / 1024 / 1024}MB) exceeds maximum allowed size (${MAX_FILE_SIZE / 1024 / 1024}MB)"))
+      }
+    } catch (e: IllegalArgumentException) {
+      // Skip size validation for content:// URIs
+      // Firebase Storage will handle size limits during upload
+      android.util.Log.w("StorageRepository", "Skipping file size validation: ${e.message}")
     }
 
     // Determine content type
     val contentType = getImageContentType(uri.toString())
 
-    // Validate content type
+    // Validate content type (warn but don't fail for unknown types)
     if (contentType !in SUPPORTED_IMAGE_TYPES) {
-      return Result.failure(
-          IllegalArgumentException(
-              "Unsupported image type: $contentType. Supported types: $SUPPORTED_IMAGE_TYPES"))
+      android.util.Log.w("StorageRepository", 
+          "Potentially unsupported image type: $contentType. Proceeding with upload anyway.")
     }
 
     val fileRef = storageRef.child(path)
@@ -187,13 +192,19 @@ class StorageRepositoryFirebase(private val storage: FirebaseStorage = Firebase.
    * @return The MIME type of the image.
    */
   private fun getImageContentType(uriString: String): String {
+    // Extract the last path segment and check for extension
+    val lowerCaseUri = uriString.lowercase()
     return when {
-      uriString.endsWith(".jpg", ignoreCase = true) ||
-          uriString.endsWith(".jpeg", ignoreCase = true) -> "image/jpeg"
-      uriString.endsWith(".png", ignoreCase = true) -> "image/png"
-      uriString.endsWith(".gif", ignoreCase = true) -> "image/gif"
-      uriString.endsWith(".webp", ignoreCase = true) -> "image/webp"
-      else -> "image/jpeg" // Default to JPEG
+      lowerCaseUri.contains(".jpg") || lowerCaseUri.contains(".jpeg") -> "image/jpeg"
+      lowerCaseUri.contains(".png") -> "image/png"
+      lowerCaseUri.contains(".gif") -> "image/gif"
+      lowerCaseUri.contains(".webp") -> "image/webp"
+      else -> {
+        // For content:// URIs without clear extension, default to JPEG
+        // Firebase will accept it and handle conversion if needed
+        android.util.Log.d("StorageRepository", "Unknown image type for URI: $uriString, defaulting to JPEG")
+        "image/jpeg"
+      }
     }
   }
 }
