@@ -195,7 +195,7 @@ private fun BackSection(onBack: () -> Unit) {
       horizontalArrangement = Arrangement.spacedBy(40.dp, Alignment.Start)) {
         IconButton(onClick = onBack) {
           Icon(
-              painter = painterResource(R.drawable.go_back_vector),
+              imageVector = Icons.AutoMirrored.Filled.ArrowBack,
               contentDescription = "Back",
               tint = Color.White)
         }
