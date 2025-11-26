@@ -57,10 +57,10 @@ class NotificationsViewModel(
       _uiState.value = _uiState.value.copy(isLoading = true)
       notificationRepository
           .getUserNotifications(userId)
-          .catch { e ->
+          .catch {
             _uiState.value =
                 _uiState.value.copy(
-                    isLoading = false, error = e.message ?: "Failed to load notifications")
+                    isLoading = false, error = it.message ?: "Failed to load notifications")
           }
           .collect { notifications ->
             _uiState.value =
