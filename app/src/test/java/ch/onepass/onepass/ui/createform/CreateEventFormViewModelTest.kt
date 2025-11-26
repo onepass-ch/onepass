@@ -21,6 +21,8 @@ import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
 /**
  * Unit tests for CreateEventFormViewModel.
@@ -28,6 +30,7 @@ import org.junit.Test
  * These tests verify the ViewModel's business logic, validation, and state management using a
  * mocked repository.
  */
+@RunWith(RobolectricTestRunner::class)
 @OptIn(ExperimentalCoroutinesApi::class)
 class CreateEventFormViewModelTest {
 
@@ -35,6 +38,7 @@ class CreateEventFormViewModelTest {
   private lateinit var mockEventRepository: EventRepository
   private lateinit var mockOrganizationRepository: OrganizationRepository
   private lateinit var mockLocationRepository: LocationRepository
+  private lateinit var mockStorageRepository: ch.onepass.onepass.model.storage.StorageRepository
   private val testDispatcher = UnconfinedTestDispatcher()
 
   private val testOrganization =
@@ -54,6 +58,7 @@ class CreateEventFormViewModelTest {
     mockEventRepository = mockk(relaxed = true)
     mockOrganizationRepository = mockk(relaxed = true)
     mockLocationRepository = mockk(relaxed = true)
+    mockStorageRepository = mockk(relaxed = true)
 
     // Mock the organization repository to return a test organization
     coEvery { mockOrganizationRepository.getOrganizationById(any()) } returns
@@ -63,7 +68,8 @@ class CreateEventFormViewModelTest {
         CreateEventFormViewModel(
             eventRepository = mockEventRepository,
             organizationRepository = mockOrganizationRepository,
-            locationRepository = mockLocationRepository)
+            locationRepository = mockLocationRepository,
+            storageRepository = mockStorageRepository)
 
     // Set the organization ID for the viewModel
     viewModel.setOrganizationId("test-org-id")

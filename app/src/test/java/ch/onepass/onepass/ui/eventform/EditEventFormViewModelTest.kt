@@ -27,10 +27,14 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 @ExperimentalCoroutinesApi
 class EditEventFormViewModelTest {
   private lateinit var mockLocationRepository: LocationRepository
+  private lateinit var mockStorageRepository: ch.onepass.onepass.model.storage.StorageRepository
 
   // Set the main coroutines dispatcher for unit testing.
   private val testDispatcher = StandardTestDispatcher()
@@ -50,6 +54,7 @@ class EditEventFormViewModelTest {
     Dispatchers.setMain(testDispatcher) // Set main dispatcher
     mockRepository = mockk<EventRepository>()
     mockLocationRepository = mockk(relaxed = true)
+    mockStorageRepository = mockk(relaxed = true)
 
     testEvent =
         Event(
@@ -70,7 +75,8 @@ class EditEventFormViewModelTest {
     // Default setup for loading, tests can override this
     coEvery { mockRepository.getEventById(any()) } returns flowOf(testEvent)
 
-    viewModel = EditEventFormViewModel(mockRepository, mockLocationRepository)
+    viewModel =
+        EditEventFormViewModel(mockRepository, mockLocationRepository, mockStorageRepository)
   }
 
   @After
@@ -302,7 +308,8 @@ class EditEventFormViewModelTest {
   @Test
   fun updateEventWithoutLoadingEventFirstSetsErrorState() = runTest {
     // Arrange
-    val freshViewModel = EditEventFormViewModel(mockRepository, mockLocationRepository)
+    val freshViewModel =
+        EditEventFormViewModel(mockRepository, mockLocationRepository, mockStorageRepository)
 
     // Act
     freshViewModel.updateEvent()
