@@ -9,6 +9,7 @@ import java.net.URLEncoder
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertTrue
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -191,7 +192,7 @@ class StorageRepositoryFirebaseTest {
   }
 
   @Test
-  fun deleteDirectory_withMultipleImages_deletesAll() = runTest {
+  fun deleteDirectory_withMultipleImages_deletesAll() = runTest(timeout = 30.seconds) {
     val directoryPath = "test/directory-${System.currentTimeMillis()}"
 
     // Upload multiple images to the directory
@@ -203,9 +204,15 @@ class StorageRepositoryFirebaseTest {
     val path2 = "$directoryPath/image2.jpg"
     val path3 = "$directoryPath/image3.jpg"
 
-    repository.uploadImage(Uri.fromFile(file1), path1)
-    repository.uploadImage(Uri.fromFile(file2), path2)
-    repository.uploadImage(Uri.fromFile(file3), path3)
+    // Await all uploads and verify they succeeded
+    val upload1 = repository.uploadImage(Uri.fromFile(file1), path1)
+    assertTrue("Upload 1 should succeed", upload1.isSuccess)
+
+    val upload2 = repository.uploadImage(Uri.fromFile(file2), path2)
+    assertTrue("Upload 2 should succeed", upload2.isSuccess)
+
+    val upload3 = repository.uploadImage(Uri.fromFile(file3), path3)
+    assertTrue("Upload 3 should succeed", upload3.isSuccess)
 
     // Delete the entire directory
     val result = repository.deleteDirectory(directoryPath)

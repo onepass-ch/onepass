@@ -494,4 +494,97 @@ class CreateEventFormViewModelTest {
     assertEquals("Description 1", viewModel.formState.value.description)
     assertEquals("10", viewModel.formState.value.price)
   }
+
+  // ===== NEW TESTS FOR IMAGE FUNCTIONALITY =====
+
+  @Test
+  fun `selectImage adds image URI to form state`() {
+    val imageUri = android.net.Uri.parse("content://media/image/123")
+    
+    viewModel.selectImage(imageUri)
+    
+    val formState = viewModel.formState.value
+    assertEquals(1, formState.selectedImageUris.size)
+    assertTrue(formState.selectedImageUris.contains(imageUri))
+  }
+
+  @Test
+  fun `selectImage can add multiple images`() {
+    val imageUri1 = android.net.Uri.parse("content://media/image/123")
+    val imageUri2 = android.net.Uri.parse("content://media/image/456")
+    val imageUri3 = android.net.Uri.parse("content://media/image/789")
+    
+    viewModel.selectImage(imageUri1)
+    viewModel.selectImage(imageUri2)
+    viewModel.selectImage(imageUri3)
+    
+    val formState = viewModel.formState.value
+    assertEquals(3, formState.selectedImageUris.size)
+    assertTrue(formState.selectedImageUris.containsAll(listOf(imageUri1, imageUri2, imageUri3)))
+  }
+
+  @Test
+  fun `removeImage removes correct image from form state`() {
+    val imageUri1 = android.net.Uri.parse("content://media/image/123")
+    val imageUri2 = android.net.Uri.parse("content://media/image/456")
+    val imageUri3 = android.net.Uri.parse("content://media/image/789")
+    
+    viewModel.selectImage(imageUri1)
+    viewModel.selectImage(imageUri2)
+    viewModel.selectImage(imageUri3)
+    
+    viewModel.removeImage(imageUri2)
+    
+    val formState = viewModel.formState.value
+    assertEquals(2, formState.selectedImageUris.size)
+    assertFalse(formState.selectedImageUris.contains(imageUri2))
+    assertTrue(formState.selectedImageUris.contains(imageUri1))
+    assertTrue(formState.selectedImageUris.contains(imageUri3))
+  }
+
+  @Test
+  fun `resetForm clears selected images`() {
+    val imageUri1 = android.net.Uri.parse("content://media/image/123")
+    val imageUri2 = android.net.Uri.parse("content://media/image/456")
+    
+    viewModel.selectImage(imageUri1)
+    viewModel.selectImage(imageUri2)
+    
+    assertEquals(2, viewModel.formState.value.selectedImageUris.size)
+    
+    viewModel.resetForm()
+    
+    assertTrue(viewModel.formState.value.selectedImageUris.isEmpty())
+  }
+
+  @Test
+  fun `selectImage maintains order of images`() {
+    val imageUri1 = android.net.Uri.parse("content://media/image/123")
+    val imageUri2 = android.net.Uri.parse("content://media/image/456")
+    val imageUri3 = android.net.Uri.parse("content://media/image/789")
+    
+    viewModel.selectImage(imageUri1)
+    viewModel.selectImage(imageUri2)
+    viewModel.selectImage(imageUri3)
+    
+    val formState = viewModel.formState.value
+    assertEquals(imageUri1, formState.selectedImageUris[0])
+    assertEquals(imageUri2, formState.selectedImageUris[1])
+    assertEquals(imageUri3, formState.selectedImageUris[2])
+  }
+
+  @Test
+  fun `removing non-existent image does not affect list`() {
+    val imageUri1 = android.net.Uri.parse("content://media/image/123")
+    val imageUri2 = android.net.Uri.parse("content://media/image/456")
+    val nonExistent = android.net.Uri.parse("content://media/image/999")
+    
+    viewModel.selectImage(imageUri1)
+    viewModel.selectImage(imageUri2)
+    
+    viewModel.removeImage(nonExistent)
+    
+    val formState = viewModel.formState.value
+    assertEquals(2, formState.selectedImageUris.size)
+  }
 }

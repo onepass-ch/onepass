@@ -45,8 +45,8 @@ class OrganizerProfileScreenComposeTest {
         OrganizerProfileContent(
             name = "Test Organizer",
             description = "Test description for organizer",
-            bannerImageRes = R.drawable.image_fallback,
-            profileImageRes = R.drawable.ic_launcher_foreground,
+            bannerImageUrl = "https://example.com/banner.jpg",
+            profileImageUrl = "https://example.com/profile.jpg",
             websiteUrl = "https://example.com",
             instagramUrl = "instagram",
             tiktokUrl = "tiktok",
@@ -65,8 +65,8 @@ class OrganizerProfileScreenComposeTest {
     composeTestRule.setContent {
       OnePassTheme {
         OrganizerHeaderSection(
-            bannerImageRes = R.drawable.image_fallback,
-            profileImageRes = R.drawable.ic_launcher_foreground)
+            bannerImageUrl = "https://example.com/banner.jpg",
+            profileImageUrl = "https://example.com/profile.jpg")
       }
     }
 
@@ -384,8 +384,8 @@ class OrganizerProfileScreenComposeTest {
         OrganizerProfileContent(
             name = testName,
             description = testDescription,
-            bannerImageRes = R.drawable.image_fallback,
-            profileImageRes = R.drawable.ic_launcher_foreground,
+            bannerImageUrl = "https://example.com/banner.jpg",
+            profileImageUrl = "https://example.com/profile.jpg",
             websiteUrl = "https://example.com",
             instagramUrl = "instagram",
             tiktokUrl = "tiktok",

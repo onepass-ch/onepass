@@ -104,6 +104,33 @@ class FakeEventRepository(initialEvents: List<Event> = emptyList()) : EventRepos
     return Result.success(Unit)
   }
 
+  override suspend fun addEventImage(eventId: String, imageUrl: String): Result<Unit> {
+    if (throwOnLoad) return Result.failure(RuntimeException("boom"))
+    val event = eventsFlow.value.find { it.eventId == eventId }
+        ?: return Result.failure(IllegalArgumentException("event not found: $eventId"))
+    val updatedEvent = event.copy(images = event.images + imageUrl)
+    eventsFlow.value = eventsFlow.value.map { if (it.eventId == eventId) updatedEvent else it }
+    return Result.success(Unit)
+  }
+
+  override suspend fun removeEventImage(eventId: String, imageUrl: String): Result<Unit> {
+    if (throwOnLoad) return Result.failure(RuntimeException("boom"))
+    val event = eventsFlow.value.find { it.eventId == eventId }
+        ?: return Result.failure(IllegalArgumentException("event not found: $eventId"))
+    val updatedEvent = event.copy(images = event.images.filterNot { it == imageUrl })
+    eventsFlow.value = eventsFlow.value.map { if (it.eventId == eventId) updatedEvent else it }
+    return Result.success(Unit)
+  }
+
+  override suspend fun updateEventImages(eventId: String, imageUrls: List<String>): Result<Unit> {
+    if (throwOnLoad) return Result.failure(RuntimeException("boom"))
+    val event = eventsFlow.value.find { it.eventId == eventId }
+        ?: return Result.failure(IllegalArgumentException("event not found: $eventId"))
+    val updatedEvent = event.copy(images = imageUrls)
+    eventsFlow.value = eventsFlow.value.map { if (it.eventId == eventId) updatedEvent else it }
+    return Result.success(Unit)
+  }
+
   // --- Utility: haversine distance between two GeoPoints (km) ---
   private fun distanceKm(a: GeoPoint, b: GeoPoint): Double {
     val lat1 = Math.toRadians(a.latitude)

@@ -619,4 +619,141 @@ class OrganizationRepositoryAdvancedTest : FirestoreTestBase() {
     assertEquals("Should find 1 organization for member", 1, memberOrgs.size)
     assertEquals("Organization ID should match", orgId, memberOrgs.first().id)
   }
+
+  // ===== NEW TESTS FOR IMAGE FUNCTIONALITY =====
+
+  @Test
+  fun canUpdateProfileImage() = runTest {
+    val testOrg = OrganizationTestData.createTestOrganization(ownerId = userId)
+    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
+
+    val imageUrl = "https://storage.googleapis.com/bucket/orgs/org123/profile.jpg"
+    val result = orgRepository.updateProfileImage(orgId, imageUrl)
+
+    assertTrue("Update profile image should succeed", result.isSuccess)
+
+    val updatedOrg = orgRepository.getOrganizationById(orgId).first()
+    assertEquals("Profile image URL should be updated", imageUrl, updatedOrg?.profileImageUrl)
+  }
+
+  @Test
+  fun canUpdateCoverImage() = runTest {
+    val testOrg = OrganizationTestData.createTestOrganization(ownerId = userId)
+    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
+
+    val imageUrl = "https://storage.googleapis.com/bucket/orgs/org123/cover.jpg"
+    val result = orgRepository.updateCoverImage(orgId, imageUrl)
+
+    assertTrue("Update cover image should succeed", result.isSuccess)
+
+    val updatedOrg = orgRepository.getOrganizationById(orgId).first()
+    assertEquals("Cover image URL should be updated", imageUrl, updatedOrg?.coverImageUrl)
+  }
+
+  @Test
+  fun canRemoveProfileImageBySettingToNull() = runTest {
+    val testOrg =
+        OrganizationTestData.createTestOrganization(
+            ownerId = userId, profileImageUrl = "https://example.com/old-profile.jpg")
+    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
+
+    val result = orgRepository.updateProfileImage(orgId, null)
+    assertTrue("Remove profile image should succeed", result.isSuccess)
+
+    val updatedOrg = orgRepository.getOrganizationById(orgId).first()
+    assertNull("Profile image URL should be null", updatedOrg?.profileImageUrl)
+  }
+
+  @Test
+  fun canRemoveCoverImageBySettingToNull() = runTest {
+    val testOrg =
+        OrganizationTestData.createTestOrganization(
+            ownerId = userId, coverImageUrl = "https://example.com/old-cover.jpg")
+    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
+
+    val result = orgRepository.updateCoverImage(orgId, null)
+    assertTrue("Remove cover image should succeed", result.isSuccess)
+
+    val updatedOrg = orgRepository.getOrganizationById(orgId).first()
+    assertNull("Cover image URL should be null", updatedOrg?.coverImageUrl)
+  }
+
+  @Test
+  fun updateProfileImageForNonExistentOrganizationFails() = runTest {
+    val result =
+        orgRepository.updateProfileImage("non-existent-org-id", "https://example.com/image.jpg")
+    assertTrue("Update should fail for non-existent organization", result.isFailure)
+  }
+
+  @Test
+  fun updateCoverImageForNonExistentOrganizationFails() = runTest {
+    val result =
+        orgRepository.updateCoverImage("non-existent-org-id", "https://example.com/image.jpg")
+    assertTrue("Update should fail for non-existent organization", result.isFailure)
+  }
+
+  @Test
+  fun canUpdateBothProfileAndCoverImages() = runTest {
+    val testOrg = OrganizationTestData.createTestOrganization(ownerId = userId)
+    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
+
+    val profileImageUrl = "https://storage.googleapis.com/bucket/orgs/org123/profile.jpg"
+    val coverImageUrl = "https://storage.googleapis.com/bucket/orgs/org123/cover.jpg"
+
+    val profileResult = orgRepository.updateProfileImage(orgId, profileImageUrl)
+    val coverResult = orgRepository.updateCoverImage(orgId, coverImageUrl)
+
+    assertTrue("Update profile image should succeed", profileResult.isSuccess)
+    assertTrue("Update cover image should succeed", coverResult.isSuccess)
+
+    val updatedOrg = orgRepository.getOrganizationById(orgId).first()
+    assertEquals("Profile image URL should be updated", profileImageUrl, updatedOrg?.profileImageUrl)
+    assertEquals("Cover image URL should be updated", coverImageUrl, updatedOrg?.coverImageUrl)
+  }
+
+  @Test
+  fun updateProfileImageUpdatesTimestamp() = runTest {
+    val testOrg = OrganizationTestData.createTestOrganization(ownerId = userId)
+    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
+
+    val initialOrg = orgRepository.getOrganizationById(orgId).first()
+    val initialUpdatedAt = initialOrg?.updatedAt
+
+    kotlinx.coroutines.delay(100) // Wait to ensure timestamp difference
+
+    val imageUrl = "https://storage.googleapis.com/bucket/orgs/org123/profile.jpg"
+    orgRepository.updateProfileImage(orgId, imageUrl)
+
+    val updatedOrg = orgRepository.getOrganizationById(orgId).first()
+    val updatedUpdatedAt = updatedOrg?.updatedAt
+
+    assertNotNull("Updated organization should have updatedAt", updatedUpdatedAt)
+    assertNotEquals(
+        "updatedAt should be different from the initial timestamp",
+        initialUpdatedAt,
+        updatedUpdatedAt)
+  }
+
+  @Test
+  fun updateCoverImageUpdatesTimestamp() = runTest {
+    val testOrg = OrganizationTestData.createTestOrganization(ownerId = userId)
+    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
+
+    val initialOrg = orgRepository.getOrganizationById(orgId).first()
+    val initialUpdatedAt = initialOrg?.updatedAt
+
+    kotlinx.coroutines.delay(100) // Wait to ensure timestamp difference
+
+    val imageUrl = "https://storage.googleapis.com/bucket/orgs/org123/cover.jpg"
+    orgRepository.updateCoverImage(orgId, imageUrl)
+
+    val updatedOrg = orgRepository.getOrganizationById(orgId).first()
+    val updatedUpdatedAt = updatedOrg?.updatedAt
+
+    assertNotNull("Updated organization should have updatedAt", updatedUpdatedAt)
+    assertNotEquals(
+        "updatedAt should be different from the initial timestamp",
+        initialUpdatedAt,
+        updatedUpdatedAt)
+  }
 }

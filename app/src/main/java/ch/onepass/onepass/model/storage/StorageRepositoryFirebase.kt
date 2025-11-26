@@ -51,6 +51,10 @@ class StorageRepositoryFirebase(private val storage: FirebaseStorage = Firebase.
                 "Image size (${fileSize / 1024 / 1024}MB) exceeds maximum allowed size (${MAX_FILE_SIZE / 1024 / 1024}MB)"))
       }
     } catch (e: IllegalArgumentException) {
+      // Re-throw if it's a file existence error
+      if (e.message?.contains("does not exist") == true || e.message?.contains("Invalid file path") == true) {
+        throw e
+      }
       // Skip size validation for content:// URIs
       // Firebase Storage will handle size limits during upload
       android.util.Log.w("StorageRepository", "Skipping file size validation: ${e.message}")

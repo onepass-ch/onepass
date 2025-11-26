@@ -1,6 +1,7 @@
 package ch.onepass.onepass.ui.organizer
 
 import ch.onepass.onepass.model.organization.*
+import ch.onepass.onepass.model.storage.FakeStorageRepository
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -14,6 +15,7 @@ import org.junit.Assert.*
 class OrganizationEditorViewModelTest {
 
   private lateinit var repository: FakeEditOrganizationRepository
+  private lateinit var storageRepository: FakeStorageRepository
   private lateinit var viewModel: OrganizationEditorViewModel
 
   private val testDispatcher = StandardTestDispatcher()
@@ -24,7 +26,8 @@ class OrganizationEditorViewModelTest {
     Dispatchers.setMain(testDispatcher)
 
     repository = FakeEditOrganizationRepository()
-    viewModel = OrganizationEditorViewModel(repository)
+    storageRepository = FakeStorageRepository()
+    viewModel = OrganizationEditorViewModel(repository, storageRepository)
   }
 
   @After
@@ -79,7 +82,9 @@ class OrganizationEditorViewModelTest {
             instagram = "insta",
             facebook = "fb",
             tiktok = "tt",
-            address = "address")
+            address = "address",
+            profileImageUri = null,
+            coverImageUri = null)
 
     viewModel.updateOrganization(data)
     advanceUntilIdle()
@@ -113,7 +118,9 @@ class OrganizationEditorViewModelTest {
             instagram = "insta",
             facebook = "fb",
             tiktok = "tt",
-            address = "address")
+            address = "address",
+            profileImageUri = null,
+            coverImageUri = null)
 
     viewModel.updateOrganization(data)
     advanceUntilIdle()
@@ -138,7 +145,9 @@ class OrganizationEditorViewModelTest {
             instagram = "insta",
             facebook = "fb",
             tiktok = "tt",
-            address = "address")
+            address = "address",
+            profileImageUri = null,
+            coverImageUri = null)
 
     viewModel.updateOrganization(data)
     advanceUntilIdle()
@@ -146,6 +155,142 @@ class OrganizationEditorViewModelTest {
     val state = viewModel.uiState.value
     assertEquals("Cannot update: organization not loaded", state.errorMessage)
     assertFalse(state.success)
+  }
+
+  // ===== NEW TESTS FOR IMAGE FUNCTIONALITY =====
+
+  @Test
+  fun updateOrganizationWithProfileImage() = runTest {
+    val org = testOrganization("org1")
+    repository.organizationToReturn = org
+
+    viewModel.loadOrganizationById("org1")
+    advanceUntilIdle()
+
+    val profileUri = android.net.Uri.parse("content://media/image/profile123")
+    val data =
+        OrganizationEditorData(
+            id = "org1",
+            name = "Updated Name",
+            description = "Updated Description",
+            contactEmail = "email@test.com",
+            contactPhone = "987654",
+            phonePrefix = "1",
+            website = "website.com",
+            instagram = "insta",
+            facebook = "fb",
+            tiktok = "tt",
+            address = "address",
+            profileImageUri = profileUri,
+            coverImageUri = null)
+
+    viewModel.updateOrganization(data)
+    advanceUntilIdle()
+
+    val state = viewModel.uiState.value
+    assertFalse(state.isLoading)
+    assertTrue(state.success)
+  }
+
+  @Test
+  fun updateOrganizationWithCoverImage() = runTest {
+    val org = testOrganization("org1")
+    repository.organizationToReturn = org
+
+    viewModel.loadOrganizationById("org1")
+    advanceUntilIdle()
+
+    val coverUri = android.net.Uri.parse("content://media/image/cover456")
+    val data =
+        OrganizationEditorData(
+            id = "org1",
+            name = "Updated Name",
+            description = "Updated Description",
+            contactEmail = "email@test.com",
+            contactPhone = "987654",
+            phonePrefix = "1",
+            website = "website.com",
+            instagram = "insta",
+            facebook = "fb",
+            tiktok = "tt",
+            address = "address",
+            profileImageUri = null,
+            coverImageUri = coverUri)
+
+    viewModel.updateOrganization(data)
+    advanceUntilIdle()
+
+    val state = viewModel.uiState.value
+    assertFalse(state.isLoading)
+    assertTrue(state.success)
+  }
+
+  @Test
+  fun updateOrganizationWithBothImages() = runTest {
+    val org = testOrganization("org1")
+    repository.organizationToReturn = org
+
+    viewModel.loadOrganizationById("org1")
+    advanceUntilIdle()
+
+    val profileUri = android.net.Uri.parse("content://media/image/profile123")
+    val coverUri = android.net.Uri.parse("content://media/image/cover456")
+    val data =
+        OrganizationEditorData(
+            id = "org1",
+            name = "Updated Name",
+            description = "Updated Description",
+            contactEmail = "email@test.com",
+            contactPhone = "987654",
+            phonePrefix = "1",
+            website = "website.com",
+            instagram = "insta",
+            facebook = "fb",
+            tiktok = "tt",
+            address = "address",
+            profileImageUri = profileUri,
+            coverImageUri = coverUri)
+
+    viewModel.updateOrganization(data)
+    advanceUntilIdle()
+
+    val state = viewModel.uiState.value
+    assertFalse(state.isLoading)
+    assertTrue(state.success)
+  }
+
+  @Test
+  fun updateOrganizationWithoutNewImages() = runTest {
+    val org = testOrganization("org1", "Old Name", "Old Description")
+    repository.organizationToReturn = org
+
+    viewModel.loadOrganizationById("org1")
+    advanceUntilIdle()
+
+    val data =
+        OrganizationEditorData(
+            id = "org1",
+            name = "New Name",
+            description = "New Description",
+            contactEmail = "email@test.com",
+            contactPhone = "987654",
+            phonePrefix = "1",
+            website = "newsite.com",
+            instagram = "insta",
+            facebook = "fb",
+            tiktok = "tt",
+            address = "address",
+            profileImageUri = null,
+            coverImageUri = null)
+
+    viewModel.updateOrganization(data)
+    advanceUntilIdle()
+
+    val state = viewModel.uiState.value
+    assertFalse(state.isLoading)
+    assertTrue(state.success)
+    // Existing images should be preserved (not replaced with null)
+    assertEquals("New Name", state.organization?.name)
   }
 
   @Test
@@ -237,4 +382,10 @@ class FakeEditOrganizationRepository : OrganizationRepository {
       TODO()
 
   override suspend fun deleteInvitation(invitationId: String) = TODO()
+
+  override suspend fun updateProfileImage(organizationId: String, imageUrl: String?) =
+      Result.success(Unit)
+
+  override suspend fun updateCoverImage(organizationId: String, imageUrl: String?) =
+      Result.success(Unit)
 }
