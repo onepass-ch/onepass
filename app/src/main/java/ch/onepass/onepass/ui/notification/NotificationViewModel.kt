@@ -9,6 +9,7 @@ import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 /**
@@ -45,22 +46,40 @@ class NotificationsViewModel(
   }
 
   /**
-   * Initializes the data streams for notifications and unread count. Updates the UI state as new
-   * data is emitted from the repository.
+   * Initializes the data streams. We do NOT call this again manually; the repository flows are
+   * reactive and will emit updates automatically when data changes (e.g. after a delete).
    */
   fun loadNotifications() {
     val userId = auth.currentUser?.uid ?: return
+
+    // 1. Collect Notifications Flow
     viewModelScope.launch {
       _uiState.value = _uiState.value.copy(isLoading = true)
-      notificationRepository.getUserNotifications(userId).collect { notifications ->
-        _uiState.value = _uiState.value.copy(notifications = notifications, isLoading = false)
-      }
+      notificationRepository
+          .getUserNotifications(userId)
+          .catch { e ->
+            _uiState.value =
+                _uiState.value.copy(
+                    isLoading = false, error = e.message ?: "Failed to load notifications")
+          }
+          .collect { notifications ->
+            _uiState.value =
+                _uiState.value.copy(
+                    notifications = notifications,
+                    isLoading = false,
+                    error = null // Clear previous errors on success
+                    )
+          }
     }
 
+    // 2. Collect Unread Count Flow
     viewModelScope.launch {
-      notificationRepository.getUnreadCount(userId).collect { count ->
-        _uiState.value = _uiState.value.copy(unreadCount = count)
-      }
+      notificationRepository
+          .getUnreadCount(userId)
+          .catch { e ->
+            // Log error or handle silently, usually main flow error covers it
+          }
+          .collect { count -> _uiState.value = _uiState.value.copy(unreadCount = count) }
     }
   }
 
@@ -70,13 +89,25 @@ class NotificationsViewModel(
    * @param notificationId The unique identifier of the notification.
    */
   fun markAsRead(notificationId: String) {
-    viewModelScope.launch { notificationRepository.markAsRead(notificationId) }
+    viewModelScope.launch {
+      try {
+        notificationRepository.markAsRead(notificationId)
+      } catch (e: Exception) {
+        _uiState.value = _uiState.value.copy(error = "Failed to mark as read")
+      }
+    }
   }
 
   /** Marks all notifications for the current user as read. */
   fun markAllAsRead() {
     val userId = auth.currentUser?.uid ?: return
-    viewModelScope.launch { notificationRepository.markAllAsRead(userId) }
+    viewModelScope.launch {
+      try {
+        notificationRepository.markAllAsRead(userId)
+      } catch (e: Exception) {
+        _uiState.value = _uiState.value.copy(error = "Failed to mark all as read")
+      }
+    }
   }
 
   /**
@@ -86,8 +117,11 @@ class NotificationsViewModel(
    */
   fun deleteNotification(notificationId: String) {
     viewModelScope.launch {
-      notificationRepository.deleteNotification(notificationId)
-      loadNotifications()
+      try {
+        notificationRepository.deleteNotification(notificationId)
+      } catch (e: Exception) {
+        _uiState.value = _uiState.value.copy(error = "Failed to delete notification")
+      }
     }
   }
 }

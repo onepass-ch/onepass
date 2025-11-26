@@ -4,6 +4,7 @@ import ch.onepass.onepass.model.notification.Notification
 import ch.onepass.onepass.model.notification.NotificationRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
+import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
@@ -75,6 +76,8 @@ class NotificationViewModelTest {
 
   @Test
   fun `markAllAsRead calls repository`() = runTest {
+    coEvery { repository.markAllAsRead("testUser") } returns Result.success(5)
+
     viewModel = NotificationsViewModel(repository, auth)
 
     viewModel.markAllAsRead()
@@ -84,15 +87,15 @@ class NotificationViewModelTest {
   }
 
   @Test
-  fun `deleteNotification calls repository and reloads`() = runTest {
+  fun `deleteNotification calls repository`() = runTest {
     viewModel = NotificationsViewModel(repository, auth)
+    advanceUntilIdle()
 
     viewModel.deleteNotification("123")
     advanceUntilIdle()
 
     coVerify { repository.deleteNotification("123") }
-    // Verify getUserNotifications is called again (initial init + reload)
-    verify(atLeast = 2) { repository.getUserNotifications("testUser") }
+    verify(exactly = 1) { repository.getUserNotifications("testUser") }
   }
 
   @Test
@@ -101,7 +104,7 @@ class NotificationViewModelTest {
     viewModel = NotificationsViewModel(repository, auth)
     advanceUntilIdle()
 
-    // Verify we didn't call the repo with a null ID or crash
+    // Verify we didn't call the repo with a null ID
     verify(exactly = 0) { repository.getUserNotifications(any()) }
   }
 }
