@@ -103,8 +103,7 @@ class MyInvitationsViewModelTest {
       email: String = testUserEmail
   ): TestMockOrganizationRepository =
       TestMockOrganizationRepository(
-          invitationsByEmail = mapOf(email to invitations),
-          shouldThrowOnUpdateStatus = true)
+          invitationsByEmail = mapOf(email to invitations), shouldThrowOnUpdateStatus = true)
 
   private fun createOrgRepositoryWithUpdateFailureNullMessage(
       invitations: List<OrganizationInvitation> = listOf(pendingInvitation),

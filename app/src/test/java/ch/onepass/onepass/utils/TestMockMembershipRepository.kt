@@ -55,4 +55,3 @@ class TestMockMembershipRepository(
       roles: List<OrganizationRole>
   ): Boolean = false
 }
-
