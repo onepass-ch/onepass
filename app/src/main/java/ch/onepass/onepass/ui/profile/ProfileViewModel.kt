@@ -94,13 +94,13 @@ open class ProfileViewModel(
    * - Otherwise, navigates to Become an Organizer onboarding.
    */
   fun onOrganizationButton() =
-    viewModelScope.launch {
-      if (_state.value.isOrganizer) {
-        _effects.emit(ProfileEffect.NavigateToMyOrganizations)
-      } else {
-        _effects.emit(ProfileEffect.NavigateToBecomeOrganizer)
+      viewModelScope.launch {
+        if (_state.value.isOrganizer) {
+          _effects.emit(ProfileEffect.NavigateToMyOrganizations)
+        } else {
+          _effects.emit(ProfileEffect.NavigateToBecomeOrganizer)
+        }
       }
-    }
 
   // --- Placeholder stubs to avoid navigating to non-existent screens ---
 
