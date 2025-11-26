@@ -3,11 +3,14 @@ package ch.onepass.onepass.ui.notification
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -22,12 +25,14 @@ import ch.onepass.onepass.ui.components.common.LoadingState
  *
  * @param navController Controller for navigating between screens.
  * @param viewModel ViewModel that holds the state and logic for notifications.
+ * @param onNavigateBack Lambda function to execute when the back button is pressed.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun NotificationsScreen(
     navController: NavController,
-    viewModel: NotificationsViewModel = viewModel()
+    viewModel: NotificationsViewModel = viewModel(),
+    onNavigateBack: () -> Unit = { navController.popBackStack() }
 ) {
   val uiState by viewModel.uiState.collectAsState()
 
@@ -35,6 +40,15 @@ fun NotificationsScreen(
       topBar = {
         TopAppBar(
             title = { Text("Notifications") },
+            navigationIcon = {
+              IconButton(
+                  onClick = onNavigateBack,
+                  modifier = Modifier.testTag("notification_back_button")) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back")
+                  }
+            },
             actions = {
               if (uiState.unreadCount > 0) {
                 TextButton(onClick = { viewModel.markAllAsRead() }) { Text("Mark all as read") }
