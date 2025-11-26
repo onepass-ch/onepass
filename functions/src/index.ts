@@ -81,3 +81,4 @@ export const searchUsers = functions.https.onCall(async (payload: any, context: 
 });
 
 export { generateUserPass } from "./generateUserPass";
+export { onUserCreated } from "./onUserCreated";
