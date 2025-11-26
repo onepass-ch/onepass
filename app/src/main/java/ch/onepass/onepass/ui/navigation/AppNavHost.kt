@@ -121,7 +121,10 @@ fun AppNavHost(
     // ------------------ Notifications ------------------
     composable(Screen.Notification.route) {
       val notificationViewModel: NotificationsViewModel = viewModel()
-      NotificationsScreen(navController = navController, viewModel = notificationViewModel)
+      NotificationsScreen(
+          navController = navController,
+          viewModel = notificationViewModel,
+          onNavigateBack = { navController.popBackStack() })
     }
 
     // ------------------ Event Detail ------------------
