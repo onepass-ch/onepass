@@ -240,6 +240,10 @@ class StaffInvitationViewModel(
    * @return The result of the invitation attempt.
    */
   private suspend fun checkAndCreateInvitation(user: StaffSearchResult): InvitationResult {
+    if (user.id == currentUserId) {
+      return InvitationResult.Error("You cannot invite yourself.")
+    }
+
     // Check if user is already invited to this organization
     val existingInvitations = organizationRepository.getInvitationsByEmail(user.email).first()
 
