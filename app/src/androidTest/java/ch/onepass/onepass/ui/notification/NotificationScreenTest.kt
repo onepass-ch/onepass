@@ -14,6 +14,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.flow.MutableStateFlow
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 
@@ -159,5 +160,23 @@ class NotificationScreenTest {
 
     composeTestRule.onNodeWithContentDescription("Delete notification").performClick()
     verify { mockViewModel.deleteNotification("del") }
+  }
+
+  @Test
+  fun notificationScreen_backButton_isDisplayed_and_clickable() {
+    var backClicked = false
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        NotificationsScreen(
+            navController = mockNavController,
+            viewModel = mockViewModel,
+            onNavigateBack = { backClicked = true })
+      }
+    }
+
+    composeTestRule.onNodeWithTag("notification_back_button").assertIsDisplayed().performClick()
+
+    assertTrue(backClicked)
   }
 }
