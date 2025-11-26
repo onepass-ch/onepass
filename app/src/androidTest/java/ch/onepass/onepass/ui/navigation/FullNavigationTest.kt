@@ -517,5 +517,14 @@ class FullNavigationTest {
     // Check we navigated to Notification screen
     assertEquals(
         NavigationDestinations.Screen.Notification.route, navController.currentDestination?.route)
+
+    // Click the Back button on the notification screen
+    composeRule.onNodeWithTag("notification_back_button").assertIsDisplayed().performClick()
+
+    composeRule.waitForIdle()
+
+    // Check we navigated back to the Feed screen
+    assertEquals(
+        NavigationDestinations.Screen.Events.route, navController.currentDestination?.route)
   }
 }
