@@ -3,6 +3,7 @@ package ch.onepass.onepass.utils
 import com.google.firebase.Timestamp
 import java.text.ParseException
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
@@ -14,6 +15,8 @@ object DateTimeUtils {
   const val PATTERN_DATE_INPUT = "dd/MM/yyyy" // Used in forms
   const val PATTERN_TIME_INPUT = "HH:mm" // Used in forms
   const val PATTERN_MONTH_YEAR = "MMM.yyyy" // Used in Organization profile
+  const val PATTERN_NOTIFICATION_TIME = "HH:mm" // Used for today's notifications
+  const val PATTERN_NOTIFICATION_DATE = "dd MMM" // Used for older notifications
 
   /**
    * Formats a Firestore Timestamp to the standard display format (e.g., "October 14, 2025 • 2:30
@@ -36,6 +39,31 @@ object DateTimeUtils {
   /** Formats a Timestamp to the "MMM.yyyy" format used in organization cards. */
   fun formatMemberSince(timestamp: Timestamp?): String {
     return timestamp?.toDate()?.let { format(it, PATTERN_MONTH_YEAR) } ?: ""
+  }
+
+  /**
+   * Helper function to format a notification date. Returns time (HH:mm) if the date is today,
+   * otherwise returns the date (dd MMM).
+   *
+   * @param date The date object to format.
+   * @param now The current date (defaults to now). Useful for testing.
+   * @return A formatted string representation of the date.
+   */
+  fun formatNotificationDate(date: Date, now: Date = Date()): String {
+    val calendarNow = Calendar.getInstance().apply { time = now }
+    val calendarDate = Calendar.getInstance().apply { time = date }
+
+    return if (calendarNow[Calendar.YEAR] == calendarDate[Calendar.YEAR] &&
+        calendarNow[Calendar.DAY_OF_YEAR] == calendarDate[Calendar.DAY_OF_YEAR]) {
+      format(date, PATTERN_NOTIFICATION_TIME)
+    } else {
+      format(date, PATTERN_NOTIFICATION_DATE)
+    }
+  }
+
+  /** Overload for Timestamp input. */
+  fun formatNotificationDate(timestamp: Timestamp?, now: Date = Date()): String {
+    return timestamp?.toDate()?.let { formatNotificationDate(it, now) } ?: ""
   }
 
   /**

@@ -9,9 +9,15 @@ import org.junit.Test
 class DateTimeUtilsTest {
 
   // Helper to create a fixed date: Oct 14, 2025 14:30:00
-  private fun getFixedDate(): Date {
+  private fun getFixedDate(
+      year: Int = 2025,
+      month: Int = Calendar.OCTOBER,
+      day: Int = 14,
+      hour: Int = 14,
+      minute: Int = 30
+  ): Date {
     val calendar = Calendar.getInstance()
-    calendar.set(2025, Calendar.OCTOBER, 14, 14, 30, 0)
+    calendar.set(year, month, day, hour, minute, 0)
     calendar.set(Calendar.MILLISECOND, 0)
     return calendar.time
   }
@@ -20,13 +26,7 @@ class DateTimeUtilsTest {
   fun formatDisplayDate_Timestamp_returnsFormattedString() {
     val date = getFixedDate()
     val timestamp = Timestamp(date)
-    // Note: Exact output depends on the test environment's Locale, assuming Locale.US/Default
-    // similar structure
-    // We verify the format structure generally or mocking Locale if strictness is needed.
-    // For standard unit tests, SimpleDateFormat uses system default.
     val result = DateTimeUtils.formatDisplayDate(timestamp)
-
-    // Just checking it's not the fallback
     assert(result != "Date not set")
     assert(result.contains("2025"))
   }
@@ -55,13 +55,58 @@ class DateTimeUtilsTest {
     val date = getFixedDate() // Oct 2025
     val timestamp = Timestamp(date)
     val result = DateTimeUtils.formatMemberSince(timestamp)
-    // Pattern MMM.yyyy -> Oct.2025 or Oct 2025 depending on Locale
     assert(result.contains("2025"))
   }
 
   @Test
   fun formatMemberSince_null_returnsEmpty() {
     assertEquals("", DateTimeUtils.formatMemberSince(null))
+  }
+
+  @Test
+  fun formatNotificationDate_isToday_returnsTime() {
+    val now = getFixedDate(hour = 18, minute = 0)
+    val notificationTime = getFixedDate(hour = 14, minute = 30)
+
+    val result = DateTimeUtils.formatNotificationDate(notificationTime, now)
+    assertEquals("14:30", result)
+  }
+
+  @Test
+  fun formatNotificationDate_isDifferentDay_returnsDate() {
+    val now = getFixedDate(day = 15)
+    val notificationTime = getFixedDate(day = 14)
+
+    val result = DateTimeUtils.formatNotificationDate(notificationTime, now)
+    assert(result.contains("14"))
+    assert(!result.contains(":"))
+  }
+
+  @Test
+  fun formatNotificationDate_isDifferentYear_returnsDate() {
+    val now = getFixedDate(year = 2026)
+    val notificationTime = getFixedDate(year = 2025)
+
+    val result = DateTimeUtils.formatNotificationDate(notificationTime, now)
+    assert(result.contains("14"))
+    assert(!result.contains(":"))
+  }
+
+  @Test
+  fun formatNotificationDate_TimestampOverload_worksCorrectly() {
+    val now = getFixedDate(hour = 18, minute = 0)
+    val notificationTime = getFixedDate(hour = 14, minute = 30)
+    val timestamp = Timestamp(notificationTime)
+
+    val result = DateTimeUtils.formatNotificationDate(timestamp, now)
+    assertEquals("14:30", result)
+  }
+
+  @Test
+  fun formatNotificationDate_TimestampOverload_null_returnsEmpty() {
+    val timestamp: Timestamp? = null
+    val result = DateTimeUtils.formatNotificationDate(timestamp)
+    assertEquals("", result)
   }
 
   @Test
