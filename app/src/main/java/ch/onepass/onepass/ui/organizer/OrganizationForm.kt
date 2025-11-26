@@ -144,13 +144,12 @@ fun OrganizerForm(
             testTag = testTagsField(testTags, "ADDRESS_FIELD"))
 
         Spacer(Modifier.height(32.dp))
-        
+
         // Upload profile Image
         UploadImageButton(
             imageDescription = "Profile image",
-            onImageSelected = { uri -> viewModel.selectProfileImage(uri) }
-        )
-        
+            onImageSelected = { uri -> viewModel.selectProfileImage(uri) })
+
         // Display profile image selection status
         if (formState.profileImageUri != null) {
           Spacer(modifier = Modifier.height(8.dp))
@@ -160,15 +159,14 @@ fun OrganizerForm(
               color = colorResource(id = R.color.white),
               modifier = Modifier.padding(start = 8.dp))
         }
-        
+
         Spacer(Modifier.height(16.dp))
-        
+
         // Upload banner image
         UploadImageButton(
             imageDescription = "Banner image",
-            onImageSelected = { uri -> viewModel.selectCoverImage(uri) }
-        )
-        
+            onImageSelected = { uri -> viewModel.selectCoverImage(uri) })
+
         // Display cover image selection status
         if (formState.coverImageUri != null) {
           Spacer(modifier = Modifier.height(8.dp))
@@ -178,9 +176,9 @@ fun OrganizerForm(
               color = colorResource(id = R.color.white),
               modifier = Modifier.padding(start = 8.dp))
         }
-        
+
         Spacer(Modifier.height(16.dp))
-        
+
         // Submit Button
         SubmitButton(
             onClick = onSubmit,

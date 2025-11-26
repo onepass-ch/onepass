@@ -143,12 +143,14 @@ class OrganizationEditorViewModel(
     }
 
     val storagePath = "organizations/$organizationId/profile_image.jpg"
-    return storageRepository.uploadImage(imageUri, storagePath)
+    return storageRepository
+        .uploadImage(imageUri, storagePath)
         .map { url -> url }
         .fold(
             onSuccess = { Result.success(it) },
-            onFailure = { Result.failure(Exception("Failed to upload profile image: ${it.message}")) }
-        )
+            onFailure = {
+              Result.failure(Exception("Failed to upload profile image: ${it.message}"))
+            })
   }
 
   /**
@@ -164,12 +166,14 @@ class OrganizationEditorViewModel(
     }
 
     val storagePath = "organizations/$organizationId/cover_image.jpg"
-    return storageRepository.uploadImage(imageUri, storagePath)
+    return storageRepository
+        .uploadImage(imageUri, storagePath)
         .map { url -> url }
         .fold(
             onSuccess = { Result.success(it) },
-            onFailure = { Result.failure(Exception("Failed to upload cover image: ${it.message}")) }
-        )
+            onFailure = {
+              Result.failure(Exception("Failed to upload cover image: ${it.message}"))
+            })
   }
 
   /**
@@ -190,19 +194,23 @@ class OrganizationEditorViewModel(
       _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null, success = false)
       try {
         // Upload new images if selected
-        val profileImageUrl = uploadProfileImage(data.id, data.profileImageUri).getOrElse {
-          _uiState.value = _uiState.value.copy(
-              isLoading = false,
-              errorMessage = it.message ?: "Failed to upload profile image")
-          return@launch
-        }
+        val profileImageUrl =
+            uploadProfileImage(data.id, data.profileImageUri).getOrElse {
+              _uiState.value =
+                  _uiState.value.copy(
+                      isLoading = false,
+                      errorMessage = it.message ?: "Failed to upload profile image")
+              return@launch
+            }
 
-        val coverImageUrl = uploadCoverImage(data.id, data.coverImageUri).getOrElse {
-          _uiState.value = _uiState.value.copy(
-              isLoading = false,
-              errorMessage = it.message ?: "Failed to upload cover image")
-          return@launch
-        }
+        val coverImageUrl =
+            uploadCoverImage(data.id, data.coverImageUri).getOrElse {
+              _uiState.value =
+                  _uiState.value.copy(
+                      isLoading = false,
+                      errorMessage = it.message ?: "Failed to upload cover image")
+              return@launch
+            }
 
         // Update organization with new data and uploaded image URLs if new images were selected
         val org =

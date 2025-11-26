@@ -371,12 +371,14 @@ class OrganizationFormViewModel(
     val imageUri = _formState.value.profileImageUri ?: return Result.success(null)
 
     val storagePath = "organizations/$organizationId/profile_image.jpg"
-    return storageRepository.uploadImage(imageUri, storagePath)
+    return storageRepository
+        .uploadImage(imageUri, storagePath)
         .map { url -> url }
         .fold(
             onSuccess = { Result.success(it) },
-            onFailure = { Result.failure(Exception("Failed to upload profile image: ${it.message}")) }
-        )
+            onFailure = {
+              Result.failure(Exception("Failed to upload profile image: ${it.message}"))
+            })
   }
 
   /**
@@ -389,12 +391,14 @@ class OrganizationFormViewModel(
     val imageUri = _formState.value.coverImageUri ?: return Result.success(null)
 
     val storagePath = "organizations/$organizationId/cover_image.jpg"
-    return storageRepository.uploadImage(imageUri, storagePath)
+    return storageRepository
+        .uploadImage(imageUri, storagePath)
         .map { url -> url }
         .fold(
             onSuccess = { Result.success(it) },
-            onFailure = { Result.failure(Exception("Failed to upload cover image: ${it.message}")) }
-        )
+            onFailure = {
+              Result.failure(Exception("Failed to upload cover image: ${it.message}"))
+            })
   }
 
   /**
@@ -538,15 +542,21 @@ class OrganizationFormViewModel(
         val orgId = java.util.UUID.randomUUID().toString()
 
         // Upload images to storage if any selected
-        val profileImageUrl = uploadProfileImage(orgId).getOrElse {
-          _uiState.value = OrganizationFormUiState(errorMessage = it.message ?: "Failed to upload profile image")
-          return@launch
-        }
+        val profileImageUrl =
+            uploadProfileImage(orgId).getOrElse {
+              _uiState.value =
+                  OrganizationFormUiState(
+                      errorMessage = it.message ?: "Failed to upload profile image")
+              return@launch
+            }
 
-        val coverImageUrl = uploadCoverImage(orgId).getOrElse {
-          _uiState.value = OrganizationFormUiState(errorMessage = it.message ?: "Failed to upload cover image")
-          return@launch
-        }
+        val coverImageUrl =
+            uploadCoverImage(orgId).getOrElse {
+              _uiState.value =
+                  OrganizationFormUiState(
+                      errorMessage = it.message ?: "Failed to upload cover image")
+              return@launch
+            }
 
         // Construct organization object with uploaded image URLs
         val org =
@@ -571,7 +581,8 @@ class OrganizationFormViewModel(
         result.fold(
             onSuccess = { createdOrgId ->
               // Add the current user as OWNER member to the organization
-              val addMemberResult = repository.addMember(createdOrgId, ownerId, OrganizationRole.OWNER)
+              val addMemberResult =
+                  repository.addMember(createdOrgId, ownerId, OrganizationRole.OWNER)
 
               addMemberResult.fold(
                   onSuccess = {

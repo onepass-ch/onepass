@@ -335,12 +335,9 @@ class EventRepositoryFirebaseTest : FirestoreTestBase() {
     val updatedEvent = repository.getEventById(eventId).first()
     assertNotNull("Updated event should not be null", updatedEvent)
     assertTrue(
-        "Event should have the new image",
-        updatedEvent?.images?.contains(newImageUrl) == true)
+        "Event should have the new image", updatedEvent?.images?.contains(newImageUrl) == true)
     assertEquals(
-        "Event should have 2 images total",
-        2,
-        updatedEvent?.images?.size) // Original + new
+        "Event should have 2 images total", 2, updatedEvent?.images?.size) // Original + new
   }
 
   @Test
@@ -386,8 +383,7 @@ class EventRepositoryFirebaseTest : FirestoreTestBase() {
     assertNotNull("Updated event should not be null", updatedEvent)
     assertEquals("Event should have 3 new images", 3, updatedEvent?.images?.size)
     assertTrue(
-        "Event should have all new images",
-        updatedEvent?.images?.containsAll(newImageUrls) == true)
+        "Event should have all new images", updatedEvent?.images?.containsAll(newImageUrls) == true)
     assertFalse(
         "Event should not have old images",
         updatedEvent?.images?.contains("https://example.com/image1.jpg") == true)
@@ -410,8 +406,7 @@ class EventRepositoryFirebaseTest : FirestoreTestBase() {
 
   @Test
   fun addEventImageForNonExistentEventFails() = runTest {
-    val result =
-        repository.addEventImage("non-existent-event-id", "https://example.com/image.jpg")
+    val result = repository.addEventImage("non-existent-event-id", "https://example.com/image.jpg")
     assertTrue("Add image should fail for non-existent event", result.isFailure)
   }
 
@@ -489,7 +484,8 @@ class EventRepositoryFirebaseTest : FirestoreTestBase() {
   @Test
   fun removeEventImageUpdatesTimestamp() = runTest {
     val eventWithImages =
-        testEvent1.copy(images = listOf("https://example.com/image1.jpg", "https://example.com/image2.jpg"))
+        testEvent1.copy(
+            images = listOf("https://example.com/image1.jpg", "https://example.com/image2.jpg"))
     val result = repository.createEvent(eventWithImages)
     val eventId = result.getOrNull()!!
 

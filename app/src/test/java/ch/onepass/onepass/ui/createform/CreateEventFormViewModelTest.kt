@@ -500,9 +500,9 @@ class CreateEventFormViewModelTest {
   @Test
   fun `selectImage adds image URI to form state`() {
     val imageUri = android.net.Uri.parse("content://media/image/123")
-    
+
     viewModel.selectImage(imageUri)
-    
+
     val formState = viewModel.formState.value
     assertEquals(1, formState.selectedImageUris.size)
     assertTrue(formState.selectedImageUris.contains(imageUri))
@@ -513,11 +513,11 @@ class CreateEventFormViewModelTest {
     val imageUri1 = android.net.Uri.parse("content://media/image/123")
     val imageUri2 = android.net.Uri.parse("content://media/image/456")
     val imageUri3 = android.net.Uri.parse("content://media/image/789")
-    
+
     viewModel.selectImage(imageUri1)
     viewModel.selectImage(imageUri2)
     viewModel.selectImage(imageUri3)
-    
+
     val formState = viewModel.formState.value
     assertEquals(3, formState.selectedImageUris.size)
     assertTrue(formState.selectedImageUris.containsAll(listOf(imageUri1, imageUri2, imageUri3)))
@@ -528,13 +528,13 @@ class CreateEventFormViewModelTest {
     val imageUri1 = android.net.Uri.parse("content://media/image/123")
     val imageUri2 = android.net.Uri.parse("content://media/image/456")
     val imageUri3 = android.net.Uri.parse("content://media/image/789")
-    
+
     viewModel.selectImage(imageUri1)
     viewModel.selectImage(imageUri2)
     viewModel.selectImage(imageUri3)
-    
+
     viewModel.removeImage(imageUri2)
-    
+
     val formState = viewModel.formState.value
     assertEquals(2, formState.selectedImageUris.size)
     assertFalse(formState.selectedImageUris.contains(imageUri2))
@@ -546,14 +546,14 @@ class CreateEventFormViewModelTest {
   fun `resetForm clears selected images`() {
     val imageUri1 = android.net.Uri.parse("content://media/image/123")
     val imageUri2 = android.net.Uri.parse("content://media/image/456")
-    
+
     viewModel.selectImage(imageUri1)
     viewModel.selectImage(imageUri2)
-    
+
     assertEquals(2, viewModel.formState.value.selectedImageUris.size)
-    
+
     viewModel.resetForm()
-    
+
     assertTrue(viewModel.formState.value.selectedImageUris.isEmpty())
   }
 
@@ -562,11 +562,11 @@ class CreateEventFormViewModelTest {
     val imageUri1 = android.net.Uri.parse("content://media/image/123")
     val imageUri2 = android.net.Uri.parse("content://media/image/456")
     val imageUri3 = android.net.Uri.parse("content://media/image/789")
-    
+
     viewModel.selectImage(imageUri1)
     viewModel.selectImage(imageUri2)
     viewModel.selectImage(imageUri3)
-    
+
     val formState = viewModel.formState.value
     assertEquals(imageUri1, formState.selectedImageUris[0])
     assertEquals(imageUri2, formState.selectedImageUris[1])
@@ -578,12 +578,12 @@ class CreateEventFormViewModelTest {
     val imageUri1 = android.net.Uri.parse("content://media/image/123")
     val imageUri2 = android.net.Uri.parse("content://media/image/456")
     val nonExistent = android.net.Uri.parse("content://media/image/999")
-    
+
     viewModel.selectImage(imageUri1)
     viewModel.selectImage(imageUri2)
-    
+
     viewModel.removeImage(nonExistent)
-    
+
     val formState = viewModel.formState.value
     assertEquals(2, formState.selectedImageUris.size)
   }

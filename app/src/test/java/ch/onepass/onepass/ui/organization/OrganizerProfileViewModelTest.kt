@@ -113,8 +113,10 @@ class OrganizerProfileViewModelTest {
 
     override suspend fun deleteInvitation(invitationId: String): Result<Unit> = Result.success(Unit)
 
-    override suspend fun updateProfileImage(organizationId: String, imageUrl: String?): Result<Unit> =
-        Result.success(Unit)
+    override suspend fun updateProfileImage(
+        organizationId: String,
+        imageUrl: String?
+    ): Result<Unit> = Result.success(Unit)
 
     override suspend fun updateCoverImage(organizationId: String, imageUrl: String?): Result<Unit> =
         Result.success(Unit)

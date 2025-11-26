@@ -102,9 +102,9 @@ class OrganizationFormViewModelTest {
   @Test
   fun selectProfileImageUpdatesFormState() = runTest {
     val mockUri = android.net.Uri.parse("content://media/image/123")
-    
+
     viewModel.selectProfileImage(mockUri)
-    
+
     val state = viewModel.formState.value
     assertEquals("Profile image URI should be set", mockUri, state.profileImageUri)
   }
@@ -112,9 +112,9 @@ class OrganizationFormViewModelTest {
   @Test
   fun selectCoverImageUpdatesFormState() = runTest {
     val mockUri = android.net.Uri.parse("content://media/image/456")
-    
+
     viewModel.selectCoverImage(mockUri)
-    
+
     val state = viewModel.formState.value
     assertEquals("Cover image URI should be set", mockUri, state.coverImageUri)
   }
@@ -123,10 +123,10 @@ class OrganizationFormViewModelTest {
   fun canSelectBothProfileAndCoverImages() = runTest {
     val profileUri = android.net.Uri.parse("content://media/image/123")
     val coverUri = android.net.Uri.parse("content://media/image/456")
-    
+
     viewModel.selectProfileImage(profileUri)
     viewModel.selectCoverImage(coverUri)
-    
+
     val state = viewModel.formState.value
     assertEquals("Profile image URI should be set", profileUri, state.profileImageUri)
     assertEquals("Cover image URI should be set", coverUri, state.coverImageUri)
@@ -136,10 +136,10 @@ class OrganizationFormViewModelTest {
   fun selectingNewProfileImageReplacesOld() = runTest {
     val firstUri = android.net.Uri.parse("content://media/image/123")
     val secondUri = android.net.Uri.parse("content://media/image/789")
-    
+
     viewModel.selectProfileImage(firstUri)
     viewModel.selectProfileImage(secondUri)
-    
+
     val state = viewModel.formState.value
     assertEquals("Should have the second image", secondUri, state.profileImageUri)
   }
@@ -148,10 +148,10 @@ class OrganizationFormViewModelTest {
   fun selectingNewCoverImageReplacesOld() = runTest {
     val firstUri = android.net.Uri.parse("content://media/image/456")
     val secondUri = android.net.Uri.parse("content://media/image/999")
-    
+
     viewModel.selectCoverImage(firstUri)
     viewModel.selectCoverImage(secondUri)
-    
+
     val state = viewModel.formState.value
     assertEquals("Should have the second image", secondUri, state.coverImageUri)
   }
@@ -211,14 +211,17 @@ class FakeOrganizationRepository : OrganizationRepository {
 
   override suspend fun deleteInvitation(invitationId: String) = TODO()
 
-  override suspend fun updateProfileImage(organizationId: String, imageUrl: String?) = 
+  override suspend fun updateProfileImage(organizationId: String, imageUrl: String?) =
       Result.success(Unit)
 
-  override suspend fun updateCoverImage(organizationId: String, imageUrl: String?) = 
+  override suspend fun updateCoverImage(organizationId: String, imageUrl: String?) =
       Result.success(Unit)
 
-  override suspend fun addMember(organizationId: String, userId: String, role: OrganizationRole): Result<Unit> = 
-      Result.success(Unit)
+  override suspend fun addMember(
+      organizationId: String,
+      userId: String,
+      role: OrganizationRole
+  ): Result<Unit> = Result.success(Unit)
 }
 
 class FakeUserRepository : UserRepository {

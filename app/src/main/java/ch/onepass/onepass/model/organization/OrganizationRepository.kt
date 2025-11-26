@@ -161,8 +161,8 @@ interface OrganizationRepository {
   /**
    * Updates the profile image URL for an organization.
    *
-   * This is a convenience method to update only the profileImageUrl field without
-   * needing to update the entire organization object.
+   * This is a convenience method to update only the profileImageUrl field without needing to update
+   * the entire organization object.
    *
    * @param organizationId The organization's ID.
    * @param imageUrl The new profile image URL, or null to remove the image.
@@ -173,8 +173,8 @@ interface OrganizationRepository {
   /**
    * Updates the cover image URL for an organization.
    *
-   * This is a convenience method to update only the coverImageUrl field without
-   * needing to update the entire organization object.
+   * This is a convenience method to update only the coverImageUrl field without needing to update
+   * the entire organization object.
    *
    * @param organizationId The organization's ID.
    * @param imageUrl The new cover image URL, or null to remove the image.

@@ -129,9 +129,9 @@ open class CreateEventFormViewModel(
       val result = eventRepository.createEvent(event)
 
       result.fold(
-          onSuccess = { createdEventId -> 
+          onSuccess = { createdEventId ->
             android.util.Log.d("CreateEventFormVM", "Event created successfully: $createdEventId")
-            _uiState.value = CreateEventUiState.Success(createdEventId) 
+            _uiState.value = CreateEventUiState.Success(createdEventId)
           },
           onFailure = { error ->
             android.util.Log.e("CreateEventFormVM", "Event creation failed: ${error.message}")

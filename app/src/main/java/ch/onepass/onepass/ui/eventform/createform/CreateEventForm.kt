@@ -59,7 +59,6 @@ fun EventFormScaffold(
       }
 }
 
-
 @Composable
 fun CreateEventButton(onClick: () -> Unit, enabled: Boolean = true, modifier: Modifier = Modifier) {
   Button(
@@ -82,7 +81,7 @@ fun CreateEventButton(onClick: () -> Unit, enabled: Boolean = true, modifier: Mo
       shape = RoundedCornerShape(5.dp),
       colors =
           ButtonDefaults.buttonColors(
-              containerColor = Color.Transparent, 
+              containerColor = Color.Transparent,
               contentColor = Color.White,
               disabledContainerColor = Color.Transparent,
               disabledContentColor = Color.White.copy(alpha = 0.5f)),
@@ -122,10 +121,7 @@ fun CreateEventForm(
         viewModel.resetForm()
       }
       is CreateEventUiState.Error -> {
-        snackbarHostState.showSnackbar(
-            message = state.message,
-            duration = SnackbarDuration.Long
-        )
+        snackbarHostState.showSnackbar(message = state.message, duration = SnackbarDuration.Long)
         viewModel.clearError()
       }
       else -> {}
@@ -139,9 +135,7 @@ fun CreateEventForm(
 
       // Create Button - disabled during loading
       CreateEventButton(
-          onClick = { viewModel.createEvent() },
-          enabled = uiState !is CreateEventUiState.Loading
-      )
+          onClick = { viewModel.createEvent() }, enabled = uiState !is CreateEventUiState.Loading)
       Spacer(modifier = Modifier.height(24.dp))
     }
 
@@ -156,7 +150,6 @@ fun CreateEventForm(
     // Snackbar for error messages
     SnackbarHost(
         hostState = snackbarHostState,
-        modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)
-    )
+        modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp))
   }
 }

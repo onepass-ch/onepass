@@ -52,7 +52,8 @@ class StorageRepositoryFirebase(private val storage: FirebaseStorage = Firebase.
       }
     } catch (e: IllegalArgumentException) {
       // Re-throw if it's a file existence error
-      if (e.message?.contains("does not exist") == true || e.message?.contains("Invalid file path") == true) {
+      if (e.message?.contains("does not exist") == true ||
+          e.message?.contains("Invalid file path") == true) {
         throw e
       }
       // Skip size validation for content:// URIs
@@ -65,7 +66,8 @@ class StorageRepositoryFirebase(private val storage: FirebaseStorage = Firebase.
 
     // Validate content type (warn but don't fail for unknown types)
     if (contentType !in SUPPORTED_IMAGE_TYPES) {
-      android.util.Log.w("StorageRepository", 
+      android.util.Log.w(
+          "StorageRepository",
           "Potentially unsupported image type: $contentType. Proceeding with upload anyway.")
     }
 
@@ -206,7 +208,8 @@ class StorageRepositoryFirebase(private val storage: FirebaseStorage = Firebase.
       else -> {
         // For content:// URIs without clear extension, default to JPEG
         // Firebase will accept it and handle conversion if needed
-        android.util.Log.d("StorageRepository", "Unknown image type for URI: $uriString, defaulting to JPEG")
+        android.util.Log.d(
+            "StorageRepository", "Unknown image type for URI: $uriString, defaulting to JPEG")
         "image/jpeg"
       }
     }

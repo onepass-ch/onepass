@@ -707,7 +707,8 @@ class OrganizationRepositoryAdvancedTest : FirestoreTestBase() {
     assertTrue("Update cover image should succeed", coverResult.isSuccess)
 
     val updatedOrg = orgRepository.getOrganizationById(orgId).first()
-    assertEquals("Profile image URL should be updated", profileImageUrl, updatedOrg?.profileImageUrl)
+    assertEquals(
+        "Profile image URL should be updated", profileImageUrl, updatedOrg?.profileImageUrl)
     assertEquals("Cover image URL should be updated", coverImageUrl, updatedOrg?.coverImageUrl)
   }
 

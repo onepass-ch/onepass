@@ -145,10 +145,7 @@ class FakeOrganizationRepository(
     return Result.success(Unit)
   }
 
-  override suspend fun updateProfileImage(
-    organizationId: String,
-    imageUrl: String?
-  ): Result<Unit> {
+  override suspend fun updateProfileImage(organizationId: String, imageUrl: String?): Result<Unit> {
     val org =
         organizations[organizationId]
             ?: return Result.failure(IllegalStateException("Organization not found"))
@@ -156,10 +153,7 @@ class FakeOrganizationRepository(
     return Result.success(Unit)
   }
 
-  override suspend fun updateCoverImage(
-    organizationId: String,
-    imageUrl: String?
-  ): Result<Unit> {
+  override suspend fun updateCoverImage(organizationId: String, imageUrl: String?): Result<Unit> {
     val org =
         organizations[organizationId]
             ?: return Result.failure(IllegalStateException("Organization not found"))

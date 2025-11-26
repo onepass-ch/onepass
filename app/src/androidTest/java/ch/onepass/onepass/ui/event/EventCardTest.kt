@@ -54,7 +54,7 @@ class EventCardTest {
     composeTestRule.onNodeWithText("Test Organizer").assertExists()
     composeTestRule.onNodeWithText("Test Location").assertExists()
     composeTestRule.onNodeWithText("CHF25").assertExists()
-    composeTestRule.onNodeWithTag("event_card_image").assertExists()
+    composeTestRule.onNodeWithTag("event_card_image", useUnmergedTree = true).assertExists()
     composeTestRule.onNodeWithContentDescription("Like").assertExists()
   }
 
@@ -132,7 +132,7 @@ class EventCardTest {
   fun eventCard_handlesAllEmpty() {
     composeTestRule.setContent { MaterialTheme { EventCard(event = createEvent(0u, "", "", "")) } }
     composeTestRule.onNodeWithText("FREE").assertIsDisplayed()
-    composeTestRule.onNodeWithTag("event_card_image").assertExists()
+    composeTestRule.onNodeWithTag("event_card_image", useUnmergedTree = true).assertExists()
     composeTestRule.onNodeWithContentDescription("Like").assertIsDisplayed()
   }
 

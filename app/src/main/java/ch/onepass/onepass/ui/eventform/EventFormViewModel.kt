@@ -311,7 +311,7 @@ abstract class EventFormViewModel(
    */
   protected suspend fun uploadSelectedImages(eventId: String): Result<List<String>> {
     val imageUris = _formState.value.selectedImageUris
-    
+
     if (imageUris.isEmpty()) {
       return Result.success(emptyList())
     }
