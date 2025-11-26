@@ -33,6 +33,8 @@ import ch.onepass.onepass.ui.myevents.MyEventsViewModel
 import ch.onepass.onepass.ui.myinvitations.MyInvitationsScreen
 import ch.onepass.onepass.ui.myinvitations.MyInvitationsViewModel
 import ch.onepass.onepass.ui.navigation.NavigationDestinations.Screen
+import ch.onepass.onepass.ui.notification.NotificationsScreen
+import ch.onepass.onepass.ui.notification.NotificationsViewModel
 import ch.onepass.onepass.ui.organization.OrganizationDashboardScreen
 import ch.onepass.onepass.ui.organization.OrganizationDashboardViewModel
 import ch.onepass.onepass.ui.organization.OrganizationFeedScreen
@@ -113,7 +115,16 @@ fun AppNavHost(
           onNavigateToEvent = { eventId ->
             navController.navigate(Screen.EventDetail.route(eventId))
           },
-      )
+          onNavigateToNotifications = { navController.navigate(Screen.Notification.route) })
+    }
+
+    // ------------------ Notifications ------------------
+    composable(Screen.Notification.route) {
+      val notificationViewModel: NotificationsViewModel = viewModel()
+      NotificationsScreen(
+          navController = navController,
+          viewModel = notificationViewModel,
+          onNavigateBack = { navController.popBackStack() })
     }
 
     // ------------------ Event Detail ------------------
