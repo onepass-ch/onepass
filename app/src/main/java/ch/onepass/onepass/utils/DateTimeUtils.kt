@@ -53,8 +53,8 @@ object DateTimeUtils {
     val calendarNow = Calendar.getInstance().apply { time = now }
     val calendarDate = Calendar.getInstance().apply { time = date }
 
-    return if (calendarNow.get(Calendar.YEAR) == calendarDate.get(Calendar.YEAR) &&
-        calendarNow.get(Calendar.DAY_OF_YEAR) == calendarDate.get(Calendar.DAY_OF_YEAR)) {
+    return if (calendarNow[Calendar.YEAR] == calendarDate[Calendar.YEAR] &&
+        calendarNow[Calendar.DAY_OF_YEAR] == calendarDate[Calendar.DAY_OF_YEAR]) {
       format(date, PATTERN_NOTIFICATION_TIME)
     } else {
       format(date, PATTERN_NOTIFICATION_DATE)
