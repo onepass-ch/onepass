@@ -4,7 +4,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.membership.MembershipRepository
 import ch.onepass.onepass.model.membership.MembershipRepositoryFirebase
-import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
@@ -72,10 +71,10 @@ open class ProfileViewModel(
         val user = userRepository.getCurrentUser() ?: userRepository.getOrCreateUser()
 
         if (user != null) {
-          // Check if user has any organization membership with OWNER role
+          // Check if user has any organization membership
           val memberships =
               membershipRepository.getOrganizationsByUser(user.uid).getOrNull() ?: emptyList()
-          val isOrganizer = memberships.any { it.role == OrganizationRole.OWNER }
+          val isOrganizer = memberships.isNotEmpty()
           _state.value = user.toUiState(isOrganizer)
         } else {
           _state.value =
@@ -95,7 +94,13 @@ open class ProfileViewModel(
    * - Otherwise, navigates to Become an Organizer onboarding.
    */
   fun onOrganizationButton() =
-      viewModelScope.launch { _effects.emit(ProfileEffect.NavigateToMyOrganizations) }
+    viewModelScope.launch {
+      if (_state.value.isOrganizer) {
+        _effects.emit(ProfileEffect.NavigateToMyOrganizations)
+      } else {
+        _effects.emit(ProfileEffect.NavigateToBecomeOrganizer)
+      }
+    }
 
   // --- Placeholder stubs to avoid navigating to non-existent screens ---
 

@@ -61,8 +61,29 @@ class ProfileViewModelTest {
   }
 
   @Test
-  fun onOrganizationButtonEmitsNavigateToMyOrganizations() = runBlocking {
-    val repo = FakeUserRepository(currentUser = makeUser())
+  fun onOrganizationButtonEmitsNavigateToMyOrganizationsWhenUserIsOrganizer() = runBlocking {
+    val user = makeUser(uid = "user-1")
+    val repo = FakeUserRepository(currentUser = user)
+    val membership = Membership(userId = "user-1", orgId = "org-1", role = OrganizationRole.OWNER)
+    val membershipRepo =
+        TestMockMembershipRepository(organizationsByUser = mapOf("user-1" to listOf(membership)))
+    val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
+
+    // Ensure state is ready before triggering effect
+    vm.state.filter { !it.loading }.first()
+
+    val effect =
+        withTimeout(1000) {
+          vm.onOrganizationButton()
+          vm.effects.first()
+        }
+    assertEquals(ProfileEffect.NavigateToMyOrganizations, effect)
+  }
+
+  @Test
+  fun onOrganizationButtonEmitsNavigateToBecomeOrganizerWhenUserIsNotOrganizer() = runBlocking {
+    val user = makeUser(uid = "user-1")
+    val repo = FakeUserRepository(currentUser = user)
     val membershipRepo = TestMockMembershipRepository()
     val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
 
@@ -74,9 +95,30 @@ class ProfileViewModelTest {
           vm.onOrganizationButton()
           vm.effects.first()
         }
-    // Note: The current implementation always navigates to MyOrganizations
-    assertEquals(ProfileEffect.NavigateToMyOrganizations, effect)
+    assertEquals(ProfileEffect.NavigateToBecomeOrganizer, effect)
   }
+
+  @Test
+  fun onOrganizationButtonEmitsNavigateToMyOrganizationsWhenUserHasOnlyMemberRole() =
+      runBlocking {
+        val user = makeUser(uid = "user-1")
+        val repo = FakeUserRepository(currentUser = user)
+        val membership =
+            Membership(userId = "user-1", orgId = "org-1", role = OrganizationRole.MEMBER)
+        val membershipRepo =
+            TestMockMembershipRepository(organizationsByUser = mapOf("user-1" to listOf(membership)))
+        val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
+
+        // Ensure state is ready before triggering effect
+        vm.state.filter { !it.loading }.first()
+
+        val effect =
+            withTimeout(1000) {
+              vm.onOrganizationButton()
+              vm.effects.first()
+            }
+        assertEquals(ProfileEffect.NavigateToMyOrganizations, effect)
+      }
 
   @Test
   fun isOrganizerIsTrueWhenUserHasOwnerRoleMembership() = runBlocking {
@@ -89,7 +131,7 @@ class ProfileViewModelTest {
 
     val state = vm.state.filter { !it.loading }.first()
 
-    assertTrue("User with OWNER role membership should be organizer", state.isOrganizer)
+    assertTrue("User with any membership should be organizer", state.isOrganizer)
   }
 
   @Test
@@ -105,7 +147,7 @@ class ProfileViewModelTest {
   }
 
   @Test
-  fun isOrganizerIsFalseWhenUserHasOnlyMemberRoleMembership() = runBlocking {
+  fun isOrganizerIsTrueWhenUserHasOnlyMemberRoleMembership() = runBlocking {
     val user = makeUser(uid = "user-1")
     val repo = FakeUserRepository(currentUser = user)
     val membership = Membership(userId = "user-1", orgId = "org-1", role = OrganizationRole.MEMBER)
@@ -115,11 +157,11 @@ class ProfileViewModelTest {
 
     val state = vm.state.filter { !it.loading }.first()
 
-    assertFalse("User with only MEMBER role should not be organizer", state.isOrganizer)
+    assertTrue("User with any membership (including MEMBER role) should be organizer", state.isOrganizer)
   }
 
   @Test
-  fun isOrganizerIsTrueWhenUserHasOwnerRoleAmongMultipleMemberships() = runBlocking {
+  fun isOrganizerIsTrueWhenUserHasMultipleMemberships() = runBlocking {
     val user = makeUser(uid = "user-1")
     val repo = FakeUserRepository(currentUser = user)
     val memberships =
@@ -133,7 +175,7 @@ class ProfileViewModelTest {
 
     val state = vm.state.filter { !it.loading }.first()
 
-    assertTrue("User with at least one OWNER role should be organizer", state.isOrganizer)
+    assertTrue("User with any memberships should be organizer", state.isOrganizer)
   }
 
   @Test
