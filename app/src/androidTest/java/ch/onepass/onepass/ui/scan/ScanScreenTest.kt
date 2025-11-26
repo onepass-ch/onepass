@@ -45,7 +45,6 @@ class ScanScreenTest {
         val vm = createVM()
 
         compose.setContent {
-            // ScanContent doit être public (pas private)
             ScanContent(viewModel = vm)
         }
 
@@ -73,7 +72,6 @@ class ScanScreenTest {
             ScanContent(viewModel = vm)
         }
 
-        // 👉 On utilise un QR *valide* pour laisser le VM appeler le repo
         compose.runOnIdle { vm.onQrScanned(VALID_QR) }
         compose.waitForIdle()
 
@@ -87,7 +85,7 @@ class ScanScreenTest {
     }
 
     @Test
-    fun rejected_scan_showsRejectedMessage() {
+    fun rejected_alreadyScanned_showsRejectedMessage() {
         val repo = FakeRepo().apply {
             next = Result.success(
                 ScanDecision.Rejected(ScanDecision.Reason.ALREADY_SCANNED)
@@ -99,13 +97,81 @@ class ScanScreenTest {
             ScanContent(viewModel = vm)
         }
 
-        // Toujours le QR valide
         compose.runOnIdle { vm.onQrScanned(VALID_QR) }
         compose.waitForIdle()
 
         compose.onNodeWithTag(ScanTestTags.MESSAGE)
             .assertIsDisplayed()
             .assertTextContains("Already scanned")
+
+        compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertIsDisplayed()
+    }
+
+    @Test
+    fun rejected_revoked_showsRevokedMessage() {
+        val repo = FakeRepo().apply {
+            next = Result.success(
+                ScanDecision.Rejected(ScanDecision.Reason.REVOKED)
+            )
+        }
+        val vm = createVM(repo)
+
+        compose.setContent {
+            ScanContent(viewModel = vm)
+        }
+
+        compose.runOnIdle { vm.onQrScanned(VALID_QR) }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag(ScanTestTags.MESSAGE)
+            .assertIsDisplayed()
+            .assertTextContains("Pass revoked")
+
+        compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertIsDisplayed()
+    }
+
+    @Test
+    fun rejected_unregistered_showsUnregisteredMessage() {
+        val repo = FakeRepo().apply {
+            next = Result.success(
+                ScanDecision.Rejected(ScanDecision.Reason.UNREGISTERED)
+            )
+        }
+        val vm = createVM(repo)
+
+        compose.setContent {
+            ScanContent(viewModel = vm)
+        }
+
+        compose.runOnIdle { vm.onQrScanned(VALID_QR) }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag(ScanTestTags.MESSAGE)
+            .assertIsDisplayed()
+            .assertTextContains("User not registered")
+
+        compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertIsDisplayed()
+    }
+
+    @Test
+    fun rejected_badSignature_showsBadSignatureMessage() {
+        val repo = FakeRepo().apply {
+            next = Result.success(
+                ScanDecision.Rejected(ScanDecision.Reason.BAD_SIGNATURE)
+            )
+        }
+        val vm = createVM(repo)
+
+        compose.setContent {
+            ScanContent(viewModel = vm)
+        }
+
+        compose.runOnIdle { vm.onQrScanned(VALID_QR) }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag(ScanTestTags.MESSAGE)
+            .assertIsDisplayed()
+            .assertTextContains("Invalid signature")
 
         compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertIsDisplayed()
     }
@@ -121,7 +187,6 @@ class ScanScreenTest {
             ScanContent(viewModel = vm)
         }
 
-        // Toujours le QR valide
         compose.runOnIdle { vm.onQrScanned(VALID_QR) }
         compose.waitForIdle()
 
@@ -131,7 +196,22 @@ class ScanScreenTest {
 
         compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertIsDisplayed()
     }
-}
+
+    @Test
+    fun invalid_qr_showsInvalidFormatMessage() {
+        val vm = createVM()
+
+        compose.setContent {
+            ScanContent(viewModel = vm)
+        }
+
+        compose.runOnIdle { vm.onQrScanned("invalid-qr-format") }
+        compose.waitForIdle()
+
+        compose.onNodeWithTag(ScanTestTags.MESSAGE)
+            .assertIsDisplayed()
+            .assertTextContains("Invalid QR format")
+    }
 
 /**
  * Fake simple du repository pour les tests UI.
@@ -140,5 +220,13 @@ class FakeRepo : TicketScanRepository {
     var next: Result<ScanDecision> =
         Result.success(ScanDecision.Accepted(ticketId = "T-DEFAULT"))
 
-    override suspend fun validateByPass(qrText: String, eventId: String) = next
+    var delayMs: Long = 0
+
+    override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> {
+        if (delayMs > 0) {
+            kotlinx.coroutines.delay(delayMs)
+        }
+        return next
+    }
+}
 }
