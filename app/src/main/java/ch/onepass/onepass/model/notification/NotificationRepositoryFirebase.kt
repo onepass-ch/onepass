@@ -33,9 +33,11 @@ class NotificationRepositoryFirebase : NotificationRepository {
                 close(error)
                 return@addSnapshotListener
               }
+              // Safely deserialize documents; ignore those that fail parsing to prevent flow crash
               val notifications =
-                  snapshot?.documents?.mapNotNull { it.toObject(Notification::class.java) }
-                      ?: emptyList()
+                  snapshot?.documents?.mapNotNull { doc ->
+                    runCatching { doc.toObject(Notification::class.java) }.getOrNull()
+                  } ?: emptyList()
               trySend(notifications)
             }
     awaitClose { listener.remove() }
@@ -79,9 +81,9 @@ class NotificationRepositoryFirebase : NotificationRepository {
    * Marks all unread notifications for a user as read using a batch update.
    *
    * @param userId The unique identifier of the user.
-   * @return A [Result] indicating success or failure.
+   * @return A [Result] containing the count of updated notifications.
    */
-  override suspend fun markAllAsRead(userId: String): Result<Unit> = runCatching {
+  override suspend fun markAllAsRead(userId: String): Result<Int> = runCatching {
     val snapshot =
         notificationsCollection
             .whereEqualTo("userId", userId)
@@ -90,10 +92,16 @@ class NotificationRepositoryFirebase : NotificationRepository {
             .await()
 
     val batch = Firebase.firestore.batch()
+    val count = snapshot.size()
+
     snapshot.documents.forEach { doc ->
       batch.update(doc.reference, mapOf("isRead" to true, "readAt" to FieldValue.serverTimestamp()))
     }
-    batch.commit().await()
+
+    if (count > 0) {
+      batch.commit().await()
+    }
+    count
   }
 
   /**

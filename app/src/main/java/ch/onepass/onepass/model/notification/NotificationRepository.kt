@@ -33,9 +33,9 @@ interface NotificationRepository {
    * Marks all unread notifications for a specific user as read.
    *
    * @param userId The unique identifier of the user.
-   * @return A [Result] indicating success or failure.
+   * @return A [Result] containing the number of updated notifications on success.
    */
-  suspend fun markAllAsRead(userId: String): Result<Unit>
+  suspend fun markAllAsRead(userId: String): Result<Int>
 
   /**
    * Deletes a specific notification.

@@ -126,6 +126,9 @@ class NotificationRepositoryFirebaseTest : FirestoreTestBase() {
     val result = notificationRepository.markAllAsRead(userId)
     assertTrue(result.isSuccess)
 
+    // Verify returned count matches the number of notifications updated (2)
+    assertEquals("Should return count of updated notifications", 2, result.getOrNull())
+
     val countFlow = notificationRepository.getUnreadCount(userId)
     assertEquals("My unread count should be 0", 0, countFlow.first())
 
