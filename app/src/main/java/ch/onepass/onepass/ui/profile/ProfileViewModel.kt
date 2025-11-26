@@ -72,8 +72,10 @@ open class ProfileViewModel(
         val user = userRepository.getCurrentUser() ?: userRepository.getOrCreateUser()
 
         if (user != null) {
-          val isOrganizer =
-              membershipRepository.hasMembership(user.uid, "", listOf(OrganizationRole.OWNER))
+          // Check if user has any organization membership with OWNER role
+          val memberships =
+              membershipRepository.getOrganizationsByUser(user.uid).getOrNull() ?: emptyList()
+          val isOrganizer = memberships.any { it.role == OrganizationRole.OWNER }
           _state.value = user.toUiState(isOrganizer)
         } else {
           _state.value =
