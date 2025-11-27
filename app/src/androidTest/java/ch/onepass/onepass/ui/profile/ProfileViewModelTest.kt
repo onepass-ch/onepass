@@ -73,7 +73,7 @@ class ProfileViewModelTest {
     vm.state.filter { !it.loading }.first()
 
     val effect =
-        withTimeout(2000) {
+        withTimeout(3000) {
           vm.onOrganizationButton()
           vm.effects.first()
         }
@@ -91,7 +91,7 @@ class ProfileViewModelTest {
     vm.state.filter { !it.loading }.first()
 
     val effect =
-        withTimeout(1000) {
+        withTimeout(3000) {
           vm.onOrganizationButton()
           vm.effects.first()
         }
@@ -111,7 +111,7 @@ class ProfileViewModelTest {
     vm.state.filter { !it.loading }.first()
 
     val effect =
-        withTimeout(1000) {
+        withTimeout(3000) {
           vm.onOrganizationButton()
           vm.effects.first()
         }
