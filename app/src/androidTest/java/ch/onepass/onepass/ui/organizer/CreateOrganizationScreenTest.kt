@@ -133,4 +133,35 @@ class CreateOrganizationScreenTest {
         .assertIsDisplayed()
         .performClick()
   }
+
+  @Test
+  fun profileImageSelectionIndicatorNotShownInitially() {
+    composeTestRule.setContent { OnePassTheme { CreateOrganizationScreen(ownerId = "user123") } }
+
+    // Profile image selection indicator should not be shown initially
+    composeTestRule.onNodeWithText("✓ Profile image selected").assertDoesNotExist()
+  }
+
+  @Test
+  fun coverImageSelectionIndicatorNotShownInitially() {
+    composeTestRule.setContent { OnePassTheme { CreateOrganizationScreen(ownerId = "user123") } }
+
+    // Banner image selection indicator should not be shown initially
+    composeTestRule.onNodeWithText("✓ Banner image selected").assertDoesNotExist()
+  }
+
+  @Test
+  fun uploadImageButtonsAreVisible() {
+    composeTestRule.setContent { OnePassTheme { CreateOrganizationScreen(ownerId = "user123") } }
+
+    // Should have upload buttons (they contain text about uploading images)
+    composeTestRule
+        .onNodeWithText("Profile image", substring = true)
+        .performScrollTo()
+        .assertExists()
+    composeTestRule
+        .onNodeWithText("Banner image", substring = true)
+        .performScrollTo()
+        .assertExists()
+  }
 }

@@ -9,9 +9,19 @@ import android.net.Uri
  * network calls, making it suitable for unit tests.
  *
  * @property shouldFailUpload If true, all upload operations will fail with an exception.
+ * @property shouldSucceed If true, all upload operations will succeed (inverse of
+ *   shouldFailUpload).
+ * @property failureMessage Custom error message for failed uploads.
  */
 class FakeStorageRepository : StorageRepository {
   var shouldFailUpload = false
+  var failureMessage = "Upload failed"
+
+  var shouldSucceed: Boolean
+    get() = !shouldFailUpload
+    set(value) {
+      shouldFailUpload = !value
+    }
 
   override suspend fun uploadImage(
       uri: Uri,
@@ -19,7 +29,7 @@ class FakeStorageRepository : StorageRepository {
       onProgress: ((Float) -> Unit)?
   ): Result<String> {
     return if (shouldFailUpload) {
-      Result.failure(Exception("Upload failed"))
+      Result.failure(Exception(failureMessage))
     } else {
       // Return a fake download URL
       Result.success("https://fake-storage.com/$path")

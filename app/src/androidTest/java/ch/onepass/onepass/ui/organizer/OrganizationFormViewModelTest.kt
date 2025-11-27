@@ -156,6 +156,116 @@ class OrganizationFormViewModelTest {
     assertEquals("Should have the second image", secondUri, state.coverImageUri)
   }
 
+  @Test
+  fun createOrganizationWithProfileImageUploadsSuccessfully() = runTest {
+    val profileUri = android.net.Uri.parse("content://media/image/profile123")
+    storageRepository.shouldSucceed = true
+
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Test Description")
+    viewModel.selectProfileImage(profileUri)
+    viewModel.updateContactPhone("791234567")
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.successOrganizationId != null }.first()
+
+    assertNotNull(finalState.successOrganizationId)
+    assertNull(finalState.errorMessage)
+  }
+
+  @Test
+  fun createOrganizationWithCoverImageUploadsSuccessfully() = runTest {
+    val coverUri = android.net.Uri.parse("content://media/image/cover456")
+    storageRepository.shouldSucceed = true
+
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Test Description")
+    viewModel.selectCoverImage(coverUri)
+    viewModel.updateContactPhone("791234567")
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.successOrganizationId != null }.first()
+
+    assertNotNull(finalState.successOrganizationId)
+    assertNull(finalState.errorMessage)
+  }
+
+  @Test
+  fun createOrganizationWithBothImagesUploadsSuccessfully() = runTest {
+    val profileUri = android.net.Uri.parse("content://media/image/profile123")
+    val coverUri = android.net.Uri.parse("content://media/image/cover456")
+    storageRepository.shouldSucceed = true
+
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Test Description")
+    viewModel.selectProfileImage(profileUri)
+    viewModel.selectCoverImage(coverUri)
+    viewModel.updateContactPhone("791234567")
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.successOrganizationId != null }.first()
+
+    assertNotNull(finalState.successOrganizationId)
+    assertNull(finalState.errorMessage)
+  }
+
+  @Test
+  fun createOrganizationWithProfileImageFailsWhenUploadFails() = runTest {
+    val profileUri = android.net.Uri.parse("content://media/image/profile123")
+    storageRepository.shouldSucceed = false
+    storageRepository.failureMessage = "Failed to upload profile image"
+
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Test Description")
+    viewModel.selectProfileImage(profileUri)
+    viewModel.updateContactPhone("791234567")
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.errorMessage != null }.first()
+
+    assertNull(finalState.successOrganizationId)
+    assertTrue(finalState.errorMessage?.contains("Failed to upload profile image") ?: false)
+  }
+
+  @Test
+  fun createOrganizationWithCoverImageFailsWhenUploadFails() = runTest {
+    val coverUri = android.net.Uri.parse("content://media/image/cover456")
+    storageRepository.shouldSucceed = false
+    storageRepository.failureMessage = "Failed to upload cover image"
+
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Test Description")
+    viewModel.selectCoverImage(coverUri)
+    viewModel.updateContactPhone("791234567")
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.errorMessage != null }.first()
+
+    assertNull(finalState.successOrganizationId)
+    assertTrue(finalState.errorMessage?.contains("Failed to upload cover image") ?: false)
+  }
+
+  @Test
+  fun createOrganizationWithoutImagesSucceeds() = runTest {
+    storageRepository.shouldSucceed = true
+
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Test Description")
+    viewModel.updateContactPhone("791234567")
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.successOrganizationId != null }.first()
+
+    assertNotNull(finalState.successOrganizationId)
+    assertNull(finalState.errorMessage)
+  }
+
   private fun OrganizationFormViewModel.createOrganizationValidation(): Boolean {
     val method = OrganizationFormViewModel::class.java.getDeclaredMethod("validateForm")
     method.isAccessible = true

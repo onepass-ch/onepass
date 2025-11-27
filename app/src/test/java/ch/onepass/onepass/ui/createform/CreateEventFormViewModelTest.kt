@@ -593,4 +593,149 @@ class CreateEventFormViewModelTest {
     val formState = viewModel.formState.value
     assertEquals(2, formState.selectedImageUris.size)
   }
+
+  @Test
+  fun `createEvent with images uploads successfully`() =
+      runTest(testDispatcher) {
+        // Mock successful event creation and image upload
+        coEvery { mockEventRepository.createEvent(any()) } returns Result.success("new-event-id")
+        coEvery { mockStorageRepository.uploadImage(any(), any()) } returns
+            Result.success("https://example.com/uploaded-image.jpg")
+
+        // Fill in valid form data with images
+        viewModel.updateTitle("Test Event")
+        viewModel.updateDescription("Test Description")
+        viewModel.updateDate("25/12/2025")
+        viewModel.updateStartTime("14:30")
+        viewModel.updateEndTime("16:30")
+        viewModel.selectLocation(testLocation)
+        viewModel.updatePrice("25.50")
+        viewModel.updateCapacity("100")
+
+        val imageUri = android.net.Uri.parse("content://media/image/123")
+        viewModel.selectImage(imageUri)
+
+        viewModel.createEvent()
+
+        advanceUntilIdle()
+
+        // Verify repository was called and upload succeeded
+        coVerify(timeout = 2000) { mockEventRepository.createEvent(any()) }
+        coVerify(timeout = 2000) { mockStorageRepository.uploadImage(any(), any()) }
+
+        val uiState = viewModel.uiState.value
+        assertTrue(uiState is CreateEventUiState.Success)
+      }
+
+  @Test
+  fun `createEvent with multiple images uploads all successfully`() =
+      runTest(testDispatcher) {
+        coEvery { mockEventRepository.createEvent(any()) } returns Result.success("new-event-id")
+        coEvery { mockStorageRepository.uploadImage(any(), any()) } returns
+            Result.success("https://example.com/uploaded-image.jpg")
+
+        viewModel.updateTitle("Test Event")
+        viewModel.updateDescription("Test Description")
+        viewModel.updateDate("25/12/2025")
+        viewModel.updateStartTime("14:30")
+        viewModel.updateEndTime("16:30")
+        viewModel.selectLocation(testLocation)
+        viewModel.updatePrice("25.50")
+        viewModel.updateCapacity("100")
+
+        val imageUri1 = android.net.Uri.parse("content://media/image/123")
+        val imageUri2 = android.net.Uri.parse("content://media/image/456")
+        val imageUri3 = android.net.Uri.parse("content://media/image/789")
+        viewModel.selectImage(imageUri1)
+        viewModel.selectImage(imageUri2)
+        viewModel.selectImage(imageUri3)
+
+        viewModel.createEvent()
+
+        advanceUntilIdle()
+
+        // Verify all images were uploaded
+        coVerify(exactly = 3) { mockStorageRepository.uploadImage(any(), any()) }
+
+        val uiState = viewModel.uiState.value
+        assertTrue(uiState is CreateEventUiState.Success)
+      }
+
+  @Test
+  fun `createEvent fails when image upload fails`() =
+      runTest(testDispatcher) {
+        coEvery { mockEventRepository.createEvent(any()) } returns Result.success("new-event-id")
+        coEvery { mockStorageRepository.uploadImage(any(), any()) } returns
+            Result.failure(Exception("Upload failed"))
+
+        viewModel.updateTitle("Test Event")
+        viewModel.updateDescription("Test Description")
+        viewModel.updateDate("25/12/2025")
+        viewModel.updateStartTime("14:30")
+        viewModel.updateEndTime("16:30")
+        viewModel.selectLocation(testLocation)
+        viewModel.updatePrice("25.50")
+        viewModel.updateCapacity("100")
+
+        val imageUri = android.net.Uri.parse("content://media/image/123")
+        viewModel.selectImage(imageUri)
+
+        viewModel.createEvent()
+
+        advanceUntilIdle()
+
+        val uiState = viewModel.uiState.value
+        assertTrue(uiState is CreateEventUiState.Error)
+        assertTrue((uiState as CreateEventUiState.Error).message.contains("Failed to upload image"))
+      }
+
+  @Test
+  fun `createEvent without images succeeds and skips upload`() =
+      runTest(testDispatcher) {
+        coEvery { mockEventRepository.createEvent(any()) } returns Result.success("new-event-id")
+
+        viewModel.updateTitle("Test Event")
+        viewModel.updateDescription("Test Description")
+        viewModel.updateDate("25/12/2025")
+        viewModel.updateStartTime("14:30")
+        viewModel.updateEndTime("16:30")
+        viewModel.selectLocation(testLocation)
+        viewModel.updatePrice("25.50")
+        viewModel.updateCapacity("100")
+
+        viewModel.createEvent()
+
+        advanceUntilIdle()
+
+        // Verify no image upload was attempted
+        coVerify(exactly = 0) { mockStorageRepository.uploadImage(any(), any()) }
+
+        val uiState = viewModel.uiState.value
+        assertTrue(uiState is CreateEventUiState.Success)
+      }
+
+  @Test
+  fun `createEvent with empty image list does not call upload`() =
+      runTest(testDispatcher) {
+        coEvery { mockEventRepository.createEvent(any()) } returns Result.success("new-event-id")
+
+        viewModel.updateTitle("Test Event")
+        viewModel.updateDescription("Test Description")
+        viewModel.updateDate("25/12/2025")
+        viewModel.updateStartTime("14:30")
+        viewModel.updateEndTime("16:30")
+        viewModel.selectLocation(testLocation)
+        viewModel.updatePrice("25")
+        viewModel.updateCapacity("100")
+
+        // Verify initial state has no images
+        assertEquals(0, viewModel.formState.value.selectedImageUris.size)
+
+        viewModel.createEvent()
+
+        advanceUntilIdle()
+
+        // Verify storage repository was never called
+        coVerify(exactly = 0) { mockStorageRepository.uploadImage(any(), any()) }
+      }
 }
