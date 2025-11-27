@@ -54,7 +54,7 @@ export const validateEntryByPass = functions.https.onCall(async (data: any, cont
   }
 
   // Check pass status
-  const userDoc = await db.collection("user").doc(uid).get();
+  const userDoc = await db.collection("users").doc(uid).get();  // ← CORRIGÉ
   const pass = userDoc.data()?.pass;
 
   if (!pass || !pass.active || pass.revokedAt) {
@@ -82,7 +82,7 @@ export const validateEntryByPass = functions.https.onCall(async (data: any, cont
     .collection("tickets")
     .where("ownerId", "==", uid)
     .where("eventId", "==", eventId)
-    .where("state", "in", ["ISSUED", "TRANSFERRED"])  // ← Majuscules
+    .where("state", "in", ["ISSUED", "TRANSFERRED"])
     .limit(1)
     .get();
 
@@ -115,19 +115,19 @@ export const validateEntryByPass = functions.https.onCall(async (data: any, cont
 
       // Update ticket to REDEEMED (uppercase)
       transaction.update(ticketDoc.ref, {
-        state: "REDEEMED",  // ← Majuscule
+        state: "REDEEMED",
         redeemedAt: admin.firestore.FieldValue.serverTimestamp(),
       });
 
       // Update pass
-      transaction.update(db.collection("user").doc(uid), {
+      transaction.update(db.collection("users").doc(uid), {  // ← CORRIGÉ
         "pass.lastScannedAt": scannedAtSeconds,
       });
 
       // Increment event counters
       transaction.update(eventRef, {
         ticketsRedeemed: admin.firestore.FieldValue.increment(1),
-        ticketsRemaining: admin.firestore.FieldValue.increment(-1),  // ← Décrémenter
+        ticketsRemaining: admin.firestore.FieldValue.increment(-1),
       });
 
       // Create success validation record
@@ -143,7 +143,7 @@ export const validateEntryByPass = functions.https.onCall(async (data: any, cont
     // Get updated remaining count
     const eventDoc = await db.collection("events").doc(eventId).get();
     const eventData = eventDoc.data();
-    const remaining = eventData?.ticketsRemaining ?? 0;  // ← Utilise ticketsRemaining
+    const remaining = eventData?.ticketsRemaining ?? 0;
 
     logger.info(`Entry validated for uid=${uid}, ticket=${ticketId}`);
 
