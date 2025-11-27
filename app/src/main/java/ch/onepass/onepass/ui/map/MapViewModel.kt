@@ -9,6 +9,7 @@ import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.repository.RepositoryProvider
 import ch.onepass.onepass.ui.eventfilters.EventFilteringUtils.applyFiltersLocally
+import com.google.gson.JsonPrimitive
 import com.mapbox.geojson.Point
 import com.mapbox.maps.CameraOptions
 import com.mapbox.maps.MapView
@@ -18,6 +19,7 @@ import com.mapbox.maps.plugin.animation.MapAnimationOptions
 import com.mapbox.maps.plugin.animation.easeTo
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
+import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
 import com.mapbox.maps.plugin.compass.CompassPlugin
 import com.mapbox.maps.plugin.gestures.gestures
@@ -37,6 +39,11 @@ data class MapUIState(
     val showFilterDialog: Boolean = false,
     val hasLocationPermission: Boolean = false
 )
+
+private object AnnotationConfig {
+  const val PIN_ICON = "purple-pin"
+  const val PIN_SIZE = 0.6
+}
 
 /**
  * ViewModel for managing Mapbox map state and events.
@@ -156,18 +163,6 @@ class MapViewModel(
   }
 
   /**
-   * Updates the location permission flag and enables location tracking if granted.
-   *
-   * @param granted true if location permission is granted, false otherwise.
-   */
-  fun setLocationPermission(granted: Boolean) {
-    _uiState.update { it.copy(hasLocationPermission = granted) }
-    if (granted) {
-      enableLocationTracking()
-    }
-  }
-
-  /**
    * Checks if given latitude and longitude are valid coordinates.
    *
    * @param latitude The latitude value to validate
@@ -253,11 +248,6 @@ class MapViewModel(
     }
   }
 
-  /** Enables location tracking if permission is granted. */
-  fun enableLocationTracking() {
-    internalMapView?.let { enableLocationTracking(it) }
-  }
-
   /**
    * Enables the location component on the map and sets up the indicator listener.
    *
@@ -335,5 +325,112 @@ class MapViewModel(
     internalMapView = null
 
     super.onCleared()
+  }
+
+  /** Updates the location permission flag and enables/disables location tracking accordingly. */
+  fun setLocationPermission(granted: Boolean) {
+    _uiState.update { it.copy(hasLocationPermission = granted) }
+    if (granted) {
+      enableLocationTracking()
+    } else {
+      disableLocationTracking()
+    }
+  }
+
+  /** Enables location tracking if permission is granted */
+  fun enableLocationTracking() {
+    internalMapView?.let { mapView ->
+      val locationComponent: LocationComponentPlugin = mapView.location
+      locationComponent.updateSettings {
+        enabled = true
+        pulsingEnabled = true
+        locationPuck = createDefault2DPuck(withBearing = true)
+        puckBearing = PuckBearing.COURSE
+        puckBearingEnabled = true
+      }
+
+      // Set up position listener if not already set
+      if (indicatorListener == null) {
+        indicatorListener =
+            OnIndicatorPositionChangedListener { point -> lastKnownPoint = point }
+                .also { listener ->
+                  locationComponent.addOnIndicatorPositionChangedListener(listener)
+                }
+      }
+    }
+  }
+
+  /** Disables location tracking when permission is not granted */
+  private fun disableLocationTracking() {
+    internalMapView?.let { mapView ->
+      val locationComponent: LocationComponentPlugin = mapView.location
+      locationComponent.updateSettings {
+        enabled = false
+        pulsingEnabled = false
+      }
+
+      // Remove listener
+      indicatorListener?.let { listener ->
+        locationComponent.removeOnIndicatorPositionChangedListener(listener)
+      }
+      indicatorListener = null
+    }
+  }
+
+  /** Improved annotation setup that ensures annotations are recreated */
+  fun setupAnnotationsForEvents(events: List<Event>, mapView: MapView) {
+    viewModelScope.launch {
+      // Clear existing annotations first
+      clearAnnotationManager()
+
+      // Get or create annotation manager
+      val pointAnnotationManager = getOrCreatePointAnnotationManager(mapView)
+
+      // Create new annotations
+      events.forEach { event ->
+        val coords = event.location?.coordinates ?: return@forEach
+        val point = Point.fromLngLat(coords.longitude, coords.latitude)
+
+        val pin =
+            PointAnnotationOptions()
+                .withPoint(point)
+                .withIconImage(AnnotationConfig.PIN_ICON)
+                .withIconSize(AnnotationConfig.PIN_SIZE)
+                .withData(JsonPrimitive(event.eventId))
+
+        pointAnnotationManager.create(pin)
+      }
+
+      // Set up click listeners
+      setupAnnotationClickListeners(pointAnnotationManager, events, mapView)
+    }
+  }
+
+  /** Set up click listeners for annotations and map */
+  private fun setupAnnotationClickListeners(
+      pointAnnotationManager: PointAnnotationManager,
+      events: List<Event>,
+      mapView: MapView
+  ) {
+    // Remove existing click listeners first
+    pointAnnotationManager.removeClickListener { true }
+    mapView.gestures.removeOnMapClickListener { true }
+
+    // Add click listener for pins
+    pointAnnotationManager.addClickListener { annotation ->
+      val eventIdJson = annotation.getData()
+      val eventId = eventIdJson?.asString
+      eventId?.let { id ->
+        val selectedEvent = events.find { it.eventId == id }
+        selectedEvent?.let { event -> selectEvent(event) }
+      }
+      true
+    }
+
+    // Add map click listener to clear selection
+    mapView.gestures.addOnMapClickListener {
+      clearSelectedEvent()
+      true
+    }
   }
 }

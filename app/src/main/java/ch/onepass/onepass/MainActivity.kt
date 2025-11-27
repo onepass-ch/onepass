@@ -1,13 +1,8 @@
 package ch.onepass.onepass
 
-import android.Manifest
-import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Bundle
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -15,13 +10,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
@@ -29,6 +21,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import ch.onepass.onepass.resources.C
+import ch.onepass.onepass.ui.auth.AuthViewModel
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.navigation.AppNavHost
 import ch.onepass.onepass.ui.navigation.BottomNavigationBar
@@ -52,9 +45,7 @@ class MainActivity : ComponentActivity() {
     // Mapbox access token
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
 
-    setContent {
-      OnePassTheme { MainActivityContent(mapViewModel = mapViewModel, context = this@MainActivity) }
-    }
+    setContent { OnePassTheme { MainActivityContent(mapViewModel = mapViewModel) } }
   }
 }
 
@@ -63,37 +54,14 @@ class MainActivity : ComponentActivity() {
  * ViewModel state collection, and theming for the app.
  *
  * @param mapViewModel The [MapViewModel] instance controlling map UI state and logic.
- * @param context The [Context] used for permission checks and launching permission requests.
  */
 @Composable
-internal fun MainActivityContent(mapViewModel: MapViewModel, context: Context) {
-  val uiState by mapViewModel.uiState.collectAsState()
-
-  val launcher =
-      rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-        mapViewModel.setLocationPermission(isGranted)
-      }
-
-  // Runs only once when MainActivityContent first appears (because of Unit key)
-  LaunchedEffect(Unit) {
-    if (!uiState.hasLocationPermission) {
-      val hasPermission =
-          ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
-              PackageManager.PERMISSION_GRANTED
-
-      mapViewModel.setLocationPermission(hasPermission)
-
-      if (!hasPermission) {
-        launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-      }
-    }
-  }
-
+internal fun MainActivityContent(mapViewModel: MapViewModel) {
   Surface(
       modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
       color = MaterialTheme.colorScheme.background) {
-        OnePassApp(mapViewModel = mapViewModel)
-      }
+        OnePassApp() // Let each map screen create its own ViewModel
+  }
 }
 
 /**
@@ -108,10 +76,10 @@ internal fun MainActivityContent(mapViewModel: MapViewModel, context: Context) {
  */
 @Composable
 fun OnePassApp(
-    mapViewModel: MapViewModel,
+    mapViewModel: MapViewModel? = null,
     testAuthButtonTag: String? = null,
     authViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
-      initializer { ch.onepass.onepass.ui.auth.AuthViewModel() }
+      initializer { AuthViewModel() }
     },
     navController: NavHostController = rememberNavController(),
     profileViewModelFactory: ViewModelProvider.Factory? = viewModelFactory {
