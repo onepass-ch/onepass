@@ -13,7 +13,7 @@ export const generateUserPass = functions.https.onCall(async (data: any, context
 
   logger.info(`Generating pass for user ${uid}`);
 
-  const userDoc = await db.collection("user").doc(uid).get();
+  const userDoc = await db.collection("users").doc(uid).get();
   const existingPass = userDoc.data()?.pass;
 
   if (existingPass && existingPass.signature) {
@@ -48,7 +48,7 @@ export const generateUserPass = functions.https.onCall(async (data: any, context
     revokedAt: null,
   };
 
-  await db.collection("user").doc(uid).set(
+  await db.collection("users").doc(uid).set(
     { pass },
     { merge: true }
   );
