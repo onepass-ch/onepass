@@ -5,8 +5,10 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.model.ticket.TicketRepository
+import ch.onepass.onepass.model.ticket.TicketState
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.google.firebase.Timestamp
+import java.util.Calendar
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Rule
@@ -17,28 +19,22 @@ class MyEventsScreenTest {
 
   private fun setContent() {
     val fakeVm = createFakeMyEventsViewModel()
-
     composeTestRule.setContent {
       OnePassTheme { MyEventsContent(userQrData = "USER-QR-DATA", viewModel = fakeVm) }
     }
-
     composeTestRule.waitForIdle()
   }
 
   @Test
   fun tabs_exist_and_switchingTabs_showsCorrectTickets() {
     setContent()
-
     composeTestRule.onNodeWithTag(MyEventsTestTags.TABS_ROW).assertIsDisplayed()
     composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_CURRENT).assertIsDisplayed()
     composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_EXPIRED).assertIsDisplayed()
-
     composeTestRule.onNodeWithText("Lausanne Party").assertIsDisplayed()
     composeTestRule.onNodeWithText("Morges Party").assertDoesNotExist()
-
     composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_EXPIRED).performClick()
     composeTestRule.waitForIdle()
-
     composeTestRule.onNodeWithText("Morges Party").assertIsDisplayed()
     composeTestRule.onNodeWithText("Lausanne Party").assertDoesNotExist()
   }
@@ -46,74 +42,73 @@ class MyEventsScreenTest {
   @Test
   fun clickingTicket_showsDetailsDialog() {
     setContent()
-
     composeTestRule.onNodeWithTag(MyEventsTestTags.TICKET_CARD).performClick()
     composeTestRule.waitForIdle()
-
     composeTestRule
         .onNodeWithTag(MyEventsTestTags.TICKET_DIALOG_TITLE)
         .assertTextEquals("Lausanne Party")
-
+    composeTestRule.waitForIdle()
     composeTestRule.onNodeWithTag(MyEventsTestTags.TICKET_DIALOG_STATUS).assertIsDisplayed()
-
+    composeTestRule.waitForIdle()
     composeTestRule
         .onNodeWithTag(MyEventsTestTags.TICKET_DIALOG_DATE)
         .assertTextEquals("December 16, 2024 • 12:40 AM")
-
+    composeTestRule.waitForIdle()
     composeTestRule
         .onNodeWithTag(MyEventsTestTags.TICKET_DIALOG_LOCATION)
         .assertTextEquals("Lausanne, Flon")
+    composeTestRule.waitForIdle()
   }
 
   @Test
   fun qrCodeCard_expandsOnClick() {
     setContent()
-
     val qrCard = composeTestRule.onNodeWithTag(MyEventsTestTags.QR_CODE_CARD)
-
     val initialHeight = qrCard.fetchSemanticsNode().boundsInRoot.height
-
     qrCard.performClick()
     composeTestRule.waitForIdle()
-
     val expandedHeight = qrCard.fetchSemanticsNode().boundsInRoot.height
-
     assert(expandedHeight > initialHeight) {
       "QR card did not expand (initial=$initialHeight, expanded=$expandedHeight)"
     }
   }
 }
 
+fun createTestTicket(ticketId: String, eventId: String, state: TicketState, userId: String) =
+    ch.onepass.onepass.model.ticket.Ticket(
+        ticketId = ticketId,
+        eventId = eventId,
+        ownerId = userId,
+        state = state,
+        tierId = "tier1",
+        purchasePrice = 50.0,
+        issuedAt = fixedTestTimestamp(),
+        expiresAt = if (state == TicketState.REDEEMED) fixedTestTimestamp() else null)
+
+fun createTestEvent(eventId: String, title: String, location: String, startTime: Timestamp) =
+    ch.onepass.onepass.model.event.Event(
+        eventId = eventId,
+        title = title,
+        location = Location(name = location),
+        startTime = startTime)
+
+fun fixedTestTimestamp(): Timestamp {
+  val calendar = Calendar.getInstance()
+  calendar.set(2024, Calendar.DECEMBER, 16, 0, 40, 0)
+  calendar.set(Calendar.MILLISECOND, 0)
+  return Timestamp(calendar.time)
+}
+
 class FakeTicketRepository : TicketRepository {
   override fun getActiveTickets(
       userId: String
   ): Flow<List<ch.onepass.onepass.model.ticket.Ticket>> =
-      flowOf(
-          listOf(
-              ch.onepass.onepass.model.ticket.Ticket(
-                  ticketId = "t1",
-                  eventId = "e1",
-                  ownerId = userId,
-                  state = ch.onepass.onepass.model.ticket.TicketState.ISSUED,
-                  tierId = "tier1",
-                  purchasePrice = 50.0,
-                  issuedAt = Timestamp.now(),
-                  expiresAt = null)))
+      flowOf(listOf(createTestTicket("t1", "e1", TicketState.ISSUED, userId)))
 
   override fun getExpiredTickets(
       userId: String
   ): Flow<List<ch.onepass.onepass.model.ticket.Ticket>> =
-      flowOf(
-          listOf(
-              ch.onepass.onepass.model.ticket.Ticket(
-                  ticketId = "t2",
-                  eventId = "e2",
-                  ownerId = userId,
-                  state = ch.onepass.onepass.model.ticket.TicketState.REDEEMED,
-                  tierId = "tier2",
-                  purchasePrice = 40.0,
-                  issuedAt = Timestamp.now(),
-                  expiresAt = Timestamp.now())))
+      flowOf(listOf(createTestTicket("t2", "e2", TicketState.REDEEMED, userId)))
 
   override fun getTicketsByUser(
       userId: String
@@ -131,28 +126,15 @@ class FakeTicketRepository : TicketRepository {
   override suspend fun deleteTicket(ticketId: String) = Result.success(Unit)
 }
 
-private fun createFakeMyEventsViewModel(): MyEventsViewModel {
-  return MyEventsViewModel(
-      ticketRepo = FakeTicketRepository(), eventRepo = FakeEventRepository(), userId = "TEST_USER")
-}
-
 class FakeEventRepository : EventRepository {
-
   private val events =
       listOf(
-          ch.onepass.onepass.model.event.Event(
-              eventId = "e1",
-              title = "Lausanne Party",
-              location = Location(name = "Lausanne, Flon"),
-              startTime = Timestamp(1734306000, 0)),
-          ch.onepass.onepass.model.event.Event(
-              eventId = "e2",
-              title = "Morges Party",
-              location = Location(name = "Morges"),
-              startTime = Timestamp(1734306000 + 86400, 0)))
+          createTestEvent("e1", "Lausanne Party", "Lausanne, Flon", fixedTestTimestamp()),
+          createTestEvent(
+              "e2", "Morges Party", "Morges", Timestamp(fixedTestTimestamp().seconds + 86400, 0)))
 
   override fun getEventById(eventId: String): Flow<ch.onepass.onepass.model.event.Event> =
-      flowOf(events.find { it.eventId == eventId }!!)
+      flowOf(events.first { it.eventId == eventId })
 
   override fun getAllEvents(): Flow<List<ch.onepass.onepass.model.event.Event>> = flowOf(events)
 
@@ -185,4 +167,9 @@ class FakeEventRepository : EventRepository {
       Result.success(Unit)
 
   override suspend fun deleteEvent(eventId: String) = Result.success(Unit)
+}
+
+private fun createFakeMyEventsViewModel(): MyEventsViewModel {
+  return MyEventsViewModel(
+      ticketRepo = FakeTicketRepository(), eventRepo = FakeEventRepository(), userId = "TEST_USER")
 }
