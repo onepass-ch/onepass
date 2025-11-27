@@ -60,7 +60,7 @@ fun EventFormScaffold(
 }
 
 @Composable
-fun CreateEventButton(onClick: () -> Unit, enabled: Boolean = true, modifier: Modifier = Modifier) {
+fun CreateEventButton(modifier: Modifier = Modifier, onClick: () -> Unit, enabled: Boolean = true) {
   Button(
       onClick = onClick,
       enabled = enabled,

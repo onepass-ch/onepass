@@ -81,7 +81,7 @@ class EditEventFormViewModel(
       _uiState.value = EditEventUiState.Updating
 
       // Upload new images if any selected
-      val imageUploadResult = uploadSelectedImages(original.eventId)
+      val imageUploadResult = uploadSelectedImagesInternal(original.eventId)
       val newImageUrls =
           imageUploadResult.getOrElse {
             _uiState.value = EditEventUiState.Error(it.message ?: "Failed to upload images")

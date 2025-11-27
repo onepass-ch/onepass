@@ -34,9 +34,9 @@ import ch.onepass.onepass.R
  */
 @Composable
 fun UploadImageButton(
+    modifier: Modifier = Modifier,
     imageDescription: String = "Image*",
     onImageSelected: (Uri) -> Unit,
-    modifier: Modifier = Modifier,
     enabled: Boolean = true,
     testTag: String = "uploadImageButton"
 ) {

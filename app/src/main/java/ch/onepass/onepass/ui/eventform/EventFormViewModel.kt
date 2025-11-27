@@ -76,11 +76,30 @@ abstract class EventFormViewModel(
       val selectedLocation: Location?
   )
 
+  /** Sealed class representing the state of image upload operations */
+  sealed class ImageUploadState {
+    /** No upload operation in progress */
+    object Idle : ImageUploadState()
+
+    /** Images are being uploaded */
+    object Uploading : ImageUploadState()
+
+    /** Upload completed successfully */
+    data class Success(val urls: List<String>) : ImageUploadState()
+
+    /** Upload failed */
+    data class Error(val message: String) : ImageUploadState()
+  }
+
   protected val _formState = MutableStateFlow(EventFormState())
   val formState: StateFlow<EventFormState> = _formState.asStateFlow()
 
   protected val _fieldErrors = MutableStateFlow<Map<String, String>>(emptyMap())
   val fieldErrors: StateFlow<Map<String, String>> = _fieldErrors.asStateFlow()
+
+  // Image upload state
+  protected val _imageUploadState = MutableStateFlow<ImageUploadState>(ImageUploadState.Idle)
+  val imageUploadState: StateFlow<ImageUploadState> = _imageUploadState.asStateFlow()
 
   // Location search state
   private val _locationSearchResults = MutableStateFlow<List<Location>>(emptyList())
@@ -304,12 +323,32 @@ abstract class EventFormViewModel(
   }
 
   /**
-   * Uploads selected images to storage
+   * Starts the image upload process in the background and updates the imageUploadState. Child
+   * classes should observe imageUploadState to handle the result.
+   *
+   * @param eventId The event ID to use for the storage path
+   */
+  protected fun startImageUpload(eventId: String) {
+    viewModelScope.launch {
+      _imageUploadState.value = ImageUploadState.Uploading
+      val result = uploadSelectedImagesInternal(eventId)
+
+      _imageUploadState.value =
+          result.fold(
+              onSuccess = { ImageUploadState.Success(it) },
+              onFailure = { ImageUploadState.Error(it.message ?: "Upload failed") })
+    }
+  }
+
+  /**
+   * Internal suspend function that performs the actual image upload. Protected to allow child
+   * ViewModels to call it within their own coroutine scopes. Should NOT be called from UI layer -
+   * use startImageUpload() instead.
    *
    * @param eventId The event ID to use for the storage path
    * @return Result containing list of uploaded image URLs or error
    */
-  protected suspend fun uploadSelectedImages(eventId: String): Result<List<String>> {
+  protected suspend fun uploadSelectedImagesInternal(eventId: String): Result<List<String>> {
     val imageUris = _formState.value.selectedImageUris
 
     if (imageUris.isEmpty()) {
@@ -337,6 +376,11 @@ abstract class EventFormViewModel(
     } catch (e: Exception) {
       return Result.failure(Exception("Image upload failed: ${e.message}"))
     }
+  }
+
+  /** Resets the image upload state to Idle */
+  protected fun resetImageUploadState() {
+    _imageUploadState.value = ImageUploadState.Idle
   }
 
   /** Resets the form to initial state */

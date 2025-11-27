@@ -125,7 +125,7 @@ open class CreateEventFormViewModel(
       // Upload images to storage using the created event ID
       if (_formState.value.selectedImageUris.isNotEmpty()) {
         android.util.Log.d("CreateEventFormVM", "Uploading images...")
-        val imageUploadResult = uploadSelectedImages(createdEventId)
+        val imageUploadResult = uploadSelectedImagesInternal(createdEventId)
         val imageUrls =
             imageUploadResult.getOrElse {
               android.util.Log.e("CreateEventFormVM", "Image upload failed: ${it.message}")
