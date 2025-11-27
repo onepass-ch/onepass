@@ -16,9 +16,16 @@ export const generateUserPass = functions.https.onCall(async (data: any, context
   const userDoc = await db.collection("users").doc(uid).get();
   const existingPass = userDoc.data()?.pass;
 
+  // Check if valid pass already exists
   if (existingPass && existingPass.signature) {
-    logger.info(`Pass already exists for user ${uid}, returning existing`);
-    return existingPass;
+    // Validate pass is still active and not revoked
+    if (!existingPass.active || existingPass.revokedAt) {
+      logger.info(`Existing pass for user ${uid} is revoked or inactive, regenerating`);
+      // Fall through to generate new pass
+    } else {
+      logger.info(`Valid pass already exists for user ${uid}, returning existing`);
+      return existingPass;
+    }
   }
 
   const key = await getActiveKey();
