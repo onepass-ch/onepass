@@ -92,7 +92,7 @@ class MapViewModel(
   val allEvents: StateFlow<List<Event>> = _allEvents.asStateFlow()
 
   // --- Reusable PointAnnotationManager ---
-  private var pointAnnotationManager: PointAnnotationManager? = null
+  var pointAnnotationManager: PointAnnotationManager? = null
 
   // --- Mapbox references ---
   /**
@@ -107,9 +107,9 @@ class MapViewModel(
    *
    * @see onCleared for cleanup implementation
    */
-  @SuppressLint("StaticFieldLeak") private var internalMapView: MapView? = null
+  @SuppressLint("StaticFieldLeak") var internalMapView: MapView? = null
 
-  private var lastKnownPoint: Point? = null
+  var lastKnownPoint: Point? = null
   private var indicatorListener: OnIndicatorPositionChangedListener? = null
   private val defaultCenterPoint =
       Point.fromLngLat(CameraConfig.DEFAULT_LONGITUDE, CameraConfig.DEFAULT_LATITUDE)
