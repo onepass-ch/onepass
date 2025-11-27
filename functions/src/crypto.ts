@@ -23,7 +23,7 @@ export async function getActiveKey(): Promise<SigningKey> {
   const snapshot = await db
     .collection("keys")
     .where("active", "==", true)
-    .orderBy("createdAt", "desc")  // ← Ensures most recent key is selected
+    .orderBy("createdAt", "desc")
     .limit(1)
     .get();
 
@@ -40,8 +40,25 @@ export async function getActiveKey(): Promise<SigningKey> {
   };
 }
 
+/**
+ * Signs a payload using Ed25519 private key.
+ *
+ * @param payload - JSON string to sign
+ * @param privateKeyBase64 - Base64-encoded Ed25519 private key (64 bytes)
+ * @returns Base64url-encoded signature
+ * @throws HttpsError if private key format is invalid
+ */
 export function signPayload(payload: string, privateKeyBase64: string): string {
   const privateKey = util.decodeBase64(privateKeyBase64);
+
+  // Validate Ed25519 private key length (64 bytes)
+  if (privateKey.length !== 64) {
+    throw new functions.https.HttpsError(
+      "internal",
+      `Invalid private key length: expected 64 bytes, got ${privateKey.length}`
+    );
+  }
+
   const message = util.decodeUTF8(payload);
   const signature = nacl.sign.detached(message, privateKey);
 
@@ -51,6 +68,14 @@ export function signPayload(payload: string, privateKeyBase64: string): string {
     .replace(/=/g, "");
 }
 
+/**
+ * Verifies an Ed25519 signature against a payload.
+ *
+ * @param payload - Original JSON string that was signed
+ * @param signatureBase64Url - Base64url-encoded signature
+ * @param kid - Key ID to use for verification
+ * @returns true if signature is valid, false otherwise
+ */
 export async function verifySignature(
   payload: string,
   signatureBase64Url: string,
@@ -70,9 +95,20 @@ export async function verifySignature(
     .replace(/-/g, "+")
     .replace(/_/g, "/");
 
-  const publicKey = util.decodeBase64(keyData.publicKey);
-  const signature = util.decodeBase64(signatureBase64);
-  const message = util.decodeUTF8(payload);
+  try {
+    const publicKey = util.decodeBase64(keyData.publicKey);
 
-  return nacl.sign.detached.verify(message, signature, publicKey);
+    // Validate Ed25519 public key length (32 bytes)
+    if (publicKey.length !== 32) {
+      return false;
+    }
+
+    const signature = util.decodeBase64(signatureBase64);
+    const message = util.decodeUTF8(payload);
+
+    return nacl.sign.detached.verify(message, signature, publicKey);
+  } catch (error) {
+    // Catch any decoding errors
+    return false;
+  }
 }
