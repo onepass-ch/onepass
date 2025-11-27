@@ -3,7 +3,6 @@ package ch.onepass.onepass
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -35,28 +34,22 @@ import com.mapbox.common.MapboxOptions
  * Main Activity that sets up Mapbox, the OnePass theme and hosts the root composable navigation.
  */
 class MainActivity : ComponentActivity() {
-
-  // Map screen ViewModel (for lifecycle delegation)
-  private val mapViewModel: MapViewModel by viewModels()
-
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
     // Mapbox access token
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
 
-    setContent { OnePassTheme { MainActivityContent(mapViewModel = mapViewModel) } }
+    setContent { OnePassTheme { MainActivityContent() } }
   }
 }
 
 /**
  * Root composable for the main activity content, responsible for setting up permission handling,
  * ViewModel state collection, and theming for the app.
- *
- * @param mapViewModel The [MapViewModel] instance controlling map UI state and logic.
  */
 @Composable
-internal fun MainActivityContent(mapViewModel: MapViewModel) {
+internal fun MainActivityContent() {
   Surface(
       modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
       color = MaterialTheme.colorScheme.background) {
