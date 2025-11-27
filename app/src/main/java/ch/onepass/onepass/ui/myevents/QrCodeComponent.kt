@@ -1,6 +1,7 @@
 package ch.onepass.onepass.ui.myevents
 
 import android.graphics.Bitmap
+import android.graphics.Color
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -17,9 +18,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,12 +29,11 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 import ch.onepass.onepass.R
-import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 
@@ -44,13 +42,17 @@ import com.google.zxing.qrcode.QRCodeWriter
  * code.
  *
  * @param qrData The data to encode in the QR code
+ * @param isExpanded Whether the QR code is expanded or collapsed
+ * @param onToggleExpanded Callback to toggle the expanded state
  * @param modifier Modifier for styling
  */
 @Composable
-fun QrCodeComponent(qrData: String, modifier: Modifier = Modifier) {
-  // State to track whether the QR code is expanded or collapsed
-  var isExpanded by remember { mutableStateOf(false) }
-
+fun QrCodeComponent(
+    qrData: String,
+    isExpanded: Boolean,
+    onToggleExpanded: () -> Unit,
+    modifier: Modifier = Modifier
+) {
   // Calculate heights based on screen size
   val screenHeight = LocalConfiguration.current.screenHeightDp.dp
   val expandedHeight = screenHeight * 0.55f
@@ -71,20 +73,7 @@ fun QrCodeComponent(qrData: String, modifier: Modifier = Modifier) {
               spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow))
 
   // Generate QR code bitmap
-  val qrBitmap: Bitmap =
-      remember(qrData) {
-        val size = 800
-        val bits = QRCodeWriter().encode(qrData, BarcodeFormat.QR_CODE, size, size)
-        createBitmap(size, size).also { bmp ->
-          for (x in 0 until size) {
-            for (y in 0 until size) {
-              bmp[x, y] =
-                  if (bits[x, y]) android.graphics.Color.WHITE
-                  else android.graphics.Color.TRANSPARENT
-            }
-          }
-        }
-      }
+  val qrBitmap: Bitmap = remember(qrData) { generateQrBitmap(qrData) }
 
   // QR code card with animated size and content
   Card(
@@ -92,49 +81,75 @@ fun QrCodeComponent(qrData: String, modifier: Modifier = Modifier) {
           modifier
               .fillMaxWidth()
               .size(animatedHeight, animatedHeight)
-              .clickable { isExpanded = !isExpanded }
+              .clickable { onToggleExpanded() }
               .testTag(MyEventsTestTags.QR_CODE_CARD),
       shape = RoundedCornerShape(16.dp),
       colors = CardDefaults.cardColors(containerColor = colorResource(id = R.color.background))) {
         // Background with gradient and QR code image
-        Box(
-            modifier =
-                Modifier.fillMaxSize()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(
-                        // Background gradient colors
-                        Brush.horizontalGradient(
-                            listOf(
-                                colorResource(id = R.color.qr_red).copy(alpha = 0.2f),
-                                colorResource(id = R.color.qr_pink).copy(alpha = 0.2f),
-                                colorResource(id = R.color.qr_purple).copy(alpha = 0.2f),
-                                colorResource(id = R.color.qr_lilac).copy(alpha = 0.2f),
-                                colorResource(id = R.color.qr_orange).copy(alpha = 0.2f),
-                                colorResource(id = R.color.qr_yellow).copy(alpha = 0.2f)))),
-            contentAlignment = Alignment.Center) {
-              if (isExpanded) {
-                // Show generated QR code when expanded
-                Image(
-                    bitmap = qrBitmap.asImageBitmap(),
-                    contentDescription = null,
-                    modifier =
-                        Modifier.size(screenHeight * 0.6f).graphicsLayer {
-                          scaleX = qrScale
-                          scaleY = qrScale
-                        })
-              } else {
-                // Show placeholder icon when collapsed
-                Image(
-                    painter = painterResource(id = R.drawable.qr_code_icon),
-                    contentDescription = null,
-                    modifier = Modifier.size(40.dp))
-              }
-            }
+        QrCardContent(isExpanded, qrBitmap, screenHeight, qrScale)
       }
 }
 
-@Preview(showBackground = true)
+/**
+ * Composable that displays the content of the QR code card, including the background gradient and
+ * the QR code image or placeholder icon.
+ *
+ * @param isExpanded Whether the QR code is expanded or collapsed
+ * @param qrBitmap The generated QR code bitmap
+ * @param screenHeight The height of the device screen
+ * @param qrScale The scale factor for the QR code image
+ */
 @Composable
-fun QrCodePreview() {
-  OnePassTheme { QrCodeComponent(qrData = "QR-1234", modifier = Modifier.fillMaxWidth()) }
+private fun QrCardContent(isExpanded: Boolean, qrBitmap: Bitmap, screenHeight: Dp, qrScale: Float) {
+  Box(
+      modifier =
+          Modifier.fillMaxSize()
+              .clip(RoundedCornerShape(16.dp))
+              .background(
+                  // Background gradient colors
+                  Brush.horizontalGradient(
+                      listOf(
+                          colorResource(id = R.color.qr_red).copy(alpha = 0.2f),
+                          colorResource(id = R.color.qr_pink).copy(alpha = 0.2f),
+                          colorResource(id = R.color.qr_purple).copy(alpha = 0.2f),
+                          colorResource(id = R.color.qr_lilac).copy(alpha = 0.2f),
+                          colorResource(id = R.color.qr_orange).copy(alpha = 0.2f),
+                          colorResource(id = R.color.qr_yellow).copy(alpha = 0.2f)))),
+      contentAlignment = Alignment.Center) {
+        if (isExpanded) {
+          // Show generated QR code when expanded
+          Image(
+              bitmap = qrBitmap.asImageBitmap(),
+              contentDescription = null,
+              modifier =
+                  Modifier.size(screenHeight * 0.6f).graphicsLayer {
+                    scaleX = qrScale
+                    scaleY = qrScale
+                  })
+        } else {
+          // Show placeholder icon when collapsed
+          Image(
+              painter = painterResource(id = R.drawable.qr_code_icon),
+              contentDescription = null,
+              modifier = Modifier.size(40.dp))
+        }
+      }
+}
+
+/**
+ * Generates a QR code bitmap from the provided data string.
+ *
+ * @param qrData The data to encode in the QR code
+ * @return A Bitmap representing the generated QR code
+ */
+private fun generateQrBitmap(qrData: String): Bitmap {
+  val size = 800
+  val bits = QRCodeWriter().encode(qrData, BarcodeFormat.QR_CODE, size, size)
+  return createBitmap(size, size).also { bmp ->
+    for (x in 0 until size) {
+      for (y in 0 until size) {
+        bmp[x, y] = if (bits[x, y]) Color.WHITE else Color.TRANSPARENT
+      }
+    }
+  }
 }
