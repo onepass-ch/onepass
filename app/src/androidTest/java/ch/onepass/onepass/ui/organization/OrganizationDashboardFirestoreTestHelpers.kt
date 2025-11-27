@@ -73,9 +73,8 @@ object FirestoreTestHelper {
   ) {
     val user =
         User(
-            uid =
-                userId, // Note: @Exclude means this won't be in the doc body, which matches
-                        // Firestore behavior
+            uid = userId, // Note: @Exclude means this won't be in the doc body, which matches
+            // Firestore behavior
             displayName = displayName,
             email = email)
     db.collection("users").document(userId).set(user).await()
