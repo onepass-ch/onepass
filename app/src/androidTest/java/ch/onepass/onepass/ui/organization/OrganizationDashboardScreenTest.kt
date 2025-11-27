@@ -71,7 +71,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)),
-            membershipRepository = MockMembershipRepository(testMemberships))
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.ORG_SUMMARY_CARD)
@@ -87,7 +88,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(),
-            membershipRepository = MockMembershipRepository(testMemberships))
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.ORG_SUMMARY_CARD)
@@ -113,7 +115,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)),
-            membershipRepository = MockMembershipRepository(testMemberships))
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.MANAGE_EVENTS_SECTION)
@@ -135,7 +138,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(),
-            membershipRepository = MockMembershipRepository(testMemberships))
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.MANAGE_STAFF_SECTION)
@@ -157,7 +161,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)),
-            membershipRepository = MockMembershipRepository(testMemberships))
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN)
@@ -183,7 +188,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(),
-            membershipRepository = MockMembershipRepository(testMemberships))
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
@@ -221,7 +227,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(),
-            membershipRepository = MockMembershipRepository(testMemberships))
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     var clicked = false
     setScreen(viewModel = viewModel, onNavigateToCreateEvent = { clicked = true })
 
@@ -237,7 +244,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(),
-            membershipRepository = MockMembershipRepository(testMemberships))
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     var clicked = false
     setScreen(viewModel = viewModel, onNavigateToAddStaff = { clicked = true })
 
@@ -257,6 +265,7 @@ class OrganizationDashboardScreenTest {
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(events = listOf(testEvent1)),
             membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository(),
             auth = mockAuth)
     var clickedEventId: String? = null
     setScreen(viewModel = viewModel, onNavigateToScanTickets = { clickedEventId = it })
@@ -291,6 +300,7 @@ class OrganizationDashboardScreenTest {
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(events = listOf(testEvent1)),
             membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository(),
             auth = mockAuth)
     var clickedEventId: String? = null
     setScreen(viewModel = viewModel, onNavigateToEditEvent = { clickedEventId = it })
@@ -332,6 +342,7 @@ class OrganizationDashboardScreenTest {
             organizationRepository = mockOrgRepo,
             eventRepository = MockEventRepository(),
             membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository(),
             auth = mockAuth)
     setScreen(viewModel = viewModel)
 
@@ -347,7 +358,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(shouldThrowError = true),
             eventRepository = MockEventRepository(),
-            membershipRepository = MockMembershipRepository(testMemberships))
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     composeTestRule.waitUntil(timeoutMillis = 5000) {
@@ -367,7 +379,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(),
-            membershipRepository = MockMembershipRepository(testMemberships))
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     var clicked = false
     setScreen(viewModel = viewModel, onNavigateBack = { clicked = true })
 
@@ -383,7 +396,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(),
-            membershipRepository = MockMembershipRepository(testMemberships))
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     var clickedOrgId: String? = null
     setScreen(viewModel = viewModel, onNavigateToProfile = { clickedOrgId = it })
 
@@ -399,7 +413,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(events = emptyList()),
-            membershipRepository = MockMembershipRepository(testMemberships))
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN)
@@ -416,7 +431,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(),
-            membershipRepository = MockMembershipRepository(members = emptyList()))
+            membershipRepository = MockMembershipRepository(members = emptyList()),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     composeTestRule.waitForIdle()

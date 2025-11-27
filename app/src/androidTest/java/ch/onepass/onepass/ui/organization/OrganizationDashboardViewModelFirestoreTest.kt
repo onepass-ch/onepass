@@ -4,6 +4,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.membership.MembershipRepositoryFirebase
 import ch.onepass.onepass.model.organization.*
+import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import ch.onepass.onepass.utils.EventTestData
 import ch.onepass.onepass.utils.FirebaseEmulator
 import ch.onepass.onepass.utils.FirestoreTestBase
@@ -24,6 +25,7 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
   private lateinit var orgRepository: OrganizationRepositoryFirebase
   private lateinit var eventRepository: EventRepositoryFirebase
   private lateinit var membershipRepository: MembershipRepositoryFirebase
+  private lateinit var userRepository: UserRepositoryFirebase
   private lateinit var auth: FirebaseAuth
 
   @Before
@@ -35,6 +37,7 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
       orgRepository = OrganizationRepositoryFirebase()
       eventRepository = EventRepositoryFirebase()
       membershipRepository = MembershipRepositoryFirebase()
+      userRepository = UserRepositoryFirebase()
       auth = FirebaseEmulator.auth
     }
   }
@@ -44,6 +47,7 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
           organizationRepository = orgRepository,
           eventRepository = eventRepository,
           membershipRepository = membershipRepository,
+          userRepository = userRepository,
           auth = auth)
 
   private fun createOrg(
@@ -132,6 +136,7 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
             "member-2" to OrganizationRole.MEMBER,
             "staff-2" to OrganizationRole.STAFF)
     FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
+    members.keys.forEach { uid -> FirestoreTestHelper.createFirestoreUser(uid) }
 
     val viewModel = createViewModel()
     val state =
@@ -140,9 +145,9 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
             .value
 
     assertEquals(3, state.staffMembers.size)
-    assertEquals(OrganizationRole.OWNER, state.staffMembers[userId]?.role)
-    assertEquals(OrganizationRole.MEMBER, state.staffMembers["member-2"]?.role)
-    assertEquals(OrganizationRole.STAFF, state.staffMembers["staff-2"]?.role)
+    assertEquals(OrganizationRole.OWNER, state.staffMembers.find { it.userId == userId }?.role)
+    assertEquals(OrganizationRole.MEMBER, state.staffMembers.find { it.userId == "member-2" }?.role)
+    assertEquals(OrganizationRole.STAFF, state.staffMembers.find { it.userId == "staff-2" }?.role)
   }
 
   @Test
@@ -157,16 +162,20 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
     val members =
         mapOf(userId to OrganizationRole.OWNER, "removable-member" to OrganizationRole.MEMBER)
     FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
+    members.keys.forEach { uid -> FirestoreTestHelper.createFirestoreUser(uid) }
 
     val viewModel = createViewModel()
     loadOrgAndWait(viewModel, orgId) { !it.isLoading && it.organization != null }
 
     viewModel.removeStaffMember("removable-member")
-    val state = viewModel.uiState.first { !it.staffMembers.containsKey("removable-member") }
+    val state =
+        viewModel.uiState.first { state ->
+          state.staffMembers.none { it.userId == "removable-member" }
+        }
 
-    assertFalse(state.staffMembers.containsKey("removable-member"))
+    assertFalse(state.staffMembers.any { it.userId == "removable-member" })
     assertEquals(1, state.staffMembers.size)
-    assertTrue(state.staffMembers.containsKey(userId))
+    assertTrue(state.staffMembers.any { it.userId == userId })
   }
 
   @Test
@@ -180,6 +189,7 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
 
     val members = mapOf(userId to OrganizationRole.OWNER, "safe-member" to OrganizationRole.MEMBER)
     FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
+    members.keys.forEach { uid -> FirestoreTestHelper.createFirestoreUser(uid) }
 
     val viewModel = createViewModel()
     loadOrgAndWait(viewModel, orgId) { !it.isLoading && it.organization != null }
@@ -190,7 +200,7 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
     val afterRemove = viewModel.uiState.value
 
     assertEquals(memberCountBefore, afterRemove.staffMembers.size)
-    assertTrue(afterRemove.staffMembers.containsKey(userId))
+    assertTrue(afterRemove.staffMembers.any { it.userId == userId })
   }
 
   @Test
@@ -307,19 +317,22 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
             "member-x" to OrganizationRole.MEMBER,
             "staff-x" to OrganizationRole.STAFF)
     FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
+    members.keys.forEach { uid -> FirestoreTestHelper.createFirestoreUser(uid) }
 
     val viewModel = createViewModel()
     loadOrgAndWait(viewModel, orgId) { !it.isLoading && it.organization != null }
 
     viewModel.removeStaffMember("member-x")
-    val afterMemberRemove = viewModel.uiState.first { !it.staffMembers.containsKey("member-x") }
-    assertFalse(afterMemberRemove.staffMembers.containsKey("member-x"))
+    val afterMemberRemove =
+        viewModel.uiState.first { state -> state.staffMembers.none { it.userId == "member-x" } }
+    assertFalse(afterMemberRemove.staffMembers.any { it.userId == "member-x" })
 
     viewModel.removeStaffMember("staff-x")
-    val afterStaffRemove = viewModel.uiState.first { !it.staffMembers.containsKey("staff-x") }
-    assertFalse(afterStaffRemove.staffMembers.containsKey("staff-x"))
+    val afterStaffRemove =
+        viewModel.uiState.first { state -> state.staffMembers.none { it.userId == "staff-x" } }
+    assertFalse(afterStaffRemove.staffMembers.any { it.userId == "staff-x" })
 
-    assertTrue(afterStaffRemove.staffMembers.containsKey(userId))
+    assertTrue(afterStaffRemove.staffMembers.any { it.userId == userId })
     assertEquals(1, afterStaffRemove.staffMembers.size)
   }
 }
