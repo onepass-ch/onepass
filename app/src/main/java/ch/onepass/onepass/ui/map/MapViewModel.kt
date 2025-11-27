@@ -331,11 +331,7 @@ class MapViewModel(
   /** Updates the location permission flag and enables/disables location tracking accordingly. */
   fun setLocationPermission(granted: Boolean) {
     _uiState.update { it.copy(hasLocationPermission = granted) }
-    if (granted) {
-      enableLocationTracking()
-    } else {
-      disableLocationTracking()
-    }
+    if (granted) enableLocationTracking() else disableLocationTracking()
   }
 
   /** Enables location tracking if permission is granted */
