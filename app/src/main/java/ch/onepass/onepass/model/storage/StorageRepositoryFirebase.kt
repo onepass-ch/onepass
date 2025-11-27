@@ -214,4 +214,21 @@ class StorageRepositoryFirebase(private val storage: FirebaseStorage = Firebase.
       }
     }
   }
+
+  /**
+   * Determines the file extension from the URI or content type.
+   *
+   * @param uri The URI of the image.
+   * @return The file extension (e.g., "jpg", "png", "webp").
+   */
+  override fun getImageExtension(uri: Uri): String {
+    val uriString = uri.toString().lowercase()
+    return when {
+      uriString.contains(".png") -> "png"
+      uriString.contains(".gif") -> "gif"
+      uriString.contains(".webp") -> "webp"
+      uriString.contains(".jpg") || uriString.contains(".jpeg") -> "jpg"
+      else -> "jpg" // Default to jpg for unknown types
+    }
+  }
 }

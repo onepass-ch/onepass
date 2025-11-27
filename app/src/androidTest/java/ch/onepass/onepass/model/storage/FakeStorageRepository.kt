@@ -44,4 +44,15 @@ class FakeStorageRepository : StorageRepository {
       Result.success("https://fake-storage.com/$path")
 
   override suspend fun deleteDirectory(directoryPath: String): Result<Int> = Result.success(0)
+
+  override fun getImageExtension(uri: Uri): String {
+    val uriString = uri.toString().lowercase()
+    return when {
+      uriString.contains(".png") -> "png"
+      uriString.contains(".gif") -> "gif"
+      uriString.contains(".webp") -> "webp"
+      uriString.contains(".jpg") || uriString.contains(".jpeg") -> "jpg"
+      else -> "jpg" // Default to jpg for unknown types
+    }
+  }
 }

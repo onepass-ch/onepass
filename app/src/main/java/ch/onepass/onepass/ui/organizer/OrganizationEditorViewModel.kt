@@ -142,7 +142,9 @@ class OrganizationEditorViewModel(
       return Result.success(null)
     }
 
-    val storagePath = "organizations/$organizationId/profile_image.jpg"
+    // Determine the correct file extension based on the image type
+    val extension = storageRepository.getImageExtension(imageUri)
+    val storagePath = "organizations/$organizationId/profile_image.$extension"
     return storageRepository
         .uploadImage(imageUri, storagePath)
         .map { url -> url }
@@ -165,7 +167,9 @@ class OrganizationEditorViewModel(
       return Result.success(null)
     }
 
-    val storagePath = "organizations/$organizationId/cover_image.jpg"
+    // Determine the correct file extension based on the image type
+    val extension = storageRepository.getImageExtension(imageUri)
+    val storagePath = "organizations/$organizationId/cover_image.$extension"
     return storageRepository
         .uploadImage(imageUri, storagePath)
         .map { url -> url }

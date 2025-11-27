@@ -597,10 +597,12 @@ class CreateEventFormViewModelTest {
   @Test
   fun `createEvent with images uploads successfully`() =
       runTest(testDispatcher) {
-        // Mock successful event creation and image upload
+        // Mock successful event creation, image upload, and event update
         coEvery { mockEventRepository.createEvent(any()) } returns Result.success("new-event-id")
         coEvery { mockStorageRepository.uploadImage(any(), any()) } returns
             Result.success("https://example.com/uploaded-image.jpg")
+        coEvery { mockEventRepository.updateEventImages(any(), any()) } returns Result.success(Unit)
+        coEvery { mockStorageRepository.getImageExtension(any()) } returns "jpg"
 
         // Fill in valid form data with images
         viewModel.updateTitle("Test Event")
@@ -622,6 +624,7 @@ class CreateEventFormViewModelTest {
         // Verify repository was called and upload succeeded
         coVerify(timeout = 2000) { mockEventRepository.createEvent(any()) }
         coVerify(timeout = 2000) { mockStorageRepository.uploadImage(any(), any()) }
+        coVerify(timeout = 2000) { mockEventRepository.updateEventImages(any(), any()) }
 
         val uiState = viewModel.uiState.value
         assertTrue(uiState is CreateEventUiState.Success)
@@ -633,6 +636,8 @@ class CreateEventFormViewModelTest {
         coEvery { mockEventRepository.createEvent(any()) } returns Result.success("new-event-id")
         coEvery { mockStorageRepository.uploadImage(any(), any()) } returns
             Result.success("https://example.com/uploaded-image.jpg")
+        coEvery { mockEventRepository.updateEventImages(any(), any()) } returns Result.success(Unit)
+        coEvery { mockStorageRepository.getImageExtension(any()) } returns "jpg"
 
         viewModel.updateTitle("Test Event")
         viewModel.updateDescription("Test Description")
@@ -667,6 +672,7 @@ class CreateEventFormViewModelTest {
         coEvery { mockEventRepository.createEvent(any()) } returns Result.success("new-event-id")
         coEvery { mockStorageRepository.uploadImage(any(), any()) } returns
             Result.failure(Exception("Upload failed"))
+        coEvery { mockStorageRepository.getImageExtension(any()) } returns "jpg"
 
         viewModel.updateTitle("Test Event")
         viewModel.updateDescription("Test Description")

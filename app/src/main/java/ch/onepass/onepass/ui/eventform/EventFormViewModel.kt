@@ -320,7 +320,9 @@ abstract class EventFormViewModel(
 
     try {
       imageUris.forEachIndexed { index, uri ->
-        val storagePath = "events/$eventId/image_$index.jpg"
+        // Determine the correct file extension based on the image type
+        val extension = storageRepository.getImageExtension(uri)
+        val storagePath = "events/$eventId/image_$index.$extension"
         val result = storageRepository.uploadImage(uri, storagePath)
 
         result.fold(

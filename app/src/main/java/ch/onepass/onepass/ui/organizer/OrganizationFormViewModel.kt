@@ -370,7 +370,9 @@ class OrganizationFormViewModel(
   private suspend fun uploadProfileImage(organizationId: String): Result<String?> {
     val imageUri = _formState.value.profileImageUri ?: return Result.success(null)
 
-    val storagePath = "organizations/$organizationId/profile_image.jpg"
+    // Determine the correct file extension based on the image type
+    val extension = storageRepository.getImageExtension(imageUri)
+    val storagePath = "organizations/$organizationId/profile_image.$extension"
     return storageRepository
         .uploadImage(imageUri, storagePath)
         .map { url -> url }
@@ -390,7 +392,9 @@ class OrganizationFormViewModel(
   private suspend fun uploadCoverImage(organizationId: String): Result<String?> {
     val imageUri = _formState.value.coverImageUri ?: return Result.success(null)
 
-    val storagePath = "organizations/$organizationId/cover_image.jpg"
+    // Determine the correct file extension based on the image type
+    val extension = storageRepository.getImageExtension(imageUri)
+    val storagePath = "organizations/$organizationId/cover_image.$extension"
     return storageRepository
         .uploadImage(imageUri, storagePath)
         .map { url -> url }
@@ -538,30 +542,10 @@ class OrganizationFormViewModel(
       val s = _formState.value
       _uiState.value = OrganizationFormUiState()
       try {
-        // Generate organization ID first for image uploads
-        val orgId = java.util.UUID.randomUUID().toString()
-
-        // Upload images to storage if any selected
-        val profileImageUrl =
-            uploadProfileImage(orgId).getOrElse {
-              _uiState.value =
-                  OrganizationFormUiState(
-                      errorMessage = it.message ?: "Failed to upload profile image")
-              return@launch
-            }
-
-        val coverImageUrl =
-            uploadCoverImage(orgId).getOrElse {
-              _uiState.value =
-                  OrganizationFormUiState(
-                      errorMessage = it.message ?: "Failed to upload cover image")
-              return@launch
-            }
-
-        // Construct organization object with uploaded image URLs
+        // Construct organization object without images first
         val org =
             Organization(
-                id = orgId,
+                id = "", // Will be set by repository
                 name = s.name.value,
                 description = s.description.value,
                 ownerId = ownerId,
@@ -573,43 +557,86 @@ class OrganizationFormViewModel(
                 facebook = s.facebook.value,
                 tiktok = s.tiktok.value,
                 address = s.address.value,
-                profileImageUrl = profileImageUrl,
-                coverImageUrl = coverImageUrl)
-        val result = repository.createOrganization(org)
+                profileImageUrl = null, // No images yet (this fixes the orga id issue)
+                coverImageUrl = null) // No images yet
 
-        // Update UI state based on result
-        result.fold(
-            onSuccess = { createdOrgId ->
-              // Add the current user as OWNER member to the organization
-              val addMemberResult =
-                  repository.addMember(createdOrgId, ownerId, OrganizationRole.OWNER)
+        // Create organization first to get the real organization ID
+        val createResult = repository.createOrganization(org)
 
-              addMemberResult.fold(
-                  onSuccess = {
-                    // Member added successfully, now update user's organizationIds
-                    try {
-                      userRepository.addOrganizationToUser(ownerId, createdOrgId)
-                      _uiState.value = OrganizationFormUiState(successOrganizationId = createdOrgId)
-                    } catch (e: Exception) {
-                      // Organization created and member added, but failed to update user's org list
-                      _uiState.value =
-                          OrganizationFormUiState(
-                              successOrganizationId = createdOrgId,
-                              errorMessage =
-                                  "Organization created, but failed to update user profile: ${e.message}")
-                    }
-                  },
-                  onFailure = { error ->
-                    // Organization created but failed to add member
-                    _uiState.value =
-                        OrganizationFormUiState(
-                            successOrganizationId = createdOrgId,
-                            errorMessage =
-                                "Organization created, but failed to add member: ${error.message ?: "Unknown error"}")
-                  })
+        val createdOrgId =
+            createResult.getOrElse {
+              _uiState.value =
+                  OrganizationFormUiState(
+                      errorMessage = it.message ?: "The organization creation failed")
+              return@launch
+            }
+
+        // Upload images to storage using the created organization ID
+        if (s.profileImageUri != null) {
+          val profileImageUrl =
+              uploadProfileImage(createdOrgId).getOrElse {
+                _uiState.value =
+                    OrganizationFormUiState(
+                        errorMessage = it.message ?: "Failed to upload profile image")
+                return@launch
+              }
+
+          // Update organization with profile image URL
+          if (profileImageUrl != null) {
+            repository.updateProfileImage(createdOrgId, profileImageUrl).getOrElse {
+              _uiState.value =
+                  OrganizationFormUiState(
+                      errorMessage = it.message ?: "Failed to update profile image")
+              return@launch
+            }
+          }
+        }
+
+        if (s.coverImageUri != null) {
+          val coverImageUrl =
+              uploadCoverImage(createdOrgId).getOrElse {
+                _uiState.value =
+                    OrganizationFormUiState(
+                        errorMessage = it.message ?: "Failed to upload cover image")
+                return@launch
+              }
+
+          // Update organization with cover image URL
+          if (coverImageUrl != null) {
+            repository.updateCoverImage(createdOrgId, coverImageUrl).getOrElse {
+              _uiState.value =
+                  OrganizationFormUiState(
+                      errorMessage = it.message ?: "Failed to update cover image")
+              return@launch
+            }
+          }
+        }
+
+        // Add the current user as OWNER member to the organization
+        val addMemberResult = repository.addMember(createdOrgId, ownerId, OrganizationRole.OWNER)
+
+        addMemberResult.fold(
+            onSuccess = {
+              // Member added successfully, now update user's organizationIds
+              try {
+                userRepository.addOrganizationToUser(ownerId, createdOrgId)
+                _uiState.value = OrganizationFormUiState(successOrganizationId = createdOrgId)
+              } catch (e: Exception) {
+                // Organization created and member added, but failed to update user's org list
+                _uiState.value =
+                    OrganizationFormUiState(
+                        successOrganizationId = createdOrgId,
+                        errorMessage =
+                            "Organization created, but failed to update user profile: ${e.message}")
+              }
             },
-            onFailure = {
-              _uiState.value = OrganizationFormUiState(errorMessage = it.message ?: "Unknown error")
+            onFailure = { error ->
+              // Organization created but failed to add member
+              _uiState.value =
+                  OrganizationFormUiState(
+                      successOrganizationId = createdOrgId,
+                      errorMessage =
+                          "Organization created, but failed to add member: ${error.message ?: "Unknown error"}")
             })
       } catch (e: Exception) {
         _uiState.value = OrganizationFormUiState(errorMessage = e.message ?: "Unknown error")
