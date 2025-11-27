@@ -348,7 +348,7 @@ abstract class EventFormViewModel(
    * @param eventId The event ID to use for the storage path
    * @return Result containing list of uploaded image URLs or error
    */
-  protected suspend fun uploadSelectedImagesInternal(eventId: String): Result<List<String>> {
+  private suspend fun uploadSelectedImagesInternal(eventId: String): Result<List<String>> {
     val imageUris = _formState.value.selectedImageUris
 
     if (imageUris.isEmpty()) {
