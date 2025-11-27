@@ -19,6 +19,7 @@ import ch.onepass.onepass.OnePassApp
 import ch.onepass.onepass.model.auth.AuthRepositoryFirebase
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import ch.onepass.onepass.ui.auth.AuthViewModel
+import ch.onepass.onepass.ui.feed.FeedScreenTestTags
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.profile.*
 import com.mapbox.common.MapboxOptions
@@ -60,7 +61,8 @@ class FullNavigationTest {
     mockUserRepo = mockk(relaxed = true)
 
     every { mockAuthRepo.isUserSignedIn() } returns signedIn
-    coEvery { mockUserRepo.isOrganizer() } returns false
+    // Note: isOrganizer() method has been removed from UserRepository
+    // Organization membership is now checked via MembershipRepository
 
     val authVmFactory = viewModelFactory { initializer { AuthViewModel(mockAuthRepo) } }
 
@@ -494,5 +496,36 @@ class FullNavigationTest {
     assertEquals(
         NavigationDestinations.Screen.BecomeOrganizer.route,
         navController.currentDestination?.route)
+  }
+
+  @Test
+  fun feed_to_notification_flow() {
+    setApp(signedIn = true)
+    composeRule.waitForIdle()
+
+    // On the Feed Screen by default
+    assertEquals(
+        NavigationDestinations.Screen.Events.route, navController.currentDestination?.route)
+
+    // Click the Notification button on the top bar
+    composeRule
+        .onNodeWithTag(FeedScreenTestTags.NOTIFICATION_BUTTON)
+        .assertIsDisplayed()
+        .performClick()
+
+    composeRule.waitForIdle()
+
+    // Check we navigated to Notification screen
+    assertEquals(
+        NavigationDestinations.Screen.Notification.route, navController.currentDestination?.route)
+
+    // Click the Back button on the notification screen
+    composeRule.onNodeWithTag("notification_back_button").assertIsDisplayed().performClick()
+
+    composeRule.waitForIdle()
+
+    // Check we navigated back to the Feed screen
+    assertEquals(
+        NavigationDestinations.Screen.Events.route, navController.currentDestination?.route)
   }
 }

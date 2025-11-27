@@ -86,24 +86,6 @@ class UserRepositoryFirebase(
     }
   }
 
-  override suspend fun isOrganizer(): Boolean {
-    val firebaseUser = auth.currentUser ?: return false
-    val uid = firebaseUser.uid
-
-    val snapshot = userCollection.document(uid).get().await()
-    val user = snapshot.toObject(User::class.java) ?: return false
-
-    return user.organizationIds.isNotEmpty()
-  }
-
-  override suspend fun addOrganizationToUser(userId: String, orgId: String) {
-    userCollection.document(userId).update("organizationIds", FieldValue.arrayUnion(orgId)).await()
-  }
-
-  override suspend fun removeOrganizationFromUser(userId: String, orgId: String) {
-    userCollection.document(userId).update("organizationIds", FieldValue.arrayRemove(orgId)).await()
-  }
-
   private companion object {
     const val FN_SEARCH_USERS = "searchUsers"
 

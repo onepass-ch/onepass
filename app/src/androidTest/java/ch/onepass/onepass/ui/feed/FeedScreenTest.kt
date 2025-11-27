@@ -10,6 +10,7 @@ import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
 import java.util.*
+import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Rule
@@ -346,5 +347,30 @@ class FeedScreenTest {
         .onNodeWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button")
         .assertIsDisplayed()
     composeTestRule.onNodeWithText("Try Again").assertIsDisplayed()
+  }
+
+  @Test
+  fun feedScreen_notificationButton_isDisplayed_and_clickable() {
+    val repo = MockEventRepository(emptyList())
+    val vm = FeedViewModel(repo)
+    var notificationClicked = false
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        FeedScreen(viewModel = vm, onNavigateToNotifications = { notificationClicked = true })
+      }
+    }
+
+    // Verify button is displayed
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.NOTIFICATION_BUTTON)
+        .assertIsDisplayed()
+        .assertHasClickAction()
+
+    // Perform click
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.NOTIFICATION_BUTTON).performClick()
+
+    // Verify callback invocation
+    assertTrue(notificationClicked)
   }
 }

@@ -2,6 +2,8 @@ package ch.onepass.onepass.ui.myinvitations
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ch.onepass.onepass.model.membership.MembershipRepository
+import ch.onepass.onepass.model.membership.MembershipRepositoryFirebase
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.OrganizationInvitation
 import ch.onepass.onepass.model.organization.OrganizationRepository
@@ -54,7 +56,8 @@ data class MyInvitationsUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 class MyInvitationsViewModel(
     private val organizationRepository: OrganizationRepository = OrganizationRepositoryFirebase(),
-    private val userRepository: UserRepository = UserRepositoryFirebase()
+    private val userRepository: UserRepository = UserRepositoryFirebase(),
+    private val membershipRepository: MembershipRepository = MembershipRepositoryFirebase()
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(MyInvitationsUiState())
@@ -239,33 +242,20 @@ class MyInvitationsViewModel(
 
         updateStatusResult
             .onSuccess {
-              // Step 2: Add user as a member to the organization
+              // Step 2: Add user as a member to the organization using MembershipRepository
               val addMemberResult =
-                  organizationRepository.addMember(
-                      organizationId = invitation.orgId, userId = user.uid, role = invitation.role)
+                  membershipRepository.addMembership(
+                      userId = user.uid, orgId = invitation.orgId, role = invitation.role)
 
               addMemberResult
                   .onSuccess {
-                    // Step 3: Add organization to user's organization list
-                    try {
-                      userRepository.addOrganizationToUser(user.uid, invitation.orgId)
-                      // All operations succeeded - provide success feedback
-                      _uiState.value =
-                          _uiState.value.copy(
-                              successMessage =
-                                  "Invitation accepted successfully. You are now a member.")
-                      // The invitation will automatically disappear from the list via the Flow
-                      // update
-                    } catch (e: Exception) {
-                      // Member was added but failed to update user's organization list
-                      // This is a critical error - the user is a member but orgId is not in their
-                      // list
-                      _uiState.value =
-                          _uiState.value.copy(
-                              errorMessage =
-                                  "Invitation accepted and you were added as a member, but failed to update your organization list: ${e.message
-                                      ?: "Unknown error"}. Please contact support.")
-                    }
+                    // All operations succeeded - provide success feedback
+                    _uiState.value =
+                        _uiState.value.copy(
+                            successMessage =
+                                "Invitation accepted successfully. You are now a ${invitation.role}.")
+                    // The invitation will automatically disappear from the list via the Flow
+                    // update
                   }
                   .onFailure { error ->
                     // Invitation status was updated but adding member failed

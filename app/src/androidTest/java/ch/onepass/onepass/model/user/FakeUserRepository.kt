@@ -17,24 +17,6 @@ class FakeUserRepository(
     private var throwOnLoad: Boolean = false
 ) : UserRepository {
 
-  private val userOrganizations = mutableMapOf<String, MutableList<String>>()
-
-  override suspend fun isOrganizer(): Boolean {
-    val user = currentUser ?: return false
-    return user.organizationIds.isNotEmpty()
-  }
-
-  override suspend fun addOrganizationToUser(userId: String, orgId: String) {
-    val orgs = userOrganizations.getOrPut(userId) { mutableListOf() }
-    if (!orgs.contains(orgId)) {
-      orgs.add(orgId)
-    }
-  }
-
-  override suspend fun removeOrganizationFromUser(userId: String, orgId: String) {
-    userOrganizations[userId]?.remove(orgId)
-  }
-
   override suspend fun getCurrentUser(): User? {
     if (throwOnLoad) throw RuntimeException("boom")
     return currentUser
