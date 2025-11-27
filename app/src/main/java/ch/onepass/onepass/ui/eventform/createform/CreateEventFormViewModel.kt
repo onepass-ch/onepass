@@ -125,30 +125,51 @@ open class CreateEventFormViewModel(
       // Upload images to storage using the created event ID
       if (_formState.value.selectedImageUris.isNotEmpty()) {
         android.util.Log.d("CreateEventFormVM", "Uploading images...")
-        val imageUploadResult = uploadSelectedImagesInternal(createdEventId)
-        val imageUrls =
-            imageUploadResult.getOrElse {
-              android.util.Log.e("CreateEventFormVM", "Image upload failed: ${it.message}")
-              _uiState.value = CreateEventUiState.Error(it.message ?: "Failed to upload images")
-              return@launch
-            }
-        android.util.Log.d("CreateEventFormVM", "Images uploaded: ${imageUrls.size} images")
 
-        // Update event with uploaded image URLs
-        android.util.Log.d("CreateEventFormVM", "Updating event with image URLs...")
-        val updateResult = eventRepository.updateEventImages(createdEventId, imageUrls)
-        updateResult.fold(
-            onSuccess = {
+        // Start the upload and collect the state
+        startImageUpload(createdEventId)
+
+        // Collect the upload state to handle the result
+        imageUploadState.collect { uploadState ->
+          when (uploadState) {
+            is ImageUploadState.Idle -> {
+              // Still waiting for upload to start
+            }
+            is ImageUploadState.Uploading -> {
+              // Upload in progress
+              android.util.Log.d("CreateEventFormVM", "Image upload in progress...")
+            }
+            is ImageUploadState.Success -> {
               android.util.Log.d(
-                  "CreateEventFormVM", "Event images updated successfully: $createdEventId")
-              _uiState.value = CreateEventUiState.Success(createdEventId)
-            },
-            onFailure = { error ->
-              android.util.Log.e(
-                  "CreateEventFormVM", "Failed to update event images: ${error.message}")
-              _uiState.value =
-                  CreateEventUiState.Error(error.message ?: "Failed to update event images")
-            })
+                  "CreateEventFormVM", "Images uploaded: ${uploadState.urls.size} images")
+
+              // Update event with uploaded image URLs
+              android.util.Log.d("CreateEventFormVM", "Updating event with image URLs...")
+              val updateResult = eventRepository.updateEventImages(createdEventId, uploadState.urls)
+              updateResult.fold(
+                  onSuccess = {
+                    android.util.Log.d(
+                        "CreateEventFormVM", "Event images updated successfully: $createdEventId")
+                    _uiState.value = CreateEventUiState.Success(createdEventId)
+                    resetImageUploadState()
+                  },
+                  onFailure = { error ->
+                    android.util.Log.e(
+                        "CreateEventFormVM", "Failed to update event images: ${error.message}")
+                    _uiState.value =
+                        CreateEventUiState.Error(error.message ?: "Failed to update event images")
+                    resetImageUploadState()
+                  })
+              return@collect
+            }
+            is ImageUploadState.Error -> {
+              android.util.Log.e("CreateEventFormVM", "Image upload failed: ${uploadState.message}")
+              _uiState.value = CreateEventUiState.Error(uploadState.message)
+              resetImageUploadState()
+              return@collect
+            }
+          }
+        }
       } else {
         android.util.Log.d("CreateEventFormVM", "No images to upload")
         _uiState.value = CreateEventUiState.Success(createdEventId)

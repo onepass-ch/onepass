@@ -81,45 +81,96 @@ class EditEventFormViewModel(
       _uiState.value = EditEventUiState.Updating
 
       // Upload new images if any selected
-      val imageUploadResult = uploadSelectedImagesInternal(original.eventId)
-      val newImageUrls =
-          imageUploadResult.getOrElse {
-            _uiState.value = EditEventUiState.Error(it.message ?: "Failed to upload images")
-            return@launch
+      if (_formState.value.selectedImageUris.isNotEmpty()) {
+        // Start the upload and collect the state
+        startImageUpload(original.eventId)
+
+        // Collect the upload state to handle the result
+        imageUploadState.collect { uploadState ->
+          when (uploadState) {
+            is ImageUploadState.Idle -> {
+              // Still waiting for upload to start
+            }
+            is ImageUploadState.Uploading -> {
+              // Upload in progress
+            }
+            is ImageUploadState.Success -> {
+              // Combine existing images with newly uploaded ones
+              val allImageUrls = original.images + uploadState.urls
+
+              // Create updated event from parsed data
+              val updatedEvent =
+                  original.copy(
+                      title = parsed.title,
+                      description = parsed.description,
+                      startTime = parsed.startTime,
+                      endTime = parsed.endTime,
+                      capacity = parsed.capacity,
+                      location = parsed.selectedLocation,
+                      images = allImageUrls,
+                      pricingTiers =
+                          listOf(
+                              PricingTier(
+                                  name = "General",
+                                  price = parsed.price,
+                                  quantity = parsed.capacity,
+                                  remaining = parsed.capacity - original.ticketsIssued)))
+
+              // Update event in repository
+              val result = eventRepository.updateEvent(updatedEvent)
+
+              result.fold(
+                  onSuccess = {
+                    originalEvent = updatedEvent
+                    _uiState.value = EditEventUiState.Success
+                    resetImageUploadState()
+                  },
+                  onFailure = { error ->
+                    _uiState.value =
+                        EditEventUiState.Error(error.message ?: "Failed to update event")
+                    resetImageUploadState()
+                  })
+              return@collect
+            }
+            is ImageUploadState.Error -> {
+              _uiState.value = EditEventUiState.Error(uploadState.message)
+              resetImageUploadState()
+              return@collect
+            }
           }
+        }
+      } else {
+        // No new images to upload, just update the event
+        // Create updated event from parsed data
+        val updatedEvent =
+            original.copy(
+                title = parsed.title,
+                description = parsed.description,
+                startTime = parsed.startTime,
+                endTime = parsed.endTime,
+                capacity = parsed.capacity,
+                location = parsed.selectedLocation,
+                images = original.images,
+                pricingTiers =
+                    listOf(
+                        PricingTier(
+                            name = "General",
+                            price = parsed.price,
+                            quantity = parsed.capacity,
+                            remaining = parsed.capacity - original.ticketsIssued)))
 
-      // Combine existing images with newly uploaded ones
-      val allImageUrls = original.images + newImageUrls
+        // Update event in repository
+        val result = eventRepository.updateEvent(updatedEvent)
 
-      // Create updated event from parsed data
-      val updatedEvent =
-          original.copy(
-              title = parsed.title,
-              description = parsed.description,
-              startTime = parsed.startTime,
-              endTime = parsed.endTime,
-              capacity = parsed.capacity,
-              location = parsed.selectedLocation,
-              images = allImageUrls,
-              pricingTiers =
-                  listOf(
-                      PricingTier(
-                          name = "General",
-                          price = parsed.price,
-                          quantity = parsed.capacity,
-                          remaining = parsed.capacity - original.ticketsIssued)))
-
-      // Update event in repository
-      val result = eventRepository.updateEvent(updatedEvent)
-
-      result.fold(
-          onSuccess = {
-            originalEvent = updatedEvent
-            _uiState.value = EditEventUiState.Success
-          },
-          onFailure = { error ->
-            _uiState.value = EditEventUiState.Error(error.message ?: "Failed to update event")
-          })
+        result.fold(
+            onSuccess = {
+              originalEvent = updatedEvent
+              _uiState.value = EditEventUiState.Success
+            },
+            onFailure = { error ->
+              _uiState.value = EditEventUiState.Error(error.message ?: "Failed to update event")
+            })
+      }
     }
   }
 
