@@ -41,6 +41,7 @@ import ch.onepass.onepass.R
 import ch.onepass.onepass.model.user.UserSearchType
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.LoadingState
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.theme.DefaultBackground
 
 object StaffInvitationTestTags {
@@ -74,33 +75,21 @@ fun StaffInvitationScreen(
   val uiState by viewModel.uiState.collectAsState()
   val selectedTabIndex = if (uiState.selectedTab == UserSearchType.DISPLAY_NAME) 0 else 1
 
-  Scaffold(
-      modifier = modifier.fillMaxSize().testTag(StaffInvitationTestTags.SCREEN),
-      topBar = {
-        TopAppBar(
-            title = {
-              Text(
-                  text = "Add staff",
-                  color = colorResource(R.color.white),
-                  style = MaterialTheme.typography.titleLarge,
-                  modifier = Modifier.testTag(StaffInvitationTestTags.TITLE))
-            },
-            navigationIcon = {
-              IconButton(
-                  onClick = onNavigateBack,
-                  modifier = Modifier.testTag(StaffInvitationTestTags.BACK_BUTTON)) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = colorResource(R.color.white))
-                  }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = DefaultBackground),
-            modifier = Modifier.testTag(StaffInvitationTestTags.TOP_BAR))
-      },
-      containerColor = DefaultBackground) { paddingValues ->
+    BackNavigationScaffold(
+        title = "Add staff",
+        onBack = onNavigateBack,
+        modifier = modifier.testTag(StaffInvitationTestTags.SCREEN),
+        topBarTestTag = StaffInvitationTestTags.TOP_BAR,
+        backButtonTestTag = StaffInvitationTestTags.BACK_BUTTON,
+        titleTestTag = StaffInvitationTestTags.TITLE
+    ) { paddingValues ->
+
         Column(
-            modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 16.dp)) {
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp)
+        ) {
               // Tab Row
               TabRow(
                   modifier = Modifier.fillMaxWidth().testTag(StaffInvitationTestTags.TAB_ROW),

@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.eventform.EventFormFields
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
 
@@ -39,6 +40,16 @@ object EditEventFormTestTags {
   const val ERROR_DIALOG_OK_BUTTON = "edit_error_dialog_ok_button"
   const val BACK_BUTTON = "edit_back_button"
 }
+
+val fieldTestTags =
+    mapOf(
+        "title" to EditEventFormTestTags.TITLE_FIELD,
+        "description" to EditEventFormTestTags.DESCRIPTION_FIELD,
+        "time" to EditEventFormTestTags.TIME_FIELD,
+        "date" to EditEventFormTestTags.DATE_FIELD,
+        "location" to EditEventFormTestTags.LOCATION_FIELD,
+        "tickets" to EditEventFormTestTags.TICKETS_FIELD
+    )
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -98,120 +109,113 @@ fun EditEventForm(
     onNavigateBack: () -> Unit = {},
     onEventUpdated: () -> Unit = {},
 ) {
-  val uiState by viewModel.uiState.collectAsState()
-  val scrollState = rememberScrollState()
+    val uiState by viewModel.uiState.collectAsState()
+    val scrollState = rememberScrollState()
 
-  // Load event when composable is first displayed
-  LaunchedEffect(eventId) { viewModel.loadEvent(eventId) }
+    LaunchedEffect(eventId) { viewModel.loadEvent(eventId) }
 
-  LaunchedEffect(uiState) {
-    when (uiState) {
-      is EditEventUiState.Success -> {
-        onEventUpdated()
-        // Don't reset form after update - user might want to stay on page
-      }
-      is EditEventUiState.Error -> {
-        // Error state handled in UI, can be cleared by viewModel
-      }
-      else -> {}
-    }
-  }
-
-  val fieldTestTags =
-      mapOf(
-          "title" to EditEventFormTestTags.TITLE_FIELD,
-          "description" to EditEventFormTestTags.DESCRIPTION_FIELD,
-          "time" to EditEventFormTestTags.TIME_FIELD,
-          "date" to EditEventFormTestTags.DATE_FIELD,
-          "location" to EditEventFormTestTags.LOCATION_FIELD,
-          "tickets" to EditEventFormTestTags.TICKETS_FIELD)
-
-  Scaffold(
-      modifier = Modifier.testTag(EditEventFormTestTags.SCREEN),
-      topBar = {
-        TopAppBar(
-            title = { Text(text = "Edit Event", color = colorResource(id = R.color.white)) },
-            navigationIcon = {
-              IconButton(
-                  onClick = onNavigateBack,
-                  modifier = Modifier.testTag(EditEventFormTestTags.BACK_BUTTON)) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = colorResource(id = R.color.white))
-                  }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = DefaultBackground))
-      }) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-          when (uiState) {
-            is EditEventUiState.Loading -> {
-              CircularProgressIndicator(
-                  modifier =
-                      Modifier.align(Alignment.Center)
-                          .testTag(EditEventFormTestTags.LOADING_INDICATOR),
-                  color = EventDateColor)
-            }
-            is EditEventUiState.LoadError -> {
-              Column(
-                  modifier =
-                      Modifier.align(Alignment.Center)
-                          .padding(32.dp)
-                          .testTag(EditEventFormTestTags.LOAD_ERROR_SECTION),
-                  horizontalAlignment = Alignment.CenterHorizontally) {
-                    Text(
-                        text = "Failed to load event",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = colorResource(id = R.color.white))
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Text(
-                        text = (uiState as EditEventUiState.LoadError).message,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = colorResource(id = R.color.gray))
-                    Spacer(modifier = Modifier.height(24.dp))
-                    Button(
-                        onClick = { viewModel.loadEvent(eventId) },
-                        modifier = Modifier.testTag(EditEventFormTestTags.RETRY_BUTTON),
-                        colors = ButtonDefaults.buttonColors(containerColor = EventDateColor)) {
-                          Text("Retry")
-                        }
-                  }
-            }
-            else -> {
-              Column(
-                  modifier =
-                      Modifier.fillMaxSize()
-                          .background(DefaultBackground)
-                          .verticalScroll(scrollState)
-                          .padding(start = 22.dp, end = 22.dp, bottom = 48.dp)
-                          .testTag(EditEventFormTestTags.FORM_COLUMN)) {
-                    EventFormFields(viewModel = viewModel, fieldTestTags = fieldTestTags)
-
-                    // Update Button
-                    UpdateEventButton(
-                        onClick = { viewModel.updateEvent() },
-                        isLoading = uiState is EditEventUiState.Updating,
-                        modifier = Modifier.testTag(EditEventFormTestTags.UPDATE_BUTTON))
-                    Spacer(modifier = Modifier.height(24.dp))
-                  }
-            }
-          }
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            is EditEventUiState.Success -> onEventUpdated()
+            else -> {}
         }
-      }
+    }
 
-  // Show error dialog if update failed
-  if (uiState is EditEventUiState.Error) {
-    AlertDialog(
-        onDismissRequest = { viewModel.clearError() },
-        title = { Text("Update Failed") },
-        text = { Text((uiState as EditEventUiState.Error).message) },
-        confirmButton = {
-          TextButton(
-              onClick = { viewModel.clearError() },
-              modifier = Modifier.testTag(EditEventFormTestTags.ERROR_DIALOG_OK_BUTTON)) {
-                Text("OK")
-              }
-        },
-        modifier = Modifier.testTag(EditEventFormTestTags.ERROR_DIALOG))
-  }
+    BackNavigationScaffold(
+        title = "Edit Event",
+        onBack = onNavigateBack,
+        containerColor = DefaultBackground,
+        modifier = Modifier.testTag(EditEventFormTestTags.SCREEN),
+        backButtonTestTag = EditEventFormTestTags.BACK_BUTTON
+    ) { padding ->
+
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+        ) {
+            when (uiState) {
+                is EditEventUiState.Loading -> {
+                    CircularProgressIndicator(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .testTag(EditEventFormTestTags.LOADING_INDICATOR),
+                        color = EventDateColor
+                    )
+                }
+
+                is EditEventUiState.LoadError -> {
+                    Column(
+                        modifier = Modifier
+                            .align(Alignment.Center)
+                            .padding(32.dp)
+                            .testTag(EditEventFormTestTags.LOAD_ERROR_SECTION),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "Failed to load event",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = colorResource(id = R.color.white)
+                        )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Text(
+                            text = (uiState as EditEventUiState.LoadError).message,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = colorResource(id = R.color.gray)
+                        )
+                        Spacer(modifier = Modifier.height(24.dp))
+                        Button(
+                            onClick = { viewModel.loadEvent(eventId) },
+                            modifier = Modifier.testTag(EditEventFormTestTags.RETRY_BUTTON),
+                            colors = ButtonDefaults.buttonColors(containerColor = EventDateColor)
+                        ) {
+                            Text("Retry")
+                        }
+                    }
+                }
+
+                else -> {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(DefaultBackground)
+                            .verticalScroll(scrollState)
+                            .padding(start = 22.dp, end = 22.dp, bottom = 48.dp)
+                            .testTag(EditEventFormTestTags.FORM_COLUMN)
+                    ) {
+                        EventFormFields(
+                            viewModel = viewModel,
+                            fieldTestTags = fieldTestTags
+                        )
+
+                        UpdateEventButton(
+                            onClick = { viewModel.updateEvent() },
+                            isLoading = uiState is EditEventUiState.Updating,
+                            modifier = Modifier.testTag(EditEventFormTestTags.UPDATE_BUTTON)
+                        )
+
+                        Spacer(modifier = Modifier.height(24.dp))
+                    }
+                }
+            }
+        }
+    }
+
+    // Error dialog on update failure
+    if (uiState is EditEventUiState.Error) {
+        AlertDialog(
+            onDismissRequest = { viewModel.clearError() },
+            title = { Text("Update Failed") },
+            text = { Text((uiState as EditEventUiState.Error).message) },
+            confirmButton = {
+                TextButton(
+                    onClick = { viewModel.clearError() },
+                    modifier = Modifier.testTag(EditEventFormTestTags.ERROR_DIALOG_OK_BUTTON)
+                ) {
+                    Text("OK")
+                }
+            },
+            modifier = Modifier.testTag(EditEventFormTestTags.ERROR_DIALOG)
+        )
+    }
 }

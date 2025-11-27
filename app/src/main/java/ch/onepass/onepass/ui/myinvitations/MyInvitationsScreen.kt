@@ -22,6 +22,7 @@ import ch.onepass.onepass.model.organization.*
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import kotlinx.coroutines.flow.first
 
 /**
@@ -124,89 +125,70 @@ internal fun MyInvitationsContent(
     onRejectInvitation: (String) -> Unit,
     onRetry: () -> Unit = {},
     onClearSuccessMessage: () -> Unit = {},
-    onNavigateBack: () -> Unit = {},
+    onNavigateBack: (() -> Unit)? = null,
     organizationRepository: OrganizationRepository,
     modifier: Modifier = Modifier
 ) {
-  val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarHostState = remember { SnackbarHostState() }
 
-  // Show success message as snackbar and clear it after displaying
-  // This ensures that subsequent operations with the same success message will trigger
-  // the snackbar to show again (since LaunchedEffect only triggers when the key changes).
-  LaunchedEffect(state.successMessage) {
-    state.successMessage?.let { message ->
-      snackbarHostState.showSnackbar(
-          message = message, duration = SnackbarDuration.Short, withDismissAction = true)
-      // Clear the success message after displaying to allow the same message to be shown again
-      // if the same operation is performed multiple times.
-      onClearSuccessMessage()
+    LaunchedEffect(state.successMessage) {
+        state.successMessage?.let { message ->
+            snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short,
+                withDismissAction = true
+            )
+            onClearSuccessMessage()
+        }
     }
-  }
 
-  Scaffold(
-      modifier = modifier.fillMaxSize().testTag(MyInvitationsScreenTestTags.SCREEN),
-      containerColor = colorResource(id = R.color.screen_background),
-      snackbarHost = {
-        SnackbarHost(
-            hostState = snackbarHostState,
-            snackbar = { snackbarData ->
-              Snackbar(
-                  snackbarData = snackbarData,
-                  modifier = Modifier.testTag(MyInvitationsScreenTestTags.SUCCESS_MESSAGE),
-                  containerColor = colorResource(id = R.color.myinvitations_success_green),
-                  contentColor = colorResource(id = R.color.white))
-            })
-      },
-      topBar = {
-        TopAppBar(
-            title = {
-              Text(
-                  text = "My Invitations",
-                  style = MaterialTheme.typography.headlineSmall,
-                  fontWeight = FontWeight.Bold,
-                  color = colorResource(id = R.color.white))
-            },
-            navigationIcon = {
-              IconButton(onClick = onNavigateBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = colorResource(id = R.color.white))
-              }
-            },
-            colors =
-                TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorResource(id = R.color.screen_background)))
-      }) { paddingValues ->
-        Box(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
-            contentAlignment = Alignment.Center) {
-              when {
-                state.loading -> {
-                  LoadingState(testTag = MyInvitationsScreenTestTags.LOADING_INDICATOR)
+    BackNavigationScaffold(
+        title = "My Invitations",
+        onBack = onNavigateBack,
+        modifier = modifier.testTag(MyInvitationsScreenTestTags.SCREEN),
+        containerColor = colorResource(id = R.color.screen_background),
+        content = { paddingValues ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center
+            ) {
+                when {
+                    state.loading -> {
+                        LoadingState(testTag = MyInvitationsScreenTestTags.LOADING_INDICATOR)
+                    }
+                    state.errorMessage != null && state.invitations.isEmpty() -> {
+                        ErrorState(
+                            error = state.errorMessage,
+                            onRetry = onRetry,
+                            testTag = MyInvitationsScreenTestTags.ERROR_MESSAGE
+                        )
+                    }
+                    state.invitations.isEmpty() -> {
+                        EmptyState(
+                            title = "No Invitations",
+                            message = "You don't have any pending invitations at the moment.",
+                            testTag = MyInvitationsScreenTestTags.EMPTY_STATE
+                        )
+                    }
+                    else -> {
+                        InvitationsList(
+                            invitations = state.invitations,
+                            onAcceptInvitation = onAcceptInvitation,
+                            onRejectInvitation = onRejectInvitation,
+                            organizationRepository = organizationRepository
+                        )
+                    }
                 }
-                state.errorMessage != null && state.invitations.isEmpty() -> {
-                  ErrorState(
-                      error = state.errorMessage,
-                      onRetry = onRetry,
-                      testTag = MyInvitationsScreenTestTags.ERROR_MESSAGE)
-                }
-                state.invitations.isEmpty() -> {
-                  EmptyState(
-                      title = "No Invitations",
-                      message = "You don't have any pending invitations at the moment.",
-                      testTag = MyInvitationsScreenTestTags.EMPTY_STATE)
-                }
-                else -> {
-                  InvitationsList(
-                      invitations = state.invitations,
-                      onAcceptInvitation = onAcceptInvitation,
-                      onRejectInvitation = onRejectInvitation,
-                      organizationRepository = organizationRepository)
-                }
-              }
+
+                SnackbarHost(
+                    hostState = snackbarHostState,
+                    modifier = Modifier.testTag(MyInvitationsScreenTestTags.SUCCESS_MESSAGE)
+                )
             }
-      }
+        }
+    )
 }
 
 /**

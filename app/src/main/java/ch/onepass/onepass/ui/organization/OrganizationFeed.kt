@@ -23,6 +23,7 @@ import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 
 object OrganizationFeedTestTags {
   const val ORGANIZATION_FEED_SCREEN = "organizationFeedScreen"
@@ -84,81 +85,61 @@ fun OrganizationFeedScaffold(
     error: String?,
     onOrganizationClick: (String) -> Unit = {},
     onFabClick: () -> Unit = {},
-    onNavigateBack: () -> Unit = {},
+    onNavigateBack: (() -> Unit) = {},
     onRetry: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-  Scaffold(
-      modifier = modifier.fillMaxSize(),
-      topBar = { OrganizationFeedTopBar(onNavigateBack = onNavigateBack) },
-      containerColor = colorResource(id = R.color.screen_background)) { paddingValues ->
-        Box(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
-            contentAlignment = Alignment.Center,
-        ) {
-          when {
-            isLoading && organizations.isEmpty() -> {
-              LoadingState(testTag = OrganizationFeedTestTags.LOADING_INDICATOR)
-            }
-            error != null && organizations.isEmpty() -> {
-              ErrorState(
-                  error = error,
-                  onRetry = onRetry,
-                  testTag = OrganizationFeedTestTags.ERROR_MESSAGE)
-            }
-            !isLoading && organizations.isEmpty() -> {
-              EmptyState(
-                  title = "No Organizations",
-                  message = "You haven't joined any organizations yet.",
-                  testTag = OrganizationFeedTestTags.EMPTY_STATE)
-            }
-            else -> {
-              OrganizationListContent(
-                  organizations = organizations,
-                  onOrganizationClick = onOrganizationClick,
-              )
-            }
-          }
-          AddOrganizationButton(
-              modifier =
-                  Modifier.align(Alignment.BottomEnd)
-                      .padding(16.dp)
-                      .testTag(OrganizationFeedTestTags.ADD_ORG_FAB),
-              onClick = onFabClick)
-        }
-      }
-}
+    BackNavigationScaffold(
+        title = "MY ORGANIZATIONS",
+        onBack = onNavigateBack,
+        modifier = modifier.fillMaxSize(),
+        containerColor = colorResource(id = R.color.screen_background),
+        topBarTestTag = OrganizationFeedTestTags.ORGANIZATION_FEED_TOP_BAR,
+        backButtonTestTag = OrganizationFeedTestTags.BACK_BUTTON,
+        titleTestTag = OrganizationFeedTestTags.ORGANIZATION_FEED_TITLE,
+        content = { paddingValues ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues),
+                contentAlignment = Alignment.Center,
+            ) {
+                when {
+                    isLoading && organizations.isEmpty() -> {
+                        LoadingState(testTag = OrganizationFeedTestTags.LOADING_INDICATOR)
+                    }
+                    error != null && organizations.isEmpty() -> {
+                        ErrorState(
+                            error = error,
+                            onRetry = onRetry,
+                            testTag = OrganizationFeedTestTags.ERROR_MESSAGE
+                        )
+                    }
+                    !isLoading && organizations.isEmpty() -> {
+                        EmptyState(
+                            title = "No Organizations",
+                            message = "You haven't joined any organizations yet.",
+                            testTag = OrganizationFeedTestTags.EMPTY_STATE
+                        )
+                    }
+                    else -> {
+                        OrganizationListContent(
+                            organizations = organizations,
+                            onOrganizationClick = onOrganizationClick,
+                        )
+                    }
+                }
 
-/** Top bar with title and back button. */
-@OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("ModifierParameter")
-@Composable
-private fun OrganizationFeedTopBar(onNavigateBack: () -> Unit = {}, modifier: Modifier = Modifier) {
-  CenterAlignedTopAppBar(
-      modifier = modifier.testTag(OrganizationFeedTestTags.ORGANIZATION_FEED_TOP_BAR),
-      navigationIcon = {
-        IconButton(
-            onClick = onNavigateBack,
-            modifier = modifier.size(48.dp).testTag(OrganizationFeedTestTags.BACK_BUTTON)) {
-              Icon(
-                  imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                  contentDescription = "Back",
-                  tint = Color.White,
-                  modifier = modifier.size(24.dp))
+                AddOrganizationButton(
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(16.dp)
+                        .testTag(OrganizationFeedTestTags.ADD_ORG_FAB),
+                    onClick = onFabClick
+                )
             }
-      },
-      title = {
-        Text(
-            text = "MY ORGANIZATIONS",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            letterSpacing = 2.sp,
-            modifier = modifier.testTag(OrganizationFeedTestTags.ORGANIZATION_FEED_TITLE))
-      },
-      colors =
-          TopAppBarDefaults.centerAlignedTopAppBarColors(
-              containerColor = colorResource(id = R.color.org_feed_top_bar)))
+        }
+    )
 }
 
 /** Organization list content with scrollable cards. */

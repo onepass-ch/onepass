@@ -20,43 +20,39 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.eventform.EventFormFields
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
 import com.mapbox.maps.extension.style.expressions.dsl.generated.color
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventFormScaffold(
     onNavigateBack: () -> Unit,
     scrollState: ScrollState,
     content: @Composable ColumnScope.() -> Unit
 ) {
-  Scaffold(
-      topBar = {
-        TopAppBar(
-            title = { Text(text = "Create your Event", color = Color.White) },
-            navigationIcon = {
-              IconButton(onClick = onNavigateBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White)
-              }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = DefaultBackground))
-      }) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-          Column(
-              modifier =
-                  Modifier.fillMaxSize()
-                      .background(DefaultBackground)
-                      .verticalScroll(scrollState)
-                      .padding(start = 22.dp, end = 22.dp, bottom = 48.dp)) {
+    BackNavigationScaffold(
+        title = "Create your Event",
+        onBack = onNavigateBack,
+        containerColor = DefaultBackground
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(DefaultBackground)
+                    .verticalScroll(scrollState)
+                    .padding(start = 22.dp, end = 22.dp, bottom = 48.dp)
+            ) {
                 Spacer(modifier = Modifier.height(8.dp))
                 content()
-              }
+            }
         }
-      }
+    }
 }
 
 @Composable

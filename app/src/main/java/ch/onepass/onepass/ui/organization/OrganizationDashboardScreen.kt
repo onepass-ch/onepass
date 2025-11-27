@@ -31,6 +31,7 @@ import ch.onepass.onepass.model.organization.OrganizationMember
 import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.TextSecondary
@@ -92,7 +93,6 @@ object OrganizationDashboardTestTags {
  * @param viewModel The [OrganizationDashboardViewModel] responsible for fetching and managing the
  *   dashboard data.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrganizationDashboardScreen(
     organizationId: String,
@@ -105,64 +105,47 @@ fun OrganizationDashboardScreen(
     onNavigateToEditEvent: (String) -> Unit = {},
     viewModel: OrganizationDashboardViewModel = viewModel()
 ) {
-  val uiState by viewModel.uiState.collectAsState()
+    val uiState by viewModel.uiState.collectAsState()
 
-  LaunchedEffect(organizationId) { viewModel.loadOrganization(organizationId) }
+    LaunchedEffect(organizationId) { viewModel.loadOrganization(organizationId) }
 
-  Scaffold(
-      modifier = modifier.fillMaxSize().testTag(OrganizationDashboardTestTags.SCREEN),
-      topBar = {
-        TopAppBar(
-            title = {
-              Text(
-                  text = "DASHBOARD",
-                  style = MaterialTheme.typography.headlineMedium,
-                  fontWeight = FontWeight.Bold,
-                  modifier = Modifier.testTag(OrganizationDashboardTestTags.TITLE))
-            },
-            navigationIcon = {
-              IconButton(
-                  onClick = onNavigateBack,
-                  modifier = Modifier.testTag(OrganizationDashboardTestTags.BACK_BUTTON)) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.onSurface)
-                  }
-            },
-            colors =
-                TopAppBarDefaults.topAppBarColors(
-                    containerColor = DefaultBackground,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface))
-      },
-      containerColor = DefaultBackground) { paddingValues ->
+    BackNavigationScaffold(
+        title = "DASHBOARD",
+        onBack = onNavigateBack,
+        modifier = modifier.testTag(OrganizationDashboardTestTags.SCREEN),
+        titleTestTag = OrganizationDashboardTestTags.TITLE,
+        backButtonTestTag = OrganizationDashboardTestTags.BACK_BUTTON
+    ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-          when {
-            uiState.isLoading -> {
-              LoadingState(
-                  modifier = Modifier.align(Alignment.Center),
-                  testTag = OrganizationDashboardTestTags.LOADING_INDICATOR)
+            when {
+                uiState.isLoading -> {
+                    LoadingState(
+                        modifier = Modifier.align(Alignment.Center),
+                        testTag = OrganizationDashboardTestTags.LOADING_INDICATOR
+                    )
+                }
+                uiState.error != null -> {
+                    ErrorState(
+                        error = uiState.error!!,
+                        onRetry = { viewModel.loadOrganization(organizationId) },
+                        modifier = Modifier.align(Alignment.Center),
+                        testTag = OrganizationDashboardTestTags.ERROR_MESSAGE
+                    )
+                }
+                uiState.organization != null -> {
+                    DashboardContent(
+                        uiState = uiState,
+                        onNavigateToProfile = onNavigateToProfile,
+                        onNavigateToCreateEvent = onNavigateToCreateEvent,
+                        onNavigateToAddStaff = onNavigateToAddStaff,
+                        onNavigateToScanTickets = onNavigateToScanTickets,
+                        onNavigateToEditEvent = onNavigateToEditEvent,
+                        onRemoveStaff = { userId -> viewModel.removeStaffMember(userId) }
+                    )
+                }
             }
-            uiState.error != null -> {
-              ErrorState(
-                  error = uiState.error!!,
-                  onRetry = { viewModel.loadOrganization(organizationId) },
-                  modifier = Modifier.align(Alignment.Center),
-                  testTag = OrganizationDashboardTestTags.ERROR_MESSAGE)
-            }
-            uiState.organization != null -> {
-              DashboardContent(
-                  uiState = uiState,
-                  onNavigateToProfile = onNavigateToProfile,
-                  onNavigateToCreateEvent = onNavigateToCreateEvent,
-                  onNavigateToAddStaff = onNavigateToAddStaff,
-                  onNavigateToScanTickets = onNavigateToScanTickets,
-                  onNavigateToEditEvent = onNavigateToEditEvent,
-                  onRemoveStaff = { userId -> viewModel.removeStaffMember(userId) })
-            }
-          }
         }
-      }
+    }
 }
 
 /**

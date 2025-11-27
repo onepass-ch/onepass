@@ -52,6 +52,7 @@ import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.ui.myevents.TicketComponent
 import ch.onepass.onepass.ui.myevents.TicketStatus
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.theme.Typography
 import ch.onepass.onepass.ui.theme.White
 import coil.compose.AsyncImage
@@ -406,52 +407,34 @@ fun OrganizerProfileScreen(
 
   LaunchedEffect(viewModel) { viewModel.effects.collectLatest { effect -> onEffect(effect) } }
 
-  Scaffold(
-      topBar = {
-        TopAppBar(
-            title = { Text(text = "Organizer Profile", color = White) },
-            navigationIcon = {
-              IconButton(onClick = onNavigateBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = White)
-              }
-            },
-            colors =
-                TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorResource(id = R.color.profile_background)))
-      },
-      content = { paddingValues ->
-        Box(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
-            contentAlignment = Alignment.Center,
-        ) {
-          OrganizerProfileContent(
-              name = state.name,
-              description = state.description,
-              bannerImageUrl = state.coverImageUrl,
-              profileImageUrl = state.profileImageUrl,
-              websiteUrl = state.websiteUrl,
-              instagramUrl = state.instagramUrl,
-              tiktokUrl = state.tiktokUrl,
-              facebookUrl = state.facebookUrl,
-              followersCount = state.followersCountFormatted,
-              isFollowing = state.isFollowing,
-              isOwner = state.isOwner,
-              selectedTab = state.selectedTab,
-              upcomingEvents = state.upcomingEvents,
-              pastEvents = state.pastEvents,
-              onFollowClick = { viewModel.onFollowClicked() },
-              onWebsiteClick = { viewModel.onWebsiteClicked() },
-              onInstagramClick = { viewModel.onSocialMediaClicked("instagram") },
-              onTiktokClick = { viewModel.onSocialMediaClicked("tiktok") },
-              onFacebookClick = { viewModel.onSocialMediaClicked("facebook") },
-              onEditOrganizationClick = { viewModel.onEditOrganizationClicked() },
-              onTabSelected = { viewModel.onTabSelected(it) },
-              onEventClick = { viewModel.onEventClicked(it) })
-        }
-      })
+    BackNavigationScaffold(
+        title = "Organizer Profile",
+        onBack = onNavigateBack,
+    ) {
+        OrganizerProfileContent(
+            name = state.name,
+            description = state.description,
+            bannerImageUrl = state.coverImageUrl,
+            profileImageUrl = state.profileImageUrl,
+            websiteUrl = state.websiteUrl,
+            instagramUrl = state.instagramUrl,
+            tiktokUrl = state.tiktokUrl,
+            facebookUrl = state.facebookUrl,
+            followersCount = state.followersCountFormatted,
+            isFollowing = state.isFollowing,
+            isOwner = state.isOwner,
+            selectedTab = state.selectedTab,
+            upcomingEvents = state.upcomingEvents,
+            pastEvents = state.pastEvents,
+            onFollowClick = { viewModel.onFollowClicked() },
+            onWebsiteClick = { viewModel.onWebsiteClicked() },
+            onInstagramClick = { viewModel.onSocialMediaClicked("instagram") },
+            onTiktokClick = { viewModel.onSocialMediaClicked("tiktok") },
+            onFacebookClick = { viewModel.onSocialMediaClicked("facebook") },
+            onEditOrganizationClick = { viewModel.onEditOrganizationClicked() },
+            onTabSelected = { viewModel.onTabSelected(it) },
+            onEventClick = { viewModel.onEventClicked(it) })
+    }
 }
 
 /**
