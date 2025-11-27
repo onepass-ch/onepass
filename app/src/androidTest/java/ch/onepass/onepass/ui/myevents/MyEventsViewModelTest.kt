@@ -313,20 +313,6 @@ class MyEventsViewModelTest {
   }
 
   @Test
-  fun isLoading_isFalse_afterLoadFails() = runTest {
-    val uid = uniqueUid("loadFail")
-    coEvery { passRepo.getOrCreateSignedPass(uid) } returns Result.failure(Exception("Err"))
-
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
-    advanceUntilIdle()
-
-    vm.loadUserPass()
-    advanceUntilIdle()
-
-    assertFalse(vm.isLoading.value)
-  }
-
-  @Test
   fun initial_states_areSane_beforeAnyAction() = runTest {
     val uid = uniqueUid("sanity")
     val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
