@@ -12,10 +12,18 @@ export interface SigningKey {
   active: boolean;
 }
 
+/**
+ * Retrieves the most recent active signing key from Firestore.
+ * Uses orderBy to ensure deterministic key selection for rotation.
+ *
+ * @returns The active signing key
+ * @throws HttpsError if no active key is found
+ */
 export async function getActiveKey(): Promise<SigningKey> {
   const snapshot = await db
     .collection("keys")
     .where("active", "==", true)
+    .orderBy("createdAt", "desc")  // ← Ensures most recent key is selected
     .limit(1)
     .get();
 
