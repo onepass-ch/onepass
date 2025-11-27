@@ -5,6 +5,8 @@ import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
+import ch.onepass.onepass.model.membership.MembershipRepository
+import ch.onepass.onepass.model.membership.MembershipRepositoryFirebase
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationMember
 import ch.onepass.onepass.model.organization.OrganizationRepository
@@ -41,11 +43,13 @@ data class OrganizationDashboardUiState(
  *
  * @property organizationRepository Repository for organization operations
  * @property eventRepository Repository for event operations
+ * @property membershipRepository Repository for membership operations
  * @property auth Firebase authentication instance
  */
 class OrganizationDashboardViewModel(
     private val organizationRepository: OrganizationRepository = OrganizationRepositoryFirebase(),
     private val eventRepository: EventRepository = EventRepositoryFirebase(),
+    private val membershipRepository: MembershipRepository = MembershipRepositoryFirebase(),
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ViewModel() {
 
@@ -70,26 +74,43 @@ class OrganizationDashboardViewModel(
 
     viewModelScope.launch {
       try {
-        // Load organization details
-        organizationRepository
-            .getOrganizationById(organizationId)
-            .combine(eventRepository.getEventsByOrganization(organizationId)) { org, events ->
-              Pair(org, events)
-            }
-            .collect { (organization, events) ->
+        // Load organization details, events, and members concurrently
+        combine(
+                organizationRepository.getOrganizationById(organizationId),
+                eventRepository.getEventsByOrganization(organizationId),
+                membershipRepository.getUsersByOrganizationFlow(organizationId)) {
+                    org,
+                    events,
+                    memberships ->
+                  Triple(org, events, memberships)
+                }
+            .collect { (organization, events, memberships) ->
               if (organization == null) {
                 _uiState.update { it.copy(isLoading = false, error = "Organization not found") }
                 return@collect
               }
 
               val currentUserId = auth.currentUser?.uid
-              val currentUserRole = currentUserId?.let { organization.members[it]?.role }
+
+              // Map Membership objects to OrganizationMember for UI compatibility
+              val membersMap =
+                  memberships.associate { membership ->
+                    membership.userId to
+                        OrganizationMember(
+                            role = membership.role,
+                            joinedAt = membership.createdAt, // Use createdAt from membership
+                            assignedEvents = emptyList() // Not available in Membership yet
+                            )
+                  }
+
+              val currentUserRole =
+                  currentUserId?.let { userId -> memberships.find { it.userId == userId }?.role }
 
               _uiState.update {
                 it.copy(
                     organization = organization,
                     events = events,
-                    staffMembers = organization.members,
+                    staffMembers = membersMap,
                     currentUserRole = currentUserRole,
                     isLoading = false,
                     error = null)
@@ -127,8 +148,8 @@ class OrganizationDashboardViewModel(
 
     viewModelScope.launch {
       try {
-        organizationRepository
-            .removeMember(organizationId, userId)
+        membershipRepository
+            .removeMembership(userId, organizationId)
             .onSuccess {
               // Update local state
               _uiState.update {
