@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,9 +19,19 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButtonDefaults.Icon
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -381,40 +392,66 @@ fun TabSection(
  * Main OrganizerProfileScreen that integrates with ViewModel. This is the entry point for the
  * organizer profile feature.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrganizerProfileScreen(
     organizationId: String,
     viewModel: OrganizerProfileViewModel = viewModel(),
-    onEffect: (OrganizerProfileEffect) -> Unit = {}
+    onEffect: (OrganizerProfileEffect) -> Unit = {},
+    onNavigateBack: () -> Unit = {}
 ) {
   val state by viewModel.state.collectAsState()
 
   LaunchedEffect(organizationId) { viewModel.loadOrganizationProfile(organizationId) }
 
   LaunchedEffect(viewModel) { viewModel.effects.collectLatest { effect -> onEffect(effect) } }
-  OrganizerProfileContent(
-      name = state.name,
-      description = state.description,
-      bannerImageUrl = state.coverImageUrl,
-      profileImageUrl = state.profileImageUrl,
-      websiteUrl = state.websiteUrl,
-      instagramUrl = state.instagramUrl,
-      tiktokUrl = state.tiktokUrl,
-      facebookUrl = state.facebookUrl,
-      followersCount = state.followersCountFormatted,
-      isFollowing = state.isFollowing,
-      isOwner = state.isOwner,
-      selectedTab = state.selectedTab,
-      upcomingEvents = state.upcomingEvents,
-      pastEvents = state.pastEvents,
-      onFollowClick = { viewModel.onFollowClicked() },
-      onWebsiteClick = { viewModel.onWebsiteClicked() },
-      onInstagramClick = { viewModel.onSocialMediaClicked("instagram") },
-      onTiktokClick = { viewModel.onSocialMediaClicked("tiktok") },
-      onFacebookClick = { viewModel.onSocialMediaClicked("facebook") },
-      onEditOrganizationClick = { viewModel.onEditOrganizationClicked() },
-      onTabSelected = { viewModel.onTabSelected(it) },
-      onEventClick = { viewModel.onEventClicked(it) })
+
+  Scaffold(
+      topBar = {
+        TopAppBar(
+            title = { Text(text = "Organizer Profile", color = White) },
+            navigationIcon = {
+              IconButton(onClick = onNavigateBack) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Back",
+                    tint = White)
+              }
+            },
+            colors =
+                TopAppBarDefaults.topAppBarColors(
+                    containerColor = colorResource(id = R.color.profile_background)))
+      },
+      content = { paddingValues ->
+        Box(
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            contentAlignment = Alignment.Center,
+        ) {
+          OrganizerProfileContent(
+              name = state.name,
+              description = state.description,
+              bannerImageUrl = state.coverImageUrl,
+              profileImageUrl = state.profileImageUrl,
+              websiteUrl = state.websiteUrl,
+              instagramUrl = state.instagramUrl,
+              tiktokUrl = state.tiktokUrl,
+              facebookUrl = state.facebookUrl,
+              followersCount = state.followersCountFormatted,
+              isFollowing = state.isFollowing,
+              isOwner = state.isOwner,
+              selectedTab = state.selectedTab,
+              upcomingEvents = state.upcomingEvents,
+              pastEvents = state.pastEvents,
+              onFollowClick = { viewModel.onFollowClicked() },
+              onWebsiteClick = { viewModel.onWebsiteClicked() },
+              onInstagramClick = { viewModel.onSocialMediaClicked("instagram") },
+              onTiktokClick = { viewModel.onSocialMediaClicked("tiktok") },
+              onFacebookClick = { viewModel.onSocialMediaClicked("facebook") },
+              onEditOrganizationClick = { viewModel.onEditOrganizationClicked() },
+              onTabSelected = { viewModel.onTabSelected(it) },
+              onEventClick = { viewModel.onEventClicked(it) })
+        }
+      })
 }
 
 /**
