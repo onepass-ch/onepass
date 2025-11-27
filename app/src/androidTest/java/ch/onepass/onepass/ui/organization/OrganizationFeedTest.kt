@@ -251,18 +251,16 @@ class OrganizationFeedTest {
               averageRating = 4f + (i % 5) * 0.2f,
               createdAt = Timestamp.now())
         }
+    coEvery { mockRepository.getOrganizationsByOwner(testUserId) } returns flowOf(emptyList())
     coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns flowOf(manyOrgs)
     viewModel = OrganizationFeedViewModel(mockRepository)
     composeTestRule.setContent {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
     }
 
+    // Wait for the organization data to actually load and be displayed
     composeTestRule.waitUntil(timeoutMillis = 10_000) {
-      composeTestRule
-          .onAllNodesWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST)
-          .fetchSemanticsNodes()
-          .isNotEmpty() ||
-          composeTestRule.onAllNodesWithText("Organization 1").fetchSemanticsNodes().isNotEmpty()
+      composeTestRule.onAllNodesWithText("Organization 1").fetchSemanticsNodes().isNotEmpty()
     }
     composeTestRule.waitForIdle()
 
