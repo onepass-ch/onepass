@@ -22,6 +22,7 @@ import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
 import com.mapbox.maps.plugin.annotation.generated.createPointAnnotationManager
 import com.mapbox.maps.plugin.compass.CompassPlugin
+import com.mapbox.maps.plugin.gestures.OnMapClickListener
 import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin
 import com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener
@@ -407,14 +408,23 @@ class MapViewModel(
   }
 
   /** Set up click listeners for annotations and map */
+  @SuppressLint("ImplicitSamInstance")
   private fun setupAnnotationClickListeners(
       pointAnnotationManager: PointAnnotationManager,
       events: List<Event>,
       mapView: MapView
   ) {
-    // Remove existing click listeners first
+    // Remove existing click listeners first using conventional approach
     pointAnnotationManager.removeClickListener { true }
-    mapView.gestures.removeOnMapClickListener { true }
+
+    // Define the map click listener
+    val mapClickListener = OnMapClickListener { point: Point ->
+      clearSelectedEvent()
+      true
+    }
+
+    // Remove existing map click listener
+    mapView.gestures.removeOnMapClickListener(mapClickListener)
 
     // Add click listener for pins
     pointAnnotationManager.addClickListener { annotation ->
@@ -426,6 +436,9 @@ class MapViewModel(
       }
       true
     }
+
+    // Add map click listener to clear selection
+    mapView.gestures.addOnMapClickListener(mapClickListener)
 
     // Add map click listener to clear selection
     mapView.gestures.addOnMapClickListener {

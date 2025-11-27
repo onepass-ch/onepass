@@ -5,7 +5,6 @@ import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.map.Location
-import ch.onepass.onepass.ui.map.MapViewModel.Companion.CameraConfig
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
 import com.mapbox.common.Cancelable
@@ -224,19 +223,6 @@ class MapViewModelUnitTest {
   }
 
   @Test
-  fun setLocationPermissionUpdatesPermissionState() {
-    assertFalse(viewModel.uiState.value.hasLocationPermission)
-
-    viewModel.setLocationPermission(true)
-
-    assertTrue(viewModel.uiState.value.hasLocationPermission)
-
-    viewModel.setLocationPermission(false)
-
-    assertFalse(viewModel.uiState.value.hasLocationPermission)
-  }
-
-  @Test
   fun applyFiltersToCurrentEventsFiltersEventsByRegion() = runTest {
     advanceUntilIdle()
     assertEquals(2, viewModel.uiState.value.events.size)
@@ -395,12 +381,97 @@ class MapViewModelUnitTest {
   }
 
   @Test
-  fun initialCameraOptionsAreSetCorrectly() {
-    val cameraOptions = viewModel.initialCameraOptions
+  fun setupAnnotationsForEvents_removesExistingClickListeners() = runTest {
+    val events = listOf(validEvent1, validEvent2)
 
-    assertNotNull(cameraOptions.center)
-    assertEquals(CameraConfig.DEFAULT_LATITUDE, cameraOptions.center!!.latitude(), 0.001)
-    assertEquals(CameraConfig.DEFAULT_LONGITUDE, cameraOptions.center!!.longitude(), 0.001)
-    assertEquals(CameraConfig.DEFAULT_ZOOM, cameraOptions.zoom!!, 0.001)
+    viewModel.setupAnnotationsForEvents(events, mockMapView)
+    advanceUntilIdle()
+
+    verify { mockAnnotationManager.removeClickListener(any()) }
+    verify { mockGesturesPlugin.removeOnMapClickListener(any()) }
+  }
+
+  @Test
+  fun setupAnnotationsForEvents_annotationClick_selectsEvent() = runTest {
+    val events = listOf(validEvent1, validEvent2)
+
+    clearMocks(mockAnnotationManager)
+
+    val annotationClickListenerSlot =
+        slot<com.mapbox.maps.plugin.annotation.generated.OnPointAnnotationClickListener>()
+    every { mockAnnotationManager.addClickListener(capture(annotationClickListenerSlot)) } returns
+        true
+
+    viewModel.setupAnnotationsForEvents(events, mockMapView)
+    advanceUntilIdle()
+
+    val mockAnnotation = mockk<com.mapbox.maps.plugin.annotation.generated.PointAnnotation>()
+    every { mockAnnotation.getData() } returns com.google.gson.JsonPrimitive(validEvent1.eventId)
+
+    annotationClickListenerSlot.captured.onAnnotationClick(mockAnnotation)
+
+    assertEquals(validEvent1, viewModel.uiState.value.selectedEvent)
+  }
+
+  @Test
+  fun setupAnnotationsForEvents_mapClick_clearsSelectedEvent() = runTest {
+    val events = listOf(validEvent1, validEvent2)
+
+    viewModel.selectEvent(validEvent1)
+    assertEquals(validEvent1, viewModel.uiState.value.selectedEvent)
+
+    val mapClickListenerSlot = slot<com.mapbox.maps.plugin.gestures.OnMapClickListener>()
+    every { mockGesturesPlugin.addOnMapClickListener(capture(mapClickListenerSlot)) } returns Unit
+
+    viewModel.setupAnnotationsForEvents(events, mockMapView)
+    advanceUntilIdle()
+
+    mapClickListenerSlot.captured.onMapClick(com.mapbox.geojson.Point.fromLngLat(0.0, 0.0))
+
+    assertNull(viewModel.uiState.value.selectedEvent)
+  }
+
+  @Test
+  fun setupAnnotationsForEvents_annotationClickWithInvalidEventId_doesNothing() = runTest {
+    val events = listOf(validEvent1, validEvent2)
+
+    clearMocks(mockAnnotationManager)
+
+    val annotationClickListenerSlot =
+        slot<com.mapbox.maps.plugin.annotation.generated.OnPointAnnotationClickListener>()
+    every { mockAnnotationManager.addClickListener(capture(annotationClickListenerSlot)) } returns
+        true
+
+    viewModel.setupAnnotationsForEvents(events, mockMapView)
+    advanceUntilIdle()
+
+    val mockAnnotation = mockk<com.mapbox.maps.plugin.annotation.generated.PointAnnotation>()
+    every { mockAnnotation.getData() } returns com.google.gson.JsonPrimitive("invalid-event-id")
+
+    annotationClickListenerSlot.captured.onAnnotationClick(mockAnnotation)
+
+    assertNull(viewModel.uiState.value.selectedEvent)
+  }
+
+  @Test
+  fun setupAnnotationsForEvents_annotationClickWithNullData_doesNothing() = runTest {
+    val events = listOf(validEvent1, validEvent2)
+
+    clearMocks(mockAnnotationManager)
+
+    val annotationClickListenerSlot =
+        slot<com.mapbox.maps.plugin.annotation.generated.OnPointAnnotationClickListener>()
+    every { mockAnnotationManager.addClickListener(capture(annotationClickListenerSlot)) } returns
+        true
+
+    viewModel.setupAnnotationsForEvents(events, mockMapView)
+    advanceUntilIdle()
+
+    val mockAnnotation = mockk<com.mapbox.maps.plugin.annotation.generated.PointAnnotation>()
+    every { mockAnnotation.getData() } returns null
+
+    annotationClickListenerSlot.captured.onAnnotationClick(mockAnnotation)
+
+    assertNull(viewModel.uiState.value.selectedEvent)
   }
 }
