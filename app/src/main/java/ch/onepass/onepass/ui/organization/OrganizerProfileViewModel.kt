@@ -8,6 +8,7 @@ import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
+import ch.onepass.onepass.utils.FormatUtils
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -49,32 +50,7 @@ data class OrganizerProfileUiState(
 ) {
   /** Formatted followers count for display (e.g., "1K", "2.5M") */
   val followersCountFormatted: String
-    get() = formatFollowersCount(followersCount)
-}
-
-/**
- * Formats follower count for display:
- * - < 1000: shows exact number (e.g., "500")
- * - >= 1000 and < 1 million: shows with K suffix (e.g., "1K", "2.5K")
- * - >= 1 million: shows with M suffix (e.g., "1M", "2.5M")
- */
-private fun formatFollowersCount(count: Int): String {
-  return when {
-    count < 1000 -> count.toString()
-    count < 1_000_000 -> {
-      val thousands = count / 1000.0
-      if (thousands % 1 == 0.0) "${thousands.toInt()}K"
-      else {
-        // This fixes the rounding error where 999.95K would round to 1000.0K :)
-        val capped = thousands.coerceAtMost(999.9)
-        "%.1fK".format(capped)
-      }
-    }
-    else -> {
-      val millions = count / 1_000_000.0
-      if (millions % 1 == 0.0) "${millions.toInt()}M" else "%.1fM".format(millions)
-    }
-  }
+    get() = FormatUtils.formatCompactNumber(followersCount)
 }
 
 /** One-time effects/events for navigation and side effects */

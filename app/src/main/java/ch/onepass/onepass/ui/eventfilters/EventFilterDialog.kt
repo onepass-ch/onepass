@@ -22,7 +22,7 @@ import ch.onepass.onepass.model.eventfilters.SwissRegions
 import java.util.*
 
 /** Test tags for UI elements in the filter dialog. */
-object FeedScreenTestTags {
+object EventFilterDialogTestTags {
   const val FILTER_DIALOG = "filterDialog"
   const val REGION_DROPDOWN = "regionDropdown"
   const val DATE_RANGE_PRESETS = "dateRangePresets"
@@ -58,7 +58,7 @@ fun FilterDialog(
       properties = DialogProperties(usePlatformDefaultWidth = false),
   ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(0.9f).testTag(FeedScreenTestTags.FILTER_DIALOG),
+        modifier = Modifier.fillMaxWidth(0.9f).testTag(EventFilterDialogTestTags.FILTER_DIALOG),
         shape = MaterialTheme.shapes.extraLarge,
         tonalElevation = 6.dp,
     ) {
@@ -84,14 +84,14 @@ fun FilterDialog(
           TextButton(
               onClick = { viewModel.resetLocalFilters() },
               enabled = uiState.localFilters.hasActiveFilters,
-              modifier = Modifier.testTag(FeedScreenTestTags.RESET_FILTERS_BUTTON),
+              modifier = Modifier.testTag(EventFilterDialogTestTags.RESET_FILTERS_BUTTON),
           ) {
             Text("Reset All")
           }
           Button(
               onClick = { onApply(uiState.localFilters) },
               enabled = uiState.localFilters != viewModel.currentFilters.collectAsState().value,
-              modifier = Modifier.testTag(FeedScreenTestTags.APPLY_FILTERS_BUTTON),
+              modifier = Modifier.testTag(EventFilterDialogTestTags.APPLY_FILTERS_BUTTON),
           ) {
             Text("Apply Filters")
           }
@@ -101,7 +101,13 @@ fun FilterDialog(
   }
 }
 
-/** Displays a dropdown menu for selecting the event region. */
+/**
+ * Displays a dropdown menu for selecting the event region.
+ *
+ * @param uiState The current UI state containing local filters and dropdown expansion state.
+ * @param onFiltersChanged Callback to update the local [EventFilters] state.
+ * @param onExpandedChange Callback to toggle the expansion state of the region dropdown.
+ */
 @Composable
 private fun RegionFilter(
     uiState: FilterUIState = FilterUIState(),
@@ -112,7 +118,7 @@ private fun RegionFilter(
     Box(Modifier.fillMaxWidth()) {
       OutlinedButton(
           onClick = { onExpandedChange(true) },
-          modifier = Modifier.fillMaxWidth().testTag(FeedScreenTestTags.REGION_DROPDOWN),
+          modifier = Modifier.fillMaxWidth().testTag(EventFilterDialogTestTags.REGION_DROPDOWN),
       ) {
         Text(uiState.localFilters.region ?: SwissRegions.ALL_REGIONS, Modifier.weight(1f))
         Icon(Icons.Default.ArrowDropDown, "Select region")
@@ -144,7 +150,13 @@ private fun RegionFilter(
   }
 }
 
-/** Displays chips for selecting a date range or custom range via date picker. */
+/**
+ * Displays chips for selecting a date range or custom range via date picker.
+ *
+ * @param uiState The current UI state containing local filters and date picker visibility.
+ * @param onFiltersChanged Callback to update the local [EventFilters] state.
+ * @param onShowDatePickerChange Callback to toggle the visibility of the date range picker dialog.
+ */
 @Composable
 private fun DateRangeFilter(
     uiState: FilterUIState = FilterUIState(),
@@ -158,7 +170,7 @@ private fun DateRangeFilter(
           "Next 7 Days" to DateRangePresets.getNext7DaysRange(),
       )
   FilterSection("Date Range") {
-    Column(Modifier.testTag(FeedScreenTestTags.DATE_RANGE_PRESETS)) {
+    Column(Modifier.testTag(EventFilterDialogTestTags.DATE_RANGE_PRESETS)) {
       Row(
           horizontalArrangement = Arrangement.spacedBy(8.dp),
           modifier = Modifier.fillMaxWidth(),
@@ -188,11 +200,11 @@ private fun DateRangeFilter(
               formatDateRange(uiState.localFilters.dateRange) ?: "Not set",
               style = MaterialTheme.typography.bodySmall,
               color = MaterialTheme.colorScheme.onSurfaceVariant,
-              modifier = Modifier.testTag(FeedScreenTestTags.CUSTOM_RANGE_TEXT))
+              modifier = Modifier.testTag(EventFilterDialogTestTags.CUSTOM_RANGE_TEXT))
         }
         Button(
             onClick = { onShowDatePickerChange(true) },
-            Modifier.height(36.dp).testTag(FeedScreenTestTags.PICK_DATES_BUTTON)) {
+            Modifier.height(36.dp).testTag(EventFilterDialogTestTags.PICK_DATES_BUTTON)) {
               Text("Pick dates")
             }
       }
@@ -208,7 +220,13 @@ private fun DateRangeFilter(
   }
 }
 
-/** Shows a checkbox to hide sold out events. */
+/**
+ * Shows a checkbox to hide sold out events.
+ *
+ * @param filters The current local [EventFilters] state.
+ * @param onFiltersChanged Callback to update the local [EventFilters] state when the checkbox is
+ *   toggled.
+ */
 @Composable
 private fun AvailabilityFilter(filters: EventFilters, onFiltersChanged: (EventFilters) -> Unit) {
   FilterSection("Availability") {
@@ -219,14 +237,19 @@ private fun AvailabilityFilter(filters: EventFilters, onFiltersChanged: (EventFi
       Checkbox(
           checked = filters.hideSoldOut,
           onCheckedChange = { onFiltersChanged(filters.copy(hideSoldOut = it)) },
-          modifier = Modifier.testTag(FeedScreenTestTags.HIDE_SOLD_OUT_CHECKBOX),
+          modifier = Modifier.testTag(EventFilterDialogTestTags.HIDE_SOLD_OUT_CHECKBOX),
       )
       Text("Hide sold out events", Modifier.padding(start = 8.dp))
     }
   }
 }
 
-/** Section wrapper with a title and content. */
+/**
+ * Section wrapper with a title and content.
+ *
+ * @param title The title of the filter section.
+ * @param content The composable content displayed within the section.
+ */
 @Composable
 private fun FilterSection(title: String, content: @Composable () -> Unit) {
   Column(Modifier.fillMaxWidth()) {
@@ -239,7 +262,14 @@ private fun FilterSection(title: String, content: @Composable () -> Unit) {
   }
 }
 
-/** Dialog to pick a custom start and end date for filtering events. */
+/**
+ * Dialog to pick a custom start and end date for filtering events.
+ *
+ * @param onDismiss Callback invoked when the dialog is dismissed (e.g., via Cancel button or
+ *   outside click).
+ * @param onConfirm Callback invoked when the date range is confirmed, receives start and end date
+ *   as timestamps (Long).
+ */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateRangePickerDialog(
@@ -293,7 +323,15 @@ fun DateRangePickerDialog(
       dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }
 
-/** Extends a [ClosedRange] to include the full end-of-day time for the end date. */
+/**
+ * Extends a [ClosedRange] of milliseconds to include the full end-of-day time for the end date.
+ *
+ * This ensures that events scheduled throughout the selected end day are included in the filter.
+ *
+ * @return A new [ClosedRange] where the start is the original start and the end is set to
+ *   23:59:59.999 on the original end date.
+ * @receiver The original [ClosedRange] of milliseconds.
+ */
 fun ClosedRange<Long>.inclusiveEndOfDay(): ClosedRange<Long> {
   val cal = Calendar.getInstance().apply { timeInMillis = this@inclusiveEndOfDay.endInclusive }
   cal.set(Calendar.HOUR_OF_DAY, END_OF_DAY_HOUR)

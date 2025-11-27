@@ -10,6 +10,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,9 +19,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -32,10 +33,10 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.organization.Organization
+import ch.onepass.onepass.ui.components.buttons.LikeButton
 import ch.onepass.onepass.ui.event.EventCardViewModel
-import ch.onepass.onepass.ui.event.LikeButton
+import ch.onepass.onepass.ui.organization.OrganizationCard
 import ch.onepass.onepass.ui.theme.DefaultBackground
-import ch.onepass.onepass.ui.theme.White
 import coil.compose.AsyncImage
 
 object EventDetailTestTags {
@@ -45,9 +46,6 @@ object EventDetailTestTags {
   const val LIKE_BUTTON = "eventDetailLikeButton"
   const val EVENT_TITLE = "eventDetailEventTitle"
   const val ORGANIZER_SECTION = "eventDetailOrganizerSection"
-  const val ORGANIZER_IMAGE = "eventDetailOrganizerImage"
-  const val ORGANIZER_NAME = "eventDetailOrganizerName"
-  const val ORGANIZER_FOLLOWERS = "eventDetailOrganizerFollowers"
   const val ORGANIZER_RATING = "eventDetailOrganizerRating"
   const val ABOUT_EVENT = "eventDetailAboutEvent"
   const val EVENT_DATE = "eventDetailDate"
@@ -65,6 +63,7 @@ fun EventDetailScreen(
     onBack: () -> Unit,
     onNavigateToMap: (String) -> Unit = {},
     onBuyTicket: (String) -> Unit = {},
+    onNavigateToOrganizerProfile: (String) -> Unit,
     viewModel: EventDetailViewModel =
         viewModel(
             factory = viewModelFactory { initializer { EventDetailViewModel(eventId = eventId) } })
@@ -89,6 +88,7 @@ fun EventDetailScreen(
       onBack = onBack,
       onLikeToggle = { eventCardViewModel.toggleLike(eventId) },
       onNavigateToMap = { onNavigateToMap(eventId) },
+      onNavigateToOrganizerProfile = onNavigateToOrganizerProfile,
       onBuyTicket = { onBuyTicket(eventId) })
 }
 
@@ -108,6 +108,7 @@ internal fun EventDetailScreenContent(
     onBack: () -> Unit,
     onLikeToggle: () -> Unit,
     onNavigateToMap: () -> Unit,
+    onNavigateToOrganizerProfile: (String) -> Unit = {},
     onBuyTicket: () -> Unit
 ) {
   Box(
@@ -129,23 +130,24 @@ internal fun EventDetailScreenContent(
                         .testTag(EventDetailTestTags.ERROR),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                  Text(text = uiState.errorMessage ?: "Error loading event", color = Color.White)
+                  Text(text = uiState.errorMessage, color = Color.White)
                   Button(onClick = onBack) { Text("Go Back") }
                 }
           }
           uiState.event != null -> {
             EventDetailContent(
-                event = uiState.event!!,
+                event = uiState.event,
                 organization = uiState.organization,
                 isLiked = uiState.isLiked,
                 onLikeToggle = onLikeToggle,
                 onNavigateToMap = onNavigateToMap,
                 onBuyTicket = onBuyTicket,
+                onNavigateToOrganizerProfile = onNavigateToOrganizerProfile,
                 onBack = onBack)
 
             BuyButton(
                 onBuyTicket = onBuyTicket,
-                priceText = formatPrice(uiState.event!!),
+                priceText = formatPrice(uiState.event),
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth())
           }
         }
@@ -154,9 +156,9 @@ internal fun EventDetailScreenContent(
 
 @Composable
 private fun BuyButton(
+    modifier: Modifier = Modifier,
     onBuyTicket: () -> Unit = {},
-    priceText: String = "text",
-    modifier: Modifier = Modifier
+    priceText: String = "text"
 ) {
   // Buy ticket button - fixed at bottom with padding
   Surface(modifier = modifier, shadowElevation = 8.dp, color = DefaultBackground) {
@@ -167,8 +169,7 @@ private fun BuyButton(
           shape = RoundedCornerShape(5.dp),
           colors =
               ButtonDefaults.buttonColors(
-                  containerColor = Color(0xFF413857) // Purple from design
-                  )) {
+                  containerColor = colorResource(id = R.color.event_buy_button_bg))) {
             Text(
                 text = priceText,
                 style =
@@ -186,15 +187,14 @@ private fun BackSection(onBack: () -> Unit) {
   Row(
       modifier =
           Modifier.fillMaxWidth()
-              .background(Color(0xFF1A1A1A)) // Semi-transparent black
+              .background(colorResource(id = R.color.event_back_section_bg))
               .height(79.dp)
-              .padding(start = 22.dp, top = 55.dp, end = 22.dp, bottom = 6.dp)
               .testTag(EventDetailTestTags.TITLE),
       verticalAlignment = Alignment.CenterVertically,
       horizontalArrangement = Arrangement.spacedBy(40.dp, Alignment.Start)) {
         IconButton(onClick = onBack) {
           Icon(
-              painter = painterResource(R.drawable.go_back_vector),
+              imageVector = Icons.AutoMirrored.Filled.ArrowBack,
               contentDescription = "Back",
               tint = Color.White)
         }
@@ -209,6 +209,7 @@ private fun EventDetailContent(
     onLikeToggle: () -> Unit,
     onNavigateToMap: () -> Unit,
     onBuyTicket: () -> Unit,
+    onNavigateToOrganizerProfile: (String) -> Unit,
     onBack: () -> Unit = {}
 ) {
   Box(modifier = Modifier.fillMaxSize()) {
@@ -267,6 +268,7 @@ private fun EventDetailContent(
           OrganizerSection(
               organization = organization,
               organizerName = event.organizerName,
+              onNavigateToOrganizerProfile = onNavigateToOrganizerProfile,
               modifier = Modifier.padding(horizontal = 10.dp))
 
           // About Event section
@@ -293,6 +295,7 @@ private fun EventDetailContent(
 private fun OrganizerSection(
     organization: Organization?,
     organizerName: String,
+    onNavigateToOrganizerProfile: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
   Column(
@@ -304,100 +307,17 @@ private fun OrganizerSection(
             color = Color.White,
             modifier = Modifier.padding(vertical = 10.dp))
 
-        OrganizerInfoRow(
-            organization = organization,
-            organizerName = organizerName,
-            onNavigate = {
-              // TODO: Navigate to organizer profile screen
-            })
-      }
-}
-
-/**
- * Displays the organizer information row with profile image, name, followers, and rating.
- *
- * @param organization The organization data to display (nullable)
- * @param organizerName Fallback name to display if organization is null
- * @param onNavigate Callback for navigating to the organizer profile (added for future
- *   implementation of navigation to organizer profile screen)
- * @param modifier Modifier for styling
- */
-@Composable
-private fun OrganizerInfoRow(
-    organization: Organization?,
-    organizerName: String,
-    onNavigate: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-  Row(
-      modifier =
-          modifier
-              .fillMaxWidth()
-              .background(
-                  color = Color(0xFF1F1F1F), // neutral-800
-                  shape = RoundedCornerShape(10.dp))
-              .clickable(onClick = onNavigate)
-              .padding(10.dp),
-      horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-        // Organizer image
-        AsyncImage(
-            model = organization?.profileImageUrl,
-            contentDescription = "Organizer profile",
-            placeholder = rememberVectorPainter(Icons.Default.Person),
-            error = rememberVectorPainter(Icons.Default.Person),
-            modifier =
-                Modifier.size(70.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(Color.Black)
-                    .testTag(EventDetailTestTags.ORGANIZER_IMAGE),
-            contentScale = ContentScale.Crop)
-
-        // Organizer details
-        Column(
-            modifier = Modifier.weight(1f).padding(10.dp),
-            verticalArrangement = Arrangement.spacedBy(10.dp)) {
-              Text(
-                  text = organization?.name ?: organizerName,
-                  style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                  color = Color.White,
-                  modifier = Modifier.testTag(EventDetailTestTags.ORGANIZER_NAME))
-
-              // Stats row (followers and rating)
-              Row(
-                  modifier = Modifier.fillMaxWidth(),
-                  horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    // Followers
-                    Text(
-                        text = formatFollowerCount(organization?.followerCount ?: 0),
-                        style =
-                            MaterialTheme.typography.titleLarge.copy(
-                                fontWeight = FontWeight(400), fontSize = 11.sp, lineHeight = 16.sp),
-                        color = Color.White,
-                        modifier = Modifier.testTag(EventDetailTestTags.ORGANIZER_FOLLOWERS))
-
-                    // Rating
-                    if ((organization?.averageRating ?: 0f) > 0f) {
-                      Row(
-                          horizontalArrangement = Arrangement.spacedBy(4.dp),
-                          verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Star,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp).padding(1.dp),
-                                tint = Color(0xFF683F88))
-                            Text(
-                                text = String.format("%.1f", organization?.averageRating ?: 0f),
-                                style =
-                                    MaterialTheme.typography.titleLarge.copy(
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 11.sp,
-                                        lineHeight = 16.sp),
-                                color = Color.White,
-                                modifier = Modifier.testTag(EventDetailTestTags.ORGANIZER_RATING))
-                          }
-                    }
-                  }
-            }
+        if (organization != null) {
+          OrganizationCard(
+              organization = organization,
+              onClick = { onNavigateToOrganizerProfile(organization.id) })
+        } else {
+          Text(
+              text = organizerName,
+              style = MaterialTheme.typography.titleMedium,
+              color = Color.White,
+              modifier = Modifier.padding(vertical = 8.dp))
+        }
       }
 }
 
@@ -439,7 +359,7 @@ private fun EventDetailsSection(
                 imageVector = Icons.Default.CalendarToday,
                 contentDescription = null,
                 modifier = Modifier.size(26.dp),
-                tint = Color(0xFFA3A3A3))
+                tint = colorResource(id = R.color.event_icon_gray))
             Text(
                 text = event.displayDateTime,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
@@ -456,7 +376,7 @@ private fun EventDetailsSection(
                 imageVector = Icons.Default.LocationCity,
                 contentDescription = null,
                 modifier = Modifier.size(26.dp),
-                tint = Color(0xFFA3A3A3))
+                tint = colorResource(id = R.color.event_icon_gray))
             Text(
                 text = event.displayLocation,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
@@ -469,7 +389,8 @@ private fun EventDetailsSection(
     Row(
         modifier =
             Modifier.fillMaxWidth()
-                .border(1.dp, Color(0xFF242424), RoundedCornerShape(0.dp))
+                .border(
+                    1.dp, colorResource(id = R.color.event_border_gray), RoundedCornerShape(0.dp))
                 .clickable(onClick = onNavigateToMap)
                 .padding(vertical = 14.dp, horizontal = 16.dp)
                 .testTag(EventDetailTestTags.MAP_BUTTON),
@@ -482,28 +403,11 @@ private fun EventDetailsSection(
               modifier = Modifier.padding(end = 30.dp))
 
           Icon(
-              imageVector = Icons.Default.ArrowBack,
+              imageVector = Icons.AutoMirrored.Filled.ArrowBack,
               contentDescription = null,
               modifier = Modifier.rotate(180f),
               tint = Color.White)
         }
-  }
-}
-
-@SuppressLint("DefaultLocale")
-internal fun formatFollowerCount(
-    count: Int
-): String { // TODO duplicate with organizationProfile we need to make it into helper func
-  return when {
-    count < 1000 -> "$count followers"
-    count < 1_000_000 -> {
-      val k = count / 1000.0
-      if (k % 1 == 0.0) "${k.toInt()}K followers" else "%.1fK followers".format(k)
-    }
-    else -> {
-      val m = count / 1_000_000.0
-      if (m % 1 == 0.0) "${m.toInt()}M followers" else "%.1fM followers".format(m)
-    }
   }
 }
 

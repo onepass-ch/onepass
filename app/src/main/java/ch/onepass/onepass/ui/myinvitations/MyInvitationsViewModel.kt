@@ -2,6 +2,8 @@ package ch.onepass.onepass.ui.myinvitations
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ch.onepass.onepass.model.membership.MembershipRepository
+import ch.onepass.onepass.model.membership.MembershipRepositoryFirebase
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.OrganizationInvitation
 import ch.onepass.onepass.model.organization.OrganizationRepository
@@ -54,7 +56,8 @@ data class MyInvitationsUiState(
 @OptIn(ExperimentalCoroutinesApi::class)
 class MyInvitationsViewModel(
     private val organizationRepository: OrganizationRepository = OrganizationRepositoryFirebase(),
-    private val userRepository: UserRepository = UserRepositoryFirebase()
+    private val userRepository: UserRepository = UserRepositoryFirebase(),
+    private val membershipRepository: MembershipRepository = MembershipRepositoryFirebase()
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(MyInvitationsUiState())
@@ -239,19 +242,20 @@ class MyInvitationsViewModel(
 
         updateStatusResult
             .onSuccess {
-              // Step 2: Add user as a member to the organization
+              // Step 2: Add user as a member to the organization using MembershipRepository
               val addMemberResult =
-                  organizationRepository.addMember(
-                      organizationId = invitation.orgId, userId = user.uid, role = invitation.role)
+                  membershipRepository.addMembership(
+                      userId = user.uid, orgId = invitation.orgId, role = invitation.role)
 
               addMemberResult
                   .onSuccess {
-                    // Both operations succeeded - provide success feedback
+                    // All operations succeeded - provide success feedback
                     _uiState.value =
                         _uiState.value.copy(
                             successMessage =
-                                "Invitation accepted successfully. You are now a member.")
-                    // The invitation will automatically disappear from the list via the Flow update
+                                "Invitation accepted successfully. You are now a ${invitation.role}.")
+                    // The invitation will automatically disappear from the list via the Flow
+                    // update
                   }
                   .onFailure { error ->
                     // Invitation status was updated but adding member failed

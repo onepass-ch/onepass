@@ -6,13 +6,10 @@ import ch.onepass.onepass.utils.FirestoreTestBase
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
 import java.util.Calendar
-import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertNotNull
-import junit.framework.TestCase.assertNull
-import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
+import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 

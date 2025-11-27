@@ -43,7 +43,7 @@ class UserRepositoryFirebaseTest : FirestoreTestBase() {
       // Try to create the user if it doesn't exist
       try {
         auth.createUserWithEmailAndPassword(email, password).await()
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         // User might already exist, ignore
       }
 

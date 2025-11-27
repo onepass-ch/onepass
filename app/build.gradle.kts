@@ -92,6 +92,7 @@ android {
             isIncludeAndroidResources = true
             isReturnDefaultValues = true
         }
+        animationsDisabled = true
     }
 
     // Robolectric needs to be run only in debug. But its tests are placed in the shared source set (test)
@@ -179,6 +180,8 @@ dependencies {
     implementation(libs.firebase.auth.ktx)
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.database.ktx)
+    implementation(libs.firebase.storage.ktx)
+    androidTestImplementation(libs.androidx.navigation.testing)
 
     // ------------- Jetpack Compose ------------------
     val composeBom = platform(libs.compose.bom)
@@ -227,6 +230,9 @@ dependencies {
 
     // ---------- Google Sign-In (Credential Manager GoogleID) ------------
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
+
+    // ---------- Networking with OkHttp ----------
+    implementation(libs.okhttp)
 
     // --------- MockK for Mocking (unified version) ---------
     testImplementation("io.mockk:mockk:1.13.10")

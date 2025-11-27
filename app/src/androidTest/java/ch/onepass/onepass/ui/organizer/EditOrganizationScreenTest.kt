@@ -28,12 +28,12 @@ class EditOrganizationScreenTest {
           address = "")
 
   private val mockUiState =
-      MutableStateFlow(EditOrganizationUiState(organization = mockOrganization))
-  private val mockFormState = MutableStateFlow(BecomeOrganizerFormState())
+      MutableStateFlow(OrganizationEditorUiState(organization = mockOrganization))
+  private val mockFormState = MutableStateFlow(OrganizationFormState())
   private val mockCountryList = MutableStateFlow(listOf("American Samoa" to 1))
 
   private val mockViewModel =
-      mockk<EditOrganizationViewModel>(relaxed = true) {
+      mockk<OrganizationEditorViewModel>(relaxed = true) {
         every { uiState } returns mockUiState
         every { loadOrganizationById(any()) } returns Unit
         every { clearSuccessFlag() } returns Unit
@@ -41,7 +41,7 @@ class EditOrganizationScreenTest {
       }
 
   private val mockFormViewModel =
-      mockk<BecomeOrganizerViewModel>(relaxed = true) {
+      mockk<OrganizationFormViewModel>(relaxed = true) {
         every { formState } returns mockFormState
         every { countryList } returns mockCountryList
         every { updateName(any()) } returns Unit
@@ -67,17 +67,17 @@ class EditOrganizationScreenTest {
 
     val tags =
         listOf(
-            EditOrganizerTestTags.NAME_FIELD,
-            EditOrganizerTestTags.DESCRIPTION_FIELD,
-            EditOrganizerTestTags.EMAIL_FIELD,
-            EditOrganizerTestTags.PHONE_FIELD,
-            EditOrganizerTestTags.WEBSITE_FIELD,
-            EditOrganizerTestTags.INSTAGRAM_FIELD,
-            EditOrganizerTestTags.FACEBOOK_FIELD,
-            EditOrganizerTestTags.TIKTOK_FIELD,
-            EditOrganizerTestTags.ADDRESS_FIELD,
-            EditOrganizerTestTags.SUBMIT_BUTTON,
-            EditOrganizerTestTags.PREFIX_DROPDOWN)
+            EditOrganizationTestTags.NAME_FIELD,
+            EditOrganizationTestTags.DESCRIPTION_FIELD,
+            EditOrganizationTestTags.EMAIL_FIELD,
+            EditOrganizationTestTags.PHONE_FIELD,
+            EditOrganizationTestTags.WEBSITE_FIELD,
+            EditOrganizationTestTags.INSTAGRAM_FIELD,
+            EditOrganizationTestTags.FACEBOOK_FIELD,
+            EditOrganizationTestTags.TIKTOK_FIELD,
+            EditOrganizationTestTags.ADDRESS_FIELD,
+            EditOrganizationTestTags.SUBMIT_BUTTON,
+            EditOrganizationTestTags.PREFIX_DROPDOWN)
 
     tags.forEach { tag -> composeTestRule.onNodeWithTag(tag).performScrollTo().assertIsDisplayed() }
   }
@@ -92,47 +92,47 @@ class EditOrganizationScreenTest {
     }
 
     composeTestRule
-        .onNodeWithTag(EditOrganizerTestTags.NAME_FIELD)
+        .onNodeWithTag(EditOrganizationTestTags.NAME_FIELD)
         .performScrollTo()
         .performTextInput("Test Org")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizerTestTags.DESCRIPTION_FIELD)
+        .onNodeWithTag(EditOrganizationTestTags.DESCRIPTION_FIELD)
         .performScrollTo()
         .performTextInput("Cool description")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizerTestTags.EMAIL_FIELD)
+        .onNodeWithTag(EditOrganizationTestTags.EMAIL_FIELD)
         .performScrollTo()
         .performTextInput("test@email.com")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizerTestTags.WEBSITE_FIELD)
+        .onNodeWithTag(EditOrganizationTestTags.WEBSITE_FIELD)
         .performScrollTo()
         .performTextInput("example.com")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizerTestTags.INSTAGRAM_FIELD)
+        .onNodeWithTag(EditOrganizationTestTags.INSTAGRAM_FIELD)
         .performScrollTo()
         .performTextInput("test_insta")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizerTestTags.FACEBOOK_FIELD)
+        .onNodeWithTag(EditOrganizationTestTags.FACEBOOK_FIELD)
         .performScrollTo()
         .performTextInput("test_fb")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizerTestTags.TIKTOK_FIELD)
+        .onNodeWithTag(EditOrganizationTestTags.TIKTOK_FIELD)
         .performScrollTo()
         .performTextInput("test_tiktok")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizerTestTags.ADDRESS_FIELD)
+        .onNodeWithTag(EditOrganizationTestTags.ADDRESS_FIELD)
         .performScrollTo()
         .performTextInput("123 Test Street")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizerTestTags.PREFIX_DROPDOWN)
+        .onNodeWithTag(EditOrganizationTestTags.PREFIX_DROPDOWN)
         .performScrollTo()
         .performClick()
 
@@ -142,7 +142,7 @@ class EditOrganizationScreenTest {
         .performClick()
 
     composeTestRule
-        .onNodeWithTag(EditOrganizerTestTags.PHONE_FIELD)
+        .onNodeWithTag(EditOrganizationTestTags.PHONE_FIELD)
         .performScrollTo()
         .performTextInput("123456789")
   }
@@ -157,7 +157,7 @@ class EditOrganizationScreenTest {
     }
 
     composeTestRule
-        .onNodeWithTag(EditOrganizerTestTags.PREFIX_DROPDOWN)
+        .onNodeWithTag(EditOrganizationTestTags.PREFIX_DROPDOWN)
         .performScrollTo()
         .performClick()
 

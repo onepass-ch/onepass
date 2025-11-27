@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.resources.C
+import ch.onepass.onepass.ui.components.buttons.LikeButton
 import ch.onepass.onepass.ui.theme.CardBackground
 import ch.onepass.onepass.ui.theme.CardShadow
 import ch.onepass.onepass.ui.theme.EventCardDimens
@@ -42,7 +43,6 @@ import ch.onepass.onepass.ui.theme.TextSecondary
  * @param modifier Optional [Modifier] for styling, layout, or gesture handling. Defaults to
  *   [Modifier].
  * @param onCardClick Lambda called when the card is clicked.
- * @param onDismiss Lambda called when the close button is clicked.
  */
 @Composable
 fun EventCard(
@@ -51,7 +51,6 @@ fun EventCard(
     isLiked: Boolean = false,
     onLikeToggle: (String) -> Unit = {},
     onCardClick: () -> Unit = {},
-    onDismiss: () -> Unit = {},
 ) {
   val title = event.title
   val date = event.displayDateTime
@@ -110,15 +109,6 @@ fun EventCard(
           contentDescription = "image description",
           contentScale = ContentScale.Crop,
       )
-      // Close button - top left
-      CloseButton(
-          onDismiss = onDismiss,
-          modifier =
-              Modifier.align(Alignment.TopStart)
-                  .padding(EventCardDimens.closeButtonPadding)
-                  .testTag(C.Tag.event_card_close_button),
-      )
-
       // Like button in top-right corner
       LikeButton(
           isLiked = isLiked,

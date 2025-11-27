@@ -2,6 +2,8 @@ package ch.onepass.onepass.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ch.onepass.onepass.model.membership.MembershipRepository
+import ch.onepass.onepass.model.membership.MembershipRepositoryFirebase
 import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
@@ -31,7 +33,6 @@ data class ProfileUiState(
 )
 
 sealed interface ProfileEffect {
-  // TODO: Re-enable once destinations exist
   object NavigateToAccountSettings : ProfileEffect
 
   object NavigateToPaymentMethods : ProfileEffect
@@ -40,20 +41,17 @@ sealed interface ProfileEffect {
 
   object NavigateToMyInvitations : ProfileEffect
 
-  // Keep this one active (only supported flow for now)
-  object NavigateToOrganizerOnboarding : ProfileEffect
+  object NavigateToMyOrganizations : ProfileEffect
 
-  // TODO: Wire this when auth flow is implemented
   object SignOut : ProfileEffect
 
-  // TODO: Enable when Create Event screen exists
-  object NavigateToCreateEvent : ProfileEffect
+  object NavigateToBecomeOrganizer : ProfileEffect
 }
 
-// --- ViewModel ---
-
-open class ProfileViewModel(private val userRepository: UserRepository = UserRepositoryFirebase()) :
-    ViewModel() {
+open class ProfileViewModel(
+    private val userRepository: UserRepository = UserRepositoryFirebase(),
+    private val membershipRepository: MembershipRepository = MembershipRepositoryFirebase()
+) : ViewModel() {
 
   private val _state = MutableStateFlow(ProfileUiState())
   open val state: StateFlow<ProfileUiState> = _state.asStateFlow()
@@ -66,14 +64,18 @@ open class ProfileViewModel(private val userRepository: UserRepository = UserRep
   }
 
   /** Fetches the current user profile from Firestore. */
-  private fun loadProfile() {
+  fun loadProfile() {
     viewModelScope.launch {
       try {
         _state.value = _state.value.copy(loading = true)
         val user = userRepository.getCurrentUser() ?: userRepository.getOrCreateUser()
 
         if (user != null) {
-          _state.value = user.toUiState()
+          // Check if user has any organization membership
+          val memberships =
+              membershipRepository.getOrganizationsByUser(user.uid).getOrNull() ?: emptyList()
+          val isOrganizer = memberships.isNotEmpty()
+          _state.value = user.toUiState(isOrganizer)
         } else {
           _state.value =
               _state.value.copy(loading = false, errorMessage = "User not found or not logged in")
@@ -87,17 +89,17 @@ open class ProfileViewModel(private val userRepository: UserRepository = UserRep
   }
 
   /**
-   * Organizer action: For now, always navigate to Organizer Onboarding to avoid dead routes/black
-   * screens.
-   *
-   * TODO: If user is already an organizer, route to Create Event when that screen exists.
+   * Handles organization button click.
+   * - If the user is already an organizer, navigates to My Organizations.
+   * - Otherwise, navigates to Become an Organizer onboarding.
    */
-  fun onCreateEventClicked() =
+  fun onOrganizationButton() =
       viewModelScope.launch {
-        _effects.tryEmit(ProfileEffect.NavigateToOrganizerOnboarding)
-        // TODO: when Create Event screen is implemented:
-        // if (_state.value.isOrganizer) _effects.emit(ProfileEffect.NavigateToCreateEvent)
-        // else _effects.emit(ProfileEffect.NavigateToOrganizerOnboarding)
+        if (_state.value.isOrganizer) {
+          _effects.emit(ProfileEffect.NavigateToMyOrganizations)
+        } else {
+          _effects.emit(ProfileEffect.NavigateToBecomeOrganizer)
+        }
       }
 
   // --- Placeholder stubs to avoid navigating to non-existent screens ---
@@ -127,7 +129,7 @@ open class ProfileViewModel(private val userRepository: UserRepository = UserRep
 }
 
 // --- Extension: Map User model to UI state ---
-private fun User.toUiState(): ProfileUiState {
+private fun User.toUiState(isOrganizer: Boolean): ProfileUiState {
   val initials =
       displayName
           .split(" ")
@@ -141,6 +143,6 @@ private fun User.toUiState(): ProfileUiState {
       avatarUrl = avatarUrl,
       initials = initials,
       stats = ProfileStats(events = 0, upcoming = 0, saved = 0),
-      isOrganizer = false, // TODO: bind to organization membership when available
+      isOrganizer = isOrganizer,
       loading = false)
 }

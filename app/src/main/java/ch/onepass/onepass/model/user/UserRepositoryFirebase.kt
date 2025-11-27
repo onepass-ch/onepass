@@ -80,7 +80,7 @@ class UserRepositoryFirebase(
             email = userMap[KEY_EMAIL] as? String ?: "",
             displayName = userMap[KEY_DISPLAY_NAME] as? String ?: "",
             avatarUrl = userMap[KEY_AVATAR_URL] as? String)
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         null
       }
     }
