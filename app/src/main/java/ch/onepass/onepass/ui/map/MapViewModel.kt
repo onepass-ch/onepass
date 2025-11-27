@@ -414,7 +414,7 @@ class MapViewModel(
     pointAnnotationManager.removeClickListener { true }
 
     // Define the map click listener
-    val mapClickListener = OnMapClickListener { point: Point ->
+    val mapClickListener = OnMapClickListener { _ ->
       clearSelectedEvent()
       true
     }
