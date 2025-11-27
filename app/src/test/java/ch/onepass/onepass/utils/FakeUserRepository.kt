@@ -42,7 +42,9 @@ class FakeUserRepository(
     usersMap[user.id] = user
   }
 
-  /** Configurable get user by id results for testing. Default implementation looks up in usersMap. */
+  /**
+   * Configurable get user by id results for testing. Default implementation looks up in usersMap.
+   */
   private var getUserByIdFunction: (String) -> Result<StaffSearchResult?> = { uid ->
     Result.success(usersMap[uid])
   }
