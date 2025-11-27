@@ -10,6 +10,14 @@ interface UserRepository {
   suspend fun updateLastLogin(uid: String)
 
   /**
+   * Retrieves a user by their unique ID.
+   *
+   * @param uid The unique user ID.
+   * @return A [Result] containing the [StaffSearchResult] if found, or null if not found.
+   */
+  suspend fun getUserById(uid: String): Result<StaffSearchResult?>
+
+  /**
    * Searches for users by the specified search type.
    *
    * @param query The search query.
