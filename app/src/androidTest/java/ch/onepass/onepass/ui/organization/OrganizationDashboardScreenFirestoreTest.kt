@@ -5,6 +5,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import ch.onepass.onepass.model.membership.MembershipRepository
 import ch.onepass.onepass.model.membership.MembershipRepositoryFirebase
 import ch.onepass.onepass.model.organization.*
+import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import ch.onepass.onepass.ui.organization.FirestoreTestHelper.waitForTag
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import ch.onepass.onepass.utils.FirebaseEmulator
@@ -23,6 +24,7 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
   private lateinit var userId: String
   private lateinit var orgRepository: OrganizationRepository
   private lateinit var membershipRepository: MembershipRepository
+  private lateinit var userRepository: UserRepositoryFirebase
 
   @Before
   override fun setUp() {
@@ -32,6 +34,7 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
       userId = FirebaseEmulator.auth.currentUser?.uid ?: "test-user"
       orgRepository = OrganizationRepositoryFirebase()
       membershipRepository = MembershipRepositoryFirebase()
+      userRepository = UserRepositoryFirebase()
     }
   }
 
@@ -46,11 +49,18 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
     val membersToCreate = members ?: mapOf(userId to OrganizationRole.OWNER)
     FirestoreTestHelper.populateMemberships(orgId, membersToCreate, membershipRepository)
 
+    // Create user profiles in Firestore so the UI can load them
+    membersToCreate.keys.forEach { uid ->
+      FirestoreTestHelper.createFirestoreUser(
+          userId = uid, displayName = uid, email = "$uid@example.com")
+    }
+
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = orgRepository,
             eventRepository = repository,
             membershipRepository = membershipRepository,
+            userRepository = userRepository,
             auth = FirebaseEmulator.auth)
 
     setDashboardScreen(orgId, viewModel)
@@ -184,6 +194,7 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
             organizationRepository = orgRepository,
             eventRepository = repository,
             membershipRepository = membershipRepository,
+            userRepository = userRepository,
             auth = FirebaseEmulator.auth)
 
     setDashboardScreen(orgId, viewModel)
@@ -218,6 +229,7 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
             organizationRepository = orgRepository,
             eventRepository = repository,
             membershipRepository = membershipRepository,
+            userRepository = userRepository,
             auth = FirebaseEmulator.auth)
 
     setDashboardScreen(orgId, viewModel)
@@ -252,12 +264,17 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
             memberId to OrganizationRole.MEMBER,
             staffId to OrganizationRole.STAFF)
     FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
+    members.keys.forEach { uid ->
+      FirestoreTestHelper.createFirestoreUser(
+          userId = uid, displayName = uid, email = "$uid@example.com")
+    }
 
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = orgRepository,
             eventRepository = repository,
             membershipRepository = membershipRepository,
+            userRepository = userRepository,
             auth = FirebaseEmulator.auth)
 
     setDashboardScreen(orgId, viewModel)

@@ -63,6 +63,7 @@ class OrganizationDashboardViewModelTest {
               MockOrganizationRepository(organization, shouldThrowError, removeResult),
           eventRepository = MockEventRepository(events),
           membershipRepository = MockMembershipRepository(memberships, removeResult),
+          userRepository = MockUserRepository(),
           auth = mockAuth)
 
   private suspend fun loadAndAdvance(
@@ -207,7 +208,7 @@ class OrganizationDashboardViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.uiState.value
-    assertFalse(state.staffMembers.containsKey("member-1"))
+    assertFalse(state.staffMembers.any { it.userId == "member-1" })
     assertEquals(2, state.staffMembers.size)
   }
 
@@ -234,7 +235,7 @@ class OrganizationDashboardViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     assertEquals(beforeCount, viewModel.uiState.value.staffMembers.size)
-    assertTrue(viewModel.uiState.value.staffMembers.containsKey("owner-1"))
+    assertTrue(viewModel.uiState.value.staffMembers.any { it.userId == "owner-1" })
   }
 
   @Test
@@ -317,8 +318,8 @@ class OrganizationDashboardViewModelTest {
 
     val state = viewModel.uiState.value
     assertEquals(3, state.staffMembers.size)
-    assertTrue(state.staffMembers.containsKey("owner-1"))
-    assertTrue(state.staffMembers.containsKey("member-1"))
-    assertTrue(state.staffMembers.containsKey("staff-1"))
+    assertTrue(state.staffMembers.any { it.userId == "owner-1" })
+    assertTrue(state.staffMembers.any { it.userId == "member-1" })
+    assertTrue(state.staffMembers.any { it.userId == "staff-1" })
   }
 }
