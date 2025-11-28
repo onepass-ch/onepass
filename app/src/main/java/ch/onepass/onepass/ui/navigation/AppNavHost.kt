@@ -68,7 +68,7 @@ import com.google.firebase.auth.FirebaseAuth
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    mapViewModel: MapViewModel,
+    mapViewModel: MapViewModel? = null,
     testAuthButtonTag: String? = null,
     authViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
       initializer { AuthViewModel() }
@@ -155,8 +155,10 @@ fun AppNavHost(
 
     // ------------------ Map ------------------
     composable(Screen.Map.route) {
+      // Each map screen will create its own ViewModel and handle its own location permission
+      val mapScreenViewModel: MapViewModel = mapViewModel ?: viewModel()
       MapScreen(
-          mapViewModel = mapViewModel,
+          mapViewModel = mapScreenViewModel,
           onNavigateToEvent = { eventId ->
             navController.navigate(Screen.EventDetail.route(eventId))
           })

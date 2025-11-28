@@ -22,6 +22,7 @@ coroutines-test = "1.7.3"
 okhttp = "4.12.0"
 geofirestore = "1.5.0"
 kotlinx-serialization = "1.6.3"
+camerax = "1.3.4"
 
 
 
