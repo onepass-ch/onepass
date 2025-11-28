@@ -43,6 +43,7 @@ data class Organization(
     val facebook: String? = null,
     val contactEmail: String? = null,
     val contactPhone: String? = null,
+    val phonePrefix: String? = null,
     val address: String? = null,
     val eventIds: List<String> = emptyList(),
     val followerCount: Int = 0,

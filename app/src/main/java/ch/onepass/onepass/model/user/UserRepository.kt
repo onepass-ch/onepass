@@ -22,4 +22,22 @@ interface UserRepository {
       searchType: UserSearchType,
       organizationId: String? = null
   ): Result<List<StaffSearchResult>>
+
+  suspend fun isOrganizer(): Boolean
+
+  /**
+   * Adds the organization of ID `orgId` to the `organizationIds` list of user with Id `userId`
+   *
+   * @param userId The user that belongs to the organization
+   * @param orgId The organization to be added to `organizationIds`
+   */
+  suspend fun addOrganizationToUser(userId: String, orgId: String)
+
+  /**
+   * Removes the organization of ID `orgId` from the `organizationIds` list of user with Id `userId`
+   *
+   * @param userId The user that doesn't belong to the organization anymore
+   * @param orgId The organization to be removed from `organizationIds`
+   */
+  suspend fun removeOrganizationFromUser(userId: String, orgId: String)
 }

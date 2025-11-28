@@ -6,18 +6,23 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.Organization
+import ch.onepass.onepass.ui.components.common.EmptyState
+import ch.onepass.onepass.ui.components.common.ErrorState
+import ch.onepass.onepass.ui.components.common.LoadingState
 
 object OrganizationFeedTestTags {
   const val ORGANIZATION_FEED_SCREEN = "organizationFeedScreen"
@@ -29,6 +34,7 @@ object OrganizationFeedTestTags {
   const val RETRY_BUTTON = "retryButton"
   const val EMPTY_STATE = "emptyState"
   const val BACK_BUTTON = "backButton"
+  const val ADD_ORG_FAB = "addOrgFab"
 
   fun getTestTagForOrganizationItem(orgId: String) = "organizationItem_$orgId"
 }
@@ -46,6 +52,7 @@ fun OrganizationFeedScreen(
     modifier: Modifier = Modifier,
     onNavigateToOrganization: (String) -> Unit = {},
     onNavigateBack: () -> Unit = {},
+    onFabClick: () -> Unit = {},
     viewModel: OrganizationFeedViewModel = viewModel(),
 ) {
   val uiState by viewModel.uiState.collectAsState()
@@ -59,6 +66,7 @@ fun OrganizationFeedScreen(
       isLoading = uiState.isLoading,
       error = uiState.error,
       onOrganizationClick = onNavigateToOrganization,
+      onFabClick = onFabClick,
       onNavigateBack = onNavigateBack,
       onRetry = { viewModel.refreshOrganizations(userId) })
 }
@@ -75,6 +83,7 @@ fun OrganizationFeedScaffold(
     isLoading: Boolean,
     error: String?,
     onOrganizationClick: (String) -> Unit = {},
+    onFabClick: () -> Unit = {},
     onNavigateBack: () -> Unit = {},
     onRetry: () -> Unit = {},
     modifier: Modifier = Modifier
@@ -82,31 +91,42 @@ fun OrganizationFeedScaffold(
   Scaffold(
       modifier = modifier.fillMaxSize(),
       topBar = { OrganizationFeedTopBar(onNavigateBack = onNavigateBack) },
-      containerColor = Color(0xFF0A0A0A),
-  ) { paddingValues ->
-    Box(
-        modifier = Modifier.fillMaxSize().padding(paddingValues),
-        contentAlignment = Alignment.Center,
-    ) {
-      when {
-        isLoading && organizations.isEmpty() -> {
-          LoadingState()
-        }
-        error != null && organizations.isEmpty() -> {
-          ErrorState(error = error, onRetry = onRetry)
-        }
-        !isLoading && organizations.isEmpty() -> {
-          EmptyOrganizationState()
-        }
-        else -> {
-          OrganizationListContent(
-              organizations = organizations,
-              onOrganizationClick = onOrganizationClick,
-          )
+      containerColor = colorResource(id = R.color.screen_background)) { paddingValues ->
+        Box(
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            contentAlignment = Alignment.Center,
+        ) {
+          when {
+            isLoading && organizations.isEmpty() -> {
+              LoadingState(testTag = OrganizationFeedTestTags.LOADING_INDICATOR)
+            }
+            error != null && organizations.isEmpty() -> {
+              ErrorState(
+                  error = error,
+                  onRetry = onRetry,
+                  testTag = OrganizationFeedTestTags.ERROR_MESSAGE)
+            }
+            !isLoading && organizations.isEmpty() -> {
+              EmptyState(
+                  title = "No Organizations",
+                  message = "You haven't joined any organizations yet.",
+                  testTag = OrganizationFeedTestTags.EMPTY_STATE)
+            }
+            else -> {
+              OrganizationListContent(
+                  organizations = organizations,
+                  onOrganizationClick = onOrganizationClick,
+              )
+            }
+          }
+          AddOrganizationButton(
+              modifier =
+                  Modifier.align(Alignment.BottomEnd)
+                      .padding(16.dp)
+                      .testTag(OrganizationFeedTestTags.ADD_ORG_FAB),
+              onClick = onFabClick)
         }
       }
-    }
-  }
 }
 
 /** Top bar with title and back button. */
@@ -136,7 +156,9 @@ private fun OrganizationFeedTopBar(onNavigateBack: () -> Unit = {}, modifier: Mo
             letterSpacing = 2.sp,
             modifier = modifier.testTag(OrganizationFeedTestTags.ORGANIZATION_FEED_TITLE))
       },
-      colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color(0xFF0A0A0A)))
+      colors =
+          TopAppBarDefaults.centerAlignedTopAppBarColors(
+              containerColor = colorResource(id = R.color.org_feed_top_bar)))
 }
 
 /** Organization list content with scrollable cards. */
@@ -161,73 +183,15 @@ private fun OrganizationListContent(
   }
 }
 
-/** Loading state indicator. */
 @Composable
-private fun LoadingState(modifier: Modifier = Modifier) {
-  CircularProgressIndicator(
-      modifier = modifier.testTag(OrganizationFeedTestTags.LOADING_INDICATOR),
-      color = Color(0xFF841DA4),
-  )
-}
-
-/** Error state with retry button. */
-@Composable
-private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-  Column(
-      modifier =
-          modifier.fillMaxWidth().padding(32.dp).testTag(OrganizationFeedTestTags.ERROR_MESSAGE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-  ) {
-    Text(
-        text = "Oops!",
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-        color = Color.White,
-    )
-    Spacer(modifier = modifier.height(8.dp))
-    Text(
-        text = error,
-        style = MaterialTheme.typography.bodyMedium,
-        color = Color(0xFF9CA3AF),
-        textAlign = TextAlign.Center,
-    )
-    Spacer(modifier = modifier.height(24.dp))
-    Button(
-        onClick = onRetry,
-        modifier = modifier.testTag(OrganizationFeedTestTags.RETRY_BUTTON),
-        colors =
-            ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF841DA4),
-                contentColor = Color.White,
-            ),
-    ) {
-      Text(text = "Try Again", fontWeight = FontWeight.Medium)
-    }
-  }
-}
-
-/** Empty state when no organizations are available. */
-@Composable
-private fun EmptyOrganizationState(modifier: Modifier = Modifier) {
-  Column(
-      modifier =
-          modifier.fillMaxWidth().padding(32.dp).testTag(OrganizationFeedTestTags.EMPTY_STATE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-  ) {
-    Text(
-        text = "No Organizations",
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-        color = Color.White,
-    )
-    Spacer(modifier = modifier.height(8.dp))
-    Text(
-        text = "You haven't joined any organizations yet.",
-        style = MaterialTheme.typography.bodyMedium,
-        color = Color(0xFF9CA3AF),
-        textAlign = TextAlign.Center,
-    )
-  }
+private fun AddOrganizationButton(modifier: Modifier = Modifier, onClick: () -> Unit) {
+  FloatingActionButton(
+      modifier = modifier,
+      onClick = onClick,
+      containerColor = colorResource(R.color.accent_purple),
+      contentColor = colorResource(R.color.white)) {
+        Icon(
+            imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
+            contentDescription = "Create a new organization")
+      }
 }

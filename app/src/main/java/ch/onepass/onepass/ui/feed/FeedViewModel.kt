@@ -8,8 +8,12 @@ import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import kotlin.collections.filter
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 
 /**
  * UI state for the feed screen.
@@ -22,6 +26,7 @@ import kotlinx.coroutines.launch
 data class FeedUIState(
     val events: List<Event> = emptyList(),
     val isLoading: Boolean = false,
+    val isRefreshing: Boolean = false,
     val error: String? = null,
     val location: String = "SWITZERLAND",
     val showFilterDialog: Boolean = false,
@@ -32,13 +37,13 @@ data class FeedUIState(
  *
  * @property repository The event repository for data operations.
  */
-class FeedViewModel(
+open class FeedViewModel(
     private val repository: EventRepository = EventRepositoryFirebase(),
 ) : ViewModel() {
 
   companion object {
     /** Maximum number of loaded events to return */
-    private const val LOADED_EVENTS_LIMIT = 20
+    const val LOADED_EVENTS_LIMIT = 20
   }
 
   private val _uiState = MutableStateFlow(FeedUIState())
@@ -89,8 +94,34 @@ class FeedViewModel(
   }
 
   /** Refreshes the events list. */
-  fun refreshEvents() {
-    loadEvents()
+  open fun refreshEvents() {
+    _uiState.update { it.copy(isRefreshing = true, error = null) }
+
+    viewModelScope.launch {
+      try {
+        withTimeout(10_000L) {
+          coroutineScope {
+            val dataDeferred = async {
+              val allEvents = repository.getEventsByStatus(EventStatus.PUBLISHED).first()
+              allEvents.take(LOADED_EVENTS_LIMIT)
+            }
+            val delayDeferred = async { delay(1000) }
+
+            val events = dataDeferred.await()
+            delayDeferred.await()
+
+            _allEvents.value = events
+            _uiState.update { it.copy(events = events, isRefreshing = false, error = null) }
+          }
+        }
+      } catch (e: Exception) {
+        _uiState.update {
+          it.copy(isRefreshing = false, error = e.message ?: "Failed to refresh events")
+        }
+      } finally {
+        _uiState.update { it.copy(isRefreshing = false) }
+      }
+    }
   }
 
   /** Clears any error state. */

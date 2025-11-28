@@ -10,6 +10,7 @@ import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
 import java.util.*
+import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import org.junit.Rule
@@ -95,7 +96,6 @@ class FeedScreenTest {
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TOP_BAR).assertIsDisplayed()
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertIsDisplayed()
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_LOCATION).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.CALENDAR_BUTTON).assertIsDisplayed()
   }
 
   @Test
@@ -127,25 +127,6 @@ class FeedScreenTest {
 
     composeTestRule.onNodeWithTag(FeedScreenTestTags.EMPTY_STATE).assertIsDisplayed()
     composeTestRule.onNodeWithText("No Events Found").assertIsDisplayed()
-  }
-
-  @Test
-  fun feedScreen_calendarButton_isClickable() {
-    val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository)
-    var calendarClicked = false
-
-    composeTestRule.setContent {
-      OnePassTheme {
-        FeedScreen(viewModel = viewModel, onNavigateToCalendar = { calendarClicked = true })
-      }
-    }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.CALENDAR_BUTTON).performClick()
-
-    assert(calendarClicked)
   }
 
   @Test
@@ -253,7 +234,9 @@ class FeedScreenTest {
     composeTestRule.onNodeWithTag(FeedScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
     composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
     composeTestRule.onNodeWithText("Test error").assertIsDisplayed()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.RETRY_BUTTON).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button")
+        .assertIsDisplayed()
   }
 
   @Test
@@ -267,10 +250,12 @@ class FeedScreenTest {
 
     // Verify error state is displayed
     composeTestRule.onNodeWithTag(FeedScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.RETRY_BUTTON).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button")
+        .assertIsDisplayed()
 
     // Click retry button
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.RETRY_BUTTON).performClick()
+    composeTestRule.onNodeWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button").performClick()
 
     // Verify loading state is triggered (error state should disappear momentarily)
     composeTestRule.waitForIdle()
@@ -324,7 +309,9 @@ class FeedScreenTest {
     composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
     composeTestRule.onNodeWithText("Test error").assertIsDisplayed()
     composeTestRule.onNodeWithText("Try Again").assertIsDisplayed()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.RETRY_BUTTON).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button")
+        .assertIsDisplayed()
   }
 
   @Test
@@ -350,13 +337,40 @@ class FeedScreenTest {
     // Wait for error state to appear
     composeTestRule.waitUntil(timeoutMillis = 5_000) {
       composeTestRule
-          .onAllNodesWithTag(FeedScreenTestTags.RETRY_BUTTON)
+          .onAllNodesWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button")
           .fetchSemanticsNodes()
           .isNotEmpty()
     }
 
     // Verify button and label
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.RETRY_BUTTON).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button")
+        .assertIsDisplayed()
     composeTestRule.onNodeWithText("Try Again").assertIsDisplayed()
+  }
+
+  @Test
+  fun feedScreen_notificationButton_isDisplayed_and_clickable() {
+    val repo = MockEventRepository(emptyList())
+    val vm = FeedViewModel(repo)
+    var notificationClicked = false
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        FeedScreen(viewModel = vm, onNavigateToNotifications = { notificationClicked = true })
+      }
+    }
+
+    // Verify button is displayed
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.NOTIFICATION_BUTTON)
+        .assertIsDisplayed()
+        .assertHasClickAction()
+
+    // Perform click
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.NOTIFICATION_BUTTON).performClick()
+
+    // Verify callback invocation
+    assertTrue(notificationClicked)
   }
 }

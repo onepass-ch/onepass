@@ -11,7 +11,7 @@ permissions:
 
 env:
   MODULE_DIR: app
-  BASE_TAG_START: v1.0.0
+  BASE_TAG_START: v1.1.0
 
 jobs:
   build-release:

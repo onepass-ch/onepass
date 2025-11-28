@@ -32,7 +32,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -40,6 +42,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import kotlinx.coroutines.flow.collectLatest
 
 object ProfileTestTags {
@@ -63,24 +66,17 @@ object ProfileTestTags {
   const val SETTINGS_SIGN_OUT = "profile_settings_sign_out"
 }
 
-// Centralized colors to avoid name clash with Material3.Surface
-private object ProfileColors {
-  val Background = Color(0xFF111111)
-  val Card = Color(0xFF1B1B1B)
-  val Accent = Color(0xFF9C6BFF)
-  val TextPrimary = Color.White
-  val TextSecondary = Color(0xFFB0B0B0)
-  val Divider = Color(0xFF2A2A2A)
-}
-
 @Composable
 fun ProfileScreen(viewModel: ProfileViewModel, onEffect: (ProfileEffect) -> Unit) {
   val state by viewModel.state.collectAsState()
   LaunchedEffect(viewModel) { viewModel.effects.collectLatest(onEffect) }
 
-  DarkProfileContent(
+  // Reload profile when screen is shown to reflect any changes (e.g., new organization created)
+  LaunchedEffect(Unit) { viewModel.loadProfile() }
+
+  ProfileContent(
       state = state,
-      onCreateEvent = viewModel::onCreateEventClicked,
+      onOrganizationButton = viewModel::onOrganizationButton,
       onInvitations = viewModel::onInvitations,
       onAccountSettings = viewModel::onAccountSettings,
       onPaymentMethods = viewModel::onPaymentMethods,
@@ -89,9 +85,9 @@ fun ProfileScreen(viewModel: ProfileViewModel, onEffect: (ProfileEffect) -> Unit
 }
 
 @Composable
-private fun DarkProfileContent(
+private fun ProfileContent(
     state: ProfileUiState,
-    onCreateEvent: () -> Unit,
+    onOrganizationButton: () -> Unit,
     onAccountSettings: () -> Unit,
     onInvitations: () -> Unit = {},
     onPaymentMethods: () -> Unit,
@@ -102,15 +98,15 @@ private fun DarkProfileContent(
     Box(
         modifier =
             Modifier.fillMaxSize()
-                .background(ProfileColors.Background)
+                .background(colorResource(id = R.color.profile_background))
                 .testTag(ProfileTestTags.LOADING),
         contentAlignment = Alignment.Center) {
-          CircularProgressIndicator(color = ProfileColors.Accent)
+          CircularProgressIndicator(color = colorResource(id = R.color.profile_accent))
         }
     return
   }
 
-  Scaffold(containerColor = ProfileColors.Background) { padding ->
+  Scaffold(containerColor = colorResource(id = R.color.profile_background)) { padding ->
     Column(
         modifier =
             Modifier.fillMaxSize()
@@ -118,7 +114,7 @@ private fun DarkProfileContent(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 12.dp)
                 .testTag(ProfileTestTags.SCREEN)) {
-          HeaderBlockDark(initials = state.initials, name = state.displayName, email = state.email)
+          HeaderBlock(initials = state.initials, name = state.displayName, email = state.email)
 
           Spacer(Modifier.height(12.dp))
 
@@ -128,49 +124,52 @@ private fun DarkProfileContent(
 
           Text(
               text = "ORGANIZER SETTINGS",
-              color = ProfileColors.TextSecondary,
+              color = colorResource(id = R.color.white),
               style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
               modifier = Modifier.testTag(ProfileTestTags.ORG_SECTION_TITLE))
 
           Spacer(Modifier.height(12.dp))
 
-          OrganizerCardDark(isOrganizer = state.isOrganizer, onCreateEvent = onCreateEvent)
+          OrganizerCard(
+              isOrganizer = state.isOrganizer, onOrganizationButton = onOrganizationButton)
 
           Spacer(Modifier.height(12.dp))
 
           HorizontalDivider(
-              modifier = Modifier.alpha(0.2f), thickness = 1.dp, color = ProfileColors.Divider)
+              modifier = Modifier.alpha(0.2f),
+              thickness = 1.dp,
+              color = colorResource(id = R.color.profile_divider))
 
           Spacer(Modifier.height(8.dp))
 
-          SettingsItemDark(
+          SettingsItem(
               icon = Icons.Outlined.Diversity3,
               title = "My Invitations",
-              titleColor = ProfileColors.TextPrimary,
+              titleColor = colorResource(id = R.color.white),
               onClick = onInvitations,
               testTag = ProfileTestTags.SETTINGS_INVITATIONS)
-          SettingsItemDark(
+          SettingsItem(
               icon = Icons.Outlined.AccountCircle,
               title = "Account Settings",
-              titleColor = ProfileColors.TextPrimary,
+              titleColor = colorResource(id = R.color.white),
               onClick = onAccountSettings,
               testTag = ProfileTestTags.SETTINGS_ACCOUNT)
-          SettingsItemDark(
+          SettingsItem(
               icon = Icons.Outlined.Settings,
               title = "Payment Methods",
-              titleColor = ProfileColors.TextPrimary,
+              titleColor = colorResource(id = R.color.white),
               onClick = onPaymentMethods,
               testTag = ProfileTestTags.SETTINGS_PAYMENTS)
-          SettingsItemDark(
+          SettingsItem(
               icon = Icons.Outlined.Info,
               title = "Help & Support",
-              titleColor = ProfileColors.TextPrimary,
+              titleColor = colorResource(id = R.color.white),
               onClick = onHelp,
               testTag = ProfileTestTags.SETTINGS_HELP)
-          SettingsItemDark(
+          SettingsItem(
               icon = Icons.AutoMirrored.Outlined.ExitToApp,
               title = "Sign Out",
-              titleColor = Color(0xFFD33A2C),
+              titleColor = colorResource(id = R.color.profile_sign_out_red),
               onClick = onSignOut,
               testTag = ProfileTestTags.SETTINGS_SIGN_OUT)
         }
@@ -183,15 +182,15 @@ private fun StatsRow(stats: ProfileStats) {
   Row(
       Modifier.fillMaxWidth().testTag(ProfileTestTags.STATS_ROW),
       horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        StatCardDark(
+        StatCard(
             value = stats.events,
             label = "Events",
             modifier = Modifier.weight(1f).testTag(ProfileTestTags.STAT_EVENTS))
-        StatCardDark(
+        StatCard(
             value = stats.upcoming,
             label = "Upcoming",
             modifier = Modifier.weight(1f).testTag(ProfileTestTags.STAT_UPCOMING))
-        StatCardDark(
+        StatCard(
             value = stats.saved,
             label = "Saved",
             modifier = Modifier.weight(1f).testTag(ProfileTestTags.STAT_SAVED))
@@ -200,7 +199,7 @@ private fun StatsRow(stats: ProfileStats) {
 
 /** Header with avatar placeholder, name, and email. */
 @Composable
-private fun HeaderBlockDark(initials: String, name: String, email: String) {
+private fun HeaderBlock(initials: String, name: String, email: String) {
   Row(
       verticalAlignment = Alignment.CenterVertically,
       modifier = Modifier.testTag(ProfileTestTags.HEADER)) {
@@ -208,7 +207,7 @@ private fun HeaderBlockDark(initials: String, name: String, email: String) {
             modifier =
                 Modifier.size(72.dp)
                     .clip(CircleShape)
-                    .background(Color(0xFF2B2B2B))
+                    .background(colorResource(id = R.color.profile_header_avatar_bg))
                     .testTag(ProfileTestTags.HEADER_INITIALS),
             contentAlignment = Alignment.Center) {
               Text(initials, color = Color.White, fontWeight = FontWeight.Bold)
@@ -219,7 +218,7 @@ private fun HeaderBlockDark(initials: String, name: String, email: String) {
         Column(Modifier.weight(1f)) {
           Text(
               text = name,
-              color = ProfileColors.TextPrimary,
+              color = colorResource(id = R.color.white),
               style =
                   MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
               maxLines = 1,
@@ -227,7 +226,7 @@ private fun HeaderBlockDark(initials: String, name: String, email: String) {
               modifier = Modifier.testTag(ProfileTestTags.HEADER_NAME))
           Text(
               text = email,
-              color = ProfileColors.TextSecondary,
+              color = colorResource(id = R.color.profile_text_secondary),
               style = MaterialTheme.typography.bodyMedium,
               modifier = Modifier.testTag(ProfileTestTags.HEADER_EMAIL))
         }
@@ -236,9 +235,9 @@ private fun HeaderBlockDark(initials: String, name: String, email: String) {
 
 /** Single stat card: shows a number and a label. */
 @Composable
-private fun StatCardDark(value: Int, label: String, modifier: Modifier = Modifier) {
+private fun StatCard(value: Int, label: String, modifier: Modifier = Modifier) {
   Surface(
-      color = ProfileColors.Card,
+      color = colorResource(id = R.color.profile_card),
       shape = RoundedCornerShape(16.dp),
       tonalElevation = 0.dp,
       modifier = modifier.height(96.dp)) {
@@ -247,11 +246,11 @@ private fun StatCardDark(value: Int, label: String, modifier: Modifier = Modifie
             horizontalAlignment = Alignment.CenterHorizontally) {
               Text(
                   value.toString(),
-                  color = ProfileColors.Accent,
+                  color = colorResource(id = R.color.profile_accent),
                   style = MaterialTheme.typography.headlineSmall)
               Text(
                   label,
-                  color = ProfileColors.TextSecondary,
+                  color = colorResource(id = R.color.profile_text_secondary),
                   style = MaterialTheme.typography.bodyMedium)
             }
       }
@@ -259,33 +258,38 @@ private fun StatCardDark(value: Int, label: String, modifier: Modifier = Modifie
 
 /** Card for the organizer section. */
 @Composable
-private fun OrganizerCardDark(isOrganizer: Boolean, onCreateEvent: () -> Unit) {
-  Surface(color = ProfileColors.Card, shape = RoundedCornerShape(16.dp)) {
+private fun OrganizerCard(isOrganizer: Boolean, onOrganizationButton: () -> Unit) {
+  Surface(color = colorResource(id = R.color.profile_card), shape = RoundedCornerShape(16.dp)) {
     Column(Modifier.padding(16.dp).testTag(ProfileTestTags.ORG_CARD)) {
       Text(
-          text = if (isOrganizer) "Organizer Dashboard" else "Become an Organizer",
-          color = ProfileColors.TextPrimary,
+          text = if (isOrganizer) "Organization Management" else "Start Your Journey",
+          color = colorResource(id = R.color.white),
           style = MaterialTheme.typography.titleMedium)
 
       Spacer(Modifier.height(8.dp))
 
       Text(
           text =
-              if (isOrganizer) "Create and manage your events."
+              if (isOrganizer) "Create and manage your organizations."
               else "Create epic events, build your community, and grow your audience.",
-          color = ProfileColors.TextSecondary,
+          color = colorResource(id = R.color.profile_text_secondary),
           style = MaterialTheme.typography.bodyMedium)
 
       Spacer(Modifier.height(16.dp))
 
       Button(
-          onClick = onCreateEvent,
+          onClick = onOrganizationButton,
           modifier = Modifier.fillMaxWidth().testTag(ProfileTestTags.ORG_CTA),
           shape = RoundedCornerShape(10.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = ProfileColors.Accent)) {
-            Icon(imageVector = Icons.Filled.Add, contentDescription = null, tint = Color.White)
+          colors =
+              ButtonDefaults.buttonColors(
+                  containerColor = colorResource(id = R.color.profile_accent))) {
+            if (!isOrganizer)
+                Icon(imageVector = Icons.Filled.Add, contentDescription = null, tint = Color.White)
             Spacer(Modifier.width(8.dp))
-            Text(text = "Start Creating Events", color = Color.White)
+            Text(
+                text = if (isOrganizer) "My Organizations" else "Become an organizer",
+                color = Color.White)
           }
     }
   }
@@ -293,8 +297,8 @@ private fun OrganizerCardDark(isOrganizer: Boolean, onCreateEvent: () -> Unit) {
 
 /** List item used for settings actions. */
 @Composable
-private fun SettingsItemDark(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+private fun SettingsItem(
+    icon: ImageVector,
     title: String,
     titleColor: Color,
     onClick: () -> Unit,
@@ -312,7 +316,10 @@ private fun SettingsItemDark(
               .padding(horizontal = 6.dp)
               .testTag(testTag),
       verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = Color(0xFF9B9B9B))
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = colorResource(id = R.color.profile_settings_icon))
         Spacer(Modifier.width(16.dp))
         Text(title, color = titleColor, style = MaterialTheme.typography.bodyLarge)
       }

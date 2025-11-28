@@ -12,13 +12,16 @@ import androidx.compose.material3.IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.*
+import ch.onepass.onepass.ui.components.common.EmptyState
+import ch.onepass.onepass.ui.components.common.ErrorState
+import ch.onepass.onepass.ui.components.common.LoadingState
 import kotlinx.coroutines.flow.first
 
 /**
@@ -142,7 +145,7 @@ internal fun MyInvitationsContent(
 
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(MyInvitationsScreenTestTags.SCREEN),
-      containerColor = Color(0xFF0A0A0A),
+      containerColor = colorResource(id = R.color.screen_background),
       snackbarHost = {
         SnackbarHost(
             hostState = snackbarHostState,
@@ -150,8 +153,8 @@ internal fun MyInvitationsContent(
               Snackbar(
                   snackbarData = snackbarData,
                   modifier = Modifier.testTag(MyInvitationsScreenTestTags.SUCCESS_MESSAGE),
-                  containerColor = Color(0xFF4CAF50),
-                  contentColor = Color.White)
+                  containerColor = colorResource(id = R.color.myinvitations_success_green),
+                  contentColor = colorResource(id = R.color.white))
             })
       },
       topBar = {
@@ -161,31 +164,38 @@ internal fun MyInvitationsContent(
                   text = "My Invitations",
                   style = MaterialTheme.typography.headlineSmall,
                   fontWeight = FontWeight.Bold,
-                  color = Color.White)
+                  color = colorResource(id = R.color.white))
             },
             navigationIcon = {
               IconButton(onClick = onNavigateBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = Color.White)
+                    tint = colorResource(id = R.color.white))
               }
             },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFF0A0A0A)))
+            colors =
+                TopAppBarDefaults.topAppBarColors(
+                    containerColor = colorResource(id = R.color.screen_background)))
       }) { paddingValues ->
         Box(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
             contentAlignment = Alignment.Center) {
               when {
                 state.loading -> {
-                  LoadingState()
+                  LoadingState(testTag = MyInvitationsScreenTestTags.LOADING_INDICATOR)
                 }
                 state.errorMessage != null && state.invitations.isEmpty() -> {
-                  val errorMsg = state.errorMessage
-                  ErrorState(error = errorMsg, onRetry = onRetry)
+                  ErrorState(
+                      error = state.errorMessage,
+                      onRetry = onRetry,
+                      testTag = MyInvitationsScreenTestTags.ERROR_MESSAGE)
                 }
                 state.invitations.isEmpty() -> {
-                  EmptyState()
+                  EmptyState(
+                      title = "No Invitations",
+                      message = "You don't have any pending invitations at the moment.",
+                      testTag = MyInvitationsScreenTestTags.EMPTY_STATE)
                 }
                 else -> {
                   InvitationsList(
@@ -196,77 +206,6 @@ internal fun MyInvitationsContent(
                 }
               }
             }
-      }
-}
-
-/** Displays a loading indicator while invitations are being fetched. */
-@Composable
-private fun LoadingState(modifier: Modifier = Modifier) {
-  CircularProgressIndicator(
-      modifier = modifier.testTag(MyInvitationsScreenTestTags.LOADING_INDICATOR),
-      color = Color(0xFF9C6BFF))
-}
-
-/**
- * Displays an error state with a message and retry button.
- *
- * @param error The error message to display.
- * @param onRetry Callback invoked when the retry button is clicked.
- * @param modifier Optional modifier for layout adjustments.
- */
-@Composable
-private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-  Column(
-      modifier =
-          modifier.fillMaxWidth().padding(32.dp).testTag(MyInvitationsScreenTestTags.ERROR_MESSAGE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center) {
-        Text(
-            text = "Oops!",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.White)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = error,
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color(0xFF9CA3AF),
-            textAlign = TextAlign.Center)
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            onClick = onRetry,
-            modifier = Modifier.testTag(MyInvitationsScreenTestTags.RETRY_BUTTON),
-            colors =
-                ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFF9C6BFF), contentColor = Color.White)) {
-              Text(text = "Try Again", fontWeight = FontWeight.Medium)
-            }
-      }
-}
-
-/**
- * Displays an empty state when no invitations are available.
- *
- * @param modifier Optional modifier for layout adjustments.
- */
-@Composable
-private fun EmptyState(modifier: Modifier = Modifier) {
-  Column(
-      modifier =
-          modifier.fillMaxWidth().padding(32.dp).testTag(MyInvitationsScreenTestTags.EMPTY_STATE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center) {
-        Text(
-            text = "No Invitations",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.White)
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "You don't have any pending invitations at the moment.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = Color(0xFF9CA3AF),
-            textAlign = TextAlign.Center)
       }
 }
 
@@ -334,7 +273,7 @@ private fun InvitationCard(
           Modifier.fillMaxWidth()
               .testTag(MyInvitationsScreenTestTags.getInvitationCardTag(invitation.id)),
       shape = RoundedCornerShape(16.dp),
-      color = Color(0xFF1B1B1B),
+      color = colorResource(id = R.color.myinvitations_card_background),
       tonalElevation = 0.dp) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
           // Organization name
@@ -342,7 +281,7 @@ private fun InvitationCard(
               text = organization?.name ?: invitation.orgId,
               style = MaterialTheme.typography.titleMedium,
               fontWeight = FontWeight.Bold,
-              color = Color.White,
+              color = colorResource(id = R.color.white),
               modifier = Modifier.testTag(MyInvitationsScreenTestTags.INVITATION_ORG_NAME))
 
           Spacer(modifier = Modifier.height(8.dp))
@@ -351,7 +290,7 @@ private fun InvitationCard(
           Text(
               text = "Role: ${invitation.role.name}",
               style = MaterialTheme.typography.bodyMedium,
-              color = Color(0xFF9CA3AF),
+              color = colorResource(id = R.color.gray),
               modifier = Modifier.testTag(MyInvitationsScreenTestTags.INVITATION_ROLE))
 
           Spacer(modifier = Modifier.height(16.dp))
@@ -368,7 +307,8 @@ private fun InvitationCard(
                             .testTag(MyInvitationsScreenTestTags.getRejectButtonTag(invitation.id)),
                     colors =
                         ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF2A2A2A), contentColor = Color(0xFFD33A2C)),
+                            containerColor = colorResource(id = R.color.myinvitations_reject_bg),
+                            contentColor = colorResource(id = R.color.myinvitations_reject_red)),
                     shape = RoundedCornerShape(10.dp)) {
                       Text(text = "Reject", fontWeight = FontWeight.Medium)
                     }
@@ -381,7 +321,9 @@ private fun InvitationCard(
                             .testTag(MyInvitationsScreenTestTags.getAcceptButtonTag(invitation.id)),
                     colors =
                         ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFF9C6BFF), contentColor = Color.White),
+                            containerColor =
+                                colorResource(id = R.color.myinvitations_accent_purple),
+                            contentColor = colorResource(id = R.color.white)),
                     shape = RoundedCornerShape(10.dp)) {
                       Text(text = "Accept", fontWeight = FontWeight.Medium)
                     }

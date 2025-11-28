@@ -26,5 +26,13 @@ data class User(
     val avatarUrl: String? = null, // avatar url link  (firebase storage)
     val coverUrl: String? = null, // profile cover picture url link (firebase storage)
     val phoneE164: String? = null, // e.g. +41998887766
-    val country: String? = null // ISO 3166-1 alpha-2: "CH", "US", "CN"
-)
+    val country: String? = null, // ISO 3166-1 alpha-2: "CH", "US", "CN"
+
+    // The organizations a user belongs to
+    val organizationIds: List<String> = emptyList()
+) {
+
+  // Is the user an organizer ?
+  val isOrganizer: Boolean
+    get() = organizationIds.isNotEmpty()
+}

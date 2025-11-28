@@ -45,9 +45,9 @@ data class StaffInvitationUiState(
 /**
  * Result of an invitation attempt.
  *
- * @property success Whether the invitation was successfully created.
- * @property alreadyInvited Whether the user was already invited (not an error, just informational).
- * @property errorMessage Error message if the invitation failed.
+ * @property Success Whether the invitation was successfully created.
+ * @property AlreadyInvited Whether the user was already invited (not an error, just informational).
+ * @property Error Error message if the invitation failed.
  */
 sealed class InvitationResult {
   data object Success : InvitationResult()
@@ -240,6 +240,10 @@ class StaffInvitationViewModel(
    * @return The result of the invitation attempt.
    */
   private suspend fun checkAndCreateInvitation(user: StaffSearchResult): InvitationResult {
+    if (user.id == currentUserId) {
+      return InvitationResult.Error("You cannot invite yourself.")
+    }
+
     // Check if user is already invited to this organization
     val existingInvitations = organizationRepository.getInvitationsByEmail(user.email).first()
 

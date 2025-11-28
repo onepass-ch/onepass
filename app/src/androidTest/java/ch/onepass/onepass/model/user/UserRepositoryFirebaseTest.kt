@@ -5,6 +5,7 @@ import ch.onepass.onepass.utils.FirestoreTestBase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.tasks.await
@@ -43,7 +44,7 @@ class UserRepositoryFirebaseTest : FirestoreTestBase() {
       // Try to create the user if it doesn't exist
       try {
         auth.createUserWithEmailAndPassword(email, password).await()
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         // User might already exist, ignore
       }
 
@@ -108,5 +109,94 @@ class UserRepositoryFirebaseTest : FirestoreTestBase() {
 
     assertNotNull("Should retrieve current user", retrieved)
     assertEquals("UID should match", user!!.uid, retrieved!!.uid)
+  }
+
+  @Test
+  fun isOrganizer_returnsTrueWhenUserHasOrganizations() = runTest {
+    val user = userRepository.getOrCreateUser()
+    assertNotNull(user)
+
+    val uid = user!!.uid
+    val orgId = "org123"
+
+    // Add organization to user
+    userRepository.addOrganizationToUser(uid, orgId)
+
+    val isOrganizer = userRepository.isOrganizer()
+    assertTrue("User with organizations should be an organizer", isOrganizer)
+  }
+
+  @Test
+  fun isOrganizer_returnsFalseWhenUserHasNoOrganizations() = runTest {
+    val user = userRepository.getOrCreateUser()
+    assertNotNull(user)
+
+    // Ensure user has no organizations
+    val uid = user!!.uid
+    db.collection("users").document(uid).update("organizationIds", emptyList<String>()).await()
+
+    val isOrganizer = userRepository.isOrganizer()
+    assertFalse("User without organizations should not be an organizer", isOrganizer)
+  }
+
+  @Test
+  fun addOrganizationToUser_addsOrgIdToUser() = runTest {
+    val user = userRepository.getOrCreateUser()
+    assertNotNull(user)
+
+    val uid = user!!.uid
+    val orgId = "org456"
+
+    userRepository.addOrganizationToUser(uid, orgId)
+
+    val snapshot = db.collection("users").document(uid).get().await()
+    val organizationIds = snapshot.get("organizationIds") as? List<*>
+
+    assertNotNull("organizationIds should exist", organizationIds)
+    assertTrue("Should contain the added orgId", organizationIds!!.contains(orgId))
+  }
+
+  @Test
+  fun removeOrganizationFromUser_removesOrgIdFromUser() = runTest {
+    val user = userRepository.getOrCreateUser()
+    assertNotNull(user)
+
+    val uid = user!!.uid
+    val orgId = "org789"
+
+    // First add an organization
+    userRepository.addOrganizationToUser(uid, orgId)
+
+    // Verify it was added
+    var snapshot = db.collection("users").document(uid).get().await()
+    var organizationIds = snapshot.get("organizationIds") as? List<*>
+    assertTrue("Should contain orgId before removal", organizationIds?.contains(orgId) == true)
+
+    // Remove the organization
+    userRepository.removeOrganizationFromUser(uid, orgId)
+
+    // Verify it was removed
+    snapshot = db.collection("users").document(uid).get().await()
+    organizationIds = snapshot.get("organizationIds") as? List<*>
+    assertFalse("Should not contain orgId after removal", organizationIds?.contains(orgId) == true)
+  }
+
+  @Test
+  fun addOrganizationToUser_doesNotDuplicateOrgId() = runTest {
+    val user = userRepository.getOrCreateUser()
+    assertNotNull(user)
+
+    val uid = user!!.uid
+    val orgId = "org999"
+
+    // Add same organization twice
+    userRepository.addOrganizationToUser(uid, orgId)
+    userRepository.addOrganizationToUser(uid, orgId)
+
+    val snapshot = db.collection("users").document(uid).get().await()
+    val organizationIds = snapshot.get("organizationIds") as? List<*>
+
+    assertNotNull("organizationIds should exist", organizationIds)
+    assertEquals("Should contain orgId only once", 1, organizationIds!!.count { it == orgId })
   }
 }

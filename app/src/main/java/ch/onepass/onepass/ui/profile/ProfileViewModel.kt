@@ -31,7 +31,6 @@ data class ProfileUiState(
 )
 
 sealed interface ProfileEffect {
-  // TODO: Re-enable once destinations exist
   object NavigateToAccountSettings : ProfileEffect
 
   object NavigateToPaymentMethods : ProfileEffect
@@ -40,17 +39,12 @@ sealed interface ProfileEffect {
 
   object NavigateToMyInvitations : ProfileEffect
 
-  // Keep this one active (only supported flow for now)
-  object NavigateToOrganizerOnboarding : ProfileEffect
+  object NavigateToMyOrganizations : ProfileEffect
 
-  // TODO: Wire this when auth flow is implemented
   object SignOut : ProfileEffect
 
-  // TODO: Enable when Create Event screen exists
-  object NavigateToCreateEvent : ProfileEffect
+  object NavigateToBecomeOrganizer : ProfileEffect
 }
-
-// --- ViewModel ---
 
 open class ProfileViewModel(private val userRepository: UserRepository = UserRepositoryFirebase()) :
     ViewModel() {
@@ -66,7 +60,7 @@ open class ProfileViewModel(private val userRepository: UserRepository = UserRep
   }
 
   /** Fetches the current user profile from Firestore. */
-  private fun loadProfile() {
+  fun loadProfile() {
     viewModelScope.launch {
       try {
         _state.value = _state.value.copy(loading = true)
@@ -87,17 +81,15 @@ open class ProfileViewModel(private val userRepository: UserRepository = UserRep
   }
 
   /**
-   * Organizer action: For now, always navigate to Organizer Onboarding to avoid dead routes/black
-   * screens.
-   *
-   * TODO: If user is already an organizer, route to Create Event when that screen exists.
+   * Handles organization button click.
+   * - If the user is already an organizer, navigates to My Organizations.
+   * - Otherwise, navigates to Become an Organizer onboarding.
    */
-  fun onCreateEventClicked() =
+  fun onOrganizationButton() =
       viewModelScope.launch {
-        _effects.tryEmit(ProfileEffect.NavigateToOrganizerOnboarding)
-        // TODO: when Create Event screen is implemented:
-        // if (_state.value.isOrganizer) _effects.emit(ProfileEffect.NavigateToCreateEvent)
-        // else _effects.emit(ProfileEffect.NavigateToOrganizerOnboarding)
+        val isOrganizer = userRepository.isOrganizer()
+        if (isOrganizer) _effects.emit(ProfileEffect.NavigateToMyOrganizations)
+        else _effects.emit(ProfileEffect.NavigateToBecomeOrganizer)
       }
 
   // --- Placeholder stubs to avoid navigating to non-existent screens ---
@@ -141,6 +133,6 @@ private fun User.toUiState(): ProfileUiState {
       avatarUrl = avatarUrl,
       initials = initials,
       stats = ProfileStats(events = 0, upcoming = 0, saved = 0),
-      isOrganizer = false, // TODO: bind to organization membership when available
+      isOrganizer = this.isOrganizer,
       loading = false)
 }
