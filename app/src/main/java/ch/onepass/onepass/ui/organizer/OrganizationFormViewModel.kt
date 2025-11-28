@@ -5,6 +5,8 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ch.onepass.onepass.model.membership.MembershipRepository
+import ch.onepass.onepass.model.membership.MembershipRepositoryFirebase
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
@@ -85,11 +87,13 @@ class OrganizationFormUiState(
  * @param repository The organization repository for data operations.
  * @param userRepository The user repository for updating user data.
  * @param storageRepository The storage repository for image upload operations.
+ * @param membershipRepository The membership repository for user-organization relationships.
  */
 class OrganizationFormViewModel(
     private val repository: OrganizationRepository = OrganizationRepositoryFirebase(),
     private val userRepository: UserRepository = UserRepositoryFirebase(),
-    private val storageRepository: StorageRepository = StorageRepositoryFirebase()
+    private val storageRepository: StorageRepository = StorageRepositoryFirebase(),
+    private val membershipRepository: MembershipRepository = MembershipRepositoryFirebase()
 ) : ViewModel() {
 
   /** Private form state */
@@ -663,10 +667,29 @@ class OrganizationFormViewModel(
    * @param ownerId The ID of the owner user
    */
   private suspend fun addOwnerMembership(organizationId: String, ownerId: String) {
+    // First, add the member to the organization document (Firestore subcollection / map).
     val addMemberResult = repository.addMember(organizationId, ownerId, OrganizationRole.OWNER)
 
     addMemberResult.fold(
-        onSuccess = { updateUserOrganizationList(organizationId, ownerId) },
+        onSuccess = {
+          // Also create a dedicated membership entry to keep the memberships collection in sync.
+          val membershipResult =
+              membershipRepository.addMembership(ownerId, organizationId, OrganizationRole.OWNER)
+
+          membershipResult.fold(
+              onSuccess = {
+                // Both membership representations were created successfully, now update the user
+                // profile.
+                updateUserOrganizationList(organizationId, ownerId)
+              },
+              onFailure = { error ->
+                _uiState.value =
+                    OrganizationFormUiState(
+                        successOrganizationId = organizationId,
+                        errorMessage =
+                            "Organization created, but failed to add member: ${error.message ?: "Unknown error"}")
+              })
+        },
         onFailure = { error ->
           _uiState.value =
               OrganizationFormUiState(
@@ -683,16 +706,11 @@ class OrganizationFormViewModel(
    * @param ownerId The ID of the owner user
    */
   private suspend fun updateUserOrganizationList(organizationId: String, ownerId: String) {
-    try {
-      userRepository.addOrganizationToUser(ownerId, organizationId)
-      _uiState.value = OrganizationFormUiState(successOrganizationId = organizationId)
-    } catch (e: Exception) {
-      _uiState.value =
-          OrganizationFormUiState(
-              successOrganizationId = organizationId,
-              errorMessage =
-                  "Organization created, but failed to update user profile: ${e.message}")
-    }
+    // With the refactored data model, memberships are persisted via `MembershipRepository` and
+    // organization membership queries no longer rely on a denormalized list on the user document.
+    // We simply expose the success state here once all membership-related operations have
+    // completed successfully.
+    _uiState.value = OrganizationFormUiState(successOrganizationId = organizationId)
   }
 
   /** Resets the form to its initial empty state */

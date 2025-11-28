@@ -15,7 +15,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
@@ -207,78 +206,6 @@ internal fun MyInvitationsContent(
                 }
               }
             }
-      }
-}
-
-/** Displays a loading indicator while invitations are being fetched. */
-@Composable
-private fun LoadingState(modifier: Modifier = Modifier) {
-  CircularProgressIndicator(
-      modifier = modifier.testTag(MyInvitationsScreenTestTags.LOADING_INDICATOR),
-      color = colorResource(id = R.color.myinvitations_accent_purple))
-}
-
-/**
- * Displays an error state with a message and retry button.
- *
- * @param error The error message to display.
- * @param onRetry Callback invoked when the retry button is clicked.
- * @param modifier Optional modifier for layout adjustments.
- */
-@Composable
-private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-  Column(
-      modifier =
-          modifier.fillMaxWidth().padding(32.dp).testTag(MyInvitationsScreenTestTags.ERROR_MESSAGE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center) {
-        Text(
-            text = "Oops!",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = colorResource(id = R.color.white))
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = error,
-            style = MaterialTheme.typography.bodyMedium,
-            color = colorResource(id = R.color.gray),
-            textAlign = TextAlign.Center)
-        Spacer(modifier = Modifier.height(24.dp))
-        Button(
-            onClick = onRetry,
-            modifier = Modifier.testTag(MyInvitationsScreenTestTags.RETRY_BUTTON),
-            colors =
-                ButtonDefaults.buttonColors(
-                    containerColor = colorResource(id = R.color.myinvitations_accent_purple),
-                    contentColor = colorResource(id = R.color.white))) {
-              Text(text = "Try Again", fontWeight = FontWeight.Medium)
-            }
-      }
-}
-
-/**
- * Displays an empty state when no invitations are available.
- *
- * @param modifier Optional modifier for layout adjustments.
- */
-@Composable
-private fun EmptyState(modifier: Modifier = Modifier) {
-  Column(
-      modifier =
-          modifier.fillMaxWidth().padding(32.dp).testTag(MyInvitationsScreenTestTags.EMPTY_STATE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center) {
-        Text(
-            text = "No Invitations",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = colorResource(id = R.color.white))
-        Spacer(modifier = Modifier.height(8.dp))
-        Text(
-            text = "You don't have any pending invitations at the moment.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = colorResource(id = R.color.gray),
-            textAlign = TextAlign.Center)
       }
 }
 

@@ -19,6 +19,7 @@ import ch.onepass.onepass.OnePassApp
 import ch.onepass.onepass.model.auth.AuthRepositoryFirebase
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import ch.onepass.onepass.ui.auth.AuthViewModel
+import ch.onepass.onepass.ui.feed.FeedScreenTestTags
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.profile.*
 import com.mapbox.common.MapboxOptions
@@ -60,7 +61,8 @@ class FullNavigationTest {
     mockUserRepo = mockk(relaxed = true)
 
     every { mockAuthRepo.isUserSignedIn() } returns signedIn
-    coEvery { mockUserRepo.isOrganizer() } returns false
+    // Note: isOrganizer() method has been removed from UserRepository
+    // Organization membership is now checked via MembershipRepository
 
     val authVmFactory = viewModelFactory { initializer { AuthViewModel(mockAuthRepo) } }
 
@@ -79,7 +81,6 @@ class FullNavigationTest {
       OnePassApp(
           navController = navController,
           mapViewModel = MapViewModel(),
-          isLocationPermissionGranted = true,
           testAuthButtonTag = if (!signedIn) TEST_LOGIN_BUTTON else null,
           authViewModelFactory = authVmFactory,
           profileViewModelFactory = injectedProfileVMFactory)
@@ -445,5 +446,86 @@ class FullNavigationTest {
       composeRule.runOnUiThread { navController.popBackStack() }
       composeRule.waitForIdle()
     }
+  }
+
+  @Test
+  fun organization_feed_fab_visible_for_organizer_and_navigates_to_become_organizer() {
+    val fakeVM = mockk<ProfileViewModel>(relaxed = true)
+
+    val stateFlow =
+        MutableStateFlow(
+            ProfileUiState(
+                displayName = "Org User",
+                email = "org@example.com",
+                isOrganizer = true,
+                loading = false))
+    every { fakeVM.state } returns stateFlow
+
+    val effectsFlow = MutableSharedFlow<ProfileEffect>(extraBufferCapacity = 1)
+    every { fakeVM.effects } returns effectsFlow
+
+    val dummyJob = Job()
+    every { fakeVM.onOrganizationButton() } answers
+        {
+          effectsFlow.tryEmit(ProfileEffect.NavigateToMyOrganizations)
+          dummyJob
+        }
+
+    injectedProfileVMFactory = viewModelFactory { initializer { fakeVM } }
+
+    // Start app as signed in
+    setApp(signedIn = true)
+    composeRule.waitForIdle()
+    composeRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.Profile.route)
+    }
+    composeRule.waitForIdle()
+
+    composeRule.onNodeWithTag(ProfileTestTags.ORG_CTA).assertIsDisplayed()
+    composeRule.onNodeWithTag(ProfileTestTags.ORG_CTA).performClick()
+    composeRule.waitForIdle()
+    assertEquals(
+        NavigationDestinations.Screen.OrganizationFeed.route,
+        navController.currentDestination?.route)
+    composeRule
+        .onNodeWithTag(ch.onepass.onepass.ui.organization.OrganizationFeedTestTags.ADD_ORG_FAB)
+        .assertIsDisplayed()
+        .performClick()
+    composeRule.waitForIdle()
+
+    assertEquals(
+        NavigationDestinations.Screen.BecomeOrganizer.route,
+        navController.currentDestination?.route)
+  }
+
+  @Test
+  fun feed_to_notification_flow() {
+    setApp(signedIn = true)
+    composeRule.waitForIdle()
+
+    // On the Feed Screen by default
+    assertEquals(
+        NavigationDestinations.Screen.Events.route, navController.currentDestination?.route)
+
+    // Click the Notification button on the top bar
+    composeRule
+        .onNodeWithTag(FeedScreenTestTags.NOTIFICATION_BUTTON)
+        .assertIsDisplayed()
+        .performClick()
+
+    composeRule.waitForIdle()
+
+    // Check we navigated to Notification screen
+    assertEquals(
+        NavigationDestinations.Screen.Notification.route, navController.currentDestination?.route)
+
+    // Click the Back button on the notification screen
+    composeRule.onNodeWithTag("notification_back_button").assertIsDisplayed().performClick()
+
+    composeRule.waitForIdle()
+
+    // Check we navigated back to the Feed screen
+    assertEquals(
+        NavigationDestinations.Screen.Events.route, navController.currentDestination?.route)
   }
 }

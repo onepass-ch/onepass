@@ -1,6 +1,10 @@
 package ch.onepass.onepass.ui.map
 
+import android.Manifest
 import android.annotation.SuppressLint
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -18,9 +22,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
@@ -29,13 +35,9 @@ import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
 import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
 import ch.onepass.onepass.ui.eventfilters.FilterDialog
-import com.google.gson.JsonPrimitive
-import com.mapbox.geojson.Point
 import com.mapbox.maps.MapView
 import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
-import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
-import com.mapbox.maps.plugin.gestures.gestures
 
 object MapScreenTestTags {
   const val MAPBOX_MAP_SCREEN = "mapScreen"
@@ -43,11 +45,6 @@ object MapScreenTestTags {
   const val FILTER_BUTTON = "filterButton"
   const val ACTIVE_FILTERS_BAR = "activeFiltersBar"
   const val EVENT_CARD = "eventCard"
-}
-
-private object AnnotationConfig {
-  const val PIN_ICON = "purple-pin"
-  const val PIN_SIZE = 0.6
 }
 
 /**
@@ -59,8 +56,6 @@ private object AnnotationConfig {
  * @param filterViewModel The ViewModel responsible for managing and applying event filters.
  * @param onNavigateToEvent Callback invoked when an event card is clicked (e.g., in the info
  *   popup), receives eventId.
- * @param isLocationPermissionGranted A boolean flag indicating whether the user has granted
- *   location permissions.
  */
 @Composable
 fun MapScreen(
@@ -68,14 +63,36 @@ fun MapScreen(
     mapViewModel: MapViewModel = viewModel(),
     filterViewModel: EventFilterViewModel = viewModel(),
     onNavigateToEvent: (String) -> Unit = {},
-    isLocationPermissionGranted: Boolean
 ) {
+  val context = LocalContext.current
   val uiState by mapViewModel.uiState.collectAsState()
   val eventCardViewModel = EventCardViewModel.getInstance()
   val likedEvents by eventCardViewModel.likedEvents.collectAsState()
   val currentFilters by filterViewModel.currentFilters.collectAsState()
   val showFilterDialog = uiState.showFilterDialog
   val allEvents by mapViewModel.allEvents.collectAsState()
+
+  // Location permission handling within MapScreen
+  val launcher =
+      rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
+        mapViewModel.setLocationPermission(isGranted)
+      }
+
+  // Check location permission when MapScreen is composed
+  LaunchedEffect(Unit) {
+    val hasPermission =
+        ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+
+    mapViewModel.setLocationPermission(hasPermission)
+
+    if (!hasPermission) {
+      launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+    }
+  }
+
+  // Reset selected event when screen is first composed or recomposed
+  LaunchedEffect(Unit) { mapViewModel.clearSelectedEvent() }
 
   Box(modifier = modifier.fillMaxSize()) {
     // --- Mapbox Map Composable ---
@@ -84,9 +101,12 @@ fun MapScreen(
     ) {
       // MapEffect bridges the Compose Mapbox API with the MapView
       MapEffect(Unit) { mapView: MapView ->
-        mapViewModel.onMapReady(mapView, isLocationPermissionGranted)
+        mapViewModel.onMapReady(mapView, uiState.hasLocationPermission)
         mapViewModel.getOrCreatePointAnnotationManager(mapView)
+        // Force re-setup of annotations when map is ready
+        setupAnnotations(mapView, uiState.events, mapViewModel)
       }
+      // Also update annotations when events change
       MapEffect(uiState.events) { mapView: MapView ->
         setupAnnotations(mapView, uiState.events, mapViewModel)
       }
@@ -181,44 +201,5 @@ fun MapScreen(
  */
 @SuppressLint("ImplicitSamInstance")
 private fun setupAnnotations(mapView: MapView, events: List<Event>, viewModel: MapViewModel) {
-  val pointAnnotationManager = viewModel.getOrCreatePointAnnotationManager(mapView)
-
-  // Clear existing annotations
-  pointAnnotationManager.deleteAll()
-
-  // Create new annotations
-  events.forEach { event ->
-    val coords = event.location?.coordinates ?: return@forEach
-    val point = Point.fromLngLat(coords.longitude, coords.latitude)
-
-    val pin =
-        PointAnnotationOptions()
-            .withPoint(point)
-            .withIconImage(AnnotationConfig.PIN_ICON)
-            .withIconSize(AnnotationConfig.PIN_SIZE)
-            .withData(JsonPrimitive(event.eventId))
-
-    pointAnnotationManager.create(pin)
-  }
-
-  // Remove existing click listeners first
-  pointAnnotationManager.removeClickListener { true } // Remove all
-  // --- Add click listener for pins ---
-  pointAnnotationManager.addClickListener { annotation ->
-    val eventIdJson = annotation.getData()
-    val eventId = eventIdJson?.asString
-    eventId?.let { id ->
-      val selectedEvent = events.find { it.eventId == id }
-      selectedEvent?.let { event -> viewModel.selectEvent(event) }
-    }
-    true
-  }
-
-  // Remove existing map click listeners first
-  mapView.gestures.removeOnMapClickListener { true } // Remove all
-  // --- Add map click listener for pins ---
-  mapView.gestures.addOnMapClickListener {
-    viewModel.clearSelectedEvent()
-    true
-  }
+  viewModel.setupAnnotationsForEvents(events, mapView)
 }

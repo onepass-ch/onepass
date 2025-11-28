@@ -3,9 +3,9 @@ package ch.onepass.onepass.ui.feed
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
-import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -13,7 +13,6 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -38,11 +37,12 @@ object FeedScreenTestTags {
   const val FEED_TITLE = "feedTitle"
   const val FEED_LOCATION = "feedLocation"
   const val FILTER_BUTTON = "filterButton"
+  const val NOTIFICATION_BUTTON = "notificationButton" // Added tag
   const val EVENT_LIST = "eventList"
   const val LOADING_INDICATOR = "loadingIndicator"
   const val ERROR_MESSAGE = "errorMessage"
-  const val EMPTY_STATE = "emptyState"
   const val RETRY_BUTTON = "retryButton"
+  const val EMPTY_STATE = "emptyState"
   const val ACTIVE_FILTERS_BAR = "activeFiltersBar"
 
   fun getTestTagForEventItem(eventId: String) = "eventItem_$eventId"
@@ -53,6 +53,7 @@ object FeedScreenTestTags {
  *
  * @param modifier Optional modifier for the screen.
  * @param onNavigateToEvent Callback when an event card is clicked, receives eventId.
+ * @param onNavigateToNotifications Callback when the notification button is clicked.
  * @param viewModel FeedViewModel instance, can be overridden for testing.
  * @param filterViewModel EventFilterViewModel instance, providing filter logic.
  */
@@ -61,6 +62,7 @@ object FeedScreenTestTags {
 fun FeedScreen(
     modifier: Modifier = Modifier,
     onNavigateToEvent: (String) -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
     viewModel: FeedViewModel = viewModel(),
     filterViewModel: EventFilterViewModel = viewModel(),
 ) {
@@ -84,7 +86,7 @@ fun FeedScreen(
               currentLocation = uiState.location,
               currentDateRange = "WELCOME",
               onFilterClick = { viewModel.setShowFilterDialog(true) },
-          )
+              onNotificationClick = onNavigateToNotifications)
           if (currentFilters.hasActiveFilters) {
             ActiveFiltersBar(
                 filters = currentFilters,
@@ -99,37 +101,30 @@ fun FeedScreen(
       },
       containerColor = colorResource(id = R.color.screen_background),
   ) { paddingValues ->
-    val pullState = rememberPullToRefreshState()
-    PullToRefreshBox(
-        isRefreshing = uiState.isRefreshing,
-        onRefresh = viewModel::refreshEvents,
-        state = pullState,
+    Box(
         modifier = Modifier.fillMaxSize().padding(paddingValues),
+        contentAlignment = Alignment.Center,
     ) {
       when {
-        // Initial loading state (only show when not refreshing to avoid duplicate indicators)
-        uiState.isLoading && uiState.events.isEmpty() && !uiState.isRefreshing -> {
+        uiState.isLoading && uiState.events.isEmpty() -> {
           LoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR)
         }
-        // Error state (only show when we have no events to display)
         uiState.error != null && uiState.events.isEmpty() -> {
           ErrorState(
               error = uiState.error!!,
               onRetry = { viewModel.refreshEvents() },
               testTag = FeedScreenTestTags.ERROR_MESSAGE)
         }
-        // Empty state (only when not loading/refreshing and truly empty)
-        !uiState.isLoading && !uiState.isRefreshing && uiState.events.isEmpty() -> {
+        !uiState.isLoading && uiState.events.isEmpty() -> {
           EmptyState(
               title = "No Events Found",
               message = "Check back later for new events in your area!",
               testTag = FeedScreenTestTags.EMPTY_STATE)
         }
-        // Normal content display (handles both initial load and refresh scenarios)
         else -> {
           EventListContent(
               events = uiState.events,
-              isLoadingMore = uiState.isLoading && !uiState.isRefreshing,
+              isLoadingMore = uiState.isLoading,
               onEventClick = onNavigateToEvent,
           )
         }
@@ -158,6 +153,7 @@ fun FeedScreen(
  * @param currentLocation The string representing the current user location or selected region.
  * @param currentDateRange The string representing the current date range filter.
  * @param onFilterClick Callback invoked when the filter button is clicked.
+ * @param onNotificationClick Callback invoked when the notification button is clicked.
  * @param modifier Optional modifier for the top bar.
  */
 @Composable
@@ -165,6 +161,7 @@ private fun FeedTopBar(
     currentLocation: String,
     currentDateRange: String,
     onFilterClick: () -> Unit,
+    onNotificationClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
   Surface(
@@ -198,6 +195,17 @@ private fun FeedTopBar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+          // Notification Button
+          IconButton(
+              onClick = onNotificationClick,
+              modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.NOTIFICATION_BUTTON)) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Notifications",
+                    tint = colorResource(id = R.color.white),
+                    modifier = Modifier.size(24.dp),
+                )
+              }
           // Filter Button
           IconButton(
               onClick = onFilterClick,
@@ -254,87 +262,4 @@ private fun EventListContent(
           }
         }
       }
-}
-
-/**
- * Loading state indicator.
- *
- * @param modifier Optional modifier for the loading indicator.
- */
-@Composable
-private fun LoadingState(modifier: Modifier = Modifier) {
-  CircularProgressIndicator(
-      modifier = modifier.testTag(FeedScreenTestTags.LOADING_INDICATOR),
-      color = colorResource(id = R.color.accent_purple),
-  )
-}
-
-/**
- * Error state with retry button.
- *
- * @param error The error message string to display.
- * @param onRetry Callback invoked when the retry button is clicked.
- * @param modifier Optional modifier for the error state composable.
- */
-@Composable
-private fun ErrorState(error: String, onRetry: () -> Unit, modifier: Modifier = Modifier) {
-  Column(
-      modifier = modifier.fillMaxWidth().padding(32.dp).testTag(FeedScreenTestTags.ERROR_MESSAGE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-  ) {
-    Text(
-        text = "Oops!",
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-        color = colorResource(id = R.color.white),
-    )
-    Spacer(modifier = Modifier.height(8.dp))
-    Text(
-        text = error,
-        style = MaterialTheme.typography.bodyMedium,
-        color = colorResource(id = R.color.gray),
-        textAlign = TextAlign.Center,
-    )
-    Spacer(modifier = Modifier.height(24.dp))
-    Button(
-        onClick = onRetry,
-        modifier = Modifier.testTag(FeedScreenTestTags.RETRY_BUTTON),
-        colors =
-            ButtonDefaults.buttonColors(
-                containerColor = colorResource(id = R.color.accent_purple),
-                contentColor = colorResource(id = R.color.white),
-            ),
-    ) {
-      Text(text = "Try Again", fontWeight = FontWeight.Medium)
-    }
-  }
-}
-
-/**
- * Empty state when no events are available.
- *
- * @param modifier Optional modifier for the empty state composable.
- */
-@Composable
-private fun EmptyFeedState(modifier: Modifier = Modifier) {
-  Column(
-      modifier = modifier.fillMaxWidth().padding(32.dp).testTag(FeedScreenTestTags.EMPTY_STATE),
-      horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.Center,
-  ) {
-    Text(
-        text = "No Events Found",
-        style = MaterialTheme.typography.headlineMedium,
-        fontWeight = FontWeight.Bold,
-        color = colorResource(id = R.color.white),
-    )
-    Spacer(modifier = Modifier.height(8.dp))
-    Text(
-        text = "Check back later for new events in your area!",
-        style = MaterialTheme.typography.bodyMedium,
-        color = colorResource(id = R.color.gray),
-        textAlign = TextAlign.Center,
-    )
-  }
 }

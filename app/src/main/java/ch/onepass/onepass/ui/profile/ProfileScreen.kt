@@ -284,7 +284,8 @@ private fun OrganizerCard(isOrganizer: Boolean, onOrganizationButton: () -> Unit
           colors =
               ButtonDefaults.buttonColors(
                   containerColor = colorResource(id = R.color.profile_accent))) {
-            Icon(imageVector = Icons.Filled.Add, contentDescription = null, tint = Color.White)
+            if (!isOrganizer)
+                Icon(imageVector = Icons.Filled.Add, contentDescription = null, tint = Color.White)
             Spacer(Modifier.width(8.dp))
             Text(
                 text = if (isOrganizer) "My Organizations" else "Become an organizer",

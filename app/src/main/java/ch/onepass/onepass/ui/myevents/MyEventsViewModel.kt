@@ -9,13 +9,15 @@ import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.ticket.TicketRepository
 import ch.onepass.onepass.model.ticket.TicketRepositoryFirebase
 import ch.onepass.onepass.model.ticket.toUiTicket
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.onEach
 
 /**
  * Data class representing a ticket in the UI.
@@ -43,6 +45,26 @@ enum class TicketStatus(@ColorRes val colorRes: Int) {
   EXPIRED(R.color.status_expired)
 }
 
+/** Enum representing the tabs in the My Events screen. */
+enum class TicketTab {
+  CURRENT,
+  EXPIRED
+}
+
+/**
+ * Immutable UI state for the My Events screen.
+ *
+ * @property currentTickets List of current (active) tickets.
+ * @property expiredTickets List of expired tickets.
+ * @property selectedTab The currently selected tab (CURRENT or EXPIRED).
+ */
+data class MyEventsUiState(
+    val currentTickets: List<Ticket> = emptyList(),
+    val expiredTickets: List<Ticket> = emptyList(),
+    val selectedTab: TicketTab = TicketTab.CURRENT,
+    val isQrExpanded: Boolean = false
+)
+
 /**
  * ViewModel for managing and displaying the user's tickets.
  *
@@ -56,11 +78,56 @@ class MyEventsViewModel(
     private val userId: String
 ) : ViewModel() {
 
+  /** Backing state for the UI state flow */
+  private val _uiState = MutableStateFlow(MyEventsUiState())
+  /** Publicly exposed UI state as a StateFlow */
+  val uiState: StateFlow<MyEventsUiState> = _uiState
+
+  /** Initializes the ViewModel by observing current and expired tickets */
+  init {
+    observeCurrentTickets()
+    observeExpiredTickets()
+  }
+
+  /** Observes current tickets and updates UI state */
+  @OptIn(ExperimentalCoroutinesApi::class)
+  private fun observeCurrentTickets() {
+    ticketRepo
+        .getActiveTickets(userId)
+        .flatMapLatest { enrichTickets(it) }
+        .onEach { tickets -> _uiState.value = _uiState.value.copy(currentTickets = tickets) }
+        .launchIn(viewModelScope)
+  }
+
+  /** Observes expired tickets and updates the UI state accordingly */
+  @OptIn(ExperimentalCoroutinesApi::class)
+  private fun observeExpiredTickets() {
+    ticketRepo
+        .getExpiredTickets(userId)
+        .flatMapLatest { enrichTickets(it) }
+        .onEach { tickets -> _uiState.value = _uiState.value.copy(expiredTickets = tickets) }
+        .launchIn(viewModelScope)
+  }
+
   /**
-   * Enriches a list of tickets with their associated event details.
+   * Selects a tab in the UI.
+   *
+   * @param tab The tab to select (CURRENT or EXPIRED).
+   */
+  fun selectTab(tab: TicketTab) {
+    _uiState.value = _uiState.value.copy(selectedTab = tab)
+  }
+
+  /** Toggles the expansion state of the user's QR code. */
+  fun toggleQrExpansion() {
+    _uiState.value = _uiState.value.copy(isQrExpanded = !_uiState.value.isQrExpanded)
+  }
+
+  /**
+   * Enriches a list of tickets with their associated event data.
    *
    * @param tickets List of tickets to enrich.
-   * @return A Flow emitting a list of enriched tickets with event details.
+   * @return Flow emitting a list of enriched tickets.
    */
   private fun enrichTickets(
       tickets: List<ch.onepass.onepass.model.ticket.Ticket>
@@ -72,18 +139,4 @@ class MyEventsViewModel(
           it.toList()
         }
   }
-
-  /** StateFlow of the user's current (active) tickets enriched with event details. */
-  val currentTickets: StateFlow<List<Ticket>> =
-      ticketRepo
-          .getActiveTickets(userId)
-          .flatMapLatest { enrichTickets(it) }
-          .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
-
-  /** StateFlow of the user's expired or redeemed tickets enriched with event details. */
-  val expiredTickets: StateFlow<List<Ticket>> =
-      ticketRepo
-          .getExpiredTickets(userId)
-          .flatMapLatest { enrichTickets(it) }
-          .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 }

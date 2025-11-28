@@ -49,7 +49,6 @@ class AppE2E {
     compose.setContent {
       OnePassApp(
           mapViewModel = viewModel<MapViewModel>(),
-          isLocationPermissionGranted = true,
           testAuthButtonTag = SignInScreenTestTags.LOGIN_BUTTON)
     }
     compose.waitForIdle()

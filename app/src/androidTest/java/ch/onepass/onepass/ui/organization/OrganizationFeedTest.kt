@@ -10,6 +10,7 @@ import com.google.firebase.Timestamp
 import io.mockk.*
 import kotlinx.coroutines.flow.flowOf
 import org.junit.After
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -238,6 +239,7 @@ class OrganizationFeedTest {
   }
 
   // ==================== Scrolling and List Tests ====================
+  @OptIn(ExperimentalTestApi::class)
   @Test
   fun organizationFeedScreen_scrollableList_worksCorrectly() {
     val manyOrgs =
@@ -259,19 +261,17 @@ class OrganizationFeedTest {
     }
 
     // Wait for the organization data to actually load and be displayed
-    composeTestRule.waitUntil(timeoutMillis = 10_000) {
-      composeTestRule.onAllNodesWithText("Organization 1").fetchSemanticsNodes().isNotEmpty()
-    }
+    composeTestRule.waitUntilAtLeastOneExists(hasText("Organization 1"), timeoutMillis = 10_000)
     composeTestRule.waitForIdle()
-
     composeTestRule.onNodeWithText("Organization 1").assertExists().assertIsDisplayed()
     composeTestRule
         .onNodeWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST)
         .performScrollToNode(hasText("Organization 10"))
 
-    composeTestRule.waitUntil(timeoutMillis = 5_000) {
-      composeTestRule.onAllNodesWithText("Organization 10").fetchSemanticsNodes().isNotEmpty()
-    }
+    composeTestRule
+        .onNodeWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST)
+        .performScrollToNode(hasText("Organization 10"))
+
     composeTestRule.onNodeWithText("Organization 10").assertExists().assertIsDisplayed()
   }
 
@@ -417,5 +417,28 @@ class OrganizationFeedTest {
     composeTestRule
         .onNodeWithTag(OrganizationFeedTestTags.getTestTagForOrganizationItem("org-3"))
         .assertExists()
+  }
+
+  @Test
+  fun fab_is_displayed_and_click_triggers_callback() {
+    var clicked = false
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        OrganizationFeedScaffold(
+            organizations = emptyList(),
+            isLoading = false,
+            error = null,
+            onOrganizationClick = {},
+            onFabClick = { clicked = true },
+            onNavigateBack = {},
+            onRetry = {})
+      }
+    }
+
+    composeTestRule.onNodeWithTag(OrganizationFeedTestTags.ADD_ORG_FAB).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(OrganizationFeedTestTags.ADD_ORG_FAB).performClick()
+
+    composeTestRule.runOnIdle { assertTrue("FAB click should trigger callback", clicked) }
   }
 }

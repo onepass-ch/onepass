@@ -33,6 +33,8 @@ import ch.onepass.onepass.ui.myevents.MyEventsViewModel
 import ch.onepass.onepass.ui.myinvitations.MyInvitationsScreen
 import ch.onepass.onepass.ui.myinvitations.MyInvitationsViewModel
 import ch.onepass.onepass.ui.navigation.NavigationDestinations.Screen
+import ch.onepass.onepass.ui.notification.NotificationsScreen
+import ch.onepass.onepass.ui.notification.NotificationsViewModel
 import ch.onepass.onepass.ui.organization.OrganizationDashboardScreen
 import ch.onepass.onepass.ui.organization.OrganizationDashboardViewModel
 import ch.onepass.onepass.ui.organization.OrganizationFeedScreen
@@ -51,12 +53,22 @@ import ch.onepass.onepass.ui.staff.StaffInvitationScreen
 import ch.onepass.onepass.ui.staff.StaffInvitationViewModel
 import com.google.firebase.auth.FirebaseAuth
 
+/**
+ * Navigation host that registers all app routes and wires view models to screens.
+ *
+ * @param navController NavHostController used to drive navigation.
+ * @param modifier Modifier applied to the NavHost container.
+ * @param mapViewModel Map screen ViewModel instance to pass into MapScreen.
+ * @param testAuthButtonTag Optional test tag; when provided a simple login button is shown for
+ *   testing.
+ * @param authViewModelFactory Factory used to create the shared AuthViewModel instance.
+ * @param profileViewModelFactory Factory used to create ProfileViewModel instances.
+ */
 @Composable
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    mapViewModel: MapViewModel,
-    isLocationPermissionGranted: Boolean,
+    mapViewModel: MapViewModel? = null,
     testAuthButtonTag: String? = null,
     authViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
       initializer { AuthViewModel() }
@@ -103,7 +115,16 @@ fun AppNavHost(
           onNavigateToEvent = { eventId ->
             navController.navigate(Screen.EventDetail.route(eventId))
           },
-      )
+          onNavigateToNotifications = { navController.navigate(Screen.Notification.route) })
+    }
+
+    // ------------------ Notifications ------------------
+    composable(Screen.Notification.route) {
+      val notificationViewModel: NotificationsViewModel = viewModel()
+      NotificationsScreen(
+          navController = navController,
+          viewModel = notificationViewModel,
+          onNavigateBack = { navController.popBackStack() })
     }
 
     // ------------------ Event Detail ------------------
@@ -134,9 +155,10 @@ fun AppNavHost(
 
     // ------------------ Map ------------------
     composable(Screen.Map.route) {
+      // Each map screen will create its own ViewModel and handle its own location permission
+      val mapScreenViewModel: MapViewModel = mapViewModel ?: viewModel()
       MapScreen(
-          mapViewModel = mapViewModel,
-          isLocationPermissionGranted = isLocationPermissionGranted,
+          mapViewModel = mapScreenViewModel,
           onNavigateToEvent = { eventId ->
             navController.navigate(Screen.EventDetail.route(eventId))
           })
@@ -181,7 +203,8 @@ fun AppNavHost(
           onNavigateToOrganization = { organizationId ->
             navController.navigate(Screen.OrganizationDashboard.route(organizationId))
           },
-          onNavigateBack = { navController.popBackStack() })
+          onNavigateBack = { navController.popBackStack() },
+          onFabClick = { navController.navigate(Screen.BecomeOrganizer.route) })
     }
 
     // ------------------ Organization Dashboard ------------------

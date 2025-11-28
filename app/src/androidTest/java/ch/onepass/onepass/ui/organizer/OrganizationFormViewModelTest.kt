@@ -350,13 +350,13 @@ class FakeUserRepository : UserRepository {
       organizationId: String?
   ): Result<List<StaffSearchResult>> = Result.success(emptyList())
 
-  override suspend fun isOrganizer(): Boolean = false
+  suspend fun isOrganizer(): Boolean = false
 
-  override suspend fun addOrganizationToUser(userId: String, orgId: String) {
+  suspend fun addOrganizationToUser(userId: String, orgId: String) {
     if (shouldFailAddOrganization) {
       throw Exception("Failed to add organization")
     }
   }
 
-  override suspend fun removeOrganizationFromUser(userId: String, orgId: String) {}
+  suspend fun removeOrganizationFromUser(userId: String, orgId: String) {}
 }

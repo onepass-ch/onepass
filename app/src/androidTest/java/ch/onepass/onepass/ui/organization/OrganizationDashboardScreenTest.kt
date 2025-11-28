@@ -2,6 +2,7 @@ package ch.onepass.onepass.ui.organization
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import java.util.*
 import kotlinx.coroutines.delay
@@ -14,7 +15,7 @@ class OrganizationDashboardScreenTest {
 
   private val mockAuth = OrganizationDashboardTestData.createMockAuth().first
   private val mockUser = OrganizationDashboardTestData.createMockAuth().second
-  private val testOrg = OrganizationDashboardTestData.createTestOrganization()
+  private val testOrg = OrganizationDashboardTestData.createTestOrganization(members = emptyMap())
   private val testEvent1 = OrganizationDashboardTestData.createTestEvent()
   private val testEvent2 =
       OrganizationDashboardTestData.createTestEvent(
@@ -23,6 +24,15 @@ class OrganizationDashboardScreenTest {
           status = ch.onepass.onepass.model.event.EventStatus.DRAFT,
           capacity = 200,
           ticketsRemaining = 200)
+
+  private val testMemberships =
+      listOf(
+          OrganizationDashboardTestData.createTestMembership(
+              membershipId = "mem-1", userId = "owner-1", role = OrganizationRole.OWNER),
+          OrganizationDashboardTestData.createTestMembership(
+              membershipId = "mem-2", userId = "member-1", role = OrganizationRole.MEMBER),
+          OrganizationDashboardTestData.createTestMembership(
+              membershipId = "mem-3", userId = "staff-1", role = OrganizationRole.STAFF))
 
   private fun setScreen(
       orgId: String = "test-org-1",
@@ -60,7 +70,8 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)))
+            eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)),
+            membershipRepository = MockMembershipRepository(testMemberships))
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.ORG_SUMMARY_CARD)
@@ -75,7 +86,8 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships))
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.ORG_SUMMARY_CARD)
@@ -100,7 +112,8 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)))
+            eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)),
+            membershipRepository = MockMembershipRepository(testMemberships))
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.MANAGE_EVENTS_SECTION)
@@ -121,7 +134,8 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships))
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.MANAGE_STAFF_SECTION)
@@ -142,7 +156,8 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)))
+            eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)),
+            membershipRepository = MockMembershipRepository(testMemberships))
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN)
@@ -167,7 +182,8 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships))
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
@@ -204,7 +220,8 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships))
     var clicked = false
     setScreen(viewModel = viewModel, onNavigateToCreateEvent = { clicked = true })
 
@@ -219,7 +236,8 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships))
     var clicked = false
     setScreen(viewModel = viewModel, onNavigateToAddStaff = { clicked = true })
 
@@ -238,6 +256,7 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(events = listOf(testEvent1)),
+            membershipRepository = MockMembershipRepository(testMemberships),
             auth = mockAuth)
     var clickedEventId: String? = null
     setScreen(viewModel = viewModel, onNavigateToScanTickets = { clickedEventId = it })
@@ -271,6 +290,7 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(events = listOf(testEvent1)),
+            membershipRepository = MockMembershipRepository(testMemberships),
             auth = mockAuth)
     var clickedEventId: String? = null
     setScreen(viewModel = viewModel, onNavigateToEditEvent = { clickedEventId = it })
@@ -311,6 +331,7 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = mockOrgRepo,
             eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships),
             auth = mockAuth)
     setScreen(viewModel = viewModel)
 
@@ -325,7 +346,8 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(shouldThrowError = true),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships))
     setScreen(viewModel = viewModel)
 
     composeTestRule.waitUntil(timeoutMillis = 5000) {
@@ -344,7 +366,8 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships))
     var clicked = false
     setScreen(viewModel = viewModel, onNavigateBack = { clicked = true })
 
@@ -359,7 +382,8 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships))
     var clickedOrgId: String? = null
     setScreen(viewModel = viewModel, onNavigateToProfile = { clickedOrgId = it })
 
@@ -374,7 +398,8 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository(events = emptyList()))
+            eventRepository = MockEventRepository(events = emptyList()),
+            membershipRepository = MockMembershipRepository(testMemberships))
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN)
@@ -387,11 +412,11 @@ class OrganizationDashboardScreenTest {
 
   @Test
   fun organizationDashboardScreen_displaysNoStaffMessage() {
-    val emptyOrg = testOrg.copy(members = emptyMap())
     val viewModel =
         OrganizationDashboardViewModel(
-            organizationRepository = MockOrganizationRepository(organization = emptyOrg),
-            eventRepository = MockEventRepository())
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(members = emptyList()))
     setScreen(viewModel = viewModel)
 
     composeTestRule.waitForIdle()
