@@ -6,6 +6,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageMetadata
 import com.google.firebase.storage.ktx.storage
 import java.io.File
+import java.net.URLDecoder
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -116,7 +117,33 @@ class StorageRepositoryFirebase(private val storage: FirebaseStorage = Firebase.
    * @return A [Result] indicating success or failure.
    */
   override suspend fun deleteImageByUrl(downloadUrl: String): Result<Unit> = runCatching {
-    val fileRef = storage.getReferenceFromUrl(downloadUrl)
+    // Support both gs:// and http(s) download URLs, including emulator URLs.
+    val uri = Uri.parse(downloadUrl)
+    val path =
+        when (uri.scheme) {
+          "gs" -> {
+            // Format: gs://<bucket>/<path>
+            uri.path?.removePrefix("/")
+                ?: throw IllegalArgumentException("Invalid gs:// URL: $downloadUrl")
+          }
+          "http",
+          "https" -> {
+            // Format (both real and emulator):
+            //   /v0/b/<bucket>/o/<encodedPath>
+            // Extract the segment after "o" and URL-decode it.
+            val segments = uri.pathSegments
+            val oIndex = segments.indexOf("o")
+            if (oIndex == -1 || oIndex + 1 >= segments.size) {
+              throw IllegalArgumentException(
+                  "Unable to extract storage path from URL: $downloadUrl")
+            }
+            val encodedPath = segments[oIndex + 1]
+            URLDecoder.decode(encodedPath, "UTF-8")
+          }
+          else -> throw IllegalArgumentException("Unsupported download URL scheme: ${uri.scheme}")
+        }
+
+    val fileRef = storageRef.child(path)
     fileRef.delete().await()
   }
 

@@ -11,6 +11,7 @@ import ch.onepass.onepass.model.storage.FakeStorageRepository
 import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserSearchType
+import ch.onepass.onepass.utils.TestMockMembershipRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
@@ -25,6 +26,7 @@ class OrganizationFormViewModelTest {
   private lateinit var repository: FakeOrganizationRepository
   private lateinit var userRepository: FakeUserRepository
   private lateinit var storageRepository: FakeStorageRepository
+  private lateinit var membershipRepository: TestMockMembershipRepository
   private lateinit var viewModel: OrganizationFormViewModel
 
   @Before
@@ -32,7 +34,13 @@ class OrganizationFormViewModelTest {
     repository = FakeOrganizationRepository()
     userRepository = FakeUserRepository()
     storageRepository = FakeStorageRepository()
-    viewModel = OrganizationFormViewModel(repository, userRepository, storageRepository)
+    membershipRepository = TestMockMembershipRepository()
+    viewModel =
+        OrganizationFormViewModel(
+            repository = repository,
+            userRepository = userRepository,
+            storageRepository = storageRepository,
+            membershipRepository = membershipRepository)
   }
 
   @Test
