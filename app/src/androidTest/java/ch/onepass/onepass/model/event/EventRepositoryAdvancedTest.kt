@@ -48,7 +48,15 @@ class EventRepositoryAdvancedTest : FirestoreTestBase() {
 
   @Test
   fun canCreateMultipleEventsWithDifferentStatuses() = runTest {
-    val events = EventTestData.createEventsWithDifferentStatuses(organizerId = userId)
+    // Create events with explicit unique IDs to avoid timestamp collisions
+    val draftEvent = EventTestData.createDraftEvent(eventId = "draft-1", organizerId = userId)
+    val publishedEvent =
+        EventTestData.createPublishedEvent(eventId = "published-1", organizerId = userId)
+    val closedEvent = EventTestData.createClosedEvent(eventId = "closed-1", organizerId = userId)
+    val cancelledEvent =
+        EventTestData.createCancelledEvent(eventId = "cancelled-1", organizerId = userId)
+
+    val events = listOf(draftEvent, publishedEvent, closedEvent, cancelledEvent)
 
     events.forEach { event ->
       val result = repository.createEvent(event)

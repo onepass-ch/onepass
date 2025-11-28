@@ -7,6 +7,8 @@ import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.event.PricingTier
 import ch.onepass.onepass.model.map.LocationRepository
 import ch.onepass.onepass.model.map.NominatimLocationRepository
+import ch.onepass.onepass.model.storage.StorageRepository
+import ch.onepass.onepass.model.storage.StorageRepositoryFirebase
 import ch.onepass.onepass.ui.eventform.EventFormViewModel
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -22,8 +24,9 @@ import kotlinx.coroutines.launch
  */
 class EditEventFormViewModel(
     eventRepository: EventRepository = EventRepositoryFirebase(),
-    locationRepository: LocationRepository = NominatimLocationRepository()
-) : EventFormViewModel(eventRepository, locationRepository) {
+    locationRepository: LocationRepository = NominatimLocationRepository(),
+    storageRepository: StorageRepository = StorageRepositoryFirebase()
+) : EventFormViewModel(eventRepository, locationRepository, storageRepository) {
 
   // UI state
   private val _uiState = MutableStateFlow<EditEventUiState>(EditEventUiState.Idle)
@@ -77,34 +80,97 @@ class EditEventFormViewModel(
 
       _uiState.value = EditEventUiState.Updating
 
-      // Create updated event from parsed data
-      val updatedEvent =
-          original.copy(
-              title = parsed.title,
-              description = parsed.description,
-              startTime = parsed.startTime,
-              endTime = parsed.endTime,
-              capacity = parsed.capacity,
-              location = parsed.selectedLocation,
-              pricingTiers =
-                  listOf(
-                      PricingTier(
-                          name = "General",
-                          price = parsed.price,
-                          quantity = parsed.capacity,
-                          remaining = parsed.capacity - original.ticketsIssued)))
+      // Upload new images if any selected
+      if (_formState.value.selectedImageUris.isNotEmpty()) {
+        // Start the upload and collect the state
+        startImageUpload(original.eventId)
 
-      // Update event in repository
-      val result = eventRepository.updateEvent(updatedEvent)
+        // Collect the upload state to handle the result
+        imageUploadState.collect { uploadState ->
+          when (uploadState) {
+            is ImageUploadState.Idle -> {
+              // Still waiting for upload to start
+            }
+            is ImageUploadState.Uploading -> {
+              // Upload in progress
+            }
+            is ImageUploadState.Success -> {
+              // Combine existing images with newly uploaded ones
+              val allImageUrls = original.images + uploadState.urls
 
-      result.fold(
-          onSuccess = {
-            originalEvent = updatedEvent
-            _uiState.value = EditEventUiState.Success
-          },
-          onFailure = { error ->
-            _uiState.value = EditEventUiState.Error(error.message ?: "Failed to update event")
-          })
+              // Create updated event from parsed data
+              val updatedEvent =
+                  original.copy(
+                      title = parsed.title,
+                      description = parsed.description,
+                      startTime = parsed.startTime,
+                      endTime = parsed.endTime,
+                      capacity = parsed.capacity,
+                      location = parsed.selectedLocation,
+                      images = allImageUrls,
+                      pricingTiers =
+                          listOf(
+                              PricingTier(
+                                  name = "General",
+                                  price = parsed.price,
+                                  quantity = parsed.capacity,
+                                  remaining = parsed.capacity - original.ticketsIssued)))
+
+              // Update event in repository
+              val result = eventRepository.updateEvent(updatedEvent)
+
+              result.fold(
+                  onSuccess = {
+                    originalEvent = updatedEvent
+                    _uiState.value = EditEventUiState.Success
+                    resetImageUploadState()
+                  },
+                  onFailure = { error ->
+                    _uiState.value =
+                        EditEventUiState.Error(error.message ?: "Failed to update event")
+                    resetImageUploadState()
+                  })
+              return@collect
+            }
+            is ImageUploadState.Error -> {
+              _uiState.value = EditEventUiState.Error(uploadState.message)
+              resetImageUploadState()
+              return@collect
+            }
+          }
+        }
+      } else {
+        // No new images to upload, just update the event
+        // Create updated event from parsed data
+        val updatedEvent =
+            original.copy(
+                title = parsed.title,
+                description = parsed.description,
+                startTime = parsed.startTime,
+                endTime = parsed.endTime,
+                capacity = parsed.capacity,
+                location = parsed.selectedLocation,
+                images = original.images,
+                pricingTiers =
+                    listOf(
+                        PricingTier(
+                            name = "General",
+                            price = parsed.price,
+                            quantity = parsed.capacity,
+                            remaining = parsed.capacity - original.ticketsIssued)))
+
+        // Update event in repository
+        val result = eventRepository.updateEvent(updatedEvent)
+
+        result.fold(
+            onSuccess = {
+              originalEvent = updatedEvent
+              _uiState.value = EditEventUiState.Success
+            },
+            onFailure = { error ->
+              _uiState.value = EditEventUiState.Error(error.message ?: "Failed to update event")
+            })
+      }
     }
   }
 
@@ -156,5 +222,7 @@ private fun Event.toFormState(): EventFormViewModel.EventFormState {
       location = location?.name ?: "",
       price = if (lowestPrice > 0u) lowestPrice.toString() else "0",
       capacity = capacity.toString(),
-      selectedLocation = this.location)
+      selectedLocation = this.location,
+      selectedImageUris = emptyList() // Existing images are in Event.images, not form state
+      )
 }

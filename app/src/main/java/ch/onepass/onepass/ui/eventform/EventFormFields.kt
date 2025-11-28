@@ -15,6 +15,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
+import ch.onepass.onepass.ui.components.buttons.UploadImageButton
 import ch.onepass.onepass.ui.components.forms.DatePickerField
 import ch.onepass.onepass.ui.components.forms.LocationSearchField
 import ch.onepass.onepass.ui.components.forms.TimePickerField
@@ -458,6 +459,26 @@ fun EventFormFields(
         priceError = fieldErrors["price"],
         capacityError = fieldErrors["capacity"],
         modifier = Modifier.testTag(fieldTestTags["tickets"] ?: ""))
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // Upload Image Button
+    UploadImageButton(
+        onImageSelected = { uri -> viewModel.selectImage(uri) },
+        enabled = true,
+        imageDescription = "Event Image*",
+        modifier = Modifier.testTag(fieldTestTags["image_upload"] ?: ""))
+
+    // Display selected images count
+    if (formState.selectedImageUris.isNotEmpty()) {
+      Spacer(modifier = Modifier.height(8.dp))
+      Text(
+          text = "${formState.selectedImageUris.size} image(s) selected",
+          style = MaterialTheme.typography.bodySmall,
+          color = colorResource(id = R.color.white),
+          modifier = Modifier.padding(start = 8.dp))
+    }
+
     Spacer(modifier = Modifier.height(32.dp))
   }
 }

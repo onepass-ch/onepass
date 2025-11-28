@@ -167,6 +167,15 @@ class FakeEventRepository : EventRepository {
       Result.success(Unit)
 
   override suspend fun deleteEvent(eventId: String) = Result.success(Unit)
+
+  override suspend fun addEventImage(eventId: String, imageUrl: String): Result<Unit> =
+      Result.success(Unit)
+
+  override suspend fun removeEventImage(eventId: String, imageUrl: String): Result<Unit> =
+      Result.success(Unit)
+
+  override suspend fun updateEventImages(eventId: String, imageUrls: List<String>): Result<Unit> =
+      Result.success(Unit)
 }
 
 private fun createFakeMyEventsViewModel(): MyEventsViewModel {

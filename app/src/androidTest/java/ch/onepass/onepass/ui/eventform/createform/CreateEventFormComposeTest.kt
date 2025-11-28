@@ -147,4 +147,75 @@ class CreateEventFormComposeTest {
 
     composeTestRule.onNodeWithText(ValidationError.TITLE.message).assertIsDisplayed()
   }
+
+  @Test
+  fun imageUploadButton_isVisible() {
+    composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
+
+    // Upload image button should be visible
+    composeTestRule
+        .onNodeWithText("Event Image*", substring = true)
+        .performScrollTo()
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun imageSelectionIndicator_notShownInitially() {
+    composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
+
+    // Image selection indicator should not be shown initially
+    composeTestRule.onNodeWithText("image(s) selected", substring = true).assertDoesNotExist()
+  }
+
+  @Test
+  fun imageSelectionIndicator_showsAfterSelectingImage() = runTest {
+    composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
+
+    // Simulate selecting an image by updating the ViewModel directly
+    val testUri = android.net.Uri.parse("content://media/image/123")
+    viewModel.selectImage(testUri)
+
+    composeTestRule.waitForIdle()
+
+    // Image selection indicator should now be shown
+    composeTestRule.onNodeWithText("1 image(s) selected").performScrollTo().assertIsDisplayed()
+  }
+
+  @Test
+  fun imageSelectionIndicator_showsCorrectCountForMultipleImages() = runTest {
+    composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
+
+    // Simulate selecting multiple images
+    val testUri1 = android.net.Uri.parse("content://media/image/123")
+    val testUri2 = android.net.Uri.parse("content://media/image/456")
+    val testUri3 = android.net.Uri.parse("content://media/image/789")
+    viewModel.selectImage(testUri1)
+    viewModel.selectImage(testUri2)
+    viewModel.selectImage(testUri3)
+
+    composeTestRule.waitForIdle()
+
+    // Image selection indicator should show correct count
+    composeTestRule.onNodeWithText("3 image(s) selected").performScrollTo().assertIsDisplayed()
+  }
+
+  @Test
+  fun imageSelectionIndicator_disappearsAfterRemovingAllImages() = runTest {
+    composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
+
+    // Simulate selecting and then removing images
+    val testUri = android.net.Uri.parse("content://media/image/123")
+    viewModel.selectImage(testUri)
+    composeTestRule.waitForIdle()
+
+    // Image indicator should be visible
+    composeTestRule.onNodeWithText("1 image(s) selected").performScrollTo().assertIsDisplayed()
+
+    // Remove the image
+    viewModel.removeImage(testUri)
+    composeTestRule.waitForIdle()
+
+    // Image indicator should no longer be visible
+    composeTestRule.onNodeWithText("image(s) selected", substring = true).assertDoesNotExist()
+  }
 }

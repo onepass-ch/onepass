@@ -145,6 +145,22 @@ class FakeOrganizationRepository(
     return Result.success(Unit)
   }
 
+  override suspend fun updateProfileImage(organizationId: String, imageUrl: String?): Result<Unit> {
+    val org =
+        organizations[organizationId]
+            ?: return Result.failure(IllegalStateException("Organization not found"))
+    organizations[organizationId] = org.copy(profileImageUrl = imageUrl)
+    return Result.success(Unit)
+  }
+
+  override suspend fun updateCoverImage(organizationId: String, imageUrl: String?): Result<Unit> {
+    val org =
+        organizations[organizationId]
+            ?: return Result.failure(IllegalStateException("Organization not found"))
+    organizations[organizationId] = org.copy(coverImageUrl = imageUrl)
+    return Result.success(Unit)
+  }
+
   /** Helper method to add test invitations directly (for test setup). */
   fun addTestInvitation(invitation: OrganizationInvitation) {
     val id = invitation.id.ifEmpty { "inv_${invitations.size + 1}" }

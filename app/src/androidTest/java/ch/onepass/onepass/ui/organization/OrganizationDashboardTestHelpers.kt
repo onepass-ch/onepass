@@ -166,6 +166,12 @@ open class MockOrganizationRepository(
   ): Result<Unit> = Result.success(Unit)
 
   override suspend fun deleteInvitation(invitationId: String): Result<Unit> = Result.success(Unit)
+
+  override suspend fun updateProfileImage(organizationId: String, imageUrl: String?): Result<Unit> =
+      Result.success(Unit)
+
+  override suspend fun updateCoverImage(organizationId: String, imageUrl: String?): Result<Unit> =
+      Result.success(Unit)
 }
 
 /** Mock Membership Repository with configurable behavior. */
@@ -234,6 +240,15 @@ class MockEventRepository(private val events: List<Event> = emptyList()) : Event
   override suspend fun updateEvent(event: Event): Result<Unit> = Result.success(Unit)
 
   override suspend fun deleteEvent(eventId: String): Result<Unit> = Result.success(Unit)
+
+  override suspend fun addEventImage(eventId: String, imageUrl: String): Result<Unit> =
+      Result.success(Unit)
+
+  override suspend fun removeEventImage(eventId: String, imageUrl: String): Result<Unit> =
+      Result.success(Unit)
+
+  override suspend fun updateEventImages(eventId: String, imageUrls: List<String>): Result<Unit> =
+      Result.success(Unit)
 }
 
 /**
@@ -292,6 +307,15 @@ class RecordingEventRepository(private val events: List<Event> = emptyList()) : 
   override suspend fun updateEvent(event: Event): Result<Unit> = Result.success(Unit)
 
   override suspend fun deleteEvent(eventId: String): Result<Unit> = Result.success(Unit)
+
+  override suspend fun addEventImage(eventId: String, imageUrl: String): Result<Unit> =
+      Result.success(Unit)
+
+  override suspend fun removeEventImage(eventId: String, imageUrl: String): Result<Unit> =
+      Result.success(Unit)
+
+  override suspend fun updateEventImages(eventId: String, imageUrls: List<String>): Result<Unit> =
+      Result.success(Unit)
 }
 
 /**
