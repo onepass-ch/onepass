@@ -6,6 +6,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
+import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
@@ -108,5 +109,33 @@ class UserRepositoryFirebaseTest : FirestoreTestBase() {
 
     assertNotNull("Should retrieve current user", retrieved)
     assertEquals("UID should match", user!!.uid, retrieved!!.uid)
+  }
+
+  @Test
+  fun getUserById_returnsStaffSearchResultIfExists() = runTest {
+    val user = userRepository.getOrCreateUser()
+    assertNotNull(user)
+    val uid = user!!.uid
+
+    val result = userRepository.getUserById(uid)
+
+    assertTrue("Result should be success", result.isSuccess)
+    val staffSearchResult = result.getOrNull()
+    assertNotNull("StaffSearchResult should not be null", staffSearchResult)
+    assertEquals("ID should match", uid, staffSearchResult!!.id)
+    assertEquals("Email should match", user.email, staffSearchResult.email)
+    assertEquals("DisplayName should match", user.displayName, staffSearchResult.displayName)
+    assertEquals("AvatarUrl should match", user.avatarUrl, staffSearchResult.avatarUrl)
+  }
+
+  @Test
+  fun getUserById_returnsNullIfUserDoesNotExist() = runTest {
+    val uid = "non_existent_uid"
+
+    val result = userRepository.getUserById(uid)
+
+    assertTrue("Result should be success", result.isSuccess)
+    val staffSearchResult = result.getOrNull()
+    assertNull("StaffSearchResult should be null for non-existent user", staffSearchResult)
   }
 }

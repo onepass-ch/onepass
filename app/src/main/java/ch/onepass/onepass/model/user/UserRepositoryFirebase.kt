@@ -53,6 +53,19 @@ class UserRepositoryFirebase(
     docRef.update("lastLoginAt", FieldValue.serverTimestamp()).await()
   }
 
+  override suspend fun getUserById(uid: String): Result<StaffSearchResult?> = runCatching {
+    val snapshot = userCollection.document(uid).get().await()
+    if (snapshot.exists()) {
+      StaffSearchResult(
+          id = snapshot.id,
+          email = snapshot.getString(KEY_EMAIL) ?: "",
+          displayName = snapshot.getString(KEY_DISPLAY_NAME) ?: "",
+          avatarUrl = snapshot.getString(KEY_AVATAR_URL))
+    } else {
+      null
+    }
+  }
+
   override suspend fun searchUsers(
       query: String,
       searchType: UserSearchType,
