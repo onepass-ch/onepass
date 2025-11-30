@@ -26,6 +26,7 @@ import ch.onepass.onepass.ui.navigation.AppNavHost
 import ch.onepass.onepass.ui.navigation.BottomNavigationBar
 import ch.onepass.onepass.ui.navigation.NavigationActions
 import ch.onepass.onepass.ui.navigation.NavigationDestinations
+import ch.onepass.onepass.ui.navigation.navigateToTopLevel
 import ch.onepass.onepass.ui.profile.ProfileViewModel
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.mapbox.common.MapboxOptions
@@ -94,7 +95,7 @@ fun OnePassApp(
         if (showBottomBar) {
           BottomNavigationBar(
               currentRoute = currentRoute ?: NavigationDestinations.Screen.Events.route,
-              onNavigate = { screen -> navActions.navigateTo(screen) })
+              onNavigate = { screen -> navController.navigateToTopLevel(screen.route) })
         }
       }) { padding ->
         AppNavHost(

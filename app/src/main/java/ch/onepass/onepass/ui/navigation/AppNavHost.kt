@@ -137,7 +137,7 @@ fun AppNavHost(
       EventDetailScreen(
           eventId = eventId,
           viewModel = eventDetailVm,
-          onNavigateToMap = { navController.navigate(Screen.Map.route) },
+          onNavigateToMap = { navController.navigateToTopLevel(Screen.Map.route) },
           onNavigateToOrganizerProfile = { orgId ->
             navController.navigate(Screen.OrganizationProfile.route(orgId))
           },
@@ -331,4 +331,18 @@ fun AppNavHost(
       ComingSoonScreen(onBack = { navController.popBackStack() })
     }
   }
+}
+
+/**
+ * Navigates to a top-level destination, clearing any existing back stack to avoid multiple copies
+ * of the same destination.
+ *
+ * @param route The route string of the top-level destination to navigate to.
+ */
+fun NavHostController.navigateToTopLevel(route: String) {
+    this.navigate(route) {
+        launchSingleTop = true
+        restoreState = false
+        popUpTo(route) { inclusive = true }
+    }
 }
