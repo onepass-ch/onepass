@@ -352,6 +352,10 @@ class FakeUserRepository : UserRepository {
 
   override suspend fun updateLastLogin(uid: String) {}
 
+  override suspend fun getUserById(uid: String): Result<StaffSearchResult?> {
+    return Result.success(null)
+  }
+
   override suspend fun searchUsers(
       query: String,
       searchType: UserSearchType,
