@@ -340,9 +340,9 @@ fun AppNavHost(
  * @param route The route string of the top-level destination to navigate to.
  */
 fun NavHostController.navigateToTopLevel(route: String) {
-    this.navigate(route) {
-        launchSingleTop = true
-        restoreState = false
-        popUpTo(route) { inclusive = true }
-    }
+  this.navigate(route) {
+    launchSingleTop = true
+    restoreState = false
+    popUpTo(route) { inclusive = true }
+  }
 }
