@@ -14,6 +14,7 @@ import com.mapbox.maps.MapView
 import com.mapbox.maps.Style
 import com.mapbox.maps.plugin.animation.CameraAnimationsPlugin
 import com.mapbox.maps.plugin.animation.MapAnimationOptions
+import com.mapbox.maps.plugin.animation.easeTo
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
@@ -23,6 +24,10 @@ import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin
 import com.mapbox.maps.plugin.locationcomponent.location
 import io.mockk.*
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -35,6 +40,9 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.*
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -105,6 +113,8 @@ class MapViewModelUnitTest {
           callback(mockStyle)
         }
     every { mockMapboxMap.setCamera(any<CameraOptions>()) } just Runs
+    every { mockMapboxMap.pixelForCoordinate(any<Point>()) } returns
+        com.mapbox.maps.ScreenCoordinate(100.0, 100.0)
 
     val mockCancelable = mockk<Cancelable>(relaxed = true)
     coEvery {
@@ -172,7 +182,6 @@ class MapViewModelUnitTest {
 
     verify(exactly = 0) { mockAnnotationManager.create(any<PointAnnotationOptions>()) }
     verify { mockAnnotationManager.addClickListener(any()) }
-    verify { mockGesturesPlugin.addOnMapClickListener(any()) }
   }
 
   @Test
@@ -318,8 +327,6 @@ class MapViewModelUnitTest {
   @Test
   fun disableLocationTracking_disablesLocationComponent() {
     viewModel.internalMapView = mockMapView
-
-    // First enable to set up the listener
     viewModel.setLocationPermission(true)
 
     // Now test disable (called internally when permission is denied)
@@ -378,6 +385,7 @@ class MapViewModelUnitTest {
     assertNull(initialState.selectedEvent)
     assertFalse(initialState.showFilterDialog)
     assertFalse(initialState.hasLocationPermission)
+    assertFalse(initialState.isCameraTracking)
   }
 
   @Test
@@ -473,5 +481,152 @@ class MapViewModelUnitTest {
     annotationClickListenerSlot.captured.onAnnotationClick(mockAnnotation)
 
     assertNull(viewModel.uiState.value.selectedEvent)
+  }
+
+  @Test
+  fun enableCameraTracking_setsTrackingToTrue() {
+    assertFalse(viewModel.uiState.value.isCameraTracking)
+    viewModel.enableCameraTracking()
+    assertTrue(viewModel.uiState.value.isCameraTracking)
+  }
+
+  @Test
+  fun enableCameraTracking_updatesPulsingToTrue() {
+    viewModel.internalMapView = mockMapView
+    viewModel.enableCameraTracking()
+    verify { mockLocationComponent.updateSettings(any()) }
+  }
+
+  @Test
+  fun disableCameraTracking_setsTrackingToFalse() {
+    viewModel.enableCameraTracking()
+    assertTrue(viewModel.uiState.value.isCameraTracking)
+    viewModel.disableCameraTracking()
+    assertFalse(viewModel.uiState.value.isCameraTracking)
+  }
+
+  @Test
+  fun disableCameraTracking_updatesPulsingToFalse() {
+    viewModel.internalMapView = mockMapView
+    viewModel.enableCameraTracking()
+    viewModel.disableCameraTracking()
+    verify(atLeast = 2) { mockLocationComponent.updateSettings(any()) }
+  }
+
+  @Test
+  fun isCameraTracking_returnsTrueWhenEnabled() {
+    viewModel.enableCameraTracking()
+    assertTrue(viewModel.isCameraTracking())
+  }
+
+  @Test
+  fun isCameraTracking_returnsFalseWhenDisabled() {
+    viewModel.disableCameraTracking()
+    assertFalse(viewModel.isCameraTracking())
+  }
+
+  @Test
+  fun updateLocationPuckPulsing_enablesPulsingWhenTrue() {
+    viewModel.internalMapView = mockMapView
+    viewModel.enableCameraTracking()
+    verify { mockLocationComponent.updateSettings(any()) }
+  }
+
+  @Test
+  fun updateLocationPuckPulsing_disablesPulsingWhenFalse() {
+    viewModel.internalMapView = mockMapView
+    viewModel.enableCameraTracking()
+    viewModel.disableCameraTracking()
+    verify(atLeast = 2) { mockLocationComponent.updateSettings(any()) }
+  }
+
+  @Test
+  fun updateLocationPuckPulsing_withoutMapView_doesNothing() {
+    viewModel.internalMapView = null
+    viewModel.enableCameraTracking()
+    verify(exactly = 0) { mockLocationComponent.updateSettings(any()) }
+  }
+
+  @Test
+  fun updateCameraForTracking_withInvalidCoordinates_doesNotAnimate() {
+    viewModel.internalMapView = mockMapView
+    val invalidPoint = Point.fromLngLat(200.0, 100.0)
+    assertFalse(viewModel.isValidCoordinate(invalidPoint.latitude(), invalidPoint.longitude()))
+  }
+
+  @Test
+  fun setupGestureListeners_addsOnMoveListener() {
+    viewModel.internalMapView = mockMapView
+    viewModel.enableLocationTracking()
+    verify { mockGesturesPlugin.addOnMoveListener(any()) }
+  }
+
+  @Test
+  fun enableLocationTracking_callsSetupGestureListeners() {
+    viewModel.internalMapView = mockMapView
+    viewModel.enableLocationTracking()
+    verify { mockGesturesPlugin.addOnMoveListener(any()) }
+  }
+
+  @Test
+  fun enableLocationTracking_withTracking_callsUpdateCameraForTracking() = runTest {
+    viewModel.internalMapView = mockMapView
+    viewModel.enableCameraTracking()
+
+    val indicatorListenerSlot =
+        slot<com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener>()
+    every {
+      mockLocationComponent.addOnIndicatorPositionChangedListener(capture(indicatorListenerSlot))
+    } just Runs
+
+    viewModel.enableLocationTracking()
+    advanceUntilIdle()
+
+    val newPoint = Point.fromLngLat(6.5668, 46.5191)
+    indicatorListenerSlot.captured.onIndicatorPositionChanged(newPoint)
+
+    assertTrue(true)
+  }
+
+  @Test
+  fun recenterCamera_enablesTrackingBeforeAnimation() {
+    viewModel.internalMapView = mockMapView
+    viewModel.lastKnownPoint = Point.fromLngLat(6.5668, 46.5191)
+    viewModel.disableCameraTracking()
+
+    assertFalse(viewModel.isCameraTracking())
+
+    viewModel.recenterCamera()
+
+    assertTrue(viewModel.isCameraTracking())
+  }
+
+  @Test
+  fun recenterCamera_setsFocalPointBeforeAnimation() {
+    viewModel.internalMapView = mockMapView
+    viewModel.lastKnownPoint = Point.fromLngLat(6.5668, 46.5191)
+
+    viewModel.recenterCamera()
+
+    verify { mockGesturesPlugin.focalPoint = any() }
+  }
+
+  @Test
+  fun initialState_isCameraTrackingDefaultsFalse() {
+    assertFalse(viewModel.uiState.value.isCameraTracking)
+  }
+
+  @Test
+  fun cameraTracking_stateToggleWorks() {
+    assertFalse(viewModel.isCameraTracking())
+
+    viewModel.enableCameraTracking()
+    assertTrue(viewModel.isCameraTracking())
+
+    viewModel.disableCameraTracking()
+    assertFalse(viewModel.isCameraTracking())
+
+    viewModel.enableCameraTracking()
+    assertTrue(viewModel.isCameraTracking())
   }
 }

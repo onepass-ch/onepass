@@ -146,4 +146,19 @@ class MapScreenTest {
     }
     composeTestRule.onNodeWithTag(EventFilterDialogTestTags.FILTER_DIALOG).assertExists()
   }
+
+  @Test
+  fun mapScreen_whenCameraNotTracking_trackingIndicatorNotShown() {
+    setContent(uiState = MapUIState(events = listOf(testEvent1), isCameraTracking = false))
+
+    composeTestRule.onNodeWithTag(MapScreenTestTags.TRACKING_INDICATOR).assertDoesNotExist()
+  }
+
+  @Test
+  fun mapScreen_clickingRecenterWithTracking_callsRecenterCamera() {
+    setContent(uiState = MapUIState(events = listOf(testEvent1), isCameraTracking = true))
+
+    composeTestRule.onNodeWithTag(MapScreenTestTags.RECENTER_BUTTON).performClick()
+    verify { mockMapViewModel.recenterCamera() }
+  }
 }
