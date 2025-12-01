@@ -31,6 +31,16 @@ android {
         )
     }
 
+    // Get Stripe publishable key from local.properties
+    val stripePublishableKey: String? = localProperties.getProperty("STRIPE_PUBLISHABLE_KEY")
+
+    if (stripePublishableKey.isNullOrBlank()) {
+        logger.warn(
+            "⚠️ Stripe publishable key not found in local.properties. " +
+                    "Payment features will not function correctly until STRIPE_PUBLISHABLE_KEY is set."
+        )
+    }
+
     defaultConfig {
         applicationId = "ch.onepass.onepass"
         minSdk = 28
@@ -41,6 +51,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxToken}\"")
+        buildConfigField("String", "STRIPE_PUBLISHABLE_KEY", "\"${stripePublishableKey ?: ""}\"")
     }
 
     buildTypes {
@@ -216,6 +227,9 @@ dependencies {
 
     // ---------- Navigation --------
     implementation("androidx.navigation:navigation-compose:2.6.0")
+
+    // ---------- Stripe ------------
+    implementation(libs.stripe.android)
 
     // ---------- Google Sign-In (Credential Manager GoogleID) ------------
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")

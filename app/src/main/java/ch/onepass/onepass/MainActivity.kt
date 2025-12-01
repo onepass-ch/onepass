@@ -29,9 +29,10 @@ import ch.onepass.onepass.ui.navigation.NavigationDestinations
 import ch.onepass.onepass.ui.profile.ProfileViewModel
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.mapbox.common.MapboxOptions
+import com.stripe.android.PaymentConfiguration
 
 /**
- * Main Activity that sets up Mapbox, the OnePass theme and hosts the root composable navigation.
+ * Main Activity that sets up Mapbox, Stripe, the OnePass theme and hosts the root composable navigation.
  */
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,6 +40,15 @@ class MainActivity : ComponentActivity() {
 
     // Mapbox access token
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
+
+    // Initialize Stripe
+    val stripePublishableKey = BuildConfig.STRIPE_PUBLISHABLE_KEY
+    if (stripePublishableKey.isNotEmpty()) {
+      PaymentConfiguration.init(
+          applicationContext,
+          stripePublishableKey
+      )
+    }
 
     setContent { OnePassTheme { MainActivityContent() } }
   }
