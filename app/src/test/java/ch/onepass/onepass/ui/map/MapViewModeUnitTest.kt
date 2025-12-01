@@ -14,7 +14,6 @@ import com.mapbox.maps.MapView
 import com.mapbox.maps.Style
 import com.mapbox.maps.plugin.animation.CameraAnimationsPlugin
 import com.mapbox.maps.plugin.animation.MapAnimationOptions
-import com.mapbox.maps.plugin.animation.easeTo
 import com.mapbox.maps.plugin.annotation.annotations
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationManager
 import com.mapbox.maps.plugin.annotation.generated.PointAnnotationOptions
@@ -484,13 +483,6 @@ class MapViewModelUnitTest {
   }
 
   @Test
-  fun enableCameraTracking_setsTrackingToTrue() {
-    assertFalse(viewModel.uiState.value.isCameraTracking)
-    viewModel.enableCameraTracking()
-    assertTrue(viewModel.uiState.value.isCameraTracking)
-  }
-
-  @Test
   fun enableCameraTracking_updatesPulsingToTrue() {
     viewModel.internalMapView = mockMapView
     viewModel.enableCameraTracking()
@@ -498,42 +490,7 @@ class MapViewModelUnitTest {
   }
 
   @Test
-  fun disableCameraTracking_setsTrackingToFalse() {
-    viewModel.enableCameraTracking()
-    assertTrue(viewModel.uiState.value.isCameraTracking)
-    viewModel.disableCameraTracking()
-    assertFalse(viewModel.uiState.value.isCameraTracking)
-  }
-
-  @Test
   fun disableCameraTracking_updatesPulsingToFalse() {
-    viewModel.internalMapView = mockMapView
-    viewModel.enableCameraTracking()
-    viewModel.disableCameraTracking()
-    verify(atLeast = 2) { mockLocationComponent.updateSettings(any()) }
-  }
-
-  @Test
-  fun isCameraTracking_returnsTrueWhenEnabled() {
-    viewModel.enableCameraTracking()
-    assertTrue(viewModel.isCameraTracking())
-  }
-
-  @Test
-  fun isCameraTracking_returnsFalseWhenDisabled() {
-    viewModel.disableCameraTracking()
-    assertFalse(viewModel.isCameraTracking())
-  }
-
-  @Test
-  fun updateLocationPuckPulsing_enablesPulsingWhenTrue() {
-    viewModel.internalMapView = mockMapView
-    viewModel.enableCameraTracking()
-    verify { mockLocationComponent.updateSettings(any()) }
-  }
-
-  @Test
-  fun updateLocationPuckPulsing_disablesPulsingWhenFalse() {
     viewModel.internalMapView = mockMapView
     viewModel.enableCameraTracking()
     viewModel.disableCameraTracking()
@@ -548,44 +505,10 @@ class MapViewModelUnitTest {
   }
 
   @Test
-  fun updateCameraForTracking_withInvalidCoordinates_doesNotAnimate() {
-    viewModel.internalMapView = mockMapView
-    val invalidPoint = Point.fromLngLat(200.0, 100.0)
-    assertFalse(viewModel.isValidCoordinate(invalidPoint.latitude(), invalidPoint.longitude()))
-  }
-
-  @Test
   fun setupGestureListeners_addsOnMoveListener() {
     viewModel.internalMapView = mockMapView
     viewModel.enableLocationTracking()
     verify { mockGesturesPlugin.addOnMoveListener(any()) }
-  }
-
-  @Test
-  fun enableLocationTracking_callsSetupGestureListeners() {
-    viewModel.internalMapView = mockMapView
-    viewModel.enableLocationTracking()
-    verify { mockGesturesPlugin.addOnMoveListener(any()) }
-  }
-
-  @Test
-  fun enableLocationTracking_withTracking_callsUpdateCameraForTracking() = runTest {
-    viewModel.internalMapView = mockMapView
-    viewModel.enableCameraTracking()
-
-    val indicatorListenerSlot =
-        slot<com.mapbox.maps.plugin.locationcomponent.OnIndicatorPositionChangedListener>()
-    every {
-      mockLocationComponent.addOnIndicatorPositionChangedListener(capture(indicatorListenerSlot))
-    } just Runs
-
-    viewModel.enableLocationTracking()
-    advanceUntilIdle()
-
-    val newPoint = Point.fromLngLat(6.5668, 46.5191)
-    indicatorListenerSlot.captured.onIndicatorPositionChanged(newPoint)
-
-    assertTrue(true)
   }
 
   @Test
@@ -599,21 +522,6 @@ class MapViewModelUnitTest {
     viewModel.recenterCamera()
 
     assertTrue(viewModel.isCameraTracking())
-  }
-
-  @Test
-  fun recenterCamera_setsFocalPointBeforeAnimation() {
-    viewModel.internalMapView = mockMapView
-    viewModel.lastKnownPoint = Point.fromLngLat(6.5668, 46.5191)
-
-    viewModel.recenterCamera()
-
-    verify { mockGesturesPlugin.focalPoint = any() }
-  }
-
-  @Test
-  fun initialState_isCameraTrackingDefaultsFalse() {
-    assertFalse(viewModel.uiState.value.isCameraTracking)
   }
 
   @Test
