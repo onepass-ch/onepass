@@ -16,7 +16,8 @@ class EventTest {
       ticketsIssued: Int = 50,
       ticketsRedeemed: Int = 0,
       pricingTiers: List<PricingTier> = listOf(PricingTier("General", 25.0, 100, 100)),
-      images: List<String> = listOf("https://example.com/image.jpg")
+      images: List<String> = listOf("https://example.com/image.jpg"),
+      tags: List<String> = listOf("TECH", "CONFERENCE")
   ): Event {
     val calendar = Calendar.getInstance()
     calendar.set(2025, Calendar.DECEMBER, 25, 18, 0, 0)
@@ -38,7 +39,7 @@ class EventTest {
         ticketsRedeemed = ticketsRedeemed,
         pricingTiers = pricingTiers,
         images = images,
-        tags = listOf("tech", "networking"))
+        tags = tags)
   }
 
   @Test
@@ -232,5 +233,83 @@ class EventTest {
   fun titleLower_handlesTitlesWithNumbersAndSymbols() {
     val event = createEventWithTitle("Event 123!@#")
     Assert.assertEquals("event 123!@#", event.titleLower)
+  }
+
+  @Test
+  fun eventCanBeCreatedWithTags() {
+    val tags = listOf("MUSIC", "OUTDOOR")
+    val event = createTestEvent(tags = tags)
+    Assert.assertEquals(2, event.tags.size)
+    Assert.assertTrue(event.tags.contains("MUSIC"))
+    Assert.assertTrue(event.tags.contains("OUTDOOR"))
+  }
+
+  @Test
+  fun eventCopyMaintainsTags() {
+    val tags = listOf("TECH")
+    val original = createTestEvent(tags = tags)
+    val copy = original.copy(title = "New Title")
+
+    Assert.assertEquals(tags, copy.tags)
+    Assert.assertEquals("New Title", copy.title)
+  }
+
+  @Test
+  fun formatAsDisplayDateExtensionReturnsFormattedString() {
+    val date = Date()
+    val timestamp = Timestamp(date)
+    val result = timestamp.formatAsDisplayDate()
+    Assert.assertNotEquals("Date not set", result)
+  }
+
+  @Test
+  fun formatAsDisplayDateExtensionReturnsFallbackForNull() {
+    val timestamp: Timestamp? = null
+    Assert.assertEquals("Date not set", timestamp.formatAsDisplayDate())
+  }
+
+  @Test
+  fun eventTag_values_coversAllEntries() {
+    val tags = EventTag.entries.toTypedArray()
+
+    // Core Themes
+    Assert.assertTrue(tags.contains(EventTag.TECH))
+    Assert.assertTrue(tags.contains(EventTag.BUSINESS))
+    Assert.assertTrue(tags.contains(EventTag.ARTS))
+    Assert.assertTrue(tags.contains(EventTag.MUSIC))
+    Assert.assertTrue(tags.contains(EventTag.FOOD))
+    Assert.assertTrue(tags.contains(EventTag.SPORTS))
+    Assert.assertTrue(tags.contains(EventTag.COMMUNITY))
+
+    // Format / Type
+    Assert.assertTrue(tags.contains(EventTag.CONFERENCE))
+    Assert.assertTrue(tags.contains(EventTag.WORKSHOP))
+    Assert.assertTrue(tags.contains(EventTag.MEETUP))
+    Assert.assertTrue(tags.contains(EventTag.FESTIVAL))
+    Assert.assertTrue(tags.contains(EventTag.CONCERT))
+    Assert.assertTrue(tags.contains(EventTag.EXPO))
+
+    // Location / Setting
+    Assert.assertTrue(tags.contains(EventTag.IN_PERSON))
+    Assert.assertTrue(tags.contains(EventTag.ONLINE))
+    Assert.assertTrue(tags.contains(EventTag.OUTDOOR))
+
+    // Cost
+    Assert.assertTrue(tags.contains(EventTag.FREE))
+    Assert.assertTrue(tags.contains(EventTag.FAMILY))
+  }
+
+  @Test
+  fun eventTag_toString_returnsDisplayValue() {
+    Assert.assertEquals("Technology", EventTag.TECH.toString())
+    Assert.assertEquals("Food & Drink", EventTag.FOOD.toString())
+    Assert.assertEquals("Free", EventTag.FREE.toString())
+  }
+
+  @Test
+  fun eventTag_fromString_returnsCorrectEnum() {
+    Assert.assertEquals(EventTag.TECH, EventTag.fromString("TECH"))
+    Assert.assertEquals(EventTag.TECH, EventTag.fromString("Technology"))
+    Assert.assertNull(EventTag.fromString("UNKNOWN_TAG"))
   }
 }
