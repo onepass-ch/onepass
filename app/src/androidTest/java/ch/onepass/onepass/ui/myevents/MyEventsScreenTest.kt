@@ -2,12 +2,18 @@ package ch.onepass.onepass.ui.myevents
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.model.pass.Pass
+import ch.onepass.onepass.model.pass.PassRepository
 import ch.onepass.onepass.model.ticket.TicketRepository
 import ch.onepass.onepass.model.ticket.TicketState
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.google.firebase.Timestamp
+import io.mockk.coEvery
+import io.mockk.mockk
 import java.util.Calendar
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -179,6 +185,23 @@ class FakeEventRepository : EventRepository {
 }
 
 private fun createFakeMyEventsViewModel(): MyEventsViewModel {
+  // Mock DataStore
+  val mockDataStore = mockk<DataStore<Preferences>>(relaxed = true)
+  // Mock PassRepository
+  val mockPassRepository = mockk<PassRepository>(relaxed = true)
+  val mockPass =
+      Pass(
+          uid = "TEST_USER",
+          kid = "test-key",
+          issuedAt = System.currentTimeMillis() / 1000,
+          version = 1,
+          signature = "test-signature")
+  coEvery { mockPassRepository.getOrCreateSignedPass(any()) } returns Result.success(mockPass)
+
   return MyEventsViewModel(
-      ticketRepo = FakeTicketRepository(), eventRepo = FakeEventRepository(), userId = "TEST_USER")
+      dataStore = mockDataStore,
+      passRepository = mockPassRepository,
+      ticketRepo = FakeTicketRepository(),
+      eventRepo = FakeEventRepository(),
+      userId = "TEST_USER")
 }

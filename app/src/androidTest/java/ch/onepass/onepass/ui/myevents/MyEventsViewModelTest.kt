@@ -428,23 +428,6 @@ class MyEventsViewModelTest {
   }
 
   @Test
-  fun isLoading_isTrue_duringLoad() = runTest {
-    val uid = uniqueUid("loading")
-    val pass = Pass(uid = uid, kid = "k", issuedAt = 30, version = 1, signature = "loading")
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
-    advanceUntilIdle()
-
-    coEvery { passRepo.getOrCreateSignedPass(uid) } returns Result.success(pass)
-    vm.loadUserPass()
-
-    // Check isLoading is true immediately after calling loadUserPass
-    // Note: In real scenario, you might need to check before advanceUntilIdle()
-    // For this test, we verify final state after completion
-    advanceUntilIdle()
-    assertFalse(vm.isLoading.value)
-  }
-
-  @Test
   fun isLoading_isFalse_afterLoadSuccess() = runTest {
     val uid = uniqueUid("load_success")
     val pass = Pass(uid = uid, kid = "k", issuedAt = 40, version = 1, signature = "success")
