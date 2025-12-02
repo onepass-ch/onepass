@@ -2,7 +2,6 @@ package ch.onepass.onepass.ui.eventdetail
 
 import android.annotation.SuppressLint
 import android.widget.Toast
-import androidx.activity.ComponentActivity
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -39,6 +38,7 @@ import ch.onepass.onepass.model.event.PricingTier
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.payment.StripePaymentHelper
 import ch.onepass.onepass.ui.components.buttons.LikeButton
+import ch.onepass.onepass.ui.payment.LocalPaymentSheet
 import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.organization.OrganizationCard
 import ch.onepass.onepass.ui.theme.DefaultBackground
@@ -88,18 +88,12 @@ fun EventDetailScreen(
     val likedEvents by eventCardViewModel.likedEvents.collectAsState()
     val isLiked = likedEvents.contains(eventId)
 
-    // Get activity context for Stripe PaymentSheet
+    // Get PaymentSheet from CompositionLocal (created in MainActivity.onCreate)
+    val paymentSheet = LocalPaymentSheet.current
     val context = LocalContext.current
-    val activity = context as? ComponentActivity
 
-    // Initialize StripePaymentHelper
-    val stripeHelper = remember { StripePaymentHelper() }
-
-    // Initialize the payment sheet when activity is available
-    DisposableEffect(activity) {
-        activity?.let { stripeHelper.initialize(it) }
-        onDispose { }
-    }
+    // Initialize StripePaymentHelper with PaymentSheet from CompositionLocal
+    val stripeHelper = remember(paymentSheet) { StripePaymentHelper(paymentSheet) }
 
     // Handle payment state changes
     LaunchedEffect(paymentState) {
@@ -121,7 +115,7 @@ fun EventDetailScreen(
                         }
                     )
                 } else {
-                    viewModel.onPaymentFailed("Payment system not initialized")
+                    viewModel.onPaymentFailed("Payment system not initialized. Please ensure Stripe is configured.")
                 }
             }
             is PaymentState.PaymentSucceeded -> {

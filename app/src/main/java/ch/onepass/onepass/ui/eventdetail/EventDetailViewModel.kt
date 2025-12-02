@@ -150,22 +150,33 @@ class EventDetailViewModel(
      * Call this when user clicks the "Buy Ticket" button.
      */
     fun initiatePayment() {
-        val event = _event.value ?: return
+        val event = _event.value ?: run {
+            android.util.Log.e("EventDetailViewModel", "❌ Cannot initiate payment: event is null")
+            return
+        }
         val tier = _selectedTier.value
+
+        android.util.Log.d("EventDetailViewModel", "🎫 Initiating payment for event: ${event.title}")
+        android.util.Log.d("EventDetailViewModel", "Selected tier: ${tier?.name ?: "default"}, Quantity: ${_quantity.value}")
 
         // For free events, skip payment
         if (event.lowestPrice == 0u || (tier != null && tier.price == 0.0)) {
+            android.util.Log.d("EventDetailViewModel", "✓ Free event, skipping payment")
             _paymentState.value = PaymentState.PaymentSucceeded
             return
         }
 
         val amount = calculateTotalPrice()
+        android.util.Log.d("EventDetailViewModel", "Calculated amount: $amount cents")
+        
         if (amount <= 0) {
+            android.util.Log.e("EventDetailViewModel", "❌ Invalid amount: $amount")
             _paymentState.value = PaymentState.PaymentFailed("Invalid amount")
             return
         }
 
         _paymentState.value = PaymentState.CreatingPaymentIntent
+        android.util.Log.d("EventDetailViewModel", "🔨 Creating payment intent...")
 
         viewModelScope.launch {
             val result = paymentRepository.createPaymentIntent(
@@ -178,12 +189,14 @@ class EventDetailViewModel(
 
             result.fold(
                 onSuccess = { response ->
+                    android.util.Log.d("EventDetailViewModel", "✅ Payment intent created successfully: ${response.paymentIntentId}")
                     _paymentState.value = PaymentState.ReadyToPay(
                         clientSecret = response.clientSecret,
                         paymentIntentId = response.paymentIntentId
                     )
                 },
                 onFailure = { exception ->
+                    android.util.Log.e("EventDetailViewModel", "❌ Payment intent creation failed", exception)
                     _paymentState.value = PaymentState.PaymentFailed(
                         exception.message ?: "Failed to create payment"
                     )
