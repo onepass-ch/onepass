@@ -128,6 +128,45 @@ data class PricingTier(
     val remaining: Int = 0
 )
 
+/** A finite, fixed list of tags used to categorize and filter events. */
+enum class EventTag(val displayValue: String) {
+  // Core Themes
+  TECH("Technology"),
+  BUSINESS("Business & Finance"),
+  ARTS("Arts & Culture"),
+  MUSIC("Music"),
+  FOOD("Food & Drink"),
+  SPORTS("Sports & Fitness"),
+  COMMUNITY("Community & Social"),
+
+  // Format / Type
+  CONFERENCE("Conference"),
+  WORKSHOP("Workshop / Class"),
+  MEETUP("Networking / Meetup"),
+  FESTIVAL("Festival"),
+  CONCERT("Concert / Performance"),
+  EXPO("Exhibition / Expo"),
+
+  // Location / Setting
+  IN_PERSON("In-Person"),
+  ONLINE("Online / Virtual"),
+  OUTDOOR("Outdoor"),
+
+  // Cost
+  FREE("Free"),
+  FAMILY("Family-Friendly");
+
+  override fun toString(): String {
+    return displayValue
+  }
+
+  companion object {
+    fun fromString(value: String): EventTag? {
+      return entries.find { it.name == value || it.displayValue == value }
+    }
+  }
+}
+
 /**
  * Extension function to format a Firestore [Timestamp] into a user-friendly date string.
  *
