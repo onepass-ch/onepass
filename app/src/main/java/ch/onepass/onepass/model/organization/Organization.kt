@@ -51,7 +51,14 @@ data class Organization(
     val followerCount: Int = 0,
     val averageRating: Float = 0f,
     @ServerTimestamp val createdAt: Timestamp? = null,
-    @ServerTimestamp val updatedAt: Timestamp? = null
+    @ServerTimestamp val updatedAt: Timestamp? = null,
+
+    // Stripe Connect integration for payment processing
+    val stripeConnectedAccountId: String? = null, // Stripe Connect account ID
+    val stripeAccountStatus: String? = null, // "incomplete", "complete", or "error"
+    val stripeChargesEnabled: Boolean = false, // Can accept payments
+    val stripePayoutsEnabled: Boolean = false, // Can receive payouts
+    val stripeAccountError: String? = null // Error message if account creation failed
 ) {
   /** Returns organization name in lowercase for case-insensitive searching. */
   val nameLower: String
