@@ -2,14 +2,17 @@
  * Stripe webhook handlers for payment events
  */
 
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import {stripe} from "./config";
 import Stripe from "stripe";
+import * as dotenv from "dotenv";
 
-// Get webhook secret from Firebase config
-// Set it with: firebase functions:config:set stripe.webhook_secret="whsec_..."
-const webhookSecret = functions.config().stripe?.webhook_secret;
+// Load environment variables
+dotenv.config();
+
+// Get webhook secret from environment variable
+const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET || "";
 
 /**
  * Handles Stripe webhook events.

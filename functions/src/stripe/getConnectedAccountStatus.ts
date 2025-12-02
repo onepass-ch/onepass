@@ -2,7 +2,7 @@
  * Gets the Stripe Connect account status and dashboard link
  */
 
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import {stripe} from "./config";
 
@@ -10,12 +10,13 @@ import {stripe} from "./config";
  * Gets the Stripe Connect account status and dashboard link
  */
 export const getConnectedAccountStatus = functions.https.onCall(
-  async (data: { organizationId: string }, context) => {
-    if (!context.auth) {
+  async (request) => {
+    if (!request.auth) {
       throw new functions.https.HttpsError("unauthenticated", "User must be authenticated");
     }
 
-    const userId = context.auth.uid;
+    const userId = request.auth.uid;
+    const data = request.data as { organizationId: string };
     const {organizationId} = data;
 
     if (!organizationId) {

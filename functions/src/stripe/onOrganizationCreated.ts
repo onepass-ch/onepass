@@ -2,7 +2,7 @@
  * Firestore trigger: Automatically creates a Stripe Connect account when an organization is created
  */
 
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import {stripe} from "./config";
 

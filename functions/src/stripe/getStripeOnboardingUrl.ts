@@ -2,7 +2,7 @@
  * Gets or regenerates the Stripe onboarding URL for an organization
  */
 
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import {stripe} from "./config";
 
@@ -20,16 +20,17 @@ interface GetOnboardingUrlRequest {
  * - Accept Stripe terms
  */
 export const getStripeOnboardingUrl = functions.https.onCall(
-  async (data: GetOnboardingUrlRequest, context) => {
+  async (request) => {
     // Verify user is authenticated
-    if (!context.auth) {
+    if (!request.auth) {
       throw new functions.https.HttpsError(
         "unauthenticated",
         "User must be authenticated"
       );
     }
 
-    const userId = context.auth.uid;
+    const userId = request.auth.uid;
+    const data = request.data as GetOnboardingUrlRequest;
     const {organizationId} = data;
 
     if (!organizationId) {

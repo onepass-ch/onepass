@@ -2,7 +2,7 @@
  * Creates a Stripe customer for a user
  */
 
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import {stripe} from "./config";
 
@@ -20,16 +20,18 @@ interface CreateCustomerRequest {
  * @returns Object containing customerId
  */
 export const createStripeCustomer = functions.https.onCall(
-  async (data: CreateCustomerRequest, context) => {
+  async (request) => {
+    const data = request.data as CreateCustomerRequest;
+    
     // Verify user is authenticated
-    if (!context.auth) {
+    if (!request.auth) {
       throw new functions.https.HttpsError(
         "unauthenticated",
         "User must be authenticated"
       );
     }
 
-    const userId = context.auth.uid;
+    const userId = request.auth.uid;
     const db = admin.firestore();
 
     try {
@@ -47,8 +49,8 @@ export const createStripeCustomer = functions.https.onCall(
 
       // Create new Stripe customer
       const customer = await stripe.customers.create({
-        email: data.email || userData?.email || context.auth.token.email,
-        name: data.displayName || userData?.displayName || context.auth.token.name,
+        email: data.email || userData?.email || request.auth.token.email,
+        name: data.displayName || userData?.displayName || request.auth.token.name,
         metadata: {
           firebaseUID: userId,
         },

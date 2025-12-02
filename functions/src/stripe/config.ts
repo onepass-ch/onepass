@@ -3,21 +3,23 @@
  */
 
 import Stripe from "stripe";
-import * as functions from "firebase-functions";
+import * as dotenv from "dotenv";
 
-// Initialize Stripe with your secret key from Firebase config
-// To set the key: firebase functions:config:set stripe.secret_key="sk_test_..."
-const stripeSecretKey = functions.config().stripe?.secret_key;
+// Load environment variables from .env file
+dotenv.config();
+
+// Get Stripe secret key from environment variable
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
 
 if (!stripeSecretKey) {
   console.warn(
-    "⚠️ Stripe secret key not found in Firebase config. " +
-    "Set it with: firebase functions:config:set stripe.secret_key='sk_test_...'"
+    "⚠️ Stripe secret key not found in environment variables. " +
+    "Make sure STRIPE_SECRET_KEY is set in functions/.env file"
   );
 }
 
-export const stripe = new Stripe(stripeSecretKey || "", {
-  apiVersion: "2024-11-20.acacia",
+export const stripe = new Stripe(stripeSecretKey, {
+  apiVersion: "2025-02-24.acacia",
   typescript: true,
 });
 

@@ -2,7 +2,7 @@
  * Creates a Stripe PaymentIntent for ticket purchases
  */
 
-import * as functions from "firebase-functions";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 import {stripe, DEFAULT_CURRENCY, MIN_PAYMENT_AMOUNT, MAX_PAYMENT_AMOUNT} from "./config";
 
@@ -24,16 +24,18 @@ interface CreatePaymentIntentRequest {
  * @returns Object containing clientSecret and paymentIntentId
  */
 export const createPaymentIntent = functions.https.onCall(
-  async (data: CreatePaymentIntentRequest, context) => {
+  async (request) => {
+    const data = request.data as CreatePaymentIntentRequest;
+    
     // Verify user is authenticated
-    if (!context.auth) {
+    if (!request.auth) {
       throw new functions.https.HttpsError(
         "unauthenticated",
         "User must be authenticated to create a payment"
       );
     }
 
-    const userId = context.auth.uid;
+    const userId = request.auth.uid;
     const {amount, currency = DEFAULT_CURRENCY, eventId, ticketTypeId, quantity = 1, description} = data;
 
     // Validate input
