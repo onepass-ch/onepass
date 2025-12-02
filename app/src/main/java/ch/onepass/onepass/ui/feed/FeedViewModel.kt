@@ -7,7 +7,9 @@ import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
-import kotlin.collections.filter
+import ch.onepass.onepass.ui.event.EventCardViewModel
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -33,12 +35,13 @@ data class FeedUIState(
 )
 
 /**
- * ViewModel for the feed screen.
+ * ViewModel for the feed screen. Implements a content-based recommender system.
  *
  * @property repository The event repository for data operations.
  */
 open class FeedViewModel(
     private val repository: EventRepository = EventRepositoryFirebase(),
+    private val eventCardViewModel: EventCardViewModel? = null
 ) : ViewModel() {
 
   companion object {
@@ -48,23 +51,96 @@ open class FeedViewModel(
 
   private val _uiState = MutableStateFlow(FeedUIState())
   val uiState: StateFlow<FeedUIState> = _uiState.asStateFlow()
+
+  // Holds the raw list of recommended events before local filters (region/date) are applied
   private val _allEvents = MutableStateFlow<List<Event>>(emptyList())
 
-  /** Loads events from the repository, filtering for PUBLISHED status. */
+  /**
+   * Loads events from the repository, combining them with user likes to generate a personalized
+   * feed.
+   */
   fun loadEvents() {
     _uiState.update { it.copy(isLoading = true, error = null) }
 
     viewModelScope.launch {
       try {
-        repository.getEventsByStatus(EventStatus.PUBLISHED).take(LOADED_EVENTS_LIMIT).collect {
-            events ->
-          _allEvents.value = events
-          _uiState.update { it.copy(events = events, isLoading = false, error = null) }
+        repository.getEventsByStatus(EventStatus.PUBLISHED).collect { events ->
+          // Fetch the current set of liked events value for recommendation
+          val likedIds = eventCardViewModel?.likedEvents?.value ?: emptySet()
+          val recommendedEvents = recommendEvents(events, likedIds)
+
+          // Keep the full recommended list in memory
+          _allEvents.value = recommendedEvents
+          // Apply the view limit for the UI
+          val limitedEvents = recommendedEvents.take(LOADED_EVENTS_LIMIT)
+
+          _uiState.update { it.copy(events = limitedEvents, isLoading = false, error = null) }
         }
       } catch (e: Exception) {
         _uiState.update { it.copy(isLoading = false, error = e.message ?: "Failed to load events") }
       }
     }
+  }
+
+  /**
+   * Content-Based Recommender Algorithm. Sorts events based on tag relevance to the user's liked
+   * history and recency.
+   */
+  fun recommendEvents(allEvents: List<Event>, userLikedEventIds: Set<String>): List<Event> {
+    // If user has no likes, return default sort (usually by date from repository)
+    if (userLikedEventIds.isEmpty()) return allEvents
+
+    // 1. Build User Profile (Tag Frequency Map)
+    // Find all events the user has liked that are currently in the loaded list
+    val likedEvents = allEvents.filter { it.eventId in userLikedEventIds }
+
+    val userInterestProfile = mutableMapOf<String, Int>()
+    likedEvents.forEach { event ->
+      event.tags.forEach { tag ->
+        val normalizedTag = tag.lowercase().trim()
+        userInterestProfile[normalizedTag] = (userInterestProfile[normalizedTag] ?: 0) + 1
+      }
+    }
+
+    // 2. Score Events
+    val scoredEvents =
+        allEvents.map { event ->
+          var score = 0.0
+
+          // A. Tag Matching Score
+          // For every tag in the event, if the user likes it, add points based on how much they
+          // like it.
+          event.tags.forEach { tag ->
+            val normalizedTag = tag.lowercase().trim()
+            val interestWeight = userInterestProfile[normalizedTag] ?: 0
+            // Weight multiplier: 2.0 points per interest match occurrence
+            score += interestWeight * 2.0
+          }
+
+          // B. Recency Boost
+          // Give a bonus to events created in the last 7 days to keep feed fresh
+          val createdAtSeconds = event.createdAt?.seconds ?: 0L
+          if (createdAtSeconds > 0) {
+            val eventDate = Instant.ofEpochSecond(createdAtSeconds)
+            val sevenDaysAgo = Instant.now().minus(7, ChronoUnit.DAYS)
+
+            if (eventDate.isAfter(sevenDaysAgo)) {
+              score += 5.0 // Flat 5 point bonus for new events
+            }
+          }
+
+          // C. User Affinity (Explicit Like)
+          // If they already liked it, push it to top (or bottom, depending on UX preference).
+          // Usually we keep liked items high so they don't disappear.
+          if (event.eventId in userLikedEventIds) {
+            score += 10.0
+          }
+
+          event to score
+        }
+
+    // 3. Sort by Score Descending
+    return scoredEvents.sortedByDescending { it.second }.map { it.first }
   }
 
   /** Apply current filters to the loaded events */
@@ -93,7 +169,7 @@ open class FeedViewModel(
     }
   }
 
-  /** Refreshes the events list. */
+  /** Refreshes the events list manually. */
   open fun refreshEvents() {
     _uiState.update { it.copy(isRefreshing = true, error = null) }
 
@@ -101,17 +177,20 @@ open class FeedViewModel(
       try {
         withTimeout(10_000L) {
           coroutineScope {
-            val dataDeferred = async {
-              val allEvents = repository.getEventsByStatus(EventStatus.PUBLISHED).first()
-              allEvents.take(LOADED_EVENTS_LIMIT)
-            }
+            val dataDeferred = async { repository.getEventsByStatus(EventStatus.PUBLISHED).first() }
             val delayDeferred = async { delay(1000) }
 
             val events = dataDeferred.await()
             delayDeferred.await()
 
-            _allEvents.value = events
-            _uiState.update { it.copy(events = events, isRefreshing = false, error = null) }
+            // Re-run recommendation logic with current likes
+            val likedIds = eventCardViewModel?.likedEvents?.value ?: emptySet()
+            val recommended = recommendEvents(events, likedIds)
+
+            _allEvents.value = recommended
+            val limited = recommended.take(LOADED_EVENTS_LIMIT)
+
+            _uiState.update { it.copy(events = limited, isRefreshing = false, error = null) }
           }
         }
       } catch (e: Exception) {
