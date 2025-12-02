@@ -25,6 +25,7 @@ import ch.onepass.onepass.ui.theme.CardShadow
 import ch.onepass.onepass.ui.theme.EventCardDimens
 import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.TextSecondary
+import coil.compose.AsyncImage
 
 /**
  * A card component that displays information about an event.
@@ -103,12 +104,24 @@ fun EventCard(
                     )),
         contentAlignment = Alignment.Center,
     ) {
-      Image(
-          modifier = Modifier.fillMaxSize().testTag(C.Tag.event_card_image),
-          painter = painterResource(id = R.drawable.image_fallback),
-          contentDescription = "image description",
-          contentScale = ContentScale.Crop,
-      )
+      // Use AsyncImage to load event images from URLs, or fallback to default image
+      if (event.imageUrl.isNotEmpty()) {
+        AsyncImage(
+            model = event.imageUrl,
+            contentDescription = "Event image for ${event.title}",
+            modifier = Modifier.fillMaxSize().testTag(C.Tag.event_card_image),
+            contentScale = ContentScale.Crop,
+            placeholder = painterResource(id = R.drawable.image_fallback),
+            error = painterResource(id = R.drawable.image_fallback),
+        )
+      } else {
+        Image(
+            modifier = Modifier.fillMaxSize().testTag(C.Tag.event_card_image),
+            painter = painterResource(id = R.drawable.image_fallback),
+            contentDescription = "Default event image",
+            contentScale = ContentScale.Crop,
+        )
+      }
       // Like button in top-right corner
       LikeButton(
           isLiked = isLiked,

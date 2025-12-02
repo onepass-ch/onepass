@@ -20,24 +20,6 @@ class FakeUserRepository(
     private var throwOnLoad: Boolean = false
 ) : UserRepository {
 
-  private val userOrganizations = mutableMapOf<String, MutableList<String>>()
-
-  override suspend fun isOrganizer(): Boolean {
-    val user = currentUser ?: return false
-    return user.organizationIds.isNotEmpty()
-  }
-
-  override suspend fun addOrganizationToUser(userId: String, orgId: String) {
-    val orgs = userOrganizations.getOrPut(userId) { mutableListOf() }
-    if (!orgs.contains(orgId)) {
-      orgs.add(orgId)
-    }
-  }
-
-  override suspend fun removeOrganizationFromUser(userId: String, orgId: String) {
-    userOrganizations[userId]?.remove(orgId)
-  }
-
   override suspend fun getCurrentUser(): User? {
     if (throwOnLoad) throw RuntimeException("boom")
     return currentUser
@@ -50,6 +32,35 @@ class FakeUserRepository(
 
   override suspend fun updateLastLogin(uid: String) {
     /* no-op */
+  }
+
+  // Simulate a database table for users
+  private val usersMap = mutableMapOf<String, StaffSearchResult>()
+
+  /** Add a user to the fake database. */
+  fun addTestUser(user: StaffSearchResult) {
+    usersMap[user.id] = user
+  }
+
+  /**
+   * Configurable get user by id results for testing. Default implementation looks up in usersMap.
+   */
+  private var getUserByIdFunction: (String) -> Result<StaffSearchResult?> = { uid ->
+    Result.success(usersMap[uid])
+  }
+
+  override suspend fun getUserById(uid: String): Result<StaffSearchResult?> {
+    return getUserByIdFunction(uid)
+  }
+
+  /** Override getUserById to return specific result regardless of input ID. */
+  fun setGetUserByIdResult(result: StaffSearchResult?) {
+    getUserByIdFunction = { Result.success(result) }
+  }
+
+  /** Override getUserById to return an error. */
+  fun setGetUserByIdError(error: Throwable) {
+    getUserByIdFunction = { Result.failure(error) }
   }
 
   /** Configurable search results for testing. Set this to customize search behavior in tests. */
@@ -108,6 +119,8 @@ class FakeUserRepository(
     currentUser = null
     createdUser = null
     throwOnLoad = false
+    usersMap.clear()
     searchResultsFunction = { _, _, _ -> Result.success(emptyList()) }
+    getUserByIdFunction = { uid -> Result.success(usersMap[uid]) }
   }
 }

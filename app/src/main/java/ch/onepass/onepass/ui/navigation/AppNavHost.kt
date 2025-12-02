@@ -73,7 +73,7 @@ import com.google.firebase.functions.FirebaseFunctions
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    mapViewModel: MapViewModel,
+    mapViewModel: MapViewModel? = null,
     testAuthButtonTag: String? = null,
     authViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
       initializer { AuthViewModel() }
@@ -145,7 +145,7 @@ fun AppNavHost(
       EventDetailScreen(
           eventId = eventId,
           viewModel = eventDetailVm,
-          onNavigateToMap = { navController.navigate(Screen.Map.route) },
+          onNavigateToMap = { navController.navigateToTopLevel(Screen.Map.route) },
           onNavigateToOrganizerProfile = { orgId ->
             navController.navigate(Screen.OrganizationProfile.route(orgId))
           },
@@ -174,8 +174,10 @@ fun AppNavHost(
 
     // ------------------ Map ------------------
     composable(Screen.Map.route) {
+      // Each map screen will create its own ViewModel and handle its own location permission
+      val mapScreenViewModel: MapViewModel = mapViewModel ?: viewModel()
       MapScreen(
-          mapViewModel = mapViewModel,
+          mapViewModel = mapScreenViewModel,
           onNavigateToEvent = { eventId ->
             navController.navigate(Screen.EventDetail.route(eventId))
           })
@@ -347,5 +349,19 @@ fun AppNavHost(
     composable(Screen.ComingSoon.route) {
       ComingSoonScreen(onBack = { navController.popBackStack() })
     }
+  }
+}
+
+/**
+ * Navigates to a top-level destination, clearing any existing back stack to avoid multiple copies
+ * of the same destination.
+ *
+ * @param route The route string of the top-level destination to navigate to.
+ */
+fun NavHostController.navigateToTopLevel(route: String) {
+  this.navigate(route) {
+    launchSingleTop = true
+    restoreState = false
+    popUpTo(route) { inclusive = true }
   }
 }

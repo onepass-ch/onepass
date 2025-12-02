@@ -92,6 +92,15 @@ class FeedViewModelTest {
     override suspend fun updateEvent(event: Event): Result<Unit> = Result.success(Unit)
 
     override suspend fun deleteEvent(eventId: String): Result<Unit> = Result.success(Unit)
+
+    override suspend fun addEventImage(eventId: String, imageUrl: String): Result<Unit> =
+        Result.success(Unit)
+
+    override suspend fun removeEventImage(eventId: String, imageUrl: String): Result<Unit> =
+        Result.success(Unit)
+
+    override suspend fun updateEventImages(eventId: String, imageUrls: List<String>): Result<Unit> =
+        Result.success(Unit)
   }
 
   @Before

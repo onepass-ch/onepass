@@ -319,4 +319,209 @@ class EventRepositoryFirebaseTest : FirestoreTestBase() {
     assertTrue("Should include event at EPFL", nearbyEvents.any { it.title == testEvent1.title })
     assertTrue("Should include Lausanne Center", nearbyEvents.any { it.title == testEvent2.title })
   }
+
+  // ===== NEW TESTS FOR IMAGE FUNCTIONALITY =====
+
+  @Test
+  fun canAddEventImage() = runTest {
+    val result = repository.createEvent(testEvent1)
+    val eventId = result.getOrNull()!!
+
+    val newImageUrl = "https://storage.googleapis.com/bucket/events/event123/image2.jpg"
+    val addResult = repository.addEventImage(eventId, newImageUrl)
+
+    assertTrue("Add event image should succeed", addResult.isSuccess)
+
+    val updatedEvent = repository.getEventById(eventId).first()
+    assertNotNull("Updated event should not be null", updatedEvent)
+    assertTrue(
+        "Event should have the new image", updatedEvent?.images?.contains(newImageUrl) == true)
+    assertEquals(
+        "Event should have 2 images total", 2, updatedEvent?.images?.size) // Original + new
+  }
+
+  @Test
+  fun canRemoveEventImage() = runTest {
+    val eventWithMultipleImages =
+        testEvent1.copy(
+            images =
+                listOf(
+                    "https://example.com/image1.jpg",
+                    "https://example.com/image2.jpg",
+                    "https://example.com/image3.jpg"))
+    val result = repository.createEvent(eventWithMultipleImages)
+    val eventId = result.getOrNull()!!
+
+    val imageToRemove = "https://example.com/image2.jpg"
+    val removeResult = repository.removeEventImage(eventId, imageToRemove)
+
+    assertTrue("Remove event image should succeed", removeResult.isSuccess)
+
+    val updatedEvent = repository.getEventById(eventId).first()
+    assertNotNull("Updated event should not be null", updatedEvent)
+    assertFalse(
+        "Event should not have the removed image",
+        updatedEvent?.images?.contains(imageToRemove) == true)
+    assertEquals("Event should have 2 images remaining", 2, updatedEvent?.images?.size)
+  }
+
+  @Test
+  fun canUpdateEventImages() = runTest {
+    val result = repository.createEvent(testEvent1)
+    val eventId = result.getOrNull()!!
+
+    val newImageUrls =
+        listOf(
+            "https://storage.googleapis.com/bucket/events/event123/new1.jpg",
+            "https://storage.googleapis.com/bucket/events/event123/new2.jpg",
+            "https://storage.googleapis.com/bucket/events/event123/new3.jpg")
+    val updateResult = repository.updateEventImages(eventId, newImageUrls)
+
+    assertTrue("Update event images should succeed", updateResult.isSuccess)
+
+    val updatedEvent = repository.getEventById(eventId).first()
+    assertNotNull("Updated event should not be null", updatedEvent)
+    assertEquals("Event should have 3 new images", 3, updatedEvent?.images?.size)
+    assertTrue(
+        "Event should have all new images", updatedEvent?.images?.containsAll(newImageUrls) == true)
+    assertFalse(
+        "Event should not have old images",
+        updatedEvent?.images?.contains("https://example.com/image1.jpg") == true)
+  }
+
+  @Test
+  fun canClearAllEventImagesByUpdatingToEmptyList() = runTest {
+    val eventWithImages =
+        testEvent1.copy(
+            images = listOf("https://example.com/image1.jpg", "https://example.com/image2.jpg"))
+    val result = repository.createEvent(eventWithImages)
+    val eventId = result.getOrNull()!!
+
+    val updateResult = repository.updateEventImages(eventId, emptyList())
+    assertTrue("Update to empty list should succeed", updateResult.isSuccess)
+
+    val updatedEvent = repository.getEventById(eventId).first()
+    assertTrue("Event should have no images", updatedEvent?.images?.isEmpty() == true)
+  }
+
+  @Test
+  fun addEventImageForNonExistentEventFails() = runTest {
+    val result = repository.addEventImage("non-existent-event-id", "https://example.com/image.jpg")
+    assertTrue("Add image should fail for non-existent event", result.isFailure)
+  }
+
+  @Test
+  fun removeEventImageForNonExistentEventFails() = runTest {
+    val result =
+        repository.removeEventImage("non-existent-event-id", "https://example.com/image.jpg")
+    assertTrue("Remove image should fail for non-existent event", result.isFailure)
+  }
+
+  @Test
+  fun updateEventImagesForNonExistentEventFails() = runTest {
+    val result =
+        repository.updateEventImages(
+            "non-existent-event-id", listOf("https://example.com/image.jpg"))
+    assertTrue("Update images should fail for non-existent event", result.isFailure)
+  }
+
+  @Test
+  fun addingMultipleImagesToEvent() = runTest {
+    val result = repository.createEvent(testEvent1)
+    val eventId = result.getOrNull()!!
+
+    val image2 = "https://storage.googleapis.com/bucket/events/event123/image2.jpg"
+    val image3 = "https://storage.googleapis.com/bucket/events/event123/image3.jpg"
+    val image4 = "https://storage.googleapis.com/bucket/events/event123/image4.jpg"
+
+    repository.addEventImage(eventId, image2)
+    repository.addEventImage(eventId, image3)
+    repository.addEventImage(eventId, image4)
+
+    val updatedEvent = repository.getEventById(eventId).first()
+    assertEquals("Event should have 4 images total", 4, updatedEvent?.images?.size)
+    assertTrue("Event should contain image2", updatedEvent?.images?.contains(image2) == true)
+    assertTrue("Event should contain image3", updatedEvent?.images?.contains(image3) == true)
+    assertTrue("Event should contain image4", updatedEvent?.images?.contains(image4) == true)
+  }
+
+  @Test
+  fun removingNonExistentImageDoesNotFail() = runTest {
+    val result = repository.createEvent(testEvent1)
+    val eventId = result.getOrNull()!!
+
+    val nonExistentImage = "https://example.com/non-existent.jpg"
+    val removeResult = repository.removeEventImage(eventId, nonExistentImage)
+
+    assertTrue("Remove non-existent image should succeed", removeResult.isSuccess)
+
+    val updatedEvent = repository.getEventById(eventId).first()
+    // Original images should remain unchanged
+    assertEquals("Event should still have original images", 1, updatedEvent?.images?.size)
+  }
+
+  @Test
+  fun addEventImageUpdatesTimestamp() = runTest {
+    val result = repository.createEvent(testEvent1)
+    val eventId = result.getOrNull()!!
+
+    val initialEvent = repository.getEventById(eventId).first()
+    val initialUpdatedAt = initialEvent?.updatedAt
+
+    kotlinx.coroutines.delay(100) // Wait to ensure timestamp difference
+
+    val newImageUrl = "https://storage.googleapis.com/bucket/events/event123/new-image.jpg"
+    repository.addEventImage(eventId, newImageUrl)
+
+    val updatedEvent = repository.getEventById(eventId).first()
+    val updatedUpdatedAt = updatedEvent?.updatedAt
+
+    assertNotNull("Updated event should have updatedAt", updatedUpdatedAt)
+    assertNotEquals(
+        "updatedAt should be different from initial timestamp", initialUpdatedAt, updatedUpdatedAt)
+  }
+
+  @Test
+  fun removeEventImageUpdatesTimestamp() = runTest {
+    val eventWithImages =
+        testEvent1.copy(
+            images = listOf("https://example.com/image1.jpg", "https://example.com/image2.jpg"))
+    val result = repository.createEvent(eventWithImages)
+    val eventId = result.getOrNull()!!
+
+    val initialEvent = repository.getEventById(eventId).first()
+    val initialUpdatedAt = initialEvent?.updatedAt
+
+    kotlinx.coroutines.delay(100) // Wait to ensure timestamp difference
+
+    repository.removeEventImage(eventId, "https://example.com/image1.jpg")
+
+    val updatedEvent = repository.getEventById(eventId).first()
+    val updatedUpdatedAt = updatedEvent?.updatedAt
+
+    assertNotNull("Updated event should have updatedAt", updatedUpdatedAt)
+    assertNotEquals(
+        "updatedAt should be different from initial timestamp", initialUpdatedAt, updatedUpdatedAt)
+  }
+
+  @Test
+  fun updateEventImagesUpdatesTimestamp() = runTest {
+    val result = repository.createEvent(testEvent1)
+    val eventId = result.getOrNull()!!
+
+    val initialEvent = repository.getEventById(eventId).first()
+    val initialUpdatedAt = initialEvent?.updatedAt
+
+    kotlinx.coroutines.delay(100) // Wait to ensure timestamp difference
+
+    val newImages = listOf("https://example.com/new1.jpg", "https://example.com/new2.jpg")
+    repository.updateEventImages(eventId, newImages)
+
+    val updatedEvent = repository.getEventById(eventId).first()
+    val updatedUpdatedAt = updatedEvent?.updatedAt
+
+    assertNotNull("Updated event should have updatedAt", updatedUpdatedAt)
+    assertNotEquals(
+        "updatedAt should be different from initial timestamp", initialUpdatedAt, updatedUpdatedAt)
+  }
 }

@@ -27,10 +27,14 @@ import org.junit.After
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 
+@RunWith(RobolectricTestRunner::class)
 @ExperimentalCoroutinesApi
 class EditEventFormViewModelTest {
   private lateinit var mockLocationRepository: LocationRepository
+  private lateinit var mockStorageRepository: ch.onepass.onepass.model.storage.StorageRepository
 
   // Set the main coroutines dispatcher for unit testing.
   private val testDispatcher = StandardTestDispatcher()
@@ -50,6 +54,7 @@ class EditEventFormViewModelTest {
     Dispatchers.setMain(testDispatcher) // Set main dispatcher
     mockRepository = mockk<EventRepository>()
     mockLocationRepository = mockk(relaxed = true)
+    mockStorageRepository = mockk(relaxed = true)
 
     testEvent =
         Event(
@@ -70,7 +75,8 @@ class EditEventFormViewModelTest {
     // Default setup for loading, tests can override this
     coEvery { mockRepository.getEventById(any()) } returns flowOf(testEvent)
 
-    viewModel = EditEventFormViewModel(mockRepository, mockLocationRepository)
+    viewModel =
+        EditEventFormViewModel(mockRepository, mockLocationRepository, mockStorageRepository)
   }
 
   @After
@@ -302,7 +308,8 @@ class EditEventFormViewModelTest {
   @Test
   fun updateEventWithoutLoadingEventFirstSetsErrorState() = runTest {
     // Arrange
-    val freshViewModel = EditEventFormViewModel(mockRepository, mockLocationRepository)
+    val freshViewModel =
+        EditEventFormViewModel(mockRepository, mockLocationRepository, mockStorageRepository)
 
     // Act
     freshViewModel.updateEvent()
@@ -649,5 +656,126 @@ class EditEventFormViewModelTest {
     Assert.assertEquals("", viewModel.formState.value.date)
     Assert.assertEquals("", viewModel.formState.value.startTime)
     Assert.assertEquals("", viewModel.formState.value.endTime)
+  }
+
+  // ===== NEW TESTS FOR IMAGE FUNCTIONALITY =====
+
+  @Test
+  fun selectImageAddsToExistingImages() = runTest {
+    // Arrange
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val newImageUri = android.net.Uri.parse("content://media/image/new123")
+
+    // Act
+    viewModel.selectImage(newImageUri)
+
+    // Assert
+    val formState = viewModel.formState.value
+    Assert.assertEquals(1, formState.selectedImageUris.size)
+    Assert.assertTrue(formState.selectedImageUris.contains(newImageUri))
+  }
+
+  @Test
+  fun selectMultipleImagesInEditForm() = runTest {
+    // Arrange
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val imageUri1 = android.net.Uri.parse("content://media/image/123")
+    val imageUri2 = android.net.Uri.parse("content://media/image/456")
+
+    // Act
+    viewModel.selectImage(imageUri1)
+    viewModel.selectImage(imageUri2)
+
+    // Assert
+    val formState = viewModel.formState.value
+    Assert.assertEquals(2, formState.selectedImageUris.size)
+    Assert.assertTrue(formState.selectedImageUris.containsAll(listOf(imageUri1, imageUri2)))
+  }
+
+  @Test
+  fun removeImageFromSelectedImages() = runTest {
+    // Arrange
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val imageUri1 = android.net.Uri.parse("content://media/image/123")
+    val imageUri2 = android.net.Uri.parse("content://media/image/456")
+    val imageUri3 = android.net.Uri.parse("content://media/image/789")
+
+    viewModel.selectImage(imageUri1)
+    viewModel.selectImage(imageUri2)
+    viewModel.selectImage(imageUri3)
+
+    // Act
+    viewModel.removeImage(imageUri2)
+
+    // Assert
+    val formState = viewModel.formState.value
+    Assert.assertEquals(2, formState.selectedImageUris.size)
+    Assert.assertFalse(formState.selectedImageUris.contains(imageUri2))
+    Assert.assertTrue(formState.selectedImageUris.contains(imageUri1))
+    Assert.assertTrue(formState.selectedImageUris.contains(imageUri3))
+  }
+
+  @Test
+  fun loadEventDoesNotIncludeExistingImagesInFormState() = runTest {
+    // Arrange - existing images are in Event.images, not in formState.selectedImageUris
+    coEvery { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+
+    // Act
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert - existing images are NOT in selectedImageUris (those are for NEW uploads only)
+    val formState = viewModel.formState.value
+    Assert.assertTrue(
+        "Selected image URIs should be empty for existing event",
+        formState.selectedImageUris.isEmpty())
+  }
+
+  @Test
+  fun selectImageMaintainsOrder() = runTest {
+    // Arrange
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val imageUri1 = android.net.Uri.parse("content://media/image/123")
+    val imageUri2 = android.net.Uri.parse("content://media/image/456")
+    val imageUri3 = android.net.Uri.parse("content://media/image/789")
+
+    // Act
+    viewModel.selectImage(imageUri1)
+    viewModel.selectImage(imageUri2)
+    viewModel.selectImage(imageUri3)
+
+    // Assert
+    val formState = viewModel.formState.value
+    Assert.assertEquals(imageUri1, formState.selectedImageUris[0])
+    Assert.assertEquals(imageUri2, formState.selectedImageUris[1])
+    Assert.assertEquals(imageUri3, formState.selectedImageUris[2])
+  }
+
+  @Test
+  fun removingNonExistentImageDoesNotFail() = runTest {
+    // Arrange
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val imageUri1 = android.net.Uri.parse("content://media/image/123")
+    val nonExistent = android.net.Uri.parse("content://media/image/999")
+
+    viewModel.selectImage(imageUri1)
+
+    // Act
+    viewModel.removeImage(nonExistent)
+
+    // Assert
+    val formState = viewModel.formState.value
+    Assert.assertEquals(1, formState.selectedImageUris.size)
+    Assert.assertTrue(formState.selectedImageUris.contains(imageUri1))
   }
 }

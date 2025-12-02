@@ -5,8 +5,8 @@ import ch.onepass.onepass.utils.FirestoreTestBase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import junit.framework.TestCase.assertEquals
-import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertNotNull
+import junit.framework.TestCase.assertNull
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
@@ -112,91 +112,30 @@ class UserRepositoryFirebaseTest : FirestoreTestBase() {
   }
 
   @Test
-  fun isOrganizer_returnsTrueWhenUserHasOrganizations() = runTest {
+  fun getUserById_returnsStaffSearchResultIfExists() = runTest {
     val user = userRepository.getOrCreateUser()
     assertNotNull(user)
-
     val uid = user!!.uid
-    val orgId = "org123"
 
-    // Add organization to user
-    userRepository.addOrganizationToUser(uid, orgId)
+    val result = userRepository.getUserById(uid)
 
-    val isOrganizer = userRepository.isOrganizer()
-    assertTrue("User with organizations should be an organizer", isOrganizer)
+    assertTrue("Result should be success", result.isSuccess)
+    val staffSearchResult = result.getOrNull()
+    assertNotNull("StaffSearchResult should not be null", staffSearchResult)
+    assertEquals("ID should match", uid, staffSearchResult!!.id)
+    assertEquals("Email should match", user.email, staffSearchResult.email)
+    assertEquals("DisplayName should match", user.displayName, staffSearchResult.displayName)
+    assertEquals("AvatarUrl should match", user.avatarUrl, staffSearchResult.avatarUrl)
   }
 
   @Test
-  fun isOrganizer_returnsFalseWhenUserHasNoOrganizations() = runTest {
-    val user = userRepository.getOrCreateUser()
-    assertNotNull(user)
+  fun getUserById_returnsNullIfUserDoesNotExist() = runTest {
+    val uid = "non_existent_uid"
 
-    // Ensure user has no organizations
-    val uid = user!!.uid
-    db.collection("users").document(uid).update("organizationIds", emptyList<String>()).await()
+    val result = userRepository.getUserById(uid)
 
-    val isOrganizer = userRepository.isOrganizer()
-    assertFalse("User without organizations should not be an organizer", isOrganizer)
-  }
-
-  @Test
-  fun addOrganizationToUser_addsOrgIdToUser() = runTest {
-    val user = userRepository.getOrCreateUser()
-    assertNotNull(user)
-
-    val uid = user!!.uid
-    val orgId = "org456"
-
-    userRepository.addOrganizationToUser(uid, orgId)
-
-    val snapshot = db.collection("users").document(uid).get().await()
-    val organizationIds = snapshot.get("organizationIds") as? List<*>
-
-    assertNotNull("organizationIds should exist", organizationIds)
-    assertTrue("Should contain the added orgId", organizationIds!!.contains(orgId))
-  }
-
-  @Test
-  fun removeOrganizationFromUser_removesOrgIdFromUser() = runTest {
-    val user = userRepository.getOrCreateUser()
-    assertNotNull(user)
-
-    val uid = user!!.uid
-    val orgId = "org789"
-
-    // First add an organization
-    userRepository.addOrganizationToUser(uid, orgId)
-
-    // Verify it was added
-    var snapshot = db.collection("users").document(uid).get().await()
-    var organizationIds = snapshot.get("organizationIds") as? List<*>
-    assertTrue("Should contain orgId before removal", organizationIds?.contains(orgId) == true)
-
-    // Remove the organization
-    userRepository.removeOrganizationFromUser(uid, orgId)
-
-    // Verify it was removed
-    snapshot = db.collection("users").document(uid).get().await()
-    organizationIds = snapshot.get("organizationIds") as? List<*>
-    assertFalse("Should not contain orgId after removal", organizationIds?.contains(orgId) == true)
-  }
-
-  @Test
-  fun addOrganizationToUser_doesNotDuplicateOrgId() = runTest {
-    val user = userRepository.getOrCreateUser()
-    assertNotNull(user)
-
-    val uid = user!!.uid
-    val orgId = "org999"
-
-    // Add same organization twice
-    userRepository.addOrganizationToUser(uid, orgId)
-    userRepository.addOrganizationToUser(uid, orgId)
-
-    val snapshot = db.collection("users").document(uid).get().await()
-    val organizationIds = snapshot.get("organizationIds") as? List<*>
-
-    assertNotNull("organizationIds should exist", organizationIds)
-    assertEquals("Should contain orgId only once", 1, organizationIds!!.count { it == orgId })
+    assertTrue("Result should be success", result.isSuccess)
+    val staffSearchResult = result.getOrNull()
+    assertNull("StaffSearchResult should be null for non-existent user", staffSearchResult)
   }
 }

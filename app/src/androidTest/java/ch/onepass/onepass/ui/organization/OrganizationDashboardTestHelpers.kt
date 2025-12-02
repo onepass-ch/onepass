@@ -5,6 +5,8 @@ import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.model.membership.Membership
+import ch.onepass.onepass.model.membership.MembershipRepository
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationInvitation
@@ -39,14 +41,8 @@ object OrganizationDashboardTestData {
       id: String = "test-org-1",
       name: String = "Test Organization",
       ownerId: String = "owner-1",
-      members: Map<String, OrganizationMember> =
-          mapOf(
-              "owner-1" to
-                  OrganizationMember(role = OrganizationRole.OWNER, assignedEvents = emptyList()),
-              "member-1" to
-                  OrganizationMember(role = OrganizationRole.MEMBER, assignedEvents = emptyList()),
-              "staff-1" to
-                  OrganizationMember(role = OrganizationRole.STAFF, assignedEvents = emptyList())),
+      // Deprecated: members are now handled via MembershipRepository
+      members: Map<String, OrganizationMember> = emptyMap(),
       followerCount: Int = 1500,
       averageRating: Float = 4.5f,
       eventIds: List<String> = listOf("event-1", "event-2")
@@ -62,6 +58,20 @@ object OrganizationDashboardTestData {
           followerCount = followerCount,
           averageRating = averageRating,
           eventIds = eventIds)
+
+  fun createTestMembership(
+      membershipId: String = "mem-1",
+      userId: String = "member-1",
+      orgId: String = "test-org-1",
+      role: OrganizationRole = OrganizationRole.MEMBER
+  ): Membership =
+      Membership(
+          membershipId = membershipId,
+          userId = userId,
+          orgId = orgId,
+          role = role,
+          createdAt = Timestamp.now(),
+          updatedAt = Timestamp.now())
 
   fun createTestEvent(
       eventId: String = "event-1",
@@ -156,6 +166,52 @@ open class MockOrganizationRepository(
   ): Result<Unit> = Result.success(Unit)
 
   override suspend fun deleteInvitation(invitationId: String): Result<Unit> = Result.success(Unit)
+
+  override suspend fun updateProfileImage(organizationId: String, imageUrl: String?): Result<Unit> =
+      Result.success(Unit)
+
+  override suspend fun updateCoverImage(organizationId: String, imageUrl: String?): Result<Unit> =
+      Result.success(Unit)
+}
+
+/** Mock Membership Repository with configurable behavior. */
+open class MockMembershipRepository(
+    private val members: List<Membership> = emptyList(),
+    private val removeResult: Result<Unit> = Result.success(Unit)
+) : MembershipRepository {
+
+  override suspend fun addMembership(
+      userId: String,
+      orgId: String,
+      role: OrganizationRole
+  ): Result<String> = Result.success("membership-id")
+
+  override suspend fun removeMembership(userId: String, orgId: String): Result<Unit> = removeResult
+
+  override suspend fun updateMembership(
+      userId: String,
+      orgId: String,
+      newRole: OrganizationRole
+  ): Result<Unit> = Result.success(Unit)
+
+  override suspend fun getUsersByOrganization(orgId: String): Result<List<Membership>> =
+      Result.success(members)
+
+  override fun getUsersByOrganizationFlow(orgId: String): Flow<List<Membership>> = flowOf(members)
+
+  override suspend fun getOrganizationsByUser(userId: String): Result<List<Membership>> =
+      Result.success(emptyList())
+
+  override fun getOrganizationsByUserFlow(userId: String): Flow<List<Membership>> =
+      flowOf(emptyList())
+
+  override suspend fun hasMembership(
+      userId: String,
+      orgId: String,
+      roles: List<OrganizationRole>
+  ): Boolean {
+    return members.any { it.userId == userId && it.orgId == orgId && it.role in roles }
+  }
 }
 
 /** Mock Event Repository with configurable behavior. */
@@ -184,6 +240,15 @@ class MockEventRepository(private val events: List<Event> = emptyList()) : Event
   override suspend fun updateEvent(event: Event): Result<Unit> = Result.success(Unit)
 
   override suspend fun deleteEvent(eventId: String): Result<Unit> = Result.success(Unit)
+
+  override suspend fun addEventImage(eventId: String, imageUrl: String): Result<Unit> =
+      Result.success(Unit)
+
+  override suspend fun removeEventImage(eventId: String, imageUrl: String): Result<Unit> =
+      Result.success(Unit)
+
+  override suspend fun updateEventImages(eventId: String, imageUrls: List<String>): Result<Unit> =
+      Result.success(Unit)
 }
 
 /**
@@ -242,6 +307,15 @@ class RecordingEventRepository(private val events: List<Event> = emptyList()) : 
   override suspend fun updateEvent(event: Event): Result<Unit> = Result.success(Unit)
 
   override suspend fun deleteEvent(eventId: String): Result<Unit> = Result.success(Unit)
+
+  override suspend fun addEventImage(eventId: String, imageUrl: String): Result<Unit> =
+      Result.success(Unit)
+
+  override suspend fun removeEventImage(eventId: String, imageUrl: String): Result<Unit> =
+      Result.success(Unit)
+
+  override suspend fun updateEventImages(eventId: String, imageUrls: List<String>): Result<Unit> =
+      Result.success(Unit)
 }
 
 /**

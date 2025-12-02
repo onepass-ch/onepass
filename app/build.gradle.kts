@@ -156,17 +156,28 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 }
 
 dependencies {
-
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
     implementation(libs.material)
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
+    // ML Kit Barcode Scanning
+    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+
+    // CameraX
+
+    implementation(libs.camerax.core)
+    implementation(libs.camerax.camera2)
+    implementation(libs.camerax.lifecycle)
+    implementation(libs.camerax.view)
+
+
     // ------------- Datastore ------------------
     implementation("androidx.datastore:datastore-preferences:1.1.1")
     testImplementation("androidx.datastore:datastore-preferences:1.1.1")
     androidTestImplementation("androidx.datastore:datastore-preferences:1.1.1")
+
     // ------------- Firebase ------------------
     implementation(libs.firebase.functions.ktx)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
