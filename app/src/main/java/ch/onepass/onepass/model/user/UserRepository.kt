@@ -1,6 +1,7 @@
 package ch.onepass.onepass.model.user
 
 import ch.onepass.onepass.model.staff.StaffSearchResult
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Repository interface for managing user-related data and operations.
@@ -60,4 +61,31 @@ interface UserRepository {
       searchType: UserSearchType,
       organizationId: String? = null
   ): Result<List<StaffSearchResult>>
+
+  /**
+   * Retrieves the set of IDs for events marked as favorite by the user.
+   *
+   * @param uid The unique identifier of the user.
+   * @return A [Flow] of [Set] of event IDs that are favorites. The flow emits new sets whenever the
+   *   favorite status changes.
+   */
+  fun getFavoriteEvents(uid: String): Flow<Set<String>>
+
+  /**
+   * Adds an event to the user's list of favorite events.
+   *
+   * @param uid The unique identifier of the user.
+   * @param eventId The unique identifier of the event to add.
+   * @return A [Result] of [Unit] on success, or an error if the operation fails.
+   */
+  suspend fun addFavoriteEvent(uid: String, eventId: String): Result<Unit>
+
+  /**
+   * Removes an event from the user's list of favorite events.
+   *
+   * @param uid The unique identifier of the user.
+   * @param eventId The unique identifier of the event to remove.
+   * @return A [Result] of [Unit] on success, or an error if the operation fails.
+   */
+  suspend fun removeFavoriteEvent(uid: String, eventId: String): Result<Unit>
 }
