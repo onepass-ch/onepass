@@ -7,10 +7,11 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import * as functions from "firebase-functions/v1";
+//import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
+/**
 const db = admin.firestore();
 
 export const searchUsers = functions.https.onCall(async (request) => {
@@ -46,7 +47,7 @@ export const searchUsers = functions.https.onCall(async (request) => {
   let exclude = new Set<string>();
   if (organizationId) {
     const membersSnap = await db
-      .collection("orgs")
+      .collection("organizations")
       .doc(organizationId)
       .collection("members")
       .get();
@@ -64,7 +65,7 @@ export const searchUsers = functions.https.onCall(async (request) => {
 
   return { users };
 });
-
+*/
 export { generateUserPass } from "./generateUserPass";
 export { onUserCreated } from "./onUserCreated";
 

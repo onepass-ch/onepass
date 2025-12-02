@@ -1,6 +1,6 @@
 package ch.onepass.onepass.model.payment
 
-import androidx.activity.ComponentActivity
+import ch.onepass.onepass.ui.payment.PaymentSheetResultHandler
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
 
@@ -8,19 +8,15 @@ import com.stripe.android.paymentsheet.PaymentSheetResult
  * Helper class to manage Stripe payment operations in OnePass.
  *
  * This class provides methods to handle payment flows using Stripe's Payment Sheet.
+ * The PaymentSheet instance should be provided from MainActivity via CompositionLocal
+ * to avoid lifecycle registration issues.
  *
  * Example usage in a Composable:
  * ```
- * val activity = LocalContext.current as ComponentActivity
- * val stripeHelper = remember { StripePaymentHelper() }
+ * val paymentSheet = LocalPaymentSheet.current
+ * val stripeHelper = remember { StripePaymentHelper(paymentSheet) }
  *
- * // Initialize once when the composable enters composition
- * DisposableEffect(activity) {
- *     stripeHelper.initialize(activity)
- *     onDispose { }
- * }
- *
- * // Later, present the payment sheet
+ * // Present the payment sheet
  * stripeHelper.presentPaymentSheet(
  *     clientSecret = "pi_xxx_secret_xxx",
  *     onSuccess = { /* Handle successful payment */ },
@@ -29,34 +25,39 @@ import com.stripe.android.paymentsheet.PaymentSheetResult
  * )
  * ```
  */
-class StripePaymentHelper {
-
-    private var paymentSheet: PaymentSheet? = null
+class StripePaymentHelper(
+    private val paymentSheet: PaymentSheet?
+) {
 
     private var onSuccessCallback: (() -> Unit)? = null
     private var onCancelledCallback: (() -> Unit)? = null
     private var onErrorCallback: ((String) -> Unit)? = null
 
     /**
-     * Initializes the PaymentSheet with the given activity.
-     * Must be called before presenting the payment sheet.
-     *
-     * @param activity The ComponentActivity to use for the PaymentSheet
+     * Secondary constructor for backwards compatibility.
+     * Creates the helper without a PaymentSheet (will fail when trying to present).
      */
-    fun initialize(activity: ComponentActivity) {
-        paymentSheet = PaymentSheet(activity) { result ->
-            handlePaymentSheetResult(result)
-        }
-    }
+    constructor() : this(null)
 
     /**
-     * Secondary constructor for backwards compatibility.
-     * Creates and initializes the helper with an activity.
+     * Constructor that initializes with an activity (for backwards compatibility).
+     * Note: This may cause lifecycle issues if called during composition.
+     * Prefer using the constructor that takes a PaymentSheet instance.
      */
-    constructor()
+    constructor(activity: androidx.activity.ComponentActivity) : this(
+        PaymentSheet(activity) { result ->
+            // Result handling is done through PaymentSheetResultHandler
+            PaymentSheetResultHandler.handleResult(result)
+        }
+    )
 
-    constructor(activity: ComponentActivity) {
-        initialize(activity)
+    init {
+        // Register this instance to handle PaymentSheet results
+        if (paymentSheet != null) {
+            PaymentSheetResultHandler.setHandler { result ->
+                handlePaymentSheetResult(result)
+            }
+        }
     }
 
     /**
@@ -82,13 +83,19 @@ class StripePaymentHelper {
         onError: (String) -> Unit = {}
     ) {
         if (paymentSheet == null) {
-            onError("PaymentSheet not initialized. Call initialize() first.")
+            onError("PaymentSheet not initialized. Please ensure Stripe is configured.")
             return
         }
 
+        // Register callbacks before presenting
         this.onSuccessCallback = onSuccess
         this.onCancelledCallback = onCancelled
         this.onErrorCallback = onError
+
+        // Register this instance as the result handler
+        PaymentSheetResultHandler.setHandler { result ->
+            handlePaymentSheetResult(result)
+        }
 
         val configuration = PaymentSheet.Configuration(
             merchantDisplayName = "OnePass",
@@ -96,7 +103,7 @@ class StripePaymentHelper {
             allowsDelayedPaymentMethods = true
         )
 
-        paymentSheet?.presentWithPaymentIntent(
+        paymentSheet.presentWithPaymentIntent(
             paymentIntentClientSecret = clientSecret,
             configuration = configuration
         )
