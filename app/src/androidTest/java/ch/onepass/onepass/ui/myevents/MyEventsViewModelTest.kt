@@ -83,8 +83,6 @@ class MyEventsViewModelTest {
 
   // ==================== QR CODE LOADING ====================
 
-
-
   @Test
   fun loadUserPass_failure_usesCachedQr_ifPreviouslyCached() = runTest {
     val uid = uniqueUid("cached")
@@ -102,7 +100,7 @@ class MyEventsViewModelTest {
     val reader = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
     coEvery { passRepo.getOrCreateSignedPass(uid) } returns
-            Result.failure(Exception("Network down"))
+        Result.failure(Exception("Network down"))
     reader.loadUserPass()
     advanceUntilIdle()
 
@@ -230,8 +228,6 @@ class MyEventsViewModelTest {
 
     assertNull(vm.userQrData.value)
   }
-
-
 
   @Test
   fun clearCache_withNullUser_doesNothing() = runTest {
@@ -461,7 +457,6 @@ class MyEventsViewModelTest {
 
     assertFalse(vm.isLoading.value)
   }
-
 
   @Test
   fun initial_states_areSane_beforeAnyAction() = runTest {
