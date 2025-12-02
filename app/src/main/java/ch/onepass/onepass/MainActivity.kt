@@ -27,9 +27,14 @@ import ch.onepass.onepass.ui.navigation.BottomNavigationBar
 import ch.onepass.onepass.ui.navigation.NavigationActions
 import ch.onepass.onepass.ui.navigation.NavigationDestinations
 import ch.onepass.onepass.ui.profile.ProfileViewModel
+import ch.onepass.onepass.ui.payment.LocalPaymentSheet
+import ch.onepass.onepass.ui.payment.createPaymentSheet
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import com.google.firebase.appcheck.FirebaseAppCheck
+import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 import com.mapbox.common.MapboxOptions
 import com.stripe.android.PaymentConfiguration
+import androidx.compose.runtime.CompositionLocalProvider
 
 /**
  * Main Activity that sets up Mapbox, Stripe, the OnePass theme and hosts the root composable navigation.
@@ -37,6 +42,15 @@ import com.stripe.android.PaymentConfiguration
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+
+    // Initialize Firebase App Check (for development - uses debug provider)
+    // In production, you should use Play Integrity or DeviceCheck provider
+    // TEMPORARILY DISABLED: App Check API not enabled in Firebase Console
+    // This was causing auth tokens to not reach cloud functions
+    // TODO: Enable App Check API in Firebase Console before re-enabling
+    // FirebaseAppCheck.getInstance().installAppCheckProviderFactory(
+    //     DebugAppCheckProviderFactory.getInstance()
+    // )
 
     // Mapbox access token
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
@@ -50,7 +64,20 @@ class MainActivity : ComponentActivity() {
       )
     }
 
-    setContent { OnePassTheme { MainActivityContent() } }
+    // Create PaymentSheet instance early in onCreate to avoid lifecycle registration issues
+    val paymentSheet = if (stripePublishableKey.isNotEmpty()) {
+      createPaymentSheet(this)
+    } else {
+      null
+    }
+
+    setContent {
+      OnePassTheme {
+        CompositionLocalProvider(LocalPaymentSheet provides paymentSheet) {
+          MainActivityContent()
+        }
+      }
+    }
   }
 }
 
