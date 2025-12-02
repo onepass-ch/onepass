@@ -2,19 +2,26 @@
  * Stripe configuration and initialization
  */
 
+import * as functions from "firebase-functions/v1";
 import Stripe from "stripe";
 import * as dotenv from "dotenv";
 
-// Load environment variables from .env file
+// Load environment variables from .env file (for local development only)
 dotenv.config();
 
 // Get Stripe secret key from environment variable
-const stripeSecretKey = process.env.STRIPE_SECRET_KEY || "";
+// In production, use: firebase functions:config:set stripe.secret_key="sk_..."
+// In local dev, use: .env file with STRIPE_SECRET_KEY
+const stripeSecretKey = 
+  functions.config().stripe?.secret_key || 
+  process.env.STRIPE_SECRET_KEY || 
+  "";
 
 if (!stripeSecretKey) {
   console.warn(
     "⚠️ Stripe secret key not found in environment variables. " +
-    "Make sure STRIPE_SECRET_KEY is set in functions/.env file"
+    "For production: firebase functions:config:set stripe.secret_key=\"sk_...\" " +
+    "For local dev: Set STRIPE_SECRET_KEY in functions/.env file"
   );
 }
 
