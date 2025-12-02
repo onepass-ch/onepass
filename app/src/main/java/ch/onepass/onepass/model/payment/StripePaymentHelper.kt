@@ -1,19 +1,26 @@
 package ch.onepass.onepass.model.payment
 
-import android.app.Activity
 import androidx.activity.ComponentActivity
-import com.stripe.android.PaymentConfiguration
 import com.stripe.android.paymentsheet.PaymentSheet
 import com.stripe.android.paymentsheet.PaymentSheetResult
 
 /**
  * Helper class to manage Stripe payment operations in OnePass.
- * 
+ *
  * This class provides methods to handle payment flows using Stripe's Payment Sheet.
- * 
- * Example usage:
+ *
+ * Example usage in a Composable:
  * ```
- * val stripeHelper = StripePaymentHelper(activity)
+ * val activity = LocalContext.current as ComponentActivity
+ * val stripeHelper = remember { StripePaymentHelper() }
+ *
+ * // Initialize once when the composable enters composition
+ * DisposableEffect(activity) {
+ *     stripeHelper.initialize(activity)
+ *     onDispose { }
+ * }
+ *
+ * // Later, present the payment sheet
  * stripeHelper.presentPaymentSheet(
  *     clientSecret = "pi_xxx_secret_xxx",
  *     onSuccess = { /* Handle successful payment */ },
@@ -22,24 +29,45 @@ import com.stripe.android.paymentsheet.PaymentSheetResult
  * )
  * ```
  */
-class StripePaymentHelper(private val activity: ComponentActivity) {
+class StripePaymentHelper {
 
     private var paymentSheet: PaymentSheet? = null
-
-    init {
-        // Initialize PaymentSheet
-        paymentSheet = PaymentSheet(activity) { result ->
-            handlePaymentSheetResult(result)
-        }
-    }
 
     private var onSuccessCallback: (() -> Unit)? = null
     private var onCancelledCallback: (() -> Unit)? = null
     private var onErrorCallback: ((String) -> Unit)? = null
 
     /**
+     * Initializes the PaymentSheet with the given activity.
+     * Must be called before presenting the payment sheet.
+     *
+     * @param activity The ComponentActivity to use for the PaymentSheet
+     */
+    fun initialize(activity: ComponentActivity) {
+        paymentSheet = PaymentSheet(activity) { result ->
+            handlePaymentSheetResult(result)
+        }
+    }
+
+    /**
+     * Secondary constructor for backwards compatibility.
+     * Creates and initializes the helper with an activity.
+     */
+    constructor()
+
+    constructor(activity: ComponentActivity) {
+        initialize(activity)
+    }
+
+    /**
+     * Returns true if the PaymentSheet has been initialized.
+     */
+    val isInitialized: Boolean
+        get() = paymentSheet != null
+
+    /**
      * Presents the Stripe Payment Sheet to the user.
-     * 
+     *
      * @param clientSecret The client secret from your backend (from PaymentIntent or SetupIntent)
      * @param customerConfig Optional customer configuration for saved payment methods
      * @param onSuccess Callback invoked when payment succeeds
@@ -53,6 +81,11 @@ class StripePaymentHelper(private val activity: ComponentActivity) {
         onCancelled: () -> Unit = {},
         onError: (String) -> Unit = {}
     ) {
+        if (paymentSheet == null) {
+            onError("PaymentSheet not initialized. Call initialize() first.")
+            return
+        }
+
         this.onSuccessCallback = onSuccess
         this.onCancelledCallback = onCancelled
         this.onErrorCallback = onError
@@ -92,7 +125,7 @@ class StripePaymentHelper(private val activity: ComponentActivity) {
     /**
      * Creates a customer configuration for returning customers.
      * This allows users to see and select their saved payment methods.
-     * 
+     *
      * @param customerId The Stripe customer ID from your backend
      * @param ephemeralKey The ephemeral key from your backend
      */
