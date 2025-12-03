@@ -100,7 +100,7 @@ class MyEventsViewModelTest {
     val reader = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
     coEvery { passRepo.getOrCreateSignedPass(uid) } returns
-            Result.failure(Exception("Network down"))
+        Result.failure(Exception("Network down"))
     reader.loadUserPass()
     advanceUntilIdle()
 
