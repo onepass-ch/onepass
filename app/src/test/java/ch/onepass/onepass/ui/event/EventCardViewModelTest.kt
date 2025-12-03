@@ -7,6 +7,8 @@ import io.mockk.MockKAnnotations
 import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.impl.annotations.MockK
+import io.mockk.mockkStatic
+import io.mockk.unmockkStatic
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -89,8 +91,13 @@ class EventCardViewModelTest {
   @Test
   fun toggleLike_reverts_state_on_persistence_failure() =
       runTest(testDispatcher) {
+        // Mock the static Log class to avoid Android framework dependency
+        mockkStatic(android.util.Log::class)
+        every { android.util.Log.e(any(), any(), any()) } returns 0
+
         initialLikesFlow.value = emptySet()
         testDispatcher.scheduler.advanceUntilIdle()
+        assertFalse(viewModel.isEventLiked(testEventId))
 
         val failure = Result.failure<Unit>(Exception("Network Error"))
         coEvery { userRepository.addFavoriteEvent(testUid, testEventId) } returns failure
@@ -100,6 +107,9 @@ class EventCardViewModelTest {
 
         testDispatcher.scheduler.advanceUntilIdle()
         assertFalse(viewModel.isEventLiked(testEventId))
+
+        // Clean up the static mock
+        unmockkStatic(android.util.Log::class)
       }
 
   @Test

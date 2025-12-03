@@ -75,6 +75,10 @@ class EventCardViewModel(
 
       // Revert if failed
       if (result.isFailure) {
+        android.util.Log.e(
+            "EventCardViewModel",
+            "Failed to update like status for event $eventId (isLiked: $isLiked)",
+            result.exceptionOrNull())
         _likedEvents.update { if (isLiked) it + eventId else it - eventId }
       }
     }
