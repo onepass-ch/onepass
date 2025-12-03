@@ -37,7 +37,8 @@ import com.stripe.android.PaymentConfiguration
 import androidx.compose.runtime.CompositionLocalProvider
 
 /**
- * Main Activity that sets up Mapbox, Stripe, the OnePass theme and hosts the root composable navigation.
+ * Main Activity that sets up Mapbox, Stripe, the OnePass theme and hosts the root composable
+ * navigation.
  */
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,10 +59,7 @@ class MainActivity : ComponentActivity() {
     // Initialize Stripe
     val stripePublishableKey = BuildConfig.STRIPE_PUBLISHABLE_KEY
     if (stripePublishableKey.isNotEmpty()) {
-      PaymentConfiguration.init(
-          applicationContext,
-          stripePublishableKey
-      )
+      PaymentConfiguration.init(applicationContext, stripePublishableKey)
     }
 
     // Create PaymentSheet instance early in onCreate to avoid lifecycle registration issues
