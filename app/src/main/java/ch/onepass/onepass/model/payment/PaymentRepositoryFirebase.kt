@@ -12,112 +12,110 @@ class PaymentRepositoryFirebase(
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : PaymentRepository {
 
-    init {
-        android.util.Log.d("PaymentRepository", "Initialized with functions region: ${functions.javaClass.name}")
-    }
+  init {
+    android.util.Log.d(
+        "PaymentRepository", "Initialized with functions region: ${functions.javaClass.name}")
+  }
 
-    override suspend fun createPaymentIntent(
-        amount: Long,
-        eventId: String,
-        ticketTypeId: String?,
-        quantity: Int,
-        description: String?
-    ): Result<PaymentIntentResponse> {
-        return try {
-            // Verify user is authenticated before making the call
-            val currentUser = auth.currentUser
-            if (currentUser == null) {
-                android.util.Log.e("PaymentRepository", "❌ User not authenticated")
-                return Result.failure(Exception("Please sign in to purchase ticket"))
-            }
+  override suspend fun createPaymentIntent(
+      amount: Long,
+      eventId: String,
+      ticketTypeId: String?,
+      quantity: Int,
+      description: String?
+  ): Result<PaymentIntentResponse> {
+    return try {
+      // Verify user is authenticated before making the call
+      val currentUser = auth.currentUser
+      if (currentUser == null) {
+        android.util.Log.e("PaymentRepository", "❌ User not authenticated")
+        return Result.failure(Exception("Please sign in to purchase ticket"))
+      }
 
-            android.util.Log.d("PaymentRepository", "✓ User authenticated: ${currentUser.uid}")
+      android.util.Log.d("PaymentRepository", "✓ User authenticated: ${currentUser.uid}")
 
-            // Get a fresh auth token to ensure it's valid and available
-            // This is critical - the token must be obtained before the call
-            val idToken = try {
-                val token = currentUser.getIdToken(true).await()
-                android.util.Log.d("PaymentRepository", "✓ Auth token obtained successfully")
-                token.token
-            } catch (e: Exception) {
-                android.util.Log.e("PaymentRepository", "❌ Failed to get auth token: ${e.message}", e)
-                return Result.failure(Exception("Please sign in to purchase ticket"))
-            }
+      // Get a fresh auth token to ensure it's valid and available
+      // This is critical - the token must be obtained before the call
+      val idToken =
+          try {
+            val token = currentUser.getIdToken(true).await()
+            android.util.Log.d("PaymentRepository", "✓ Auth token obtained successfully")
+            token.token
+          } catch (e: Exception) {
+            android.util.Log.e("PaymentRepository", "❌ Failed to get auth token: ${e.message}", e)
+            return Result.failure(Exception("Please sign in to purchase ticket"))
+          }
 
-            if (idToken == null) {
-                android.util.Log.e("PaymentRepository", "❌ Auth token is null")
-                return Result.failure(Exception("Please sign in to purchase ticket"))
-            }
+      if (idToken == null) {
+        android.util.Log.e("PaymentRepository", "❌ Auth token is null")
+        return Result.failure(Exception("Please sign in to purchase ticket"))
+      }
 
-            val data = hashMapOf(
-                "amount" to amount,
-                "currency" to "chf",
-                "eventId" to eventId,
-                "ticketTypeId" to ticketTypeId,
-                "quantity" to quantity,
-                "description" to description
-            )
+      val data =
+          hashMapOf(
+              "amount" to amount,
+              "currency" to "chf",
+              "eventId" to eventId,
+              "ticketTypeId" to ticketTypeId,
+              "quantity" to quantity,
+              "description" to description)
 
-            android.util.Log.d("PaymentRepository", "🎫 Calling createPaymentIntent with: amount=$amount, eventId=$eventId, ticketTypeId=$ticketTypeId, quantity=$quantity")
-            android.util.Log.d("PaymentRepository", "✓ Auth token is available: ${idToken.isNotBlank()}")
+      android.util.Log.d(
+          "PaymentRepository",
+          "🎫 Calling createPaymentIntent with: amount=$amount, eventId=$eventId, ticketTypeId=$ticketTypeId, quantity=$quantity")
+      android.util.Log.d("PaymentRepository", "✓ Auth token is available: ${idToken.isNotBlank()}")
 
-            // Firebase Functions automatically includes the auth token from currentUser
-            // Both Firebase.functions and FirebaseAuth.getInstance() use the default Firebase app,
-            // so they are already linked. The token we obtained above ensures it's fresh and available.
-            // The SDK should automatically include the token in the Authorization header.
-            val result: HttpsCallableResult = functions
-                .getHttpsCallable("createPaymentIntent")
-                .call(data)
-                .await()
+      // Firebase Functions automatically includes the auth token from currentUser
+      // Both Firebase.functions and FirebaseAuth.getInstance() use the default Firebase app,
+      // so they are already linked. The token we obtained above ensures it's fresh and available.
+      // The SDK should automatically include the token in the Authorization header.
+      val result: HttpsCallableResult =
+          functions.getHttpsCallable("createPaymentIntent").call(data).await()
 
-            android.util.Log.d("PaymentRepository", "✓ Cloud function returned successfully")
+      android.util.Log.d("PaymentRepository", "✓ Cloud function returned successfully")
 
-            val responseData = result.data as? Map<*, *>
-            android.util.Log.d("PaymentRepository", "Response data keys: ${responseData?.keys}")
-            
-            val clientSecret = responseData?.get("clientSecret") as? String
-            val paymentIntentId = responseData?.get("paymentIntentId") as? String
+      val responseData = result.data as? Map<*, *>
+      android.util.Log.d("PaymentRepository", "Response data keys: ${responseData?.keys}")
 
-            if (clientSecret != null && paymentIntentId != null) {
-                android.util.Log.d("PaymentRepository", "✅ Payment intent created: $paymentIntentId")
-                Result.success(
-                    PaymentIntentResponse(
-                        clientSecret = clientSecret,
-                        paymentIntentId = paymentIntentId
-                    )
-                )
-            } else {
-                android.util.Log.e("PaymentRepository", "❌ Invalid response: clientSecret=${clientSecret != null}, paymentIntentId=${paymentIntentId != null}")
-                android.util.Log.e("PaymentRepository", "Response data: $responseData")
-                Result.failure(Exception("Invalid response from server"))
-            }
-        } catch (e: Exception) {
-            // Comprehensive error logging
-            android.util.Log.e("PaymentRepository", "❌❌❌ Error creating payment intent", e)
-            android.util.Log.e("PaymentRepository", "Error type: ${e.javaClass.simpleName}")
-            android.util.Log.e("PaymentRepository", "Error message: ${e.message}")
-            android.util.Log.e("PaymentRepository", "Error cause: ${e.cause?.message}")
-            
-            // Check if it's an authentication-related error
-            val errorMessage = e.message ?: ""
-            if (errorMessage.contains("unauthenticated", ignoreCase = true) == true ||
-                errorMessage.contains("authentication", ignoreCase = true) == true ||
-                errorMessage.contains("must be authenticated", ignoreCase = true) == true ||
-                e.cause?.message?.contains("unauthenticated", ignoreCase = true) == true) {
-                android.util.Log.e("PaymentRepository", "🔐 Authentication error detected")
-                Result.failure(Exception("Please sign in to purchase ticket"))
-            } else {
-                // Return the actual error message to help with debugging
-                val detailedMessage = buildString {
-                    append("Payment failed: ")
-                    append(e.message ?: "Unknown error")
-                    e.cause?.message?.let { 
-                        append(" (Cause: $it)")
-                    }
-                }
-                android.util.Log.e("PaymentRepository", "Error details: $detailedMessage")
-                Result.failure(Exception(detailedMessage))
-            }
+      val clientSecret = responseData?.get("clientSecret") as? String
+      val paymentIntentId = responseData?.get("paymentIntentId") as? String
+
+      if (clientSecret != null && paymentIntentId != null) {
+        android.util.Log.d("PaymentRepository", "✅ Payment intent created: $paymentIntentId")
+        Result.success(
+            PaymentIntentResponse(clientSecret = clientSecret, paymentIntentId = paymentIntentId))
+      } else {
+        android.util.Log.e(
+            "PaymentRepository",
+            "❌ Invalid response: clientSecret=${clientSecret != null}, paymentIntentId=${paymentIntentId != null}")
+        android.util.Log.e("PaymentRepository", "Response data: $responseData")
+        Result.failure(Exception("Invalid response from server"))
+      }
+    } catch (e: Exception) {
+      // Comprehensive error logging
+      android.util.Log.e("PaymentRepository", "❌❌❌ Error creating payment intent", e)
+      android.util.Log.e("PaymentRepository", "Error type: ${e.javaClass.simpleName}")
+      android.util.Log.e("PaymentRepository", "Error message: ${e.message}")
+      android.util.Log.e("PaymentRepository", "Error cause: ${e.cause?.message}")
+
+      // Check if it's an authentication-related error
+      val errorMessage = e.message ?: ""
+      if (errorMessage.contains("unauthenticated", ignoreCase = true) == true ||
+          errorMessage.contains("authentication", ignoreCase = true) == true ||
+          errorMessage.contains("must be authenticated", ignoreCase = true) == true ||
+          e.cause?.message?.contains("unauthenticated", ignoreCase = true) == true) {
+        android.util.Log.e("PaymentRepository", "🔐 Authentication error detected")
+        Result.failure(Exception("Please sign in to purchase ticket"))
+      } else {
+        // Return the actual error message to help with debugging
+        val detailedMessage = buildString {
+          append("Payment failed: ")
+          append(e.message ?: "Unknown error")
+          e.cause?.message?.let { append(" (Cause: $it)") }
         }
+        android.util.Log.e("PaymentRepository", "Error details: $detailedMessage")
+        Result.failure(Exception(detailedMessage))
+      }
     }
+  }
 }

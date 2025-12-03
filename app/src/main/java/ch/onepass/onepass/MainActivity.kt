@@ -9,6 +9,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
@@ -26,15 +27,12 @@ import ch.onepass.onepass.ui.navigation.AppNavHost
 import ch.onepass.onepass.ui.navigation.BottomNavigationBar
 import ch.onepass.onepass.ui.navigation.NavigationDestinations
 import ch.onepass.onepass.ui.navigation.navigateToTopLevel
-import ch.onepass.onepass.ui.profile.ProfileViewModel
 import ch.onepass.onepass.ui.payment.LocalPaymentSheet
 import ch.onepass.onepass.ui.payment.createPaymentSheet
+import ch.onepass.onepass.ui.profile.ProfileViewModel
 import ch.onepass.onepass.ui.theme.OnePassTheme
-import com.google.firebase.appcheck.FirebaseAppCheck
-import com.google.firebase.appcheck.debug.DebugAppCheckProviderFactory
 import com.mapbox.common.MapboxOptions
 import com.stripe.android.PaymentConfiguration
-import androidx.compose.runtime.CompositionLocalProvider
 
 /**
  * Main Activity that sets up Mapbox, Stripe, the OnePass theme and hosts the root composable
@@ -63,17 +61,16 @@ class MainActivity : ComponentActivity() {
     }
 
     // Create PaymentSheet instance early in onCreate to avoid lifecycle registration issues
-    val paymentSheet = if (stripePublishableKey.isNotEmpty()) {
-      createPaymentSheet(this)
-    } else {
-      null
-    }
+    val paymentSheet =
+        if (stripePublishableKey.isNotEmpty()) {
+          createPaymentSheet(this)
+        } else {
+          null
+        }
 
     setContent {
       OnePassTheme {
-        CompositionLocalProvider(LocalPaymentSheet provides paymentSheet) {
-          MainActivityContent()
-        }
+        CompositionLocalProvider(LocalPaymentSheet provides paymentSheet) { MainActivityContent() }
       }
     }
   }

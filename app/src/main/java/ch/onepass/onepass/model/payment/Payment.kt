@@ -2,7 +2,7 @@ package ch.onepass.onepass.model.payment
 
 /**
  * Data class representing a payment in OnePass.
- * 
+ *
  * @property id Unique identifier for the payment
  * @property amount Amount in cents (e.g., 1000 = $10.00)
  * @property currency Currency code (e.g., "usd", "eur", "chf")
@@ -24,21 +24,19 @@ data class Payment(
     val stripePaymentIntentId: String? = null
 )
 
-/**
- * Enum representing the possible states of a payment.
- */
+/** Enum representing the possible states of a payment. */
 enum class PaymentStatus {
-    PENDING,
-    PROCESSING,
-    SUCCEEDED,
-    FAILED,
-    CANCELLED,
-    REFUNDED
+  PENDING,
+  PROCESSING,
+  SUCCEEDED,
+  FAILED,
+  CANCELLED,
+  REFUNDED
 }
 
 /**
  * Data class for creating a payment intent request to the backend.
- * 
+ *
  * @property amount Amount in cents
  * @property currency Currency code
  * @property eventId Associated event ID
@@ -53,11 +51,8 @@ data class CreatePaymentIntentRequest(
 
 /**
  * Data class for the payment intent response from the backend.
- * 
+ *
  * @property clientSecret The client secret to use with Stripe SDK
  * @property paymentIntentId The ID of the payment intent
  */
-data class PaymentIntentResponse(
-    val clientSecret: String,
-    val paymentIntentId: String
-)
+data class PaymentIntentResponse(val clientSecret: String, val paymentIntentId: String)
