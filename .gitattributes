@@ -1,2 +1,0 @@
-# Exclude package-lock.json from diffs to reduce noise in PRs
-functions/package-lock.json linguist-generated=true -diff
