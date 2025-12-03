@@ -4,4 +4,3 @@
 
 export {createPaymentIntent} from "./createPaymentIntent";
 export {stripeWebhook} from "./webhooks";
-export {onOrganizationCreated} from "./onOrganizationCreated";

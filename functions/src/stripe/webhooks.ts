@@ -49,8 +49,6 @@ app.use(
 );
 
 // Note: We do NOT add express.json() here because we need the raw body for Stripe
-// The body will be available as a Buffer in req.body, and as req.rawBody
-
 app.post("*", async (req: express.Request, res: express.Response) => {
   // Only accept POST requests
   if (req.method !== "POST") {
