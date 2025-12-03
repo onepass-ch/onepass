@@ -87,8 +87,7 @@ class EventDetailViewModelTest {
         eventId = eventId,
         eventRepository = mockEventRepository,
         organizationRepository = mockOrganizationRepository,
-        paymentRepository = mockPaymentRepository
-    )
+        paymentRepository = mockPaymentRepository)
   }
 
   @Test
@@ -424,7 +423,8 @@ class EventDetailViewModelTest {
     val freeEvent = testEvent.copy(pricingTiers = listOf(PricingTier("Free", 0.0, 100, 50)))
 
     every { mockEventRepository.getEventById("event-123") } returns flowOf(freeEvent)
-    every { mockOrganizationRepository.getOrganizationById("org-123") } returns flowOf(testOrganization)
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flowOf(testOrganization)
 
     val viewModel = createViewModel()
 
@@ -436,24 +436,17 @@ class EventDetailViewModelTest {
 
   @Test
   fun eventDetailViewModel_initiatePayment_withPaidEvent_createsPaymentIntent() = runTest {
-    val paidEvent = testEvent.copy(
-        pricingTiers = listOf(PricingTier("General", 25.0, 100, 50))
-    )
+    val paidEvent = testEvent.copy(pricingTiers = listOf(PricingTier("General", 25.0, 100, 50)))
 
     every { mockEventRepository.getEventById("event-123") } returns flowOf(paidEvent)
-    every { mockOrganizationRepository.getOrganizationById("org-123") } returns flowOf(testOrganization)
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flowOf(testOrganization)
     coEvery {
       mockPaymentRepository.createPaymentIntent(
-          amount = any(),
-          eventId = any(),
-          description = any()
-      )
-    } returns Result.success(
-        PaymentIntentResponse(
-            clientSecret = "pi_test_secret",
-            paymentIntentId = "pi_test_id"
-        )
-    )
+          amount = any(), eventId = any(), description = any())
+    } returns
+        Result.success(
+            PaymentIntentResponse(clientSecret = "pi_test_secret", paymentIntentId = "pi_test_id"))
 
     val viewModel = createViewModel()
 
@@ -468,18 +461,14 @@ class EventDetailViewModelTest {
 
   @Test
   fun eventDetailViewModel_initiatePayment_withError_setsFailedState() = runTest {
-    val paidEvent = testEvent.copy(
-        pricingTiers = listOf(PricingTier("General", 25.0, 100, 50))
-    )
+    val paidEvent = testEvent.copy(pricingTiers = listOf(PricingTier("General", 25.0, 100, 50)))
 
     every { mockEventRepository.getEventById("event-123") } returns flowOf(paidEvent)
-    every { mockOrganizationRepository.getOrganizationById("org-123") } returns flowOf(testOrganization)
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flowOf(testOrganization)
     coEvery {
       mockPaymentRepository.createPaymentIntent(
-          amount = any(),
-          eventId = any(),
-          description = any()
-      )
+          amount = any(), eventId = any(), description = any())
     } returns Result.failure(Exception("Payment error"))
 
     val viewModel = createViewModel()
@@ -495,7 +484,8 @@ class EventDetailViewModelTest {
   @Test
   fun eventDetailViewModel_paymentCallbacks_updateStateCorrectly() {
     every { mockEventRepository.getEventById("event-123") } returns flowOf(testEvent)
-    every { mockOrganizationRepository.getOrganizationById("org-123") } returns flowOf(testOrganization)
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flowOf(testOrganization)
 
     val viewModel = createViewModel()
 
@@ -529,7 +519,8 @@ class EventDetailViewModelTest {
 
     // Test free event
     every { mockEventRepository.getEventById("event-123") } returns flowOf(freeEvent)
-    every { mockOrganizationRepository.getOrganizationById("org-123") } returns flowOf(testOrganization)
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flowOf(testOrganization)
 
     val viewModel1 = createViewModel()
     Assert.assertTrue(viewModel1.isEventFree())
