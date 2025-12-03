@@ -5,10 +5,13 @@ import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.user.FakeUserRepository
 import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.utils.TestMockMembershipRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -73,9 +76,15 @@ class ProfileViewModelTest {
     vm.state.filter { !it.loading }.first()
 
     // Start collecting effects BEFORE triggering the action to avoid race condition
-    val effectDeferred = kotlinx.coroutines.async { vm.effects.first() }
+    val effectDeferred = async { vm.effects.first() }
+
+    // Give a small delay to ensure the collection coroutine starts
+    yield()
 
     vm.onOrganizationButton()
+
+    // Give viewModelScope time to execute and emit the effect
+    delay(10)
 
     val effect = withTimeout(30000) { effectDeferred.await() }
     assertEquals(ProfileEffect.NavigateToMyOrganizations, effect)
@@ -92,9 +101,15 @@ class ProfileViewModelTest {
     vm.state.filter { !it.loading }.first()
 
     // Start collecting effects BEFORE triggering the action to avoid race condition
-    val effectDeferred = kotlinx.coroutines.async { vm.effects.first() }
+    val effectDeferred = async { vm.effects.first() }
+
+    // Give a small delay to ensure the collection coroutine starts
+    yield()
 
     vm.onOrganizationButton()
+
+    // Give viewModelScope time to execute and emit the effect
+    delay(10)
 
     val effect = withTimeout(30000) { effectDeferred.await() }
     assertEquals(ProfileEffect.NavigateToBecomeOrganizer, effect)
@@ -109,13 +124,20 @@ class ProfileViewModelTest {
         TestMockMembershipRepository(organizationsByUser = mapOf("user-1" to listOf(membership)))
     val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
 
-    // Ensure state is ready before triggering effect
-    vm.state.filter { !it.loading }.first()
+    // Ensure state is ready and isOrganizer is set correctly before triggering effect
+    val readyState = vm.state.filter { !it.loading && it.isOrganizer }.first()
+    assertTrue("User with MEMBER role should be organizer", readyState.isOrganizer)
 
     // Start collecting effects BEFORE triggering the action to avoid race condition
-    val effectDeferred = kotlinx.coroutines.async { vm.effects.first() }
+    val effectDeferred = async { vm.effects.first() }
+
+    // Give a small delay to ensure the collection coroutine starts
+    yield()
 
     vm.onOrganizationButton()
+
+    // Give viewModelScope time to execute and emit the effect
+    delay(10)
 
     val effect = withTimeout(30000) { effectDeferred.await() }
     assertEquals(ProfileEffect.NavigateToMyOrganizations, effect)
@@ -205,9 +227,15 @@ class ProfileViewModelTest {
     vm.state.filter { !it.loading }.first()
 
     // Start collecting effects BEFORE triggering the action to avoid race condition
-    val effectDeferred = kotlinx.coroutines.async { vm.effects.first() }
+    val effectDeferred = async { vm.effects.first() }
+
+    // Give a small delay to ensure the collection coroutine starts
+    yield()
 
     vm.onInvitations()
+
+    // Give viewModelScope time to execute and emit the effect
+    delay(10)
 
     val effect = effectDeferred.await()
 
