@@ -7,6 +7,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.functions.ktx.functions
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 class UserRepositoryFirebase(
@@ -98,6 +101,37 @@ class UserRepositoryFirebase(
       }
     }
   }
+
+  override fun getFavoriteEvents(uid: String): Flow<Set<String>> = callbackFlow {
+    val docRef = userCollection.document(uid)
+    val listener =
+        docRef.addSnapshotListener { snapshot, error ->
+          if (error != null) {
+            close(error)
+            return@addSnapshotListener
+          }
+          if (snapshot != null && snapshot.exists()) {
+            val user = snapshot.toObject(User::class.java)
+            val favorites = user?.favoriteEventIds?.toSet() ?: emptySet()
+            trySend(favorites)
+          } else {
+            trySend(emptySet())
+          }
+        }
+    awaitClose { listener.remove() }
+  }
+
+  override suspend fun addFavoriteEvent(uid: String, eventId: String): Result<Unit> = runCatching {
+    userCollection.document(uid).update("favoriteEventIds", FieldValue.arrayUnion(eventId)).await()
+  }
+
+  override suspend fun removeFavoriteEvent(uid: String, eventId: String): Result<Unit> =
+      runCatching {
+        userCollection
+            .document(uid)
+            .update("favoriteEventIds", FieldValue.arrayRemove(eventId))
+            .await()
+      }
 
   private companion object {
     const val FN_SEARCH_USERS = "searchUsers"

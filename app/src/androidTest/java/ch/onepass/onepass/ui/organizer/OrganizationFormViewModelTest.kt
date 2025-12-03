@@ -13,8 +13,11 @@ import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserSearchType
 import ch.onepass.onepass.utils.TestMockMembershipRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
@@ -345,6 +348,7 @@ class FakeOrganizationRepository : OrganizationRepository {
 class FakeUserRepository : UserRepository {
   var userToReturn: User? = null
   var shouldFailAddOrganization = false
+  private val _favoriteEventIds = MutableStateFlow<Set<String>>(emptySet())
 
   override suspend fun getCurrentUser(): User? = userToReturn
 
@@ -371,4 +375,18 @@ class FakeUserRepository : UserRepository {
   }
 
   suspend fun removeOrganizationFromUser(userId: String, orgId: String) {}
+
+  override fun getFavoriteEvents(uid: String): Flow<Set<String>> {
+    return _favoriteEventIds
+  }
+
+  override suspend fun addFavoriteEvent(uid: String, eventId: String): Result<Unit> {
+    _favoriteEventIds.update { it + eventId }
+    return Result.success(Unit)
+  }
+
+  override suspend fun removeFavoriteEvent(uid: String, eventId: String): Result<Unit> {
+    _favoriteEventIds.update { it - eventId }
+    return Result.success(Unit)
+  }
 }
