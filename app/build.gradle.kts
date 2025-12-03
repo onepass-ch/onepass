@@ -52,6 +52,8 @@ android {
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxToken}\"")
         buildConfigField("String", "STRIPE_PUBLISHABLE_KEY", "\"${stripePublishableKey ?: ""}\"")
+        val oneSignalAppId: String? = localProperties.getProperty("ONESIGNAL_APP_ID")
+        buildConfigField("String", "ONESIGNAL_APP_ID", "\"${oneSignalAppId ?: ""}\"")
     }
 
     buildTypes {
@@ -124,7 +126,7 @@ android {
 
     val keystorePath = (project.findProperty("RELEASE_STORE_FILE") as String?) ?: "keystore.jks"
     val keystoreFile = file(keystorePath)
-    
+
     if (keystoreFile.exists()) {
         signingConfigs {
             create("release") {
@@ -274,6 +276,9 @@ dependencies {
     globalTestImplementation(libs.androidx.junit)
     globalTestImplementation(libs.androidx.espresso.core)
     testImplementation(kotlin("test"))
+
+    // --------- OneSignal -------
+    implementation("com.onesignal:OneSignal:5.4.1")
 }
 
 tasks.withType<Test> {
