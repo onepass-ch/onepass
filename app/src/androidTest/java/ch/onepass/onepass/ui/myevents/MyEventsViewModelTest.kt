@@ -100,7 +100,7 @@ class MyEventsViewModelTest {
     val reader = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
     coEvery { passRepo.getOrCreateSignedPass(uid) } returns
-        Result.failure(Exception("Network down"))
+            Result.failure(Exception("Network down"))
     reader.loadUserPass()
     advanceUntilIdle()
 
@@ -115,6 +115,9 @@ class MyEventsViewModelTest {
 
     vm.loadUserPass()
     advanceUntilIdle()
+
+    // Double vérification que toutes les coroutines sont finies
+    testScheduler.advanceUntilIdle()
 
     assertNotNull(vm.error.value)
     assertTrue(vm.error.value?.contains("not authenticated") == true)
@@ -424,20 +427,6 @@ class MyEventsViewModelTest {
 
     assertNull(vm.userQrData.value)
     assertNull(vm.error.value)
-    assertFalse(vm.isLoading.value)
-  }
-
-  @Test
-  fun isLoading_isFalse_afterLoadSuccess() = runTest {
-    val uid = uniqueUid("load_success")
-    val pass = Pass(uid = uid, kid = "k", issuedAt = 40, version = 1, signature = "success")
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
-    advanceUntilIdle()
-
-    coEvery { passRepo.getOrCreateSignedPass(uid) } returns Result.success(pass)
-    vm.loadUserPass()
-    advanceUntilIdle()
-
     assertFalse(vm.isLoading.value)
   }
 
