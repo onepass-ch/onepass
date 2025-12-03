@@ -1,13 +1,8 @@
 package ch.onepass.onepass.model.device
 
-import android.content.Context
-import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.google.firebase.Firebase
-import com.google.firebase.FirebaseApp
-import com.google.firebase.FirebaseOptions
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.firestore
+import ch.onepass.onepass.utils.FirebaseEmulator.firestore
+import ch.onepass.onepass.utils.FirestoreTestBase
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -17,42 +12,30 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class DeviceTokenRepositoryFirebaseTest {
+class DeviceTokenRepositoryFirebaseTest : FirestoreTestBase() {
 
-  private lateinit var repository: DeviceTokenRepositoryFirebase
-  private lateinit var firestore: FirebaseFirestore
+  private lateinit var deviceRepository: DeviceTokenRepositoryFirebase
   private val testUserId = "test_user_123"
 
   @Before
-  fun setup() {
-    FirebaseApp.getApps(ApplicationProvider.getApplicationContext()).forEach { it.delete() }
-
-    val context = ApplicationProvider.getApplicationContext<Context>()
-    val options =
-        FirebaseOptions.Builder()
-            .setProjectId("demo-test-project")
-            .setApplicationId("1:123456789:android:abcdef")
-            .setApiKey("fake-api-key")
-            .build()
-
-    FirebaseApp.initializeApp(context, options)
-
-    firestore = Firebase.firestore
-    firestore.useEmulator("10.0.2.2", 8080)
-
-    repository = DeviceTokenRepositoryFirebase()
+  override fun setUp() {
+    super.setUp()
+    deviceRepository = DeviceTokenRepositoryFirebase()
   }
 
   @After
-  fun tearDown() = runTest {
-    firestore
-        .collection("users")
-        .document(testUserId)
-        .collection("device_tokens")
-        .get()
-        .await()
-        .documents
-        .forEach { it.reference.delete().await() }
+  override fun tearDown() = runTest {
+    // Clean up test data
+    try {
+      firestore
+          .collection("users")
+          .document(testUserId)
+          .collection("device_tokens")
+          .get()
+          .await()
+          .documents
+          .forEach { it.reference.delete().await() }
+    } catch (_: Exception) {}
   }
 
   @Test
@@ -64,11 +47,10 @@ class DeviceTokenRepositoryFirebaseTest {
             deviceModel = "Pixel 7",
             appVersion = "1.0.0")
 
-    val result = repository.saveDeviceToken(testUserId, token)
+    val result = deviceRepository.saveDeviceToken(testUserId, token)
 
     assertTrue(result.isSuccess)
 
-    // Verify token exists in Firestore
     val doc =
         firestore
             .collection("users")
@@ -93,8 +75,8 @@ class DeviceTokenRepositoryFirebaseTest {
     val inactiveToken =
         DeviceToken(deviceId = "inactive_device", oneSignalPlayerId = "player_2", isActive = false)
 
-    repository.saveDeviceToken(testUserId, activeToken)
-    repository.saveDeviceToken(testUserId, inactiveToken)
+    deviceRepository.saveDeviceToken(testUserId, activeToken)
+    deviceRepository.saveDeviceToken(testUserId, inactiveToken)
 
     // Manually set one as inactive (since save always sets isActive=true)
     firestore
@@ -105,7 +87,7 @@ class DeviceTokenRepositoryFirebaseTest {
         .update("isActive", false)
         .await()
 
-    val result = repository.getDeviceTokens(testUserId)
+    val result = deviceRepository.getDeviceTokens(testUserId)
 
     assertTrue(result.isSuccess)
     val tokens = result.getOrNull()!!
@@ -117,8 +99,8 @@ class DeviceTokenRepositoryFirebaseTest {
   fun deactivateDeviceToken_setsIsActiveToFalse() = runTest {
     val token = DeviceToken(deviceId = "device_to_deactivate", oneSignalPlayerId = "player_999")
 
-    repository.saveDeviceToken(testUserId, token)
-    repository.deactivateDeviceToken(testUserId, "device_to_deactivate")
+    deviceRepository.saveDeviceToken(testUserId, token)
+    deviceRepository.deactivateDeviceToken(testUserId, "device_to_deactivate")
 
     val doc =
         firestore
@@ -137,10 +119,10 @@ class DeviceTokenRepositoryFirebaseTest {
     val token1 = DeviceToken(deviceId = "device1", oneSignalPlayerId = "player_active_1")
     val token2 = DeviceToken(deviceId = "device2", oneSignalPlayerId = "player_active_2")
 
-    repository.saveDeviceToken(testUserId, token1)
-    repository.saveDeviceToken(testUserId, token2)
+    deviceRepository.saveDeviceToken(testUserId, token1)
+    deviceRepository.saveDeviceToken(testUserId, token2)
 
-    val result = repository.getPlayerIds(testUserId)
+    val result = deviceRepository.getPlayerIds(testUserId)
 
     assertTrue(result.isSuccess)
     val playerIds = result.getOrNull()!!
@@ -153,7 +135,7 @@ class DeviceTokenRepositoryFirebaseTest {
   fun saveDeviceToken_setsServerTimestamps() = runTest {
     val token = DeviceToken(deviceId = "timestamp_test", oneSignalPlayerId = "player_timestamp")
 
-    repository.saveDeviceToken(testUserId, token)
+    deviceRepository.saveDeviceToken(testUserId, token)
 
     val doc =
         firestore
@@ -170,7 +152,7 @@ class DeviceTokenRepositoryFirebaseTest {
 
   @Test
   fun getDeviceTokens_withNoTokens_returnsEmptyList() = runTest {
-    val result = repository.getDeviceTokens("user_with_no_tokens")
+    val result = deviceRepository.getDeviceTokens("user_with_no_tokens")
 
     assertTrue(result.isSuccess)
     assertTrue(result.getOrNull()!!.isEmpty())
@@ -178,7 +160,7 @@ class DeviceTokenRepositoryFirebaseTest {
 
   @Test
   fun getPlayerIds_withNoTokens_returnsEmptyList() = runTest {
-    val result = repository.getPlayerIds("user_with_no_tokens")
+    val result = deviceRepository.getPlayerIds("user_with_no_tokens")
 
     assertTrue(result.isSuccess)
     assertTrue(result.getOrNull()!!.isEmpty())
@@ -196,8 +178,8 @@ class DeviceTokenRepositoryFirebaseTest {
             oneSignalPlayerId = "new_player_id",
             deviceModel = "Pixel 7")
 
-    repository.saveDeviceToken(testUserId, originalToken)
-    repository.saveDeviceToken(testUserId, updatedToken)
+    deviceRepository.saveDeviceToken(testUserId, originalToken)
+    deviceRepository.saveDeviceToken(testUserId, updatedToken)
 
     val doc =
         firestore
@@ -222,10 +204,10 @@ class DeviceTokenRepositoryFirebaseTest {
             deviceId = "device2", oneSignalPlayerId = "" // Empty
             )
 
-    repository.saveDeviceToken(testUserId, tokenWithId)
-    repository.saveDeviceToken(testUserId, tokenWithoutId)
+    deviceRepository.saveDeviceToken(testUserId, tokenWithId)
+    deviceRepository.saveDeviceToken(testUserId, tokenWithoutId)
 
-    val result = repository.getPlayerIds(testUserId)
+    val result = deviceRepository.getPlayerIds(testUserId)
 
     assertTrue(result.isSuccess)
     val playerIds = result.getOrNull()!!
@@ -235,7 +217,7 @@ class DeviceTokenRepositoryFirebaseTest {
 
   @Test
   fun deactivateDeviceToken_withNonExistentToken_returnsFailure() = runTest {
-    val result = repository.deactivateDeviceToken(testUserId, "non_existent_device")
+    val result = deviceRepository.deactivateDeviceToken(testUserId, "non_existent_device")
 
     // Should fail since document doesn't exist
     assertTrue(result.isFailure)
@@ -250,11 +232,11 @@ class DeviceTokenRepositoryFirebaseTest {
 
     val token2 = DeviceToken(deviceId = "device_user2", oneSignalPlayerId = "player_user2")
 
-    repository.saveDeviceToken(user1Id, token1)
-    repository.saveDeviceToken(user2Id, token2)
+    deviceRepository.saveDeviceToken(user1Id, token1)
+    deviceRepository.saveDeviceToken(user2Id, token2)
 
-    val user1Tokens = repository.getDeviceTokens(user1Id).getOrNull()!!
-    val user2Tokens = repository.getDeviceTokens(user2Id).getOrNull()!!
+    val user1Tokens = deviceRepository.getDeviceTokens(user1Id).getOrNull()!!
+    val user2Tokens = deviceRepository.getDeviceTokens(user2Id).getOrNull()!!
 
     assertEquals(1, user1Tokens.size)
     assertEquals(1, user2Tokens.size)
@@ -273,7 +255,7 @@ class DeviceTokenRepositoryFirebaseTest {
             appVersion = "2.1.0",
             isActive = true)
 
-    repository.saveDeviceToken(testUserId, token)
+    deviceRepository.saveDeviceToken(testUserId, token)
 
     val doc =
         firestore
