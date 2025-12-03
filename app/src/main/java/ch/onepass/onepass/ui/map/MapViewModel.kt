@@ -332,7 +332,7 @@ class MapViewModel(
    * @param mapView The MapView to update
    * @param point The new location point to track
    */
-  private fun updateCameraForTracking(mapView: MapView, point: Point) {
+  fun updateCameraForTracking(mapView: MapView, point: Point) {
     if (!isValidCoordinate(point.latitude(), point.longitude())) {
       return
     }
@@ -354,7 +354,7 @@ class MapViewModel(
    * - User pinches to zoom
    * - User rotates the map
    */
-  private fun setupGestureListeners(mapView: MapView) {
+  fun setupGestureListeners(mapView: MapView) {
     // Listener for pan/drag gestures
     moveListener =
         object : OnMoveListener {
@@ -415,7 +415,7 @@ class MapViewModel(
       pinchToZoomEnabled = true
       scrollEnabled = true
       doubleTapToZoomInEnabled = true
-      // doubleTouchToZoomOutEnabled = true
+      doubleTouchToZoomOutEnabled = true
     }
 
     val compassPlugin = mapView.getPlugin<CompassPlugin>(MAPBOX_COMPASS_PLUGIN_ID)
