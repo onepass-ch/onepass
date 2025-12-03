@@ -1,6 +1,7 @@
 package ch.onepass.onepass.model.device
 
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.ktx.firestore
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
@@ -14,24 +15,27 @@ class DeviceTokenRepositoryFirebase : DeviceTokenRepository {
 
   override suspend fun saveDeviceToken(userId: String, deviceToken: DeviceToken): Result<Unit> =
       runCatching {
-        val tokenData =
-            mapOf(
-                "deviceId" to deviceToken.deviceId,
-                "oneSignalPlayerId" to deviceToken.oneSignalPlayerId,
-                "platform" to deviceToken.platform,
-                "deviceModel" to deviceToken.deviceModel,
-                "appVersion" to deviceToken.appVersion,
-                "isActive" to true,
-                "createdAt" to FieldValue.serverTimestamp(),
-                "lastUpdated" to FieldValue.serverTimestamp())
+        val docRef =
+            firestore
+                .collection("users")
+                .document(userId)
+                .collection("device_tokens")
+                .document(deviceToken.deviceId)
+        val exists = docRef.get().await().exists()
 
-        firestore
-            .collection("users")
-            .document(userId)
-            .collection("device_tokens")
-            .document(deviceToken.deviceId)
-            .set(tokenData)
-            .await()
+        val tokenData = buildMap {
+          put("deviceId", deviceToken.deviceId)
+          put("oneSignalPlayerId", deviceToken.oneSignalPlayerId)
+          put("platform", deviceToken.platform)
+          put("deviceModel", deviceToken.deviceModel)
+          put("appVersion", deviceToken.appVersion)
+          put("isActive", true)
+          put("lastUpdated", FieldValue.serverTimestamp())
+          if (!exists) {
+            put("createdAt", FieldValue.serverTimestamp())
+          }
+        }
+        docRef.set(tokenData, SetOptions.merge()).await()
       }
 
   override suspend fun getDeviceTokens(userId: String): Result<List<DeviceToken>> = runCatching {
@@ -68,6 +72,6 @@ class DeviceTokenRepositoryFirebase : DeviceTokenRepository {
             .get()
             .await()
 
-    snapshot.documents.mapNotNull { it.getString("oneSignalPlayerId") }.filter { it.isNotEmpty() }
+    snapshot.documents.mapNotNull { it.getString("oneSignalPlayerId") }.filter { it.isNotBlank() }
   }
 }
