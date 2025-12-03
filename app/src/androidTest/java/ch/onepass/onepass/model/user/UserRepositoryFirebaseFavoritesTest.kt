@@ -116,4 +116,24 @@ class UserRepositoryFirebaseFavoritesTest {
     assertTrue(result.contains("event1"))
     assertTrue(result.contains("event2"))
   }
+
+  @Test
+  fun getFavoriteEvents_emitsEmptySet_whenUserDoesNotExist() = runTest {
+    // Simulate a snapshot where the document does not exist
+    val mockSnapshot = mockk<DocumentSnapshot>()
+    every { mockSnapshot.exists() } returns false
+
+    // Mock the snapshot listener to emit the non-existent snapshot
+    every { mockDocument.addSnapshotListener(any()) } answers
+        {
+          val listener = firstArg<EventListener<DocumentSnapshot>>()
+          listener.onEvent(mockSnapshot, null)
+          mockk<ListenerRegistration>(relaxed = true)
+        }
+
+    val flow = repository.getFavoriteEvents(testUserId)
+    val result = flow.first()
+
+    assertTrue("Should return empty set for non-existent user", result.isEmpty())
+  }
 }
