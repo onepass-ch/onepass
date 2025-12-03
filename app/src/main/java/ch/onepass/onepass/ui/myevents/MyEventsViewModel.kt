@@ -22,12 +22,14 @@ import kotlinx.coroutines.flow.onEach
 /**
  * Data class representing a ticket in the UI.
  *
+ * @param ticketId Unique identifier for the ticket.
  * @param title The title of the event.
  * @param status The status of the ticket (e.g., CURRENTLY, UPCOMING, EXPIRED).
  * @param dateTime The display date and time of the event.
  * @param location The display location of the event.
  */
 data class Ticket(
+    val ticketId: String,
     val title: String,
     val status: TicketStatus,
     val dateTime: String,
