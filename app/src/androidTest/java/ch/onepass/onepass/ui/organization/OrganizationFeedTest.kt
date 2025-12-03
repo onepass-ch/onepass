@@ -253,25 +253,43 @@ class OrganizationFeedTest {
               averageRating = 4f + (i % 5) * 0.2f,
               createdAt = Timestamp.now())
         }
+
+    // Mock both flows to ensure combine() works properly
     coEvery { mockRepository.getOrganizationsByOwner(testUserId) } returns flowOf(emptyList())
     coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns flowOf(manyOrgs)
+
     viewModel = OrganizationFeedViewModel(mockRepository)
+
     composeTestRule.setContent {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
     }
 
-    // Wait for the organization data to actually load and be displayed
-    composeTestRule.waitUntilAtLeastOneExists(hasText("Organization 1"), timeoutMillis = 10_000)
+    // Wait for loading to finish and list to appear
+    composeTestRule.waitUntil(timeoutMillis = 10_000) {
+      composeTestRule
+          .onAllNodesWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Wait for the first organization to be rendered
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      composeTestRule.onAllNodesWithText("Organization 1").fetchSemanticsNodes().isNotEmpty()
+    }
+
     composeTestRule.waitForIdle()
+
+    // Verify first item is visible
     composeTestRule.onNodeWithText("Organization 1").assertExists().assertIsDisplayed()
+
+    // Scroll to last item
     composeTestRule
         .onNodeWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST)
         .performScrollToNode(hasText("Organization 10"))
 
-    composeTestRule
-        .onNodeWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST)
-        .performScrollToNode(hasText("Organization 10"))
+    composeTestRule.waitForIdle()
 
+    // Verify last item is now visible
     composeTestRule.onNodeWithText("Organization 10").assertExists().assertIsDisplayed()
   }
 
