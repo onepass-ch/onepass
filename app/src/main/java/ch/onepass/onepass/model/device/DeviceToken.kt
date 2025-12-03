@@ -1,7 +1,6 @@
 package ch.onepass.onepass.model.device
 
 import com.google.firebase.Timestamp
-import com.google.firebase.firestore.ServerTimestamp
 
 /**
  * Represents a device registered for push notifications. Stored in:
@@ -23,6 +22,6 @@ data class DeviceToken(
     val deviceModel: String = "",
     val appVersion: String = "",
     val isActive: Boolean = true,
-    @ServerTimestamp val createdAt: Timestamp? = null,
-    @ServerTimestamp val lastUpdated: Timestamp? = null
+    val createdAt: Timestamp? = null,
+    val lastUpdated: Timestamp? = null
 )
