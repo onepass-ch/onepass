@@ -5,6 +5,8 @@ import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.user.FakeUserRepository
 import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.utils.TestMockMembershipRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
@@ -72,11 +74,13 @@ class ProfileViewModelTest {
     // Ensure state is ready before triggering effect
     vm.state.filter { !it.loading }.first()
 
-    val effect =
-        withTimeout(30000) {
-          vm.onOrganizationButton()
-          vm.effects.first()
-        }
+    val effectDeferred = async { vm.effects.first() }
+
+    delay(100)
+
+    vm.onOrganizationButton()
+
+    val effect = withTimeout(30000) { effectDeferred.await() }
     assertEquals(ProfileEffect.NavigateToMyOrganizations, effect)
   }
 
@@ -89,12 +93,10 @@ class ProfileViewModelTest {
 
     // Ensure state is ready before triggering effect
     vm.state.filter { !it.loading }.first()
-
-    val effect =
-        withTimeout(30000) {
-          vm.onOrganizationButton()
-          vm.effects.first()
-        }
+    val effectDeferred = async { vm.effects.first() }
+    delay(100)
+    vm.onOrganizationButton()
+    val effect = withTimeout(30000) { effectDeferred.await() }
     assertEquals(ProfileEffect.NavigateToBecomeOrganizer, effect)
   }
 
@@ -109,12 +111,11 @@ class ProfileViewModelTest {
 
     // Ensure state is ready before triggering effect
     vm.state.filter { !it.loading }.first()
+    val effectDeferred = async { vm.effects.first() }
+    delay(100)
+    vm.onOrganizationButton()
 
-    val effect =
-        withTimeout(30000) {
-          vm.onOrganizationButton()
-          vm.effects.first()
-        }
+    val effect = withTimeout(30000) { effectDeferred.await() }
     assertEquals(ProfileEffect.NavigateToMyOrganizations, effect)
   }
 
@@ -200,9 +201,11 @@ class ProfileViewModelTest {
     val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
 
     vm.state.filter { !it.loading }.first()
+    val effectDeferred = async { vm.effects.first() }
+    delay(100)
 
     vm.onInvitations()
-    val effect = vm.effects.first()
+    val effect = withTimeout(5000) { effectDeferred.await() }
 
     assertEquals(ProfileEffect.NavigateToMyInvitations, effect)
   }
