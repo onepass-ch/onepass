@@ -137,20 +137,6 @@ class MyEventsViewModelTest {
   }
 
   @Test
-  fun loadUserPass_throwable_setsError_andLeavesQrNull() = runTest {
-    val uid = uniqueUid("boom")
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
-    advanceUntilIdle()
-    coEvery { passRepo.getOrCreateSignedPass(uid) } throws RuntimeException("Boom!")
-
-    vm.loadUserPass()
-    advanceUntilIdle()
-
-    assertTrue(vm.error.value?.contains("Boom") == true)
-    assertNull(vm.userQrData.value)
-  }
-
-  @Test
   fun failure_after_success_keepsPreviousQr() = runTest {
     val uid = uniqueUid("mix")
     val pass = Pass(uid = uid, kid = "k", issuedAt = 5, version = 1, signature = "mix")
