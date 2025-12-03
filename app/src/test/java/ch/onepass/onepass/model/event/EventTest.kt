@@ -312,4 +312,21 @@ class EventTest {
     Assert.assertEquals(EventTag.TECH, EventTag.fromString("Technology"))
     Assert.assertNull(EventTag.fromString("UNKNOWN_TAG"))
   }
+
+  @Test
+  fun eventTag_categories_areCorrectlyGrouped() {
+    val categories = EventTag.categories
+    Assert.assertEquals(3, categories.size)
+
+    Assert.assertTrue(categories.containsKey("Theme"))
+    Assert.assertTrue(categories.containsKey("Format"))
+    Assert.assertTrue(categories.containsKey("Setting & Cost"))
+
+    // Verify all enum values are present in the map
+    val allMappedTags = categories.values.flatten()
+    val allEnumTags = EventTag.entries.toList()
+
+    Assert.assertEquals(allEnumTags.size, allMappedTags.size)
+    Assert.assertTrue(allMappedTags.containsAll(allEnumTags))
+  }
 }

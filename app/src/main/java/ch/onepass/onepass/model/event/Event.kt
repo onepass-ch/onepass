@@ -164,6 +164,12 @@ enum class EventTag(val displayValue: String) {
     fun fromString(value: String): EventTag? {
       return entries.find { it.name == value || it.displayValue == value }
     }
+
+    val categories: Map<String, List<EventTag>> =
+        mapOf(
+            "Theme" to listOf(TECH, BUSINESS, ARTS, MUSIC, FOOD, SPORTS, COMMUNITY),
+            "Format" to listOf(CONFERENCE, WORKSHOP, MEETUP, FESTIVAL, CONCERT, EXPO),
+            "Setting & Cost" to listOf(IN_PERSON, ONLINE, OUTDOOR, FREE, FAMILY))
   }
 }
 

@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -364,38 +366,12 @@ fun TagsSelectionSection(
         style = MaterialTheme.typography.bodyMedium.copy(color = colorResource(id = R.color.white)),
         modifier = Modifier.padding(bottom = 8.dp))
     Text(
-        text = "Select up to 5 tags that best describe your event.",
+        text =
+            "Select up to ${EventFormViewModel.MAX_TAG_COUNT} tags (${selectedTags.size}/${EventFormViewModel.MAX_TAG_COUNT} selected).",
         style = MaterialTheme.typography.bodySmall.copy(color = colorResource(id = R.color.gray)),
         modifier = Modifier.padding(bottom = 16.dp))
 
-    val groups =
-        mapOf(
-            "Theme" to
-                listOf(
-                    EventTag.TECH,
-                    EventTag.BUSINESS,
-                    EventTag.ARTS,
-                    EventTag.MUSIC,
-                    EventTag.FOOD,
-                    EventTag.SPORTS,
-                    EventTag.COMMUNITY),
-            "Format" to
-                listOf(
-                    EventTag.CONFERENCE,
-                    EventTag.WORKSHOP,
-                    EventTag.MEETUP,
-                    EventTag.FESTIVAL,
-                    EventTag.CONCERT,
-                    EventTag.EXPO),
-            "Setting & Cost" to
-                listOf(
-                    EventTag.IN_PERSON,
-                    EventTag.ONLINE,
-                    EventTag.OUTDOOR,
-                    EventTag.FREE,
-                    EventTag.FAMILY))
-
-    groups.forEach { (header, tags) ->
+    EventTag.categories.forEach { (header, tags) ->
       Text(
           text = header,
           style =
@@ -412,6 +388,11 @@ fun TagsSelectionSection(
                   selected = isSelected,
                   onClick = { onTagToggle(tag) },
                   label = { Text(tag.displayValue) },
+                  modifier =
+                      Modifier.semantics {
+                        contentDescription =
+                            "${tag.displayValue} tag ${if(isSelected) "selected" else "not selected"}"
+                      },
                   colors =
                       FilterChipDefaults.filterChipColors(
                           selectedContainerColor = EventDateColor,

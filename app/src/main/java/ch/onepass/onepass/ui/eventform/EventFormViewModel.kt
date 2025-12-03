@@ -34,6 +34,9 @@ abstract class EventFormViewModel(
     protected val locationRepository: LocationRepository = NominatimLocationRepository(),
     protected val storageRepository: StorageRepository = StorageRepositoryFirebase()
 ) : ViewModel() {
+  companion object {
+    const val MAX_TAG_COUNT = 5
+  }
 
   enum class ValidationError(val key: String, val message: String) {
     TITLE("title", "Title cannot be empty"),
@@ -154,7 +157,7 @@ abstract class EventFormViewModel(
         if (currentTags.contains(tag)) {
           currentTags - tag
         } else {
-          if (currentTags.size < 5) currentTags + tag else currentTags
+          if (currentTags.size < MAX_TAG_COUNT) currentTags + tag else currentTags
         }
     _formState.value = _formState.value.copy(selectedTags = newTags)
   }
