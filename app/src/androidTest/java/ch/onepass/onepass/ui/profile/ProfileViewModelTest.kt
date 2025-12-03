@@ -72,11 +72,12 @@ class ProfileViewModelTest {
     // Ensure state is ready before triggering effect
     vm.state.filter { !it.loading }.first()
 
-    val effect =
-        withTimeout(30000) {
-          vm.onOrganizationButton()
-          vm.effects.first()
-        }
+    // Start collecting effects BEFORE triggering the action to avoid race condition
+    val effectDeferred = kotlinx.coroutines.async { vm.effects.first() }
+
+    vm.onOrganizationButton()
+
+    val effect = withTimeout(30000) { effectDeferred.await() }
     assertEquals(ProfileEffect.NavigateToMyOrganizations, effect)
   }
 
@@ -90,11 +91,12 @@ class ProfileViewModelTest {
     // Ensure state is ready before triggering effect
     vm.state.filter { !it.loading }.first()
 
-    val effect =
-        withTimeout(30000) {
-          vm.onOrganizationButton()
-          vm.effects.first()
-        }
+    // Start collecting effects BEFORE triggering the action to avoid race condition
+    val effectDeferred = kotlinx.coroutines.async { vm.effects.first() }
+
+    vm.onOrganizationButton()
+
+    val effect = withTimeout(30000) { effectDeferred.await() }
     assertEquals(ProfileEffect.NavigateToBecomeOrganizer, effect)
   }
 
@@ -110,11 +112,12 @@ class ProfileViewModelTest {
     // Ensure state is ready before triggering effect
     vm.state.filter { !it.loading }.first()
 
-    val effect =
-        withTimeout(30000) {
-          vm.onOrganizationButton()
-          vm.effects.first()
-        }
+    // Start collecting effects BEFORE triggering the action to avoid race condition
+    val effectDeferred = kotlinx.coroutines.async { vm.effects.first() }
+
+    vm.onOrganizationButton()
+
+    val effect = withTimeout(30000) { effectDeferred.await() }
     assertEquals(ProfileEffect.NavigateToMyOrganizations, effect)
   }
 
@@ -201,8 +204,12 @@ class ProfileViewModelTest {
 
     vm.state.filter { !it.loading }.first()
 
+    // Start collecting effects BEFORE triggering the action to avoid race condition
+    val effectDeferred = kotlinx.coroutines.async { vm.effects.first() }
+
     vm.onInvitations()
-    val effect = vm.effects.first()
+
+    val effect = effectDeferred.await()
 
     assertEquals(ProfileEffect.NavigateToMyInvitations, effect)
   }
