@@ -73,7 +73,6 @@ export { onUserCreated } from "./onUserCreated";
 export {
   createPaymentIntent,
   getConnectedAccountStatus,
-  getStripeOnboardingUrl,
   stripeWebhook,
   onOrganizationCreated, // Automatic trigger when organization is created
 } from "./stripe";

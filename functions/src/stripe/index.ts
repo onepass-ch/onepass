@@ -4,6 +4,5 @@
 
 export {createPaymentIntent} from "./createPaymentIntent";
 export {getConnectedAccountStatus} from "./getConnectedAccountStatus";
-export {getStripeOnboardingUrl} from "./getStripeOnboardingUrl";
 export {stripeWebhook} from "./webhooks";
 export {onOrganizationCreated} from "./onOrganizationCreated";
