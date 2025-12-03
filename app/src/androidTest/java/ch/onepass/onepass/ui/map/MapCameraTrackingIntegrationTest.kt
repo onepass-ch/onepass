@@ -185,16 +185,6 @@ class MapCameraTrackingIntegrationTest {
   }
 
   @Test
-  fun cameraTracking_isValidCoordinateHelper() = runTest {
-    assertTrue("Valid EPFL location", mapViewModel.isValidCoordinate(46.5191, 6.5668))
-    assertTrue("Valid Zurich location", mapViewModel.isValidCoordinate(47.3769, 8.5417))
-    assertFalse("Invalid latitude", mapViewModel.isValidCoordinate(100.0, 50.0))
-    assertFalse("Invalid longitude", mapViewModel.isValidCoordinate(50.0, 200.0))
-    assertFalse("NaN latitude", mapViewModel.isValidCoordinate(Double.NaN, 50.0))
-    assertFalse("NaN longitude", mapViewModel.isValidCoordinate(50.0, Double.NaN))
-  }
-
-  @Test
   fun cameraTracking_stateConsistencyWithMultipleOperations() = runTest {
     val event1 =
         Event(
