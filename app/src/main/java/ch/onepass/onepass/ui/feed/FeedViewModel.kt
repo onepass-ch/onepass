@@ -47,6 +47,11 @@ open class FeedViewModel(
   companion object {
     /** Maximum number of loaded events to return */
     const val LOADED_EVENTS_LIMIT = 20
+
+    /** Recommendation Weights */
+    private const val TAG_MATCH_WEIGHT = 2.0
+    private const val RECENCY_BOOST = 5.0
+    private const val USER_AFFINITY_BOOST = 10.0
   }
 
   private val _uiState = MutableStateFlow(FeedUIState())
@@ -87,7 +92,7 @@ open class FeedViewModel(
    * history and recency.
    */
   fun recommendEvents(allEvents: List<Event>, userLikedEventIds: Set<String>): List<Event> {
-    // If user has no likes, return default sort (usually by date from repository)
+    // If user has no likes, return default sort (usually chronological from repository)
     if (userLikedEventIds.isEmpty()) return allEvents
 
     // 1. Build User Profile (Tag Frequency Map)
@@ -108,13 +113,11 @@ open class FeedViewModel(
           var score = 0.0
 
           // A. Tag Matching Score
-          // For every tag in the event, if the user likes it, add points based on how much they
-          // like it.
+          // For every tag in the event, if the user likes it, add points based on frequency
           event.tags.forEach { tag ->
             val normalizedTag = tag.lowercase().trim()
             val interestWeight = userInterestProfile[normalizedTag] ?: 0
-            // Weight multiplier: 2.0 points per interest match occurrence
-            score += interestWeight * 2.0
+            score += interestWeight * TAG_MATCH_WEIGHT
           }
 
           // B. Recency Boost
@@ -125,15 +128,14 @@ open class FeedViewModel(
             val sevenDaysAgo = Instant.now().minus(7, ChronoUnit.DAYS)
 
             if (eventDate.isAfter(sevenDaysAgo)) {
-              score += 5.0 // Flat 5 point bonus for new events
+              score += RECENCY_BOOST
             }
           }
 
           // C. User Affinity (Explicit Like)
-          // If they already liked it, push it to top (or bottom, depending on UX preference).
-          // Usually we keep liked items high so they don't disappear.
+          // Boost liked items to keep them visible.
           if (event.eventId in userLikedEventIds) {
-            score += 10.0
+            score += USER_AFFINITY_BOOST
           }
 
           event to score
