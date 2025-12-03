@@ -72,7 +72,6 @@ export { onUserCreated } from "./onUserCreated";
 // Stripe payment functions
 export {
   createPaymentIntent,
-  getConnectedAccountStatus,
   stripeWebhook,
   onOrganizationCreated, // Automatic trigger when organization is created
 } from "./stripe";
