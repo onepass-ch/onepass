@@ -395,8 +395,6 @@ class EventDetailViewModelTest {
     Assert.assertNotNull(viewModel.isLoading)
     Assert.assertNotNull(viewModel.error)
     Assert.assertNotNull(viewModel.paymentState)
-    Assert.assertNotNull(viewModel.selectedTier)
-    Assert.assertNotNull(viewModel.quantity)
   }
 
   @Test
@@ -448,8 +446,6 @@ class EventDetailViewModelTest {
       mockPaymentRepository.createPaymentIntent(
           amount = any(),
           eventId = any(),
-          ticketTypeId = any(),
-          quantity = any(),
           description = any()
       )
     } returns Result.success(
@@ -482,8 +478,6 @@ class EventDetailViewModelTest {
       mockPaymentRepository.createPaymentIntent(
           amount = any(),
           eventId = any(),
-          ticketTypeId = any(),
-          quantity = any(),
           description = any()
       )
     } returns Result.failure(Exception("Payment error"))
@@ -496,77 +490,6 @@ class EventDetailViewModelTest {
     val state = viewModel.paymentState.value
     Assert.assertTrue(state is PaymentState.PaymentFailed)
     Assert.assertEquals("Payment error", (state as PaymentState.PaymentFailed).errorMessage)
-  }
-
-  @Test
-  fun eventDetailViewModel_selectPricingTier_updatesTier() {
-    val paidEvent = testEvent.copy(
-        pricingTiers = listOf(
-            PricingTier("General", 25.0, 100, 50),
-            PricingTier("VIP", 50.0, 20, 10)
-        )
-    )
-
-    every { mockEventRepository.getEventById("event-123") } returns flowOf(paidEvent)
-    every { mockOrganizationRepository.getOrganizationById("org-123") } returns flowOf(testOrganization)
-
-    val viewModel = createViewModel()
-
-    // First tier is auto-selected
-    Assert.assertEquals("General", viewModel.selectedTier.value?.name)
-
-    // Select VIP tier
-    val vipTier = paidEvent.pricingTiers[1]
-    viewModel.selectPricingTier(vipTier)
-
-    Assert.assertEquals("VIP", viewModel.selectedTier.value?.name)
-  }
-
-  @Test
-  fun eventDetailViewModel_updateQuantity_updatesQuantityWithinBounds() {
-    every { mockEventRepository.getEventById("event-123") } returns flowOf(testEvent)
-    every { mockOrganizationRepository.getOrganizationById("org-123") } returns flowOf(testOrganization)
-
-    val viewModel = createViewModel()
-
-    // Initial quantity is 1
-    Assert.assertEquals(1, viewModel.quantity.value)
-
-    // Update to 5
-    viewModel.updateQuantity(5)
-    Assert.assertEquals(5, viewModel.quantity.value)
-
-    // Try to update to 0 (should stay at 5)
-    viewModel.updateQuantity(0)
-    Assert.assertEquals(5, viewModel.quantity.value)
-
-    // Try to update to 11 (should stay at 5)
-    viewModel.updateQuantity(11)
-    Assert.assertEquals(5, viewModel.quantity.value)
-
-    // Update to 10 (max)
-    viewModel.updateQuantity(10)
-    Assert.assertEquals(10, viewModel.quantity.value)
-  }
-
-  @Test
-  fun eventDetailViewModel_calculateTotalPrice_returnsCorrectAmount() {
-    val paidEvent = testEvent.copy(
-        pricingTiers = listOf(PricingTier("General", 25.0, 100, 50))
-    )
-
-    every { mockEventRepository.getEventById("event-123") } returns flowOf(paidEvent)
-    every { mockOrganizationRepository.getOrganizationById("org-123") } returns flowOf(testOrganization)
-
-    val viewModel = createViewModel()
-
-    // 25.0 CHF * 100 (cents) * 1 (quantity) = 2500 cents
-    Assert.assertEquals(2500L, viewModel.calculateTotalPrice())
-
-    // Update quantity to 3
-    viewModel.updateQuantity(3)
-    // 25.0 * 100 * 3 = 7500 cents
-    Assert.assertEquals(7500L, viewModel.calculateTotalPrice())
   }
 
   @Test
