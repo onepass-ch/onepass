@@ -60,8 +60,6 @@ object EventDetailTestTags {
     const val LOADING = "eventDetailLoading"
     const val ERROR = "eventDetailError"
     const val PAYMENT_LOADING = "eventDetailPaymentLoading"
-    const val PRICING_TIER_SELECTOR = "eventDetailPricingTierSelector"
-    const val QUANTITY_SELECTOR = "eventDetailQuantitySelector"
 }
 
 /** Event detail screen displaying full event information. */
@@ -81,14 +79,12 @@ fun EventDetailScreen(
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val paymentState by viewModel.paymentState.collectAsState()
-    val selectedTier by viewModel.selectedTier.collectAsState()
-    val quantity by viewModel.quantity.collectAsState()
 
     val eventCardViewModel = EventCardViewModel.getInstance()
     val likedEvents by eventCardViewModel.likedEvents.collectAsState()
     val isLiked = likedEvents.contains(eventId)
 
-    // Get PaymentSheet from CompositionLocal (created in MainActivity.onCreate)
+    // Get PaymentSheet
     val paymentSheet = LocalPaymentSheet.current
     val context = LocalContext.current
 
@@ -146,9 +142,7 @@ fun EventDetailScreen(
             isLoading = isLoading,
             errorMessage = error,
             isLiked = isLiked,
-            paymentState = paymentState,
-            selectedTier = selectedTier,
-            quantity = quantity
+            paymentState = paymentState
         ),
         onBack = onBack,
         onLikeToggle = { eventCardViewModel.toggleLike(eventId) },
@@ -158,9 +152,7 @@ fun EventDetailScreen(
             if (!isPaymentInProgress) {
                 viewModel.initiatePayment()
             }
-        },
-        onSelectTier = { tier -> viewModel.selectPricingTier(tier) },
-        onUpdateQuantity = { newQuantity -> viewModel.updateQuantity(newQuantity) }
+        }
     )
 }
 
@@ -171,9 +163,7 @@ internal data class EventDetailUiState(
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
     val isLiked: Boolean = false,
-    val paymentState: PaymentState = PaymentState.Idle,
-    val selectedTier: PricingTier? = null,
-    val quantity: Int = 1
+    val paymentState: PaymentState = PaymentState.Idle
 )
 
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -184,9 +174,7 @@ internal fun EventDetailScreenContent(
     onLikeToggle: () -> Unit,
     onNavigateToMap: () -> Unit,
     onNavigateToOrganizerProfile: (String) -> Unit = {},
-    onBuyTicket: () -> Unit,
-    onSelectTier: (PricingTier) -> Unit = {},
-    onUpdateQuantity: (Int) -> Unit = {}
+    onBuyTicket: () -> Unit
 ) {
     val isPaymentInProgress = uiState.paymentState is PaymentState.CreatingPaymentIntent ||
             uiState.paymentState is PaymentState.ProcessingPayment
@@ -223,15 +211,12 @@ internal fun EventDetailScreenContent(
                     onNavigateToMap = onNavigateToMap,
                     onBuyTicket = onBuyTicket,
                     onNavigateToOrganizerProfile = onNavigateToOrganizerProfile,
-                    onBack = onBack,
-                    selectedTier = uiState.selectedTier,
-                    quantity = uiState.quantity,
-                    onSelectTier = onSelectTier,
-                    onUpdateQuantity = onUpdateQuantity)
+                    onBack = onBack
+                )
 
                 BuyButton(
                     onBuyTicket = onBuyTicket,
-                    priceText = formatPriceWithTier(uiState.event, uiState.selectedTier, uiState.quantity),
+                    priceText = formatPrice(uiState.event),
                     isLoading = isPaymentInProgress,
                     modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth())
             }
@@ -239,26 +224,7 @@ internal fun EventDetailScreenContent(
 
         // Show loading overlay when payment is in progress
         if (isPaymentInProgress) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.5f))
-                    .testTag(EventDetailTestTags.PAYMENT_LOADING),
-                contentAlignment = Alignment.Center
-            ) {
-                Column(
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    CircularProgressIndicator(color = Color.White)
-                    Text(
-                        text = if (uiState.paymentState is PaymentState.CreatingPaymentIntent)
-                            "Preparing payment..." else "Processing payment...",
-                        color = Color.White,
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                }
-            }
+            LoadingOverlay(uiState)
         }
     }
 }
@@ -331,11 +297,7 @@ private fun EventDetailContent(
     onNavigateToMap: () -> Unit,
     onBuyTicket: () -> Unit,
     onNavigateToOrganizerProfile: (String) -> Unit,
-    onBack: () -> Unit = {},
-    selectedTier: PricingTier? = null,
-    quantity: Int = 1,
-    onSelectTier: (PricingTier) -> Unit = {},
-    onUpdateQuantity: (Int) -> Unit = {}
+    onBack: () -> Unit = {}
 ) {
     Box(modifier = Modifier.fillMaxSize()) {
         Column(
@@ -548,26 +510,27 @@ internal fun formatPrice(event: Event): String {
     }
 }
 
-/**
- * Formats the price based on selected tier and quantity.
- */
-private fun formatPriceWithTier(event: Event, selectedTier: PricingTier?, quantity: Int): String {
-    // For free events
-    if (event.lowestPrice == 0u) {
-        return "FREE"
-    }
-
-    // If a tier is selected, use its price
-    val price = selectedTier?.price ?: event.pricingTiers.firstOrNull()?.price ?: event.lowestPrice.toDouble()
-
-    return if (price == 0.0) {
-        "FREE"
-    } else {
-        val totalPrice = (price * quantity).toInt()
-        if (quantity > 1) {
-            "Buy $quantity tickets for $totalPrice ${event.currency.uppercase()}"
-        } else {
-            "Buy ticket for $totalPrice ${event.currency.uppercase()}"
+@Composable
+private fun LoadingOverlay(uiState: EventDetailUiState) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black.copy(alpha = 0.5f))
+            .testTag(EventDetailTestTags.PAYMENT_LOADING),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            CircularProgressIndicator(color = Color.White)
+            Text(
+                text = if (uiState.paymentState is PaymentState.CreatingPaymentIntent)
+                    "Preparing payment..." else "Processing payment...",
+                color = Color.White,
+                style = MaterialTheme.typography.bodyLarge
+            )
         }
     }
 }
+
