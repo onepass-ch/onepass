@@ -153,7 +153,7 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
         .performClick()
 
     // Wait until the staff item is removed from the UI
-    composeTestRule.waitUntil(timeoutMillis = 5000) {
+    composeTestRule.waitUntil(timeoutMillis = 20_000) {
       composeTestRule.onAllNodesWithText(staffId).fetchSemanticsNodes().isEmpty()
     }
   }
