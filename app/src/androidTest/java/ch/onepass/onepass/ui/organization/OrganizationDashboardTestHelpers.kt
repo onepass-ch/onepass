@@ -245,6 +245,18 @@ class MockUserRepository(private val users: Map<String, StaffSearchResult> = emp
       searchType: UserSearchType,
       organizationId: String?
   ): Result<List<StaffSearchResult>> = Result.success(emptyList())
+
+  override fun getFavoriteEvents(uid: String): Flow<Set<String>> {
+    TODO("Not yet implemented")
+  }
+
+  override suspend fun addFavoriteEvent(uid: String, eventId: String): Result<Unit> {
+    TODO("Not yet implemented")
+  }
+
+  override suspend fun removeFavoriteEvent(uid: String, eventId: String): Result<Unit> {
+    TODO("Not yet implemented")
+  }
 }
 
 /** Mock Event Repository with configurable behavior. */
