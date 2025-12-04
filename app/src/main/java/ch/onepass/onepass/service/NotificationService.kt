@@ -1,6 +1,7 @@
 package ch.onepass.onepass.service
 
 import android.util.Log
+import androidx.annotation.VisibleForTesting
 import ch.onepass.onepass.model.notification.Notification
 import ch.onepass.onepass.model.notification.NotificationRepositoryFirebase
 import ch.onepass.onepass.model.notification.NotificationType
@@ -61,20 +62,23 @@ class NotificationService : INotificationServiceExtension {
     event.notification.display()
   }
 
-  /** Parse notification type from additional data. */
-  private fun parseNotificationType(data: JSONObject?): NotificationType {
-    return when (data?.optString("type")) {
-      "EVENT_REMINDER" -> NotificationType.EVENT_REMINDER
-      "EVENT_INVITATION" -> NotificationType.EVENT_INVITATION
-      "ORGANIZATION_INVITATION" -> NotificationType.ORGANIZATION_INVITATION
-      "TICKET_PURCHASED" -> NotificationType.TICKET_PURCHASED
-      "TICKET_TRANSFER" -> NotificationType.TICKET_TRANSFER
-      "EVENT_CANCELLED" -> NotificationType.EVENT_CANCELLED
-      "NEW_MESSAGE" -> NotificationType.NEW_MESSAGE
-      "SYSTEM_ANNOUNCEMENT" -> NotificationType.SYSTEM_ANNOUNCEMENT
-      else -> {
-        Log.w(TAG, "Unknown notification type: ${data?.optString("type")}")
-        NotificationType.SYSTEM_ANNOUNCEMENT
+  companion object {
+    /** Parse notification type from additional data. Made internal for testing. */
+    @VisibleForTesting
+    internal fun parseNotificationType(data: JSONObject?): NotificationType {
+      return when (data?.optString("type")) {
+        "EVENT_REMINDER" -> NotificationType.EVENT_REMINDER
+        "EVENT_INVITATION" -> NotificationType.EVENT_INVITATION
+        "ORGANIZATION_INVITATION" -> NotificationType.ORGANIZATION_INVITATION
+        "TICKET_PURCHASED" -> NotificationType.TICKET_PURCHASED
+        "TICKET_TRANSFER" -> NotificationType.TICKET_TRANSFER
+        "EVENT_CANCELLED" -> NotificationType.EVENT_CANCELLED
+        "NEW_MESSAGE" -> NotificationType.NEW_MESSAGE
+        "SYSTEM_ANNOUNCEMENT" -> NotificationType.SYSTEM_ANNOUNCEMENT
+        else -> {
+          Log.w("OnePassNotification", "Unknown notification type: ${data?.optString("type")}")
+          NotificationType.SYSTEM_ANNOUNCEMENT
+        }
       }
     }
   }
