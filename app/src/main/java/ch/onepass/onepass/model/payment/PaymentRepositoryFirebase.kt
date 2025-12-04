@@ -24,7 +24,7 @@ class PaymentRepositoryFirebase(
       quantity: Int,
       description: String?
   ): Result<PaymentIntentResponse> {
-      val signInErrorMessage = "Please sign in to purchase ticket"
+    val signInErrorMessage = "Please sign in to purchase ticket"
     return try {
       // Verify user is authenticated before making the call
       val currentUser = auth.currentUser
