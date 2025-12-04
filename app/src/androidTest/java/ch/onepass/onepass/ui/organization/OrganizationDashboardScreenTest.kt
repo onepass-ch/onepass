@@ -582,25 +582,19 @@ class OrganizationDashboardScreenTest {
   }
 
   @Test
-  fun organizationDashboardScreen_displaysSkeleton_whenLoadingProfiles() {
-    val loadingMember =
-        OrganizationDashboardTestData.createTestMembership(
-            userId = "loading-user", role = OrganizationRole.MEMBER)
+  fun skeletonStaffItem_displaysPlaceholders() {
+    val userId = "skeleton-test-user"
+    composeTestRule.setContent { OnePassTheme { SkeletonStaffItem(userId = userId) } }
 
-    // Mock ViewModel state where userProfile is null and isLoading is true for this member
-    val viewModel =
-        OrganizationDashboardViewModel(
-            organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository(),
-            membershipRepository = MockMembershipRepository(listOf(loadingMember)),
-            userRepository =
-                MockUserRepository()) // User not found in repo, so profile remains null
+    // Verify the main container
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.getStaffItemTag(userId))
+        .assertIsDisplayed()
 
-    setScreen(viewModel = viewModel)
-
-    waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
-    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN).performClick()
-    composeTestRule.waitForIdle()
+    // Verify internal skeleton parts
+    composeTestRule.onNodeWithTag("skeleton_avatar_$userId").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("skeleton_name_$userId").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("skeleton_email_$userId").assertIsDisplayed()
   }
 
   @Test

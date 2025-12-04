@@ -727,7 +727,7 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
 }
 
 @Composable
-private fun SkeletonStaffItem(userId: String) {
+fun SkeletonStaffItem(userId: String) {
   Row(
       modifier =
           Modifier.fillMaxWidth()
@@ -740,7 +740,8 @@ private fun SkeletonStaffItem(userId: String) {
             modifier =
                 Modifier.size(40.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant))
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .testTag("skeleton_avatar_$userId"))
 
         Spacer(modifier = Modifier.width(12.dp))
 
@@ -751,7 +752,8 @@ private fun SkeletonStaffItem(userId: String) {
                   Modifier.height(16.dp)
                       .fillMaxWidth(0.5f)
                       .background(
-                          MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp)))
+                          MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+                      .testTag("skeleton_name_$userId"))
           Spacer(modifier = Modifier.height(4.dp))
           // Email Skeleton
           Box(
@@ -759,7 +761,8 @@ private fun SkeletonStaffItem(userId: String) {
                   Modifier.height(12.dp)
                       .fillMaxWidth(0.7f)
                       .background(
-                          MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp)))
+                          MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+                      .testTag("skeleton_email_$userId"))
         }
       }
 }
