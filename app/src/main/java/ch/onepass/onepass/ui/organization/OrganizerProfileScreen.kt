@@ -5,7 +5,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,19 +18,10 @@ import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButtonDefaults.Icon
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -407,34 +397,34 @@ fun OrganizerProfileScreen(
 
   LaunchedEffect(viewModel) { viewModel.effects.collectLatest { effect -> onEffect(effect) } }
 
-    BackNavigationScaffold(
-        title = "Organizer Profile",
-        onBack = onNavigateBack,
-    ) {
-        OrganizerProfileContent(
-            name = state.name,
-            description = state.description,
-            bannerImageUrl = state.coverImageUrl,
-            profileImageUrl = state.profileImageUrl,
-            websiteUrl = state.websiteUrl,
-            instagramUrl = state.instagramUrl,
-            tiktokUrl = state.tiktokUrl,
-            facebookUrl = state.facebookUrl,
-            followersCount = state.followersCountFormatted,
-            isFollowing = state.isFollowing,
-            isOwner = state.isOwner,
-            selectedTab = state.selectedTab,
-            upcomingEvents = state.upcomingEvents,
-            pastEvents = state.pastEvents,
-            onFollowClick = { viewModel.onFollowClicked() },
-            onWebsiteClick = { viewModel.onWebsiteClicked() },
-            onInstagramClick = { viewModel.onSocialMediaClicked("instagram") },
-            onTiktokClick = { viewModel.onSocialMediaClicked("tiktok") },
-            onFacebookClick = { viewModel.onSocialMediaClicked("facebook") },
-            onEditOrganizationClick = { viewModel.onEditOrganizationClicked() },
-            onTabSelected = { viewModel.onTabSelected(it) },
-            onEventClick = { viewModel.onEventClicked(it) })
-    }
+  BackNavigationScaffold(
+      title = "Organizer Profile",
+      onBack = onNavigateBack,
+  ) {
+    OrganizerProfileContent(
+        name = state.name,
+        description = state.description,
+        bannerImageUrl = state.coverImageUrl,
+        profileImageUrl = state.profileImageUrl,
+        websiteUrl = state.websiteUrl,
+        instagramUrl = state.instagramUrl,
+        tiktokUrl = state.tiktokUrl,
+        facebookUrl = state.facebookUrl,
+        followersCount = state.followersCountFormatted,
+        isFollowing = state.isFollowing,
+        isOwner = state.isOwner,
+        selectedTab = state.selectedTab,
+        upcomingEvents = state.upcomingEvents,
+        pastEvents = state.pastEvents,
+        onFollowClick = { viewModel.onFollowClicked() },
+        onWebsiteClick = { viewModel.onWebsiteClicked() },
+        onInstagramClick = { viewModel.onSocialMediaClicked("instagram") },
+        onTiktokClick = { viewModel.onSocialMediaClicked("tiktok") },
+        onFacebookClick = { viewModel.onSocialMediaClicked("facebook") },
+        onEditOrganizationClick = { viewModel.onEditOrganizationClicked() },
+        onTabSelected = { viewModel.onTabSelected(it) },
+        onEventClick = { viewModel.onEventClicked(it) })
+  }
 }
 
 /**

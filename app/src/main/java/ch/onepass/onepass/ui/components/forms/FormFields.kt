@@ -15,7 +15,6 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.OutlinedTextField
@@ -56,24 +55,24 @@ fun FormTextField(
     modifier: Modifier = Modifier,
     testTag: String? = null
 ) {
-    Column(modifier = modifier) {
-        OutlinedTextField(
-            value = value,
-            onValueChange = onValueChange,
-            label = { Text(label, color = colorResource(id = R.color.on_background)) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .onFocusChanged { onFocusChanged(it.isFocused) },
-            isError = isError,
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-            singleLine = maxLines == 1,
-            maxLines = maxLines
-        )
-        errorMessage?.let {
-            Text(it, color = colorScheme.error, style = MaterialTheme.typography.bodySmall)
-        }
-        Spacer(Modifier.height(16.dp))
+  Column(modifier = modifier) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(label, color = colorResource(id = R.color.on_background)) },
+        modifier =
+            Modifier.fillMaxWidth()
+                .onFocusChanged { onFocusChanged(it.isFocused) }
+                .then(if (testTag != null) Modifier.testTag(testTag) else Modifier),
+        isError = isError,
+        keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+        singleLine = maxLines == 1,
+        maxLines = maxLines)
+    errorMessage?.let {
+      Text(it, color = colorScheme.error, style = MaterialTheme.typography.bodySmall)
     }
+    Spacer(Modifier.height(16.dp))
+  }
 }
 
 /**
@@ -110,62 +109,70 @@ fun PrefixPhoneRow(
     phoneTestTag: String? = null,
     prefixTestTag: String? = null
 ) {
-    Column(modifier = modifier) {
-        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            ExposedDropdownMenuBox(
-                expanded = dropdownExpanded,
-                onExpandedChange = { if (it) onPrefixClick() else onDropdownDismiss() },
-                modifier = Modifier.weight(0.45f).then(if (prefixTestTag != null) Modifier.testTag(prefixTestTag) else Modifier)
-            ) {
-                OutlinedTextField(
-                    value = prefixDisplayText,
-                    onValueChange = {},
-                    readOnly = true,
-                    isError = prefixError != null,
-                    placeholder = { Text("Country", color = colorResource(id = R.color.on_background)) },
-                    singleLine = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth().height(56.dp)
-                )
-
-                ExposedDropdownMenu(
-                    expanded = dropdownExpanded,
-                    onDismissRequest = onDropdownDismiss,
-                    modifier = Modifier.heightIn(max = 300.dp).background(colorResource(id = R.color.surface))
-                ) {
-                    countryList.forEachIndexed { index, (country, code) ->
-                        DropdownMenuItem(
-                            text = { Text("+$code $country", color = colorResource(id = R.color.on_background)) },
-                            onClick = { onCountrySelected(index); onDropdownDismiss() }
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
+  Column(modifier = modifier) {
+    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+      ExposedDropdownMenuBox(
+          expanded = dropdownExpanded,
+          onExpandedChange = { if (it) onPrefixClick() else onDropdownDismiss() },
+          modifier =
+              Modifier.weight(0.45f)
+                  .then(if (prefixTestTag != null) Modifier.testTag(prefixTestTag) else Modifier)) {
             OutlinedTextField(
-                value = phoneValue,
-                onValueChange = { onPhoneChange(it.filter(Char::isDigit)) },
-                modifier = Modifier
-                    .weight(0.55f)
-                    .fillMaxWidth()
-                    .height(56.dp)
-                    .onFocusChanged { onPhoneFocusChanged(it.isFocused) }
-                    .then(if (phoneTestTag != null) Modifier.testTag(phoneTestTag) else Modifier),
-                placeholder = { Text("Phone", color = colorResource(id = R.color.on_background)) },
+                value = prefixDisplayText,
+                onValueChange = {},
+                readOnly = true,
                 isError = prefixError != null,
+                placeholder = {
+                  Text("Country", color = colorResource(id = R.color.on_background))
+                },
                 singleLine = true,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
-            )
-        }
+                trailingIcon = {
+                  ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
+                },
+                modifier = Modifier.menuAnchor().fillMaxWidth().height(56.dp))
 
-        prefixError?.let {
-            Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-        }
+            ExposedDropdownMenu(
+                expanded = dropdownExpanded,
+                onDismissRequest = onDropdownDismiss,
+                modifier =
+                    Modifier.heightIn(max = 300.dp)
+                        .background(colorResource(id = R.color.surface))) {
+                  countryList.forEachIndexed { index, (country, code) ->
+                    DropdownMenuItem(
+                        text = {
+                          Text("+$code $country", color = colorResource(id = R.color.on_background))
+                        },
+                        onClick = {
+                          onCountrySelected(index)
+                          onDropdownDismiss()
+                        })
+                  }
+                }
+          }
 
-        Spacer(Modifier.height(16.dp))
+      Spacer(modifier = Modifier.width(8.dp))
+
+      OutlinedTextField(
+          value = phoneValue,
+          onValueChange = { onPhoneChange(it.filter(Char::isDigit)) },
+          modifier =
+              Modifier.weight(0.55f)
+                  .fillMaxWidth()
+                  .height(56.dp)
+                  .onFocusChanged { onPhoneFocusChanged(it.isFocused) }
+                  .then(if (phoneTestTag != null) Modifier.testTag(phoneTestTag) else Modifier),
+          placeholder = { Text("Phone", color = colorResource(id = R.color.on_background)) },
+          isError = prefixError != null,
+          singleLine = true,
+          keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
     }
+
+    prefixError?.let {
+      Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
+    }
+
+    Spacer(Modifier.height(16.dp))
+  }
 }
 
 /**
@@ -177,11 +184,10 @@ fun PrefixPhoneRow(
  */
 @Composable
 fun SubmitButton(onClick: () -> Unit, text: String, modifier: Modifier = Modifier) {
-    Button(
-        onClick = onClick,
-        modifier = modifier.fillMaxWidth().height(48.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = colorResource(id = R.color.primary))
-    ) {
+  Button(
+      onClick = onClick,
+      modifier = modifier.fillMaxWidth().height(48.dp),
+      colors = ButtonDefaults.buttonColors(containerColor = colorResource(id = R.color.primary))) {
         Text(text, color = colorResource(id = R.color.on_background))
-    }
+      }
 }

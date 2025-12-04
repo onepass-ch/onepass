@@ -5,18 +5,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.Organization
@@ -89,57 +85,51 @@ fun OrganizationFeedScaffold(
     onRetry: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    BackNavigationScaffold(
-        title = "MY ORGANIZATIONS",
-        onBack = onNavigateBack,
-        modifier = modifier.fillMaxSize(),
-        containerColor = colorResource(id = R.color.screen_background),
-        topBarTestTag = OrganizationFeedTestTags.ORGANIZATION_FEED_TOP_BAR,
-        backButtonTestTag = OrganizationFeedTestTags.BACK_BUTTON,
-        titleTestTag = OrganizationFeedTestTags.ORGANIZATION_FEED_TITLE,
-        content = { paddingValues ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center,
-            ) {
-                when {
-                    isLoading && organizations.isEmpty() -> {
-                        LoadingState(testTag = OrganizationFeedTestTags.LOADING_INDICATOR)
-                    }
-                    error != null && organizations.isEmpty() -> {
-                        ErrorState(
-                            error = error,
-                            onRetry = onRetry,
-                            testTag = OrganizationFeedTestTags.ERROR_MESSAGE
-                        )
-                    }
-                    !isLoading && organizations.isEmpty() -> {
-                        EmptyState(
-                            title = "No Organizations",
-                            message = "You haven't joined any organizations yet.",
-                            testTag = OrganizationFeedTestTags.EMPTY_STATE
-                        )
-                    }
-                    else -> {
-                        OrganizationListContent(
-                            organizations = organizations,
-                            onOrganizationClick = onOrganizationClick,
-                        )
-                    }
-                }
-
-                AddOrganizationButton(
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp)
-                        .testTag(OrganizationFeedTestTags.ADD_ORG_FAB),
-                    onClick = onFabClick
-                )
+  BackNavigationScaffold(
+      title = "MY ORGANIZATIONS",
+      onBack = onNavigateBack,
+      modifier = modifier.fillMaxSize(),
+      containerColor = colorResource(id = R.color.screen_background),
+      topBarTestTag = OrganizationFeedTestTags.ORGANIZATION_FEED_TOP_BAR,
+      backButtonTestTag = OrganizationFeedTestTags.BACK_BUTTON,
+      titleTestTag = OrganizationFeedTestTags.ORGANIZATION_FEED_TITLE,
+      content = { paddingValues ->
+        Box(
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            contentAlignment = Alignment.Center,
+        ) {
+          when {
+            isLoading && organizations.isEmpty() -> {
+              LoadingState(testTag = OrganizationFeedTestTags.LOADING_INDICATOR)
             }
+            error != null && organizations.isEmpty() -> {
+              ErrorState(
+                  error = error,
+                  onRetry = onRetry,
+                  testTag = OrganizationFeedTestTags.ERROR_MESSAGE)
+            }
+            !isLoading && organizations.isEmpty() -> {
+              EmptyState(
+                  title = "No Organizations",
+                  message = "You haven't joined any organizations yet.",
+                  testTag = OrganizationFeedTestTags.EMPTY_STATE)
+            }
+            else -> {
+              OrganizationListContent(
+                  organizations = organizations,
+                  onOrganizationClick = onOrganizationClick,
+              )
+            }
+          }
+
+          AddOrganizationButton(
+              modifier =
+                  Modifier.align(Alignment.BottomEnd)
+                      .padding(16.dp)
+                      .testTag(OrganizationFeedTestTags.ADD_ORG_FAB),
+              onClick = onFabClick)
         }
-    )
+      })
 }
 
 /** Organization list content with scrollable cards. */

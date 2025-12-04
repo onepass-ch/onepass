@@ -31,21 +31,6 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import kotlinx.coroutines.launch
 
-/** Test tags for EditOrganizationScreen components */
-object EditOrganizationTestTags {
-  const val NAME_FIELD = "EditOrganizationNameField"
-  const val DESCRIPTION_FIELD = "EditOrganizationDescriptionField"
-  const val EMAIL_FIELD = "EditOrganizationEmailField"
-  const val PHONE_FIELD = "EditOrganizationPhoneField"
-  const val WEBSITE_FIELD = "EditOrganizationWebsiteField"
-  const val INSTAGRAM_FIELD = "EditOrganizationInstagramField"
-  const val FACEBOOK_FIELD = "EditOrganizationFacebookField"
-  const val TIKTOK_FIELD = "EditOrganizationTiktokField"
-  const val ADDRESS_FIELD = "EditOrganizationAddressField"
-  const val SUBMIT_BUTTON = "EditOrganizationSubmitButton"
-  const val PREFIX_DROPDOWN = "EditOrganizationPrefixDropdown"
-}
-
 /**
  * Composable screen for editing an existing organization's details.
  *
@@ -162,7 +147,6 @@ fun EditOrganizationScreen(
                       viewModel.updateOrganization(data)
                     },
                     submitText = "Update",
-                    testTags = EditOrganizationTestTags,
                     viewModel = formViewModel,
                     modifier = Modifier.padding(padding))
               }

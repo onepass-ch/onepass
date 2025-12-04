@@ -4,11 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -129,66 +125,55 @@ internal fun MyInvitationsContent(
     organizationRepository: OrganizationRepository,
     modifier: Modifier = Modifier
 ) {
-    val snackbarHostState = remember { SnackbarHostState() }
+  val snackbarHostState = remember { SnackbarHostState() }
 
-    LaunchedEffect(state.successMessage) {
-        state.successMessage?.let { message ->
-            snackbarHostState.showSnackbar(
-                message = message,
-                duration = SnackbarDuration.Short,
-                withDismissAction = true
-            )
-            onClearSuccessMessage()
-        }
+  LaunchedEffect(state.successMessage) {
+    state.successMessage?.let { message ->
+      snackbarHostState.showSnackbar(
+          message = message, duration = SnackbarDuration.Short, withDismissAction = true)
+      onClearSuccessMessage()
     }
+  }
 
-    BackNavigationScaffold(
-        title = "My Invitations",
-        onBack = onNavigateBack,
-        modifier = modifier.testTag(MyInvitationsScreenTestTags.SCREEN),
-        containerColor = colorResource(id = R.color.screen_background),
-        content = { paddingValues ->
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues),
-                contentAlignment = Alignment.Center
-            ) {
-                when {
-                    state.loading -> {
-                        LoadingState(testTag = MyInvitationsScreenTestTags.LOADING_INDICATOR)
-                    }
-                    state.errorMessage != null && state.invitations.isEmpty() -> {
-                        ErrorState(
-                            error = state.errorMessage,
-                            onRetry = onRetry,
-                            testTag = MyInvitationsScreenTestTags.ERROR_MESSAGE
-                        )
-                    }
-                    state.invitations.isEmpty() -> {
-                        EmptyState(
-                            title = "No Invitations",
-                            message = "You don't have any pending invitations at the moment.",
-                            testTag = MyInvitationsScreenTestTags.EMPTY_STATE
-                        )
-                    }
-                    else -> {
-                        InvitationsList(
-                            invitations = state.invitations,
-                            onAcceptInvitation = onAcceptInvitation,
-                            onRejectInvitation = onRejectInvitation,
-                            organizationRepository = organizationRepository
-                        )
-                    }
+  BackNavigationScaffold(
+      title = "My Invitations",
+      onBack = onNavigateBack,
+      modifier = modifier.testTag(MyInvitationsScreenTestTags.SCREEN),
+      containerColor = colorResource(id = R.color.screen_background),
+      content = { paddingValues ->
+        Box(
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            contentAlignment = Alignment.Center) {
+              when {
+                state.loading -> {
+                  LoadingState(testTag = MyInvitationsScreenTestTags.LOADING_INDICATOR)
                 }
+                state.errorMessage != null && state.invitations.isEmpty() -> {
+                  ErrorState(
+                      error = state.errorMessage,
+                      onRetry = onRetry,
+                      testTag = MyInvitationsScreenTestTags.ERROR_MESSAGE)
+                }
+                state.invitations.isEmpty() -> {
+                  EmptyState(
+                      title = "No Invitations",
+                      message = "You don't have any pending invitations at the moment.",
+                      testTag = MyInvitationsScreenTestTags.EMPTY_STATE)
+                }
+                else -> {
+                  InvitationsList(
+                      invitations = state.invitations,
+                      onAcceptInvitation = onAcceptInvitation,
+                      onRejectInvitation = onRejectInvitation,
+                      organizationRepository = organizationRepository)
+                }
+              }
 
-                SnackbarHost(
-                    hostState = snackbarHostState,
-                    modifier = Modifier.testTag(MyInvitationsScreenTestTags.SUCCESS_MESSAGE)
-                )
+              SnackbarHost(
+                  hostState = snackbarHostState,
+                  modifier = Modifier.testTag(MyInvitationsScreenTestTags.SUCCESS_MESSAGE))
             }
-        }
-    )
+      })
 }
 
 /**

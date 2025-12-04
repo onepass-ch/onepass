@@ -114,9 +114,6 @@ object NavigationDestinations {
     object Profile : Tab("Profile", R.drawable.ic_profile, Screen.Profile)
   }
 
-  /**
-   * List of all top-level tabs in the app.
-   * Order determines appearance in the bottom bar.
-   */
+  /** List of all top-level tabs in the app. Order determines appearance in the bottom bar. */
   val tabs = listOf(Tab.Events, Tab.Tickets, Tab.Map, Tab.Profile)
 }

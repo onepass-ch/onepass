@@ -8,7 +8,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -32,7 +31,6 @@ import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
-import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.TextSecondary
 import java.util.Locale
@@ -105,47 +103,43 @@ fun OrganizationDashboardScreen(
     onNavigateToEditEvent: (String) -> Unit = {},
     viewModel: OrganizationDashboardViewModel = viewModel()
 ) {
-    val uiState by viewModel.uiState.collectAsState()
+  val uiState by viewModel.uiState.collectAsState()
 
-    LaunchedEffect(organizationId) { viewModel.loadOrganization(organizationId) }
+  LaunchedEffect(organizationId) { viewModel.loadOrganization(organizationId) }
 
-    BackNavigationScaffold(
-        title = "DASHBOARD",
-        onBack = onNavigateBack,
-        modifier = modifier.testTag(OrganizationDashboardTestTags.SCREEN),
-        titleTestTag = OrganizationDashboardTestTags.TITLE,
-        backButtonTestTag = OrganizationDashboardTestTags.BACK_BUTTON
-    ) { paddingValues ->
+  BackNavigationScaffold(
+      title = "DASHBOARD",
+      onBack = onNavigateBack,
+      modifier = modifier.testTag(OrganizationDashboardTestTags.SCREEN),
+      titleTestTag = OrganizationDashboardTestTags.TITLE,
+      backButtonTestTag = OrganizationDashboardTestTags.BACK_BUTTON) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            when {
-                uiState.isLoading -> {
-                    LoadingState(
-                        modifier = Modifier.align(Alignment.Center),
-                        testTag = OrganizationDashboardTestTags.LOADING_INDICATOR
-                    )
-                }
-                uiState.error != null -> {
-                    ErrorState(
-                        error = uiState.error!!,
-                        onRetry = { viewModel.loadOrganization(organizationId) },
-                        modifier = Modifier.align(Alignment.Center),
-                        testTag = OrganizationDashboardTestTags.ERROR_MESSAGE
-                    )
-                }
-                uiState.organization != null -> {
-                    DashboardContent(
-                        uiState = uiState,
-                        onNavigateToProfile = onNavigateToProfile,
-                        onNavigateToCreateEvent = onNavigateToCreateEvent,
-                        onNavigateToAddStaff = onNavigateToAddStaff,
-                        onNavigateToScanTickets = onNavigateToScanTickets,
-                        onNavigateToEditEvent = onNavigateToEditEvent,
-                        onRemoveStaff = { userId -> viewModel.removeStaffMember(userId) }
-                    )
-                }
+          when {
+            uiState.isLoading -> {
+              LoadingState(
+                  modifier = Modifier.align(Alignment.Center),
+                  testTag = OrganizationDashboardTestTags.LOADING_INDICATOR)
             }
+            uiState.error != null -> {
+              ErrorState(
+                  error = uiState.error!!,
+                  onRetry = { viewModel.loadOrganization(organizationId) },
+                  modifier = Modifier.align(Alignment.Center),
+                  testTag = OrganizationDashboardTestTags.ERROR_MESSAGE)
+            }
+            uiState.organization != null -> {
+              DashboardContent(
+                  uiState = uiState,
+                  onNavigateToProfile = onNavigateToProfile,
+                  onNavigateToCreateEvent = onNavigateToCreateEvent,
+                  onNavigateToAddStaff = onNavigateToAddStaff,
+                  onNavigateToScanTickets = onNavigateToScanTickets,
+                  onNavigateToEditEvent = onNavigateToEditEvent,
+                  onRemoveStaff = { userId -> viewModel.removeStaffMember(userId) })
+            }
+          }
         }
-    }
+      }
 }
 
 /**

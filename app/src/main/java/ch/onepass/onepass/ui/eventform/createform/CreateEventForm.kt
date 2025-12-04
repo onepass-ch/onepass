@@ -8,7 +8,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,28 +30,21 @@ fun EventFormScaffold(
     scrollState: ScrollState,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    BackNavigationScaffold(
-        title = "Create your Event",
-        onBack = onNavigateBack,
-        containerColor = DefaultBackground
-    ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(DefaultBackground)
-                    .verticalScroll(scrollState)
-                    .padding(start = 22.dp, end = 22.dp, bottom = 48.dp)
-            ) {
+  BackNavigationScaffold(
+      title = "Create your Event", onBack = onNavigateBack, containerColor = DefaultBackground) {
+          paddingValues ->
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+          Column(
+              modifier =
+                  Modifier.fillMaxSize()
+                      .background(DefaultBackground)
+                      .verticalScroll(scrollState)
+                      .padding(start = 22.dp, end = 22.dp, bottom = 48.dp)) {
                 Spacer(modifier = Modifier.height(8.dp))
                 content()
-            }
+              }
         }
-    }
+      }
 }
 
 @Composable
