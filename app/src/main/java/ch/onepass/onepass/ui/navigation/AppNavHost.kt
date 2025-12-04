@@ -7,7 +7,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.lifecycle.ViewModelProvider
@@ -81,6 +85,14 @@ fun AppNavHost(
   val authViewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
   val authState by authViewModel.uiState.collectAsState()
 
+  // Swipe navigation manager
+  val swipeNavigationManager = remember { SwipeNavigationManager(navController) }
+
+  // Register top-level screens for swipe navigation
+  listOf(Screen.Events, Screen.Tickets, Screen.Map, Screen.Profile).forEach { screen ->
+    swipeNavigationManager.register(screen)
+  }
+
   // Determine start destination based on auth state
   val startDestination = if (authState.isSignedIn) Screen.Events.route else Screen.Auth.route
 
@@ -111,11 +123,13 @@ fun AppNavHost(
 
     // ------------------ Events (Feed) ------------------
     composable(Screen.Events.route) {
-      FeedScreen(
-          onNavigateToEvent = { eventId ->
-            navController.navigate(Screen.EventDetail.route(eventId))
-          },
-          onNavigateToNotifications = { navController.navigate(Screen.Notification.route) })
+      SwipeWrapper(swipeNavigationManager = swipeNavigationManager, currentScreen = Screen.Events) {
+        FeedScreen(
+            onNavigateToEvent = { eventId ->
+              navController.navigate(Screen.EventDetail.route(eventId))
+            },
+            onNavigateToNotifications = { navController.navigate(Screen.Notification.route) })
+      }
     }
 
     // ------------------ Notifications ------------------
@@ -146,52 +160,64 @@ fun AppNavHost(
 
     // ------------------ Tickets (My Events) ------------------
     composable(Screen.Tickets.route) {
-      val uid = FirebaseAuth.getInstance().currentUser?.uid ?: "LOCAL_TEST_UID"
+      SwipeWrapper(
+          swipeNavigationManager = swipeNavigationManager, currentScreen = Screen.Tickets) {
+            val uid = FirebaseAuth.getInstance().currentUser?.uid ?: "LOCAL_TEST_UID"
 
-      val myEventsVm: MyEventsViewModel =
-          viewModel(factory = viewModelFactory { initializer { MyEventsViewModel(userId = uid) } })
-      MyEventsScreen(viewModel = myEventsVm, userQrData = "USER-QR-DEMO")
+            val myEventsVm: MyEventsViewModel =
+                viewModel(
+                    factory = viewModelFactory { initializer { MyEventsViewModel(userId = uid) } })
+            MyEventsScreen(viewModel = myEventsVm, userQrData = "USER-QR-DEMO")
+          }
     }
 
     // ------------------ Map ------------------
     composable(Screen.Map.route) {
-      // Each map screen will create its own ViewModel and handle its own location permission
-      val mapScreenViewModel: MapViewModel = mapViewModel ?: viewModel()
-      MapScreen(
-          mapViewModel = mapScreenViewModel,
-          onNavigateToEvent = { eventId ->
-            navController.navigate(Screen.EventDetail.route(eventId))
-          })
+      SwipeWrapper(
+          swipeNavigationManager = swipeNavigationManager,
+          currentScreen = Screen.Map,
+          canLeave = false) {
+            // Each map screen will create its own ViewModel and handle its own location permission
+            val mapScreenViewModel: MapViewModel = mapViewModel ?: viewModel()
+            MapScreen(
+                mapViewModel = mapScreenViewModel,
+                onNavigateToEvent = { eventId ->
+                  navController.navigate(Screen.EventDetail.route(eventId))
+                })
+          }
     }
 
     // ------------------ Profile ------------------
     composable(Screen.Profile.route) {
-      val profileVm: ProfileViewModel = viewModel(factory = profileViewModelFactory)
-      ProfileScreen(
-          viewModel = profileVm,
-          onEffect = { effect ->
-            when (effect) {
-              ProfileEffect.NavigateToBecomeOrganizer ->
-                  navController.navigate(Screen.BecomeOrganizer.route)
-              ProfileEffect.NavigateToMyOrganizations ->
-                  navController.navigate(Screen.OrganizationFeed.route)
-              ProfileEffect.NavigateToAccountSettings ->
-                  navController.navigate(Screen.ComingSoon.route)
-              ProfileEffect.NavigateToPaymentMethods ->
-                  navController.navigate(Screen.ComingSoon.route)
-              ProfileEffect.NavigateToHelp -> navController.navigate(Screen.ComingSoon.route)
-              ProfileEffect.SignOut -> {
-                authViewModel.signOut()
-                navController.navigate(Screen.Auth.route) {
-                  popUpTo(navController.graph.startDestinationId) { inclusive = true }
-                  launchSingleTop = true
-                }
-              }
-              ProfileEffect.NavigateToMyInvitations -> {
-                navController.navigate(Screen.MyInvitations.route)
-              }
-            }
-          })
+      SwipeWrapper(
+          swipeNavigationManager = swipeNavigationManager, currentScreen = Screen.Profile) {
+            val profileVm: ProfileViewModel = viewModel(factory = profileViewModelFactory)
+            ProfileScreen(
+                viewModel = profileVm,
+                onEffect = { effect ->
+                  when (effect) {
+                    ProfileEffect.NavigateToBecomeOrganizer ->
+                        navController.navigate(Screen.BecomeOrganizer.route)
+                    ProfileEffect.NavigateToMyOrganizations ->
+                        navController.navigate(Screen.OrganizationFeed.route)
+                    ProfileEffect.NavigateToAccountSettings ->
+                        navController.navigate(Screen.ComingSoon.route)
+                    ProfileEffect.NavigateToPaymentMethods ->
+                        navController.navigate(Screen.ComingSoon.route)
+                    ProfileEffect.NavigateToHelp -> navController.navigate(Screen.ComingSoon.route)
+                    ProfileEffect.SignOut -> {
+                      authViewModel.signOut()
+                      navController.navigate(Screen.Auth.route) {
+                        popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                        launchSingleTop = true
+                      }
+                    }
+                    ProfileEffect.NavigateToMyInvitations -> {
+                      navController.navigate(Screen.MyInvitations.route)
+                    }
+                  }
+                })
+          }
     }
 
     // ------------------ Organization Feed ------------------
@@ -345,4 +371,56 @@ fun NavHostController.navigateToTopLevel(route: String) {
     restoreState = false
     popUpTo(route) { inclusive = true }
   }
+}
+
+/**
+ * Wrapper composable that adds swipe navigation between top-level screens.
+ *
+ * @param swipeNavigationManager SwipeNavigationManager instance managing the swipeable screens.
+ * @param currentScreen The current screen being displayed.
+ * @param canLeave Whether swiping away from this screen is allowed.
+ * @param content The content composable to display within the swipe wrapper.
+ */
+@Composable
+fun SwipeWrapper(
+    swipeNavigationManager: SwipeNavigationManager,
+    currentScreen: Screen,
+    canLeave: Boolean = true,
+    content: @Composable () -> Unit
+) {
+  if (!canLeave) {
+    content()
+    return
+  }
+
+  val navController = swipeNavigationManager.navController
+  val swipeScreens = swipeNavigationManager.screens
+  val currentIndex = swipeScreens.indexOf(currentScreen)
+
+  Box(
+      modifier =
+          Modifier.fillMaxSize().pointerInput(currentIndex) {
+            awaitPointerEventScope {
+              while (true) {
+                val event = awaitPointerEvent(PointerEventPass.Initial)
+                val drag = event.changes.firstOrNull()
+                drag?.let {
+                  if (it.positionChange().x > 50f && currentIndex > 0) {
+                    navController.navigate(swipeScreens[currentIndex - 1].route) {
+                      launchSingleTop = true
+                    }
+                    it.consume() // Only consume after a swipe
+                  } else if (it.positionChange().x < -50f &&
+                      currentIndex < swipeScreens.lastIndex) {
+                    navController.navigate(swipeScreens[currentIndex + 1].route) {
+                      launchSingleTop = true
+                    }
+                    it.consume()
+                  }
+                }
+              }
+            }
+          }) {
+        content()
+      }
 }
