@@ -24,10 +24,6 @@ import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin
 import com.mapbox.maps.plugin.locationcomponent.location
 import io.mockk.*
-import io.mockk.coEvery
-import io.mockk.coVerify
-import io.mockk.every
-import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -40,9 +36,6 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.*
-import org.junit.Assert.assertFalse
-import org.junit.Assert.assertNotNull
-import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
@@ -616,6 +609,8 @@ class MapViewModelUnitTest {
 
     verify { mockLocationComponent.removeOnIndicatorPositionChangedListener(any()) }
 
+    // Note: Cleanup order (gesture vs location listener) doesn't matter
+    // as there are no dependencies between them
     assertNull(viewModel.internalMapView)
     assertNull(viewModel.pointAnnotationManager)
   }
