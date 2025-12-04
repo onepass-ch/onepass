@@ -122,21 +122,28 @@ android {
         resources.setSrcDirs(emptyList<File>())
     }
 
-  signingConfigs {
-    create("release") {
-      storeFile = file((project.findProperty("RELEASE_STORE_FILE") as String?) ?: "keystore.jks")
-      storePassword = project.findProperty("RELEASE_STORE_PASSWORD") as String?
-      keyAlias      = project.findProperty("RELEASE_KEY_ALIAS") as String?
-      keyPassword   = project.findProperty("RELEASE_KEY_PASSWORD") as String?
-      storeType     = (project.findProperty("RELEASE_STORE_TYPE") as String?) ?: "pkcs12"
-    }
-  }
+    val keystorePath = (project.findProperty("RELEASE_STORE_FILE") as String?) ?: "keystore.jks"
+    val keystoreFile = file(keystorePath)
+    
+    if (keystoreFile.exists()) {
+        signingConfigs {
+            create("release") {
+                storeFile = keystoreFile
+                storePassword = project.findProperty("RELEASE_STORE_PASSWORD") as String?
+                keyAlias      = project.findProperty("RELEASE_KEY_ALIAS") as String?
+                keyPassword   = project.findProperty("RELEASE_KEY_PASSWORD") as String?
+                storeType     = (project.findProperty("RELEASE_STORE_TYPE") as String?) ?: "pkcs12"
+            }
+        }
 
-  buildTypes {
-    getByName("release") {
-      signingConfig = signingConfigs.getByName("release")
+        buildTypes {
+            getByName("release") {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
+    } else {
+        logger.warn("⚠️ Keystore file not found at: $keystorePath. Release builds will not be signed.")
     }
-  }
 }
 
 sonar {
