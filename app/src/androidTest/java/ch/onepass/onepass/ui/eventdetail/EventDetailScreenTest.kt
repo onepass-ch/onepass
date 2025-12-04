@@ -233,7 +233,8 @@ class EventDetailScreenTest {
       OnePassTheme {
         EventDetailScreenContent(
             uiState =
-                EventDetailUiState(event = testEvent, paymentState = PaymentState.ProcessingPayment),
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.ProcessingPayment),
             onBack = {},
             onLikeToggle = {},
             onNavigateToMap = {},
@@ -306,7 +307,8 @@ class EventDetailScreenTest {
       OnePassTheme {
         EventDetailScreenContent(
             uiState =
-                EventDetailUiState(event = testEvent, paymentState = PaymentState.ProcessingPayment),
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.ProcessingPayment),
             onBack = {},
             onLikeToggle = {},
             onNavigateToMap = {},
@@ -525,8 +527,7 @@ class EventDetailScreenTest {
         EventDetailScreenContent(
             uiState =
                 EventDetailUiState(
-                    event = testEvent,
-                    paymentState = PaymentState.PaymentFailed("Network error")),
+                    event = testEvent, paymentState = PaymentState.PaymentFailed("Network error")),
             onBack = {},
             onLikeToggle = {},
             onNavigateToMap = {},
@@ -575,7 +576,8 @@ class EventDetailScreenTest {
       OnePassTheme {
         EventDetailScreenContent(
             uiState =
-                EventDetailUiState(event = testEvent, paymentState = PaymentState.ProcessingPayment),
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.ProcessingPayment),
             onBack = {},
             onLikeToggle = {},
             onNavigateToMap = {},
@@ -681,8 +683,7 @@ class EventDetailScreenTest {
         EventDetailScreenContent(
             uiState =
                 EventDetailUiState(
-                    event = testEvent,
-                    paymentState = PaymentState.ReadyToPay("secret", "id")),
+                    event = testEvent, paymentState = PaymentState.ReadyToPay("secret", "id")),
             onBack = {},
             onLikeToggle = {},
             onNavigateToMap = {},
@@ -725,7 +726,8 @@ class EventDetailScreenTest {
       OnePassTheme {
         EventDetailScreenContent(
             uiState =
-                EventDetailUiState(event = testEvent, paymentState = PaymentState.ProcessingPayment),
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.ProcessingPayment),
             onBack = {},
             onLikeToggle = {},
             onNavigateToMap = {},
@@ -747,8 +749,7 @@ class EventDetailScreenTest {
         EventDetailScreenContent(
             uiState =
                 EventDetailUiState(
-                    event = testEvent,
-                    paymentState = PaymentState.ReadyToPay("secret", "id")),
+                    event = testEvent, paymentState = PaymentState.ReadyToPay("secret", "id")),
             onBack = {},
             onLikeToggle = {},
             onNavigateToMap = {},
