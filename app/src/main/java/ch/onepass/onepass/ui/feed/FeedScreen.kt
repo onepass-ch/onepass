@@ -6,6 +6,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -102,30 +104,37 @@ fun FeedScreen(
       },
       containerColor = colorResource(id = R.color.screen_background),
   ) { paddingValues ->
-    Box(
-        modifier = Modifier.fillMaxSize().padding(paddingValues),
-        contentAlignment = Alignment.Center,
-    ) {
+      val pullState = rememberPullToRefreshState()
+      PullToRefreshBox(
+          isRefreshing = uiState.isRefreshing,
+          onRefresh = viewModel::refreshEvents,
+          state = pullState,
+              modifier = Modifier.fillMaxSize().padding(paddingValues),
+          ) {
       when {
-        uiState.isLoading && uiState.events.isEmpty() -> {
+          // Initial loading state (only show when not refreshing to avoid duplicate indicators)
+          uiState.isLoading && uiState.events.isEmpty() && !uiState.isRefreshing -> {
           LoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR)
         }
+          // Error state (only show when we have no events to display)
         uiState.error != null && uiState.events.isEmpty() -> {
           ErrorState(
               error = uiState.error!!,
               onRetry = { viewModel.refreshEvents() },
               testTag = FeedScreenTestTags.ERROR_MESSAGE)
         }
-        !uiState.isLoading && uiState.events.isEmpty() -> {
+          // Empty state (only when not loading/refreshing and truly empty)
+          !uiState.isLoading && !uiState.isRefreshing && uiState.events.isEmpty() -> {
           EmptyState(
               title = "No Events Found",
               message = "Check back later for new events in your area!",
               testTag = FeedScreenTestTags.EMPTY_STATE)
         }
+          // Normal content display (handles both initial load and refresh scenarios)
         else -> {
           EventListContent(
               events = uiState.events,
-              isLoadingMore = uiState.isLoading,
+              isLoadingMore = uiState.isLoading && !uiState.isRefreshing,
               onEventClick = onNavigateToEvent,
               eventCardViewModel = eventCardViewModel)
         }

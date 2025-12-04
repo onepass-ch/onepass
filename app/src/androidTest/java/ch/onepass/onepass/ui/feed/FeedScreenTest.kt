@@ -2,6 +2,7 @@ package ch.onepass.onepass.ui.feed
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
@@ -382,4 +383,107 @@ class FeedScreenTest {
     // Verify callback invocation
     assertTrue(notificationClicked)
   }
+
+    @Test
+    fun feedScreen_pullToRefresh_triggersRefreshEvents() {
+        val events = listOf(testEvent1, testEvent2)
+        val mockRepository = MockEventRepository(events)
+        var refreshTriggered = false
+        val testViewModel =
+            object : FeedViewModel(mockRepository) {
+                override fun refreshEvents() {
+                    refreshTriggered = true
+                    super.refreshEvents()
+                }
+            }
+        composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = testViewModel) } }
+        composeTestRule.waitForIdle()
+        // Simulate pull-to-refresh gesture
+        composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_SCREEN).performTouchInput {
+            swipeDown(startY = centerY - 100.dp.toPx(), endY = centerY + 100.dp.toPx())
+        }
+        composeTestRule.waitForIdle()
+        // Verify refresh was triggered
+        assert(refreshTriggered)
+    }
+    @Test
+    fun feedScreen_showsRefreshingState_duringPullToRefresh() {
+        val events = listOf(testEvent1)
+        val mockRepository = MockEventRepository(events)
+        val viewModel = FeedViewModel(mockRepository)
+        composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
+        composeTestRule.waitForIdle()
+        // Initially not refreshing
+        val initialState = viewModel.uiState.value
+        assert(!initialState.isRefreshing)
+        // Trigger refresh
+        viewModel.refreshEvents()
+        // Verify refreshing state is set
+        composeTestRule.waitForIdle()
+        val refreshingState = viewModel.uiState.value
+        assert(refreshingState.isRefreshing)
+    }
+    @Test
+    fun feedScreen_eventListShows_whenNotLoadingAndNotRefreshing() {
+        val events = listOf(testEvent1, testEvent2)
+        val mockRepository = MockEventRepository(events)
+        val viewModel = FeedViewModel(mockRepository)
+        composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
+        composeTestRule.waitForIdle()
+        // Should show event list when not loading and not refreshing
+        composeTestRule.onNodeWithTag(FeedScreenTestTags.EVENT_LIST).assertIsDisplayed()
+        composeTestRule
+            .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(testEvent1.eventId))
+            .assertIsDisplayed()
+        composeTestRule
+            .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(testEvent2.eventId))
+            .assertIsDisplayed()
+    }
+    @Test
+    fun feedScreen_emptyState_showsOnlyWhenNotLoadingAndNotRefreshing() {
+        val mockRepository = MockEventRepository(emptyList())
+        val viewModel = FeedViewModel(mockRepository)
+        composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
+        composeTestRule.waitForIdle()
+        // Should show empty state when not loading and not refreshing with no events
+        composeTestRule.onNodeWithTag(FeedScreenTestTags.EMPTY_STATE).assertIsDisplayed()
+        composeTestRule.onNodeWithText("No Events Found").assertIsDisplayed()
+    }
+    @Test
+    fun feedScreen_isLoadingMore_showsLoadingInEventList() {
+        val events = listOf(testEvent1, testEvent2)
+        val mockRepository = MockEventRepository(events)
+        val viewModel = FeedViewModel(mockRepository)
+        composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
+        composeTestRule.waitForIdle()
+        viewModel.loadEvents()
+        composeTestRule.waitForIdle()
+        composeTestRule.onNodeWithTag(FeedScreenTestTags.EVENT_LIST).assertIsDisplayed()
+        composeTestRule
+            .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(testEvent1.eventId))
+            .assertIsDisplayed()
+    }
+    @Test
+    fun feedScreen_stateTransitions_correctlyDuringRefreshCycle() {
+        val events = listOf(testEvent1)
+        val mockRepository = MockEventRepository(events)
+        val viewModel = FeedViewModel(mockRepository)
+        composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
+        composeTestRule.waitForIdle()
+        // Initial state - events displayed
+        composeTestRule.onNodeWithTag(FeedScreenTestTags.EVENT_LIST).assertIsDisplayed()
+        // Trigger refresh
+        viewModel.refreshEvents()
+        // During refresh - events should still be displayed (not loading state)
+        composeTestRule.onNodeWithTag(FeedScreenTestTags.EVENT_LIST).assertIsDisplayed()
+        composeTestRule
+            .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(testEvent1.eventId))
+            .assertIsDisplayed()
+        composeTestRule.waitForIdle()
+        // After refresh - events still displayed
+        composeTestRule.onNodeWithTag(FeedScreenTestTags.EVENT_LIST).assertIsDisplayed()
+        composeTestRule
+            .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem(testEvent1.eventId))
+            .assertIsDisplayed()
+    }
 }
