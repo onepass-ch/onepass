@@ -21,8 +21,12 @@ interface PassRepository {
   suspend fun getOrCreateSignedPass(uid: String): Result<Pass>
 
   /**
-   * Revokes (deactivates) the user's pass. Sets active=false and revokedAt=serverTimestamp() in
-   * Firestore.
+   * Revokes a user's pass via secure Cloud Function (admin only). Sets active=false, revokedAt,
+   * revokedBy, and logs to audit trail.
+   *
+   * @param targetUid The user ID whose pass should be revoked
+   * @param reason Reason for revocation (e.g., "Fraudulent activity", "Refund requested")
+   * @return Result indicating success or failure
    */
-  suspend fun revokePass(uid: String): Result<Unit>
+  suspend fun revokePass(targetUid: String, reason: String): Result<Unit>
 }
