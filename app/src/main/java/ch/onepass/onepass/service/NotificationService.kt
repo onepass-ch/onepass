@@ -3,6 +3,7 @@ package ch.onepass.onepass.service
 import android.util.Log
 import androidx.annotation.VisibleForTesting
 import ch.onepass.onepass.model.notification.Notification
+import ch.onepass.onepass.model.notification.NotificationRepository
 import ch.onepass.onepass.model.notification.NotificationRepositoryFirebase
 import ch.onepass.onepass.model.notification.NotificationType
 import com.google.firebase.auth.FirebaseAuth
@@ -24,45 +25,60 @@ class NotificationService : INotificationServiceExtension {
 
   override fun onNotificationReceived(event: INotificationReceivedEvent) {
     val notification = event.notification
-    val additionalData = notification.additionalData
 
     Log.d(TAG, "Notification received: ${notification.title}")
 
-    // Store notification in Firestore for persistence
-    CoroutineScope(Dispatchers.IO).launch {
-      val userId = FirebaseAuth.getInstance().currentUser?.uid
-      if (userId == null) {
-        Log.w(TAG, "User not authenticated, skipping Firestore storage")
-        event.notification.display()
-        return@launch
-      }
-
-      val firestoreNotification =
-          Notification(
-              userId = userId,
-              type = parseNotificationType(additionalData),
-              title = notification.title ?: "",
-              body = notification.body ?: "",
-              eventId = additionalData?.optString("eventId"),
-              organizationId = additionalData?.optString("organizationId"),
-              deepLink = additionalData?.optString("deepLink"),
-              isPushed = true)
-
-      notificationRepository
-          .createNotification(firestoreNotification)
-          .onSuccess { notificationId ->
-            Log.d(TAG, "Notification stored in Firestore: $notificationId")
-            // Store Firestore ID in the notification for later reference
-            additionalData?.put("firestoreId", notificationId)
-          }
-          .onFailure { e -> Log.e(TAG, "Failed to store notification in Firestore", e) }
-    }
+    // Process and store notification
+    processNotification(
+        userId = FirebaseAuth.getInstance().currentUser?.uid,
+        title = notification.title ?: "",
+        body = notification.body ?: "",
+        additionalData = notification.additionalData,
+        repository = notificationRepository)
 
     // Display the notification
     event.notification.display()
   }
 
   companion object {
+    /** Processes incoming notification and stores in Firestore. Extracted for testing purposes. */
+    @VisibleForTesting
+    internal fun processNotification(
+        userId: String?,
+        title: String,
+        body: String,
+        additionalData: JSONObject?,
+        repository: NotificationRepository
+    ) {
+      CoroutineScope(Dispatchers.IO).launch {
+        if (userId == null) {
+          Log.w("OnePassNotification", "User not authenticated, skipping Firestore storage")
+          return@launch
+        }
+
+        val firestoreNotification =
+            Notification(
+                userId = userId,
+                type = parseNotificationType(additionalData),
+                title = title,
+                body = body,
+                eventId = additionalData?.optString("eventId"),
+                organizationId = additionalData?.optString("organizationId"),
+                deepLink = additionalData?.optString("deepLink"),
+                isPushed = true)
+
+        repository
+            .createNotification(firestoreNotification)
+            .onSuccess { notificationId ->
+              Log.d("OnePassNotification", "Notification stored in Firestore: $notificationId")
+              additionalData?.put("firestoreId", notificationId)
+            }
+            .onFailure { e ->
+              Log.e("OnePassNotification", "Failed to store notification in Firestore", e)
+            }
+      }
+    }
+
     /** Parse notification type from additional data. Made internal for testing. */
     @VisibleForTesting
     internal fun parseNotificationType(data: JSONObject?): NotificationType {

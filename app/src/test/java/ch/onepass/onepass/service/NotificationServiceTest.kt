@@ -1,8 +1,15 @@
 package ch.onepass.onepass.service
 
+import ch.onepass.onepass.model.notification.NotificationRepository
 import ch.onepass.onepass.model.notification.NotificationType
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.mockk
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.runTest
 import org.json.JSONObject
 import org.junit.Assert.assertEquals
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
@@ -16,6 +23,13 @@ import org.robolectric.RobolectricTestRunner
  */
 @RunWith(RobolectricTestRunner::class)
 class NotificationServiceTest {
+
+  private lateinit var mockRepository: NotificationRepository
+
+  @Before
+  fun setup() {
+    mockRepository = mockk()
+  }
 
   @Test
   fun parseNotificationType_eventReminder_returnsCorrectType() {
@@ -153,5 +167,167 @@ class NotificationServiceTest {
     val result = NotificationService.parseNotificationType(data)
 
     assertEquals(NotificationType.EVENT_INVITATION, result)
+  }
+
+  @Test
+  fun processNotification_authenticatedUser_storesInFirestore() = runTest {
+    coEvery { mockRepository.createNotification(any()) } returns Result.success("notif123")
+
+    val additionalData = JSONObject()
+    additionalData.put("type", "EVENT_REMINDER")
+    additionalData.put("eventId", "evt456")
+
+    NotificationService.processNotification(
+        userId = "user123",
+        title = "Test Event",
+        body = "Event starts soon",
+        additionalData = additionalData,
+        repository = mockRepository)
+
+    delay(100)
+
+    coVerify {
+      mockRepository.createNotification(
+          match {
+            it.userId == "user123" &&
+                it.title == "Test Event" &&
+                it.body == "Event starts soon" &&
+                it.type == NotificationType.EVENT_REMINDER &&
+                it.eventId == "evt456"
+          })
+    }
+  }
+
+  @Test
+  fun processNotification_nullUserId_doesNotStore() = runTest {
+    NotificationService.processNotification(
+        userId = null,
+        title = "Test Event",
+        body = "Event starts soon",
+        additionalData = JSONObject(),
+        repository = mockRepository)
+
+    delay(100)
+
+    coVerify(exactly = 0) { mockRepository.createNotification(any()) }
+  }
+
+  @Test
+  fun processNotification_extractsEventId() = runTest {
+    coEvery { mockRepository.createNotification(any()) } returns Result.success("notif123")
+
+    val additionalData = JSONObject()
+    additionalData.put("type", "EVENT_INVITATION")
+    additionalData.put("eventId", "evt789")
+
+    NotificationService.processNotification(
+        userId = "user456",
+        title = "You're Invited",
+        body = "Join our event",
+        additionalData = additionalData,
+        repository = mockRepository)
+
+    delay(100)
+
+    coVerify { mockRepository.createNotification(match { it.eventId == "evt789" }) }
+  }
+
+  @Test
+  fun processNotification_extractsOrganizationId() = runTest {
+    coEvery { mockRepository.createNotification(any()) } returns Result.success("notif123")
+
+    val additionalData = JSONObject()
+    additionalData.put("type", "ORGANIZATION_INVITATION")
+    additionalData.put("organizationId", "org999")
+
+    NotificationService.processNotification(
+        userId = "user789",
+        title = "Staff Invitation",
+        body = "Join as staff",
+        additionalData = additionalData,
+        repository = mockRepository)
+
+    delay(100)
+
+    coVerify { mockRepository.createNotification(match { it.organizationId == "org999" }) }
+  }
+
+  @Test
+  fun processNotification_extractsDeepLink() = runTest {
+    coEvery { mockRepository.createNotification(any()) } returns Result.success("notif123")
+
+    val additionalData = JSONObject()
+    additionalData.put("type", "EVENT_REMINDER")
+    additionalData.put("deepLink", "onepass://event/evt123")
+
+    NotificationService.processNotification(
+        userId = "user321",
+        title = "Reminder",
+        body = "Event tomorrow",
+        additionalData = additionalData,
+        repository = mockRepository)
+
+    delay(100)
+
+    coVerify {
+      mockRepository.createNotification(match { it.deepLink == "onepass://event/evt123" })
+    }
+  }
+
+  @Test
+  fun processNotification_setsIsPushedTrue() = runTest {
+    coEvery { mockRepository.createNotification(any()) } returns Result.success("notif123")
+
+    NotificationService.processNotification(
+        userId = "user111",
+        title = "Test",
+        body = "Body",
+        additionalData = JSONObject(),
+        repository = mockRepository)
+
+    delay(100)
+
+    coVerify { mockRepository.createNotification(match { it.isPushed == true }) }
+  }
+
+  @Test
+  fun processNotification_repositoryFailure_logsError() = runTest {
+    coEvery { mockRepository.createNotification(any()) } returns
+        Result.failure(Exception("Network error"))
+
+    NotificationService.processNotification(
+        userId = "user222",
+        title = "Test",
+        body = "Body",
+        additionalData = JSONObject(),
+        repository = mockRepository)
+
+    delay(100)
+
+    coVerify { mockRepository.createNotification(any()) }
+  }
+
+  @Test
+  fun processNotification_nullAdditionalData_stillProcesses() = runTest {
+    coEvery { mockRepository.createNotification(any()) } returns Result.success("notif123")
+
+    NotificationService.processNotification(
+        userId = "user333",
+        title = "Test",
+        body = "Body",
+        additionalData = null,
+        repository = mockRepository)
+
+    delay(100)
+
+    coVerify {
+      mockRepository.createNotification(
+          match {
+            it.eventId == null &&
+                it.organizationId == null &&
+                it.deepLink == null &&
+                it.type == NotificationType.SYSTEM_ANNOUNCEMENT
+          })
+    }
   }
 }
