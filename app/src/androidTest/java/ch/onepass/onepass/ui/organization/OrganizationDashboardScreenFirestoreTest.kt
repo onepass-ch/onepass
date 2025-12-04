@@ -5,11 +5,14 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import ch.onepass.onepass.model.membership.MembershipRepository
 import ch.onepass.onepass.model.membership.MembershipRepositoryFirebase
 import ch.onepass.onepass.model.organization.*
+import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import ch.onepass.onepass.ui.organization.FirestoreTestHelper.waitForTag
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import ch.onepass.onepass.utils.FirebaseEmulator
 import ch.onepass.onepass.utils.FirestoreTestBase
 import java.util.*
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -23,6 +26,7 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
   private lateinit var userId: String
   private lateinit var orgRepository: OrganizationRepository
   private lateinit var membershipRepository: MembershipRepository
+  private lateinit var userRepository: UserRepositoryFirebase
 
   @Before
   override fun setUp() {
@@ -32,6 +36,7 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
       userId = FirebaseEmulator.auth.currentUser?.uid ?: "test-user"
       orgRepository = OrganizationRepositoryFirebase()
       membershipRepository = MembershipRepositoryFirebase()
+      userRepository = UserRepositoryFirebase()
     }
   }
 
@@ -46,11 +51,18 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
     val membersToCreate = members ?: mapOf(userId to OrganizationRole.OWNER)
     FirestoreTestHelper.populateMemberships(orgId, membersToCreate, membershipRepository)
 
+    // Create user profiles in Firestore so the UI can load them
+    membersToCreate.keys.forEach { uid ->
+      FirestoreTestHelper.createFirestoreUser(
+          userId = uid, displayName = uid, email = "$uid@example.com")
+    }
+
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = orgRepository,
             eventRepository = repository,
             membershipRepository = membershipRepository,
+            userRepository = userRepository,
             auth = FirebaseEmulator.auth)
 
     setDashboardScreen(orgId, viewModel)
@@ -123,30 +135,42 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
   }
 
   @Test
-  fun dashboardScreen_removeStaffMember_updatesFirestore() = runTest {
-    val staffId = "staff-${UUID.randomUUID()}"
+  fun dashboardScreen_removeStaffMember_updatesFirestore() =
+      runTest(timeout = 60.seconds) {
+        val staffId = "staff-${UUID.randomUUID()}"
 
-    val members = mapOf(userId to OrganizationRole.OWNER, staffId to OrganizationRole.STAFF)
+        val members = mapOf(userId to OrganizationRole.OWNER, staffId to OrganizationRole.STAFF)
 
-    createAndLoadDashboard(members = members)
+        val (orgId, _) = createAndLoadDashboard(members = members)
 
-    composeTestRule.waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
-    composeTestRule
-        .onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
-        .performScrollTo()
-        .performClick()
+        composeTestRule.waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
+        composeTestRule
+            .onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
+            .performScrollTo()
+            .performClick()
 
-    composeTestRule.onNodeWithText(staffId).assertIsDisplayed()
+        composeTestRule.onNodeWithText(staffId).assertIsDisplayed()
 
-    composeTestRule
-        .onNodeWithTag(OrganizationDashboardTestTags.getStaffRemoveButtonTag(staffId))
-        .performClick()
+        composeTestRule
+            .onNodeWithTag(OrganizationDashboardTestTags.getStaffRemoveButtonTag(staffId))
+            .performClick()
 
-    // Wait until the staff item is removed from the UI
-    composeTestRule.waitUntil(timeoutMillis = 5000) {
-      composeTestRule.onAllNodesWithText(staffId).fetchSemanticsNodes().isEmpty()
-    }
-  }
+        // Wait for the membership to be actually removed from Firestore
+        // This is the source of truth and ensures the operation has succeeded on the backend
+        // We use waitUntil to avoid busy-waiting in runTest
+        composeTestRule.waitUntil(timeoutMillis = 60_000L) {
+          runBlocking {
+            !membershipRepository.hasMembership(
+                userId = staffId, orgId = orgId, roles = listOf(OrganizationRole.STAFF))
+          }
+        }
+
+        // Now wait for the UI to reflect the change
+        // Since we know the backend is updated, we can give the UI plenty of time to sync
+        composeTestRule.waitUntil(timeoutMillis = 60_000) {
+          composeTestRule.onAllNodesWithText(staffId).fetchSemanticsNodes().isEmpty()
+        }
+      }
 
   @Test
   fun dashboardScreen_cannotRemoveOwner() = runTest {
@@ -184,6 +208,7 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
             organizationRepository = orgRepository,
             eventRepository = repository,
             membershipRepository = membershipRepository,
+            userRepository = userRepository,
             auth = FirebaseEmulator.auth)
 
     setDashboardScreen(orgId, viewModel)
@@ -218,6 +243,7 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
             organizationRepository = orgRepository,
             eventRepository = repository,
             membershipRepository = membershipRepository,
+            userRepository = userRepository,
             auth = FirebaseEmulator.auth)
 
     setDashboardScreen(orgId, viewModel)
@@ -252,12 +278,17 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
             memberId to OrganizationRole.MEMBER,
             staffId to OrganizationRole.STAFF)
     FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
+    members.keys.forEach { uid ->
+      FirestoreTestHelper.createFirestoreUser(
+          userId = uid, displayName = uid, email = "$uid@example.com")
+    }
 
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = orgRepository,
             eventRepository = repository,
             membershipRepository = membershipRepository,
+            userRepository = userRepository,
             auth = FirebaseEmulator.auth)
 
     setDashboardScreen(orgId, viewModel)
