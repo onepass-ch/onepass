@@ -165,7 +165,7 @@ data class Pass(
   /** Full string to be encoded into the QR code. */
   val qrText: String by lazy { "$QR_PREFIX${payloadB64Url()}.$signature" }
 
-  // ---------- Private helpers ---------
+  // --------- Private helpers --------
 
   /** Checks if the string is a valid Base64URL (no padding, valid charset). */
   private fun isBase64UrlNoPad(s: String): Boolean {
