@@ -13,8 +13,7 @@ class MainActivityTest {
     try {
       Robolectric.setupActivity(MainActivity::class.java)
     } catch (e: UnsatisfiedLinkError) {
-      if (e.message?.contains("Mapbox") != true && 
-          e.message?.contains("MapboxOptions") != true) {
+      if (e.message?.contains("Mapbox") != true && e.message?.contains("MapboxOptions") != true) {
         throw e
       }
       // For Mapbox errors, the test passes as Stripe code was executed
