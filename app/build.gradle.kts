@@ -226,7 +226,7 @@ dependencies {
     implementation("com.mapbox.extension:maps-compose-ndk27:11.15.2")
 
     // ---------- Navigation --------
-    implementation("androidx.navigation:navigation-compose:2.6.0")
+    implementation("androidx.navigation:navigation-compose:2.7.3")
 
     // ---------- Google Sign-In (Credential Manager GoogleID) ------------
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
