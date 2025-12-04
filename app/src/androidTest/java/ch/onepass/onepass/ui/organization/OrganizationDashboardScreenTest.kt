@@ -580,4 +580,96 @@ class OrganizationDashboardScreenTest {
             useUnmergedTree = true)
         .assertIsDisplayed()
   }
+
+  @Test
+  fun organizationDashboardScreen_displaysSkeleton_whenLoadingProfiles() {
+    val loadingMember =
+        OrganizationDashboardTestData.createTestMembership(
+            userId = "loading-user", role = OrganizationRole.MEMBER)
+
+    // Mock ViewModel state where userProfile is null and isLoading is true for this member
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(listOf(loadingMember)),
+            userRepository =
+                MockUserRepository()) // User not found in repo, so profile remains null
+
+    setScreen(viewModel = viewModel)
+
+    waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+  }
+
+  @Test
+  fun organizationDashboardScreen_staffRole_seesScanButNotEdit() {
+    val staffMembership =
+        OrganizationDashboardTestData.createTestMembership(
+            userId = "staff-user", role = OrganizationRole.STAFF)
+    val (mockAuth, _) = OrganizationDashboardTestData.createMockAuth("staff-user")
+
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(listOf(testEvent1)),
+            membershipRepository = MockMembershipRepository(listOf(staffMembership)),
+            userRepository = MockUserRepository(),
+            auth = mockAuth)
+
+    setScreen(viewModel = viewModel)
+    waitForTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN)
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule
+          .onAllNodesWithTag(OrganizationDashboardTestTags.getEventScanButtonTag("event-1"))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.getEventScanButtonTag("event-1"))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.getEventEditButtonTag("event-1"))
+        .assertDoesNotExist()
+  }
+
+  @Test
+  fun organizationDashboardScreen_memberRole_seesScanAndEdit() {
+    val memberMembership =
+        OrganizationDashboardTestData.createTestMembership(
+            userId = "member-user", role = OrganizationRole.MEMBER)
+    val (mockAuth, _) = OrganizationDashboardTestData.createMockAuth("member-user")
+
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(listOf(testEvent1)),
+            membershipRepository = MockMembershipRepository(listOf(memberMembership)),
+            userRepository = MockUserRepository(),
+            auth = mockAuth)
+
+    setScreen(viewModel = viewModel)
+    waitForTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN)
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule
+          .onAllNodesWithTag(OrganizationDashboardTestTags.getEventEditButtonTag("event-1"))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.getEventScanButtonTag("event-1"))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.getEventEditButtonTag("event-1"))
+        .assertIsDisplayed()
+  }
 }

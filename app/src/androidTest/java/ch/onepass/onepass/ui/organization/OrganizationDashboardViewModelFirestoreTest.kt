@@ -349,4 +349,63 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
     assertTrue(afterStaffRemove.staffMembers.any { it.userId == userId })
     assertEquals(1, afterStaffRemove.staffMembers.size)
   }
+
+  @Test
+  fun viewModel_fetchUserProfile_handlesErrorGracefully() = runTest {
+    val org = createOrg("vm-org-error-1", "Profile Error Org")
+    val orgId = orgRepository.createOrganization(org).getOrThrow()
+
+    val members = mapOf(userId to OrganizationRole.OWNER, "missing-user" to OrganizationRole.MEMBER)
+    FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
+    FirestoreTestHelper.createFirestoreUser(userId) // Create owner only
+
+    val viewModel = createViewModel()
+
+    // Wait for initial load
+    loadOrgAndWait(viewModel, orgId) { !it.isLoading && it.staffMembers.size == 2 }
+
+    // Wait for "missing-user" to stop loading.
+    // Since the user doc doesn't exist, fetchUserProfile will complete (likely with null profile).
+    // The ViewModel sets isLoading = false even on failure/null.
+    val state =
+        viewModel.uiState.first { state ->
+          val missingMember = state.staffMembers.find { it.userId == "missing-user" }
+          missingMember != null && !missingMember.isLoading
+        }
+
+    val missingMember = state.staffMembers.find { it.userId == "missing-user" }
+    assertNotNull(missingMember)
+    assertNull(missingMember?.userProfile) // Profile should be null
+    assertFalse(missingMember!!.isLoading) // Loading should be false
+  }
+
+  @Test
+  fun viewModel_loadOrganization_deduplicatesRequests() = runTest {
+    val org = createOrg("vm-org-dedup", "Dedup Org")
+    val orgId = orgRepository.createOrganization(org).getOrThrow()
+    val members = mapOf(userId to OrganizationRole.OWNER)
+    FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
+    FirestoreTestHelper.createFirestoreUser(userId)
+
+    val viewModel = createViewModel()
+
+    // First load
+    loadOrgAndWait(viewModel, orgId) { !it.isLoading && it.organization != null }
+
+    // Capture state
+    val state1 = viewModel.uiState.value
+
+    // Second load with SAME ID
+    viewModel.loadOrganization(orgId)
+
+    // State should be IDENTICAL (same instance) because it returns early
+    assertTrue(viewModel.uiState.value === state1)
+
+    // Third load with DIFFERENT ID (non-existent)
+    viewModel.loadOrganization("other-id")
+
+    // Should trigger loading
+    val stateLoading = viewModel.uiState.first { it.isLoading }
+    assertTrue(stateLoading.isLoading)
+  }
 }
