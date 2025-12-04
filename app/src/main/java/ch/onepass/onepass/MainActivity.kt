@@ -41,16 +41,6 @@ import com.stripe.android.PaymentConfiguration
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-
-    // Initialize Firebase App Check (for development - uses debug provider)
-    // In production, you should use Play Integrity or DeviceCheck provider
-    // TEMPORARILY DISABLED: App Check API not enabled in Firebase Console
-    // This was causing auth tokens to not reach cloud functions
-    // TODO: Enable App Check API in Firebase Console before re-enabling
-    // FirebaseAppCheck.getInstance().installAppCheckProviderFactory(
-    //     DebugAppCheckProviderFactory.getInstance()
-    // )
-
     // Mapbox access token
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
 
