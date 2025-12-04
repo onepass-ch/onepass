@@ -667,28 +667,14 @@ class OrganizationFormViewModel(
    * @param ownerId The ID of the owner user
    */
   private suspend fun addOwnerMembership(organizationId: String, ownerId: String) {
-    // First, add the member to the organization document (Firestore subcollection / map).
-    val addMemberResult = repository.addMember(organizationId, ownerId, OrganizationRole.OWNER)
+    // Create a dedicated membership entry to keep the memberships collection in sync.
+    val membershipResult =
+        membershipRepository.addMembership(ownerId, organizationId, OrganizationRole.OWNER)
 
-    addMemberResult.fold(
+    membershipResult.fold(
         onSuccess = {
-          // Also create a dedicated membership entry to keep the memberships collection in sync.
-          val membershipResult =
-              membershipRepository.addMembership(ownerId, organizationId, OrganizationRole.OWNER)
-
-          membershipResult.fold(
-              onSuccess = {
-                // Both membership representations were created successfully, now update the user
-                // profile.
-                updateUserOrganizationList(organizationId, ownerId)
-              },
-              onFailure = { error ->
-                _uiState.value =
-                    OrganizationFormUiState(
-                        successOrganizationId = organizationId,
-                        errorMessage =
-                            "Organization created, but failed to add member: ${error.message ?: "Unknown error"}")
-              })
+          // Membership created successfully, now update the user profile.
+          updateUserOrganizationList(organizationId, ownerId)
         },
         onFailure = { error ->
           _uiState.value =
