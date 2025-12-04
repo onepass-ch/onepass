@@ -3,7 +3,6 @@ package ch.onepass.onepass.utils
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationInvitation
-import ch.onepass.onepass.model.organization.OrganizationMember
 import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.organization.OrganizationStatus
 import com.google.firebase.Timestamp
@@ -18,7 +17,6 @@ object OrganizationTestData {
       description: String = "Test Description",
       ownerId: String = "owner_test_1",
       status: OrganizationStatus = OrganizationStatus.ACTIVE,
-      members: Map<String, OrganizationMember> = emptyMap(),
       verified: Boolean = false,
       profileImageUrl: String? = null,
       coverImageUrl: String? = null,
@@ -42,7 +40,6 @@ object OrganizationTestData {
         description = description,
         ownerId = ownerId,
         status = status,
-        members = members,
         verified = verified,
         profileImageUrl = profileImageUrl,
         coverImageUrl = coverImageUrl,
@@ -59,15 +56,6 @@ object OrganizationTestData {
         averageRating = averageRating,
         createdAt = createdAt,
         updatedAt = updatedAt)
-  }
-
-  /** Creates an OrganizationMember with specified parameters. */
-  fun createTestMember(
-      role: OrganizationRole = OrganizationRole.MEMBER,
-      joinedAt: Timestamp? = Timestamp.Companion.now(),
-      assignedEvents: List<String> = emptyList()
-  ): OrganizationMember {
-    return OrganizationMember(role = role, joinedAt = joinedAt, assignedEvents = assignedEvents)
   }
 
   /** Creates an OrganizationInvitation with specified parameters. */
@@ -115,22 +103,6 @@ object OrganizationTestData {
             name = "Archived Organization",
             ownerId = ownerId,
             status = OrganizationStatus.ARCHIVED))
-  }
-
-  /** Creates an organization with members. */
-  fun createOrganizationWithMembers(
-      ownerId: String,
-      memberIds: List<String> = listOf("member1", "member2", "member3")
-  ): Organization {
-    val members =
-        memberIds.associateWith { memberId ->
-          createTestMember(
-              role =
-                  if (memberId == memberIds.first()) OrganizationRole.OWNER
-                  else OrganizationRole.MEMBER)
-        }
-    return createTestOrganization(
-        name = "Organization with Members", ownerId = ownerId, members = members)
   }
 
   /** Creates a verified organization. */
