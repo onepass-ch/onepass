@@ -63,10 +63,10 @@ fun MapScreen(
     mapViewModel: MapViewModel = viewModel(),
     filterViewModel: EventFilterViewModel = viewModel(),
     onNavigateToEvent: (String) -> Unit = {},
+    eventCardViewModel: EventCardViewModel = viewModel()
 ) {
   val context = LocalContext.current
   val uiState by mapViewModel.uiState.collectAsState()
-  val eventCardViewModel = EventCardViewModel.getInstance()
   val likedEvents by eventCardViewModel.likedEvents.collectAsState()
   val currentFilters by filterViewModel.currentFilters.collectAsState()
   val showFilterDialog = uiState.showFilterDialog
