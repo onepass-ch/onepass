@@ -104,33 +104,33 @@ fun FeedScreen(
       },
       containerColor = colorResource(id = R.color.screen_background),
   ) { paddingValues ->
-      val pullState = rememberPullToRefreshState()
-      PullToRefreshBox(
-          isRefreshing = uiState.isRefreshing,
-          onRefresh = viewModel::refreshEvents,
-          state = pullState,
-              modifier = Modifier.fillMaxSize().padding(paddingValues),
-          ) {
+    val pullState = rememberPullToRefreshState()
+    PullToRefreshBox(
+        isRefreshing = uiState.isRefreshing,
+        onRefresh = viewModel::refreshEvents,
+        state = pullState,
+        modifier = Modifier.fillMaxSize().padding(paddingValues),
+    ) {
       when {
-          // Initial loading state (only show when not refreshing to avoid duplicate indicators)
-          uiState.isLoading && uiState.events.isEmpty() && !uiState.isRefreshing -> {
+        // Initial loading state (only show when not refreshing to avoid duplicate indicators)
+        uiState.isLoading && uiState.events.isEmpty() && !uiState.isRefreshing -> {
           LoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR)
         }
-          // Error state (only show when we have no events to display)
+        // Error state (only show when we have no events to display)
         uiState.error != null && uiState.events.isEmpty() -> {
           ErrorState(
               error = uiState.error!!,
               onRetry = { viewModel.refreshEvents() },
               testTag = FeedScreenTestTags.ERROR_MESSAGE)
         }
-          // Empty state (only when not loading/refreshing and truly empty)
-          !uiState.isLoading && !uiState.isRefreshing && uiState.events.isEmpty() -> {
+        // Empty state (only when not loading/refreshing and truly empty)
+        !uiState.isLoading && !uiState.isRefreshing && uiState.events.isEmpty() -> {
           EmptyState(
               title = "No Events Found",
               message = "Check back later for new events in your area!",
               testTag = FeedScreenTestTags.EMPTY_STATE)
         }
-          // Normal content display (handles both initial load and refresh scenarios)
+        // Normal content display (handles both initial load and refresh scenarios)
         else -> {
           EventListContent(
               events = uiState.events,
