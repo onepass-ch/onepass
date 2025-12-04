@@ -442,4 +442,142 @@ class OrganizationDashboardScreenTest {
 
     composeTestRule.onNodeWithText("No staff members added yet.").assertIsDisplayed()
   }
+
+  @Test
+  fun organizationDashboardScreen_displaysAvatar_whenUrlPresent() {
+    val userWithAvatar =
+        OrganizationDashboardTestData.createTestStaffSearchResult(
+            userId = "avatar-user", avatarUrl = "https://example.com/avatar.jpg")
+    val membership =
+        OrganizationDashboardTestData.createTestMembership(
+            userId = "avatar-user", role = OrganizationRole.MEMBER)
+
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(listOf(membership)),
+            userRepository = MockUserRepository(mapOf("avatar-user" to userWithAvatar)))
+    setScreen(viewModel = viewModel)
+
+    waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    // Wait for the avatar to be displayed
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule
+          .onAllNodes(
+              hasContentDescription("Avatar") and
+                  hasAnyAncestor(
+                      hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("avatar-user"))),
+              useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify avatar image is displayed (content description "Avatar")
+    composeTestRule
+        .onNode(
+            hasContentDescription("Avatar") and
+                hasAnyAncestor(
+                    hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("avatar-user"))),
+            useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun organizationDashboardScreen_displaysInitials_whenAvatarMissing() {
+    val userNoAvatar =
+        OrganizationDashboardTestData.createTestStaffSearchResult(
+            userId = "initials-user", displayName = "John Doe", avatarUrl = null)
+    val membership =
+        OrganizationDashboardTestData.createTestMembership(
+            userId = "initials-user", role = OrganizationRole.MEMBER)
+
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(listOf(membership)),
+            userRepository = MockUserRepository(mapOf("initials-user" to userNoAvatar)))
+    setScreen(viewModel = viewModel)
+
+    waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    // Wait for initials to be displayed
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule
+          .onAllNodes(
+              hasText("J") and
+                  hasAnyAncestor(
+                      hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("initials-user"))),
+              useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify initials "J" are displayed
+    composeTestRule
+        .onNode(
+            hasText("J") and
+                hasAnyAncestor(
+                    hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("initials-user"))),
+            useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun organizationDashboardScreen_displaysUnknownUser_whenNameMissing() {
+    val userNoName =
+        OrganizationDashboardTestData.createTestStaffSearchResult(
+            userId = "unknown-user", displayName = "", avatarUrl = null)
+    val membership =
+        OrganizationDashboardTestData.createTestMembership(
+            userId = "unknown-user", role = OrganizationRole.MEMBER)
+
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(listOf(membership)),
+            userRepository = MockUserRepository(mapOf("unknown-user" to userNoName)))
+    setScreen(viewModel = viewModel)
+
+    waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    // Wait for "Unknown User" text
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule
+          .onAllNodes(
+              hasText("Unknown User") and
+                  hasAnyAncestor(
+                      hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("unknown-user"))),
+              useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify "Unknown User" is displayed
+    composeTestRule
+        .onNode(
+            hasText("Unknown User") and
+                hasAnyAncestor(
+                    hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("unknown-user"))),
+            useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    // Verify fallback initial "?"
+    composeTestRule
+        .onNode(
+            hasText("?") and
+                hasAnyAncestor(
+                    hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("unknown-user"))),
+            useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
 }

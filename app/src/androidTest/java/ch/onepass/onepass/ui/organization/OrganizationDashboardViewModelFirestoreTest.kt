@@ -140,14 +140,28 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
 
     val viewModel = createViewModel()
     val state =
-        loadOrgAndWait(viewModel, orgId) { !it.isLoading && it.staffMembers.isNotEmpty() }
+        loadOrgAndWait(viewModel, orgId) { state ->
+              !state.isLoading &&
+                  state.staffMembers.isNotEmpty() &&
+                  state.staffMembers.all { it.userProfile != null }
+            }
             .uiState
             .value
 
     assertEquals(3, state.staffMembers.size)
-    assertEquals(OrganizationRole.OWNER, state.staffMembers.find { it.userId == userId }?.role)
-    assertEquals(OrganizationRole.MEMBER, state.staffMembers.find { it.userId == "member-2" }?.role)
-    assertEquals(OrganizationRole.STAFF, state.staffMembers.find { it.userId == "staff-2" }?.role)
+
+    val owner = state.staffMembers.find { it.userId == userId }
+    assertEquals(OrganizationRole.OWNER, owner?.role)
+    // Verify profile loaded (assuming createFirestoreUser sets a default name)
+    assertNotNull(owner?.userProfile)
+
+    val member = state.staffMembers.find { it.userId == "member-2" }
+    assertEquals(OrganizationRole.MEMBER, member?.role)
+    assertNotNull(member?.userProfile)
+
+    val staff = state.staffMembers.find { it.userId == "staff-2" }
+    assertEquals(OrganizationRole.STAFF, staff?.role)
+    assertNotNull(staff?.userProfile)
   }
 
   @Test
