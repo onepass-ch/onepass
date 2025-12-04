@@ -2,11 +2,9 @@ package ch.onepass.onepass.service
 
 import android.content.Context
 import android.os.Build
-import android.provider.Settings
 import android.util.Log
 import ch.onepass.onepass.model.device.DeviceToken
 import ch.onepass.onepass.model.device.DeviceTokenRepository
-import kotlinx.coroutines.delay
 
 /**
  * Manages OneSignal device token registration and storage in Firestore. Handles retry logic when
@@ -53,7 +51,6 @@ class DeviceTokenManager(
     return if (tokenStoreRetries < maxRetries) {
       tokenStoreRetries++
       Log.w(TAG, "Player ID empty, retry $tokenStoreRetries/$maxRetries")
-      delay(2000)
       storeDeviceToken() // Recursive retry
     } else {
       Log.e(TAG, "Max retries reached, could not store token")
@@ -62,13 +59,11 @@ class DeviceTokenManager(
   }
 
   private suspend fun storeToken(userId: String, playerId: String): Boolean {
-    val deviceId = getDeviceId()
     val deviceModel = "${Build.MANUFACTURER} ${Build.MODEL}"
     val appVersion = getAppVersion()
 
     val deviceToken =
         DeviceToken(
-            deviceId = deviceId,
             oneSignalPlayerId = playerId,
             platform = "android",
             deviceModel = deviceModel,
@@ -77,18 +72,13 @@ class DeviceTokenManager(
 
     return deviceTokenRepository
         .saveDeviceToken(userId, deviceToken)
-        .onSuccess { Log.d(TAG, "Device token saved: $playerId for device: $deviceId") }
+        .onSuccess { Log.d(TAG, "Device token saved: $playerId") }
         .onFailure { e -> Log.e(TAG, "Failed to save device token", e) }
         .isSuccess
   }
 
   fun resetRetries() {
     tokenStoreRetries = 0
-  }
-
-  @android.annotation.SuppressLint("HardwareIds")
-  private fun getDeviceId(): String {
-    return Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
   }
 
   private fun getAppVersion(): String {

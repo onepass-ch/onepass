@@ -278,7 +278,7 @@ dependencies {
     testImplementation(kotlin("test"))
 
     // --------- OneSignal -------
-    implementation("com.onesignal:OneSignal:5.4.1")
+    implementation(libs.onesignal)
 }
 
 tasks.withType<Test> {

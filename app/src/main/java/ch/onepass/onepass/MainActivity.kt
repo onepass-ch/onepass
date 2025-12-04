@@ -41,7 +41,6 @@ import com.mapbox.common.MapboxOptions
 import com.stripe.android.PaymentConfiguration
 import com.onesignal.OneSignal
 import com.onesignal.debug.LogLevel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 /**
@@ -78,10 +77,7 @@ class MainActivity : ComponentActivity() {
         FirebaseAuth.AuthStateListener { auth ->
           if (auth.currentUser != null) {
             Log.d("OneSignal", "User authenticated, storing token...")
-            lifecycleScope.launch {
-              delay(2000) // Wait for OneSignal to initialize
-              deviceTokenManager.storeDeviceToken()
-            }
+            lifecycleScope.launch { deviceTokenManager.storeDeviceToken() }
           } else {
             Log.d("OneSignal", "User signed out")
             deviceTokenManager.resetRetries()
