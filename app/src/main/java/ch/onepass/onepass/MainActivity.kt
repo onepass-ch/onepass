@@ -38,9 +38,9 @@ import ch.onepass.onepass.ui.profile.ProfileViewModel
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.mapbox.common.MapboxOptions
-import com.stripe.android.PaymentConfiguration
 import com.onesignal.OneSignal
 import com.onesignal.debug.LogLevel
+import com.stripe.android.PaymentConfiguration
 import kotlinx.coroutines.launch
 
 /**
