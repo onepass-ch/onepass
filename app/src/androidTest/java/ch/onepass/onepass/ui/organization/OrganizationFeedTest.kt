@@ -10,6 +10,7 @@ import ch.onepass.onepass.model.organization.OrganizationStatus
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.google.firebase.Timestamp
 import io.mockk.*
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import org.junit.After
 import org.junit.Assert.assertTrue
@@ -58,11 +59,20 @@ class OrganizationFeedTest {
   // ==================== Loading State Tests ====================
   @Test
   fun organizationFeedScreen_displaysLoadingState_whenInitiallyLoading() {
-    coEvery { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
-        flowOf(emptyList())
+    every { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flow {
+          kotlinx.coroutines.delay(1000)
+          emit(emptyList())
+        }
     viewModel = OrganizationFeedViewModel(mockRepository, mockMembershipRepository)
     composeTestRule.setContent {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
+    }
+    composeTestRule.waitUntil(timeoutMillis = 3000) {
+      composeTestRule
+          .onAllNodesWithTag(OrganizationFeedTestTags.LOADING_INDICATOR)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
     composeTestRule
         .onNodeWithTag(OrganizationFeedTestTags.LOADING_INDICATOR)
@@ -151,12 +161,19 @@ class OrganizationFeedTest {
   @Test
   fun organizationFeedScreen_displaysErrorState_whenLoadingFails() {
     val errorMessage = "Network connection failed"
-    coEvery { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } throws
-        Exception(errorMessage)
+    every { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flow { throw Exception(errorMessage) }
     viewModel = OrganizationFeedViewModel(mockRepository, mockMembershipRepository)
     composeTestRule.setContent {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
     }
+    composeTestRule.waitUntil {
+      composeTestRule
+          .onAllNodesWithTag(OrganizationFeedTestTags.ERROR_MESSAGE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
     composeTestRule
         .onNodeWithTag(OrganizationFeedTestTags.ERROR_MESSAGE)
         .assertExists()
@@ -177,8 +194,8 @@ class OrganizationFeedTest {
     val errorMessage = "Network error"
     val memberships = testOrganizations.map { Membership(userId = testUserId, orgId = it.id) }
 
-    coEvery { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } throws
-        Exception(errorMessage) andThen
+    every { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flow { throw Exception(errorMessage) } andThen
         flowOf(memberships)
     testOrganizations.forEach { org ->
       coEvery { mockRepository.getOrganizationById(org.id) } returns flowOf(org)
@@ -270,11 +287,11 @@ class OrganizationFeedTest {
   @Test
   fun viewModel_handlesRepositoryError_correctly() {
     val errorMessage = "Database error"
-    coEvery { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } throws
-        Exception(errorMessage)
+    every { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flow { throw Exception(errorMessage) }
     viewModel = OrganizationFeedViewModel(mockRepository, mockMembershipRepository)
     viewModel.loadUserOrganizations(testUserId)
-    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil { viewModel.uiState.value.error == errorMessage }
     assert(viewModel.uiState.value.error == errorMessage)
     assert(!viewModel.uiState.value.isLoading)
   }
