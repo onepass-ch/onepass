@@ -30,4 +30,5 @@ data class User(
 
     // Stripe integration
     val stripeCustomerId: String? = null, // Stripe customer ID for saved payment methods
+    val favoriteEventIds: List<String> = emptyList() // Store liked event IDs here
 )

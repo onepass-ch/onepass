@@ -3,9 +3,11 @@ package ch.onepass.onepass.ui.eventform
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
+import ch.onepass.onepass.model.event.EventTag
 import ch.onepass.onepass.model.event.PricingTier
 import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.model.map.LocationRepository
+import ch.onepass.onepass.model.storage.StorageRepository
 import ch.onepass.onepass.ui.eventform.editform.EditEventFormViewModel
 import ch.onepass.onepass.ui.eventform.editform.EditEventUiState
 import com.google.firebase.Timestamp
@@ -15,6 +17,9 @@ import io.mockk.mockk
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import junit.framework.TestCase.assertTrue
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -777,5 +782,55 @@ class EditEventFormViewModelTest {
     val formState = viewModel.formState.value
     Assert.assertEquals(1, formState.selectedImageUris.size)
     Assert.assertTrue(formState.selectedImageUris.contains(imageUri1))
+  }
+
+  @Test
+  fun toggleTag_adds_and_removes_tag() {
+    val eventRepository: EventRepository = mockk(relaxed = true)
+    val locationRepository: LocationRepository = mockk(relaxed = true)
+    val storageRepository: StorageRepository = mockk(relaxed = true)
+
+    val viewModel =
+        EditEventFormViewModel(
+            eventRepository = eventRepository,
+            locationRepository = locationRepository,
+            storageRepository = storageRepository)
+
+    val initialTags = viewModel.formState.value.selectedTags
+    assertTrue(initialTags.isEmpty())
+
+    viewModel.toggleTag(EventTag.TECH)
+    assertEquals(1, viewModel.formState.value.selectedTags.size)
+    assertTrue(viewModel.formState.value.selectedTags.contains(EventTag.TECH))
+
+    viewModel.toggleTag(EventTag.TECH)
+    assertEquals(0, viewModel.formState.value.selectedTags.size)
+    assertFalse(viewModel.formState.value.selectedTags.contains(EventTag.TECH))
+  }
+
+  @Test
+  fun toggleTag_enforces_maximum_limit_of_five() {
+    val eventRepository: EventRepository = mockk(relaxed = true)
+    val locationRepository: LocationRepository = mockk(relaxed = true)
+    val storageRepository: StorageRepository = mockk(relaxed = true)
+
+    val viewModel =
+        EditEventFormViewModel(
+            eventRepository = eventRepository,
+            locationRepository = locationRepository,
+            storageRepository = storageRepository)
+
+    viewModel.toggleTag(EventTag.TECH)
+    viewModel.toggleTag(EventTag.BUSINESS)
+    viewModel.toggleTag(EventTag.ARTS)
+    viewModel.toggleTag(EventTag.MUSIC)
+    viewModel.toggleTag(EventTag.FOOD)
+
+    assertEquals(5, viewModel.formState.value.selectedTags.size)
+
+    viewModel.toggleTag(EventTag.SPORTS)
+
+    assertEquals(5, viewModel.formState.value.selectedTags.size)
+    assertFalse(viewModel.formState.value.selectedTags.contains(EventTag.SPORTS))
   }
 }

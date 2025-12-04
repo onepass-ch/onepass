@@ -25,8 +25,8 @@ import ch.onepass.onepass.ui.auth.AuthViewModel
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.navigation.AppNavHost
 import ch.onepass.onepass.ui.navigation.BottomNavigationBar
-import ch.onepass.onepass.ui.navigation.NavigationActions
 import ch.onepass.onepass.ui.navigation.NavigationDestinations
+import ch.onepass.onepass.ui.navigation.navigateToTopLevel
 import ch.onepass.onepass.ui.payment.LocalPaymentSheet
 import ch.onepass.onepass.ui.payment.createPaymentSheet
 import ch.onepass.onepass.ui.profile.ProfileViewModel
@@ -41,16 +41,6 @@ import com.stripe.android.PaymentConfiguration
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-
-    // Initialize Firebase App Check (for development - uses debug provider)
-    // In production, you should use Play Integrity or DeviceCheck provider
-    // TEMPORARILY DISABLED: App Check API not enabled in Firebase Console
-    // This was causing auth tokens to not reach cloud functions
-    // TODO: Enable App Check API in Firebase Console before re-enabling
-    // FirebaseAppCheck.getInstance().installAppCheckProviderFactory(
-    //     DebugAppCheckProviderFactory.getInstance()
-    // )
-
     // Mapbox access token
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
 
@@ -111,8 +101,6 @@ fun OnePassApp(
       initializer { ProfileViewModel() }
     }
 ) {
-  val navActions = NavigationActions(navController)
-
   // Which route are we on?
   val backstack by navController.currentBackStackEntryAsState()
   val currentRoute = backstack?.destination?.route
@@ -126,7 +114,7 @@ fun OnePassApp(
         if (showBottomBar) {
           BottomNavigationBar(
               currentRoute = currentRoute ?: NavigationDestinations.Screen.Events.route,
-              onNavigate = { screen -> navActions.navigateTo(screen) })
+              onNavigate = { screen -> navController.navigateToTopLevel(screen.route) })
         }
       }) { padding ->
         AppNavHost(

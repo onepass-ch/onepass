@@ -71,7 +71,8 @@ fun EventDetailScreen(
     onNavigateToOrganizerProfile: (String) -> Unit,
     viewModel: EventDetailViewModel =
         viewModel(
-            factory = viewModelFactory { initializer { EventDetailViewModel(eventId = eventId) } })
+            factory = viewModelFactory { initializer { EventDetailViewModel(eventId = eventId) } }),
+    eventCardViewModel: EventCardViewModel = viewModel()
 ) {
   val event by viewModel.event.collectAsState()
   val organization by viewModel.organization.collectAsState()
@@ -79,7 +80,6 @@ fun EventDetailScreen(
   val error by viewModel.error.collectAsState()
   val paymentState by viewModel.paymentState.collectAsState()
 
-  val eventCardViewModel = EventCardViewModel.getInstance()
   val likedEvents by eventCardViewModel.likedEvents.collectAsState()
   val isLiked = likedEvents.contains(eventId)
 

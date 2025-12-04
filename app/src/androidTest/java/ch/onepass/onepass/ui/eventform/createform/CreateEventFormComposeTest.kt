@@ -218,4 +218,21 @@ class CreateEventFormComposeTest {
     // Image indicator should no longer be visible
     composeTestRule.onNodeWithText("image(s) selected", substring = true).assertDoesNotExist()
   }
+
+  @Test
+  fun tagsSection_isDisplayed_and_hasOptions() {
+    composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
+
+    // Scroll to bottom where tags are
+    composeTestRule.onNodeWithText("Tags").performScrollTo().assertIsDisplayed()
+
+    // Check for a specific category header
+    composeTestRule.onNodeWithText("Theme").performScrollTo().assertIsDisplayed()
+
+    // Check for a specific tag chip
+    composeTestRule.onNodeWithText("Technology").performScrollTo().assertIsDisplayed()
+
+    // Perform a click
+    composeTestRule.onNodeWithText("Technology").performClick()
+  }
 }
