@@ -12,7 +12,6 @@ import java.util.Locale
  * @property description Short description of the organization's purpose or activity.
  * @property ownerId User ID of the organization owner.
  * @property status Current lifecycle status of the organization.
- * @property members Map of user IDs to their member information.
  * @property verified Whether the organization has been verified by an admin.
  * @property profileImageUrl Optional URL to the organization's profile image.
  * @property coverImageUrl Optional URL to the organization's cover/banner image.
