@@ -35,7 +35,6 @@ data class Organization(
     val description: String = "",
     val ownerId: String = "",
     val status: OrganizationStatus = OrganizationStatus.PENDING,
-    val members: Map<String, OrganizationMember> = emptyMap(),
     val verified: Boolean = false,
     val profileImageUrl: String? = null,
     val coverImageUrl: String? = null,
@@ -68,27 +67,10 @@ data class Organization(
   val isActive: Boolean
     get() = status == OrganizationStatus.ACTIVE
 
-  /** Returns the total number of members in the organization. */
-  val memberCount: Int
-    get() = members.size
-
   /** Returns the number of events created by this organization. */
   val eventCount: Int
     get() = eventIds.size
 }
-
-/**
- * Represents a member of an organization.
- *
- * @property role Role assigned within the organization (e.g., OWNER, MEMBER).
- * @property joinedAt Timestamp when the member joined.
- * @property assignedEvents List of event IDs this member is specifically assigned to help manage.
- */
-data class OrganizationMember(
-    val role: OrganizationRole = OrganizationRole.MEMBER,
-    @ServerTimestamp val joinedAt: Timestamp? = null,
-    val assignedEvents: List<String> = emptyList()
-)
 
 /**
  * Represents an invitation to join an organization.
