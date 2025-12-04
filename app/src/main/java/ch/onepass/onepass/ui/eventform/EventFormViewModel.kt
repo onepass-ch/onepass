@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
+import ch.onepass.onepass.model.event.EventTag
 import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.model.map.LocationRepository
 import ch.onepass.onepass.model.map.NominatimLocationRepository
@@ -33,6 +34,9 @@ abstract class EventFormViewModel(
     protected val locationRepository: LocationRepository = NominatimLocationRepository(),
     protected val storageRepository: StorageRepository = StorageRepositoryFirebase()
 ) : ViewModel() {
+  companion object {
+    const val MAX_TAG_COUNT = 5
+  }
 
   enum class ValidationError(val key: String, val message: String) {
     TITLE("title", "Title cannot be empty"),
@@ -63,7 +67,8 @@ abstract class EventFormViewModel(
       val price: String = "",
       val capacity: String = "",
       val selectedLocation: Location? = null,
-      val selectedImageUris: List<Uri> = emptyList()
+      val selectedImageUris: List<Uri> = emptyList(),
+      val selectedTags: Set<EventTag> = emptySet()
   )
 
   data class ParsedFormData(
@@ -73,7 +78,8 @@ abstract class EventFormViewModel(
       val capacity: Int,
       val startTime: Timestamp,
       val endTime: Timestamp,
-      val selectedLocation: Location?
+      val selectedLocation: Location?,
+      val tags: List<String>
   )
 
   /** Sealed class representing the state of image upload operations */
@@ -139,6 +145,21 @@ abstract class EventFormViewModel(
   fun updateDate(date: String) {
     _formState.value = _formState.value.copy(date = date)
     clearFieldError(ValidationError.DATE.key)
+  }
+
+  /**
+   * Toggles the selection of a tag. Adds the tag if not selected (up to a limit of 5), or removes
+   * it if already selected.
+   */
+  fun toggleTag(tag: EventTag) {
+    val currentTags = _formState.value.selectedTags
+    val newTags =
+        if (currentTags.contains(tag)) {
+          currentTags - tag
+        } else {
+          if (currentTags.size < MAX_TAG_COUNT) currentTags + tag else currentTags
+        }
+    _formState.value = _formState.value.copy(selectedTags = newTags)
   }
 
   /** Updates the event location */
@@ -273,6 +294,9 @@ abstract class EventFormViewModel(
     val startTimestamp = parseDateAndTime(state.date, state.startTime) ?: return null
     val endTimestamp = parseDateAndTime(state.date, state.endTime) ?: return null
 
+    // Convert selected tags (Enum) to list of strings (names)
+    val tagsList = state.selectedTags.map { it.name }
+
     return ParsedFormData(
         title = state.title,
         description = state.description,
@@ -280,7 +304,8 @@ abstract class EventFormViewModel(
         capacity = capacity,
         startTime = startTimestamp,
         endTime = endTimestamp,
-        selectedLocation = state.selectedLocation)
+        selectedLocation = state.selectedLocation,
+        tags = tagsList)
   }
 
   /**
