@@ -24,12 +24,13 @@ class PaymentRepositoryFirebase(
       quantity: Int,
       description: String?
   ): Result<PaymentIntentResponse> {
+      val signInErrorMessage = "Please sign in to purchase ticket"
     return try {
       // Verify user is authenticated before making the call
       val currentUser = auth.currentUser
       if (currentUser == null) {
         android.util.Log.e("PaymentRepository", "❌ User not authenticated")
-        return Result.failure(Exception("Please sign in to purchase ticket"))
+        return Result.failure(Exception(signInErrorMessage))
       }
 
       android.util.Log.d("PaymentRepository", "✓ User authenticated: ${currentUser.uid}")
@@ -43,12 +44,12 @@ class PaymentRepositoryFirebase(
             token.token
           } catch (e: Exception) {
             android.util.Log.e("PaymentRepository", "❌ Failed to get auth token: ${e.message}", e)
-            return Result.failure(Exception("Please sign in to purchase ticket"))
+            return Result.failure(Exception(signInErrorMessage))
           }
 
       if (idToken == null) {
         android.util.Log.e("PaymentRepository", "❌ Auth token is null")
-        return Result.failure(Exception("Please sign in to purchase ticket"))
+        return Result.failure(Exception(signInErrorMessage))
       }
 
       val data =
@@ -105,7 +106,7 @@ class PaymentRepositoryFirebase(
           errorMessage.contains("must be authenticated", ignoreCase = true) == true ||
           e.cause?.message?.contains("unauthenticated", ignoreCase = true) == true) {
         android.util.Log.e("PaymentRepository", "🔐 Authentication error detected")
-        Result.failure(Exception("Please sign in to purchase ticket"))
+        Result.failure(Exception(signInErrorMessage))
       } else {
         // Return the actual error message to help with debugging
         val detailedMessage = buildString {
