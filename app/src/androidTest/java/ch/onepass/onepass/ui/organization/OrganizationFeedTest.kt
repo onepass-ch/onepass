@@ -251,7 +251,10 @@ class OrganizationFeedTest {
               verified = i % 2 == 0,
               followerCount = i * 1000,
               averageRating = 4f + (i % 5) * 0.2f,
-              createdAt = Timestamp.now())
+              // Use deterministic timestamps to ensure consistent order
+              // We want Organization 1 to be the newest (top of list)
+              // and Organization 10 to be the oldest (bottom of list)
+              createdAt = Timestamp(20000L - i * 1000, 0))
         }
 
     // Mock both flows to ensure combine() works properly
