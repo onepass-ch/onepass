@@ -1,6 +1,7 @@
 package ch.onepass.onepass.ui.map
 
 import android.annotation.SuppressLint
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.event.Event
@@ -48,6 +49,8 @@ private object AnnotationConfig {
   const val PIN_ICON = "purple-pin"
   const val PIN_SIZE = 0.6
 }
+
+private const val TAG = "MapViewModel"
 
 /**
  * ViewModel for managing Mapbox map state and events with automatic camera tracking.
@@ -268,7 +271,7 @@ class MapViewModel(
     internalMapView?.let { mapView ->
       val locationComponent: LocationComponentPlugin = mapView.location
       locationComponent.updateSettings { this.pulsingEnabled = pulsingEnabled }
-    }
+    } ?: Log.w(TAG, "updateLocationPuckPulsing: internalMapView is null, skipping pulsing update")
   }
 
   // --- Mapbox integration ---
@@ -350,7 +353,7 @@ class MapViewModel(
 
   /**
    * Sets up gesture listener to disable tracking on map manipulation. Disables tracking when:
-   * - User drags/pans the map (OnMoveListener)
+   * - User drags/pans the map
    * - User pinches to zoom
    * - User rotates the map
    */
