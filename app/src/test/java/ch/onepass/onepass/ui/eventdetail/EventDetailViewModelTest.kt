@@ -443,7 +443,11 @@ class EventDetailViewModelTest {
         flowOf(testOrganization)
     coEvery {
       mockPaymentRepository.createPaymentIntent(
-          amount = any(), eventId = any(), description = any())
+          amount = any(),
+          eventId = any(),
+          ticketTypeId = any(),
+          quantity = any(),
+          description = any())
     } returns
         Result.success(
             PaymentIntentResponse(clientSecret = "pi_test_secret", paymentIntentId = "pi_test_id"))
@@ -468,7 +472,11 @@ class EventDetailViewModelTest {
         flowOf(testOrganization)
     coEvery {
       mockPaymentRepository.createPaymentIntent(
-          amount = any(), eventId = any(), description = any())
+          amount = any(),
+          eventId = any(),
+          ticketTypeId = any(),
+          quantity = any(),
+          description = any())
     } returns Result.failure(Exception("Payment error"))
 
     val viewModel = createViewModel()
@@ -530,5 +538,312 @@ class EventDetailViewModelTest {
 
     val viewModel2 = createViewModel("event-456")
     Assert.assertFalse(viewModel2.isEventFree())
+  }
+
+  @Test
+  fun eventDetailViewModel_initiatePayment_withNullEvent_doesNothing() {
+    // Mock null event
+    every { mockEventRepository.getEventById("event-123") } returns flowOf(null)
+
+    val viewModel = createViewModel()
+
+    viewModel.initiatePayment()
+
+    // Payment state should remain Idle
+    Assert.assertTrue(viewModel.paymentState.value is PaymentState.Idle)
+  }
+
+  @Test
+  fun eventDetailViewModel_initiatePayment_calculatesCorrectAmount() = runTest {
+    val paidEvent = testEvent.copy(pricingTiers = listOf(PricingTier("General", 25.0, 100, 50)))
+
+    every { mockEventRepository.getEventById("event-123") } returns flowOf(paidEvent)
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flowOf(testOrganization)
+
+    var capturedAmount: Long? = null
+    coEvery {
+      mockPaymentRepository.createPaymentIntent(
+          amount = any(),
+          eventId = any(),
+          ticketTypeId = any(),
+          quantity = any(),
+          description = any())
+    } answers
+        {
+          capturedAmount = arg(0) // amount is the first parameter
+          Result.success(
+              PaymentIntentResponse(
+                  clientSecret = "pi_test_secret", paymentIntentId = "pi_test_id"))
+        }
+
+    val viewModel = createViewModel()
+
+    viewModel.initiatePayment()
+
+    // Amount should be 25.0 * 100 = 2500 cents
+    Assert.assertEquals(2500L, capturedAmount)
+  }
+
+  @Test
+  fun eventDetailViewModel_initiatePayment_passesCorrectEventId() = runTest {
+    val paidEvent = testEvent.copy(pricingTiers = listOf(PricingTier("General", 25.0, 100, 50)))
+
+    every { mockEventRepository.getEventById("event-123") } returns flowOf(paidEvent)
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flowOf(testOrganization)
+
+    var capturedEventId: String? = null
+    coEvery {
+      mockPaymentRepository.createPaymentIntent(
+          amount = any(),
+          eventId = any(),
+          ticketTypeId = any(),
+          quantity = any(),
+          description = any())
+    } answers
+        {
+          capturedEventId = arg(1) // eventId is the second parameter (index 1)
+          Result.success(
+              PaymentIntentResponse(
+                  clientSecret = "pi_test_secret", paymentIntentId = "pi_test_id"))
+        }
+
+    val viewModel = createViewModel()
+
+    viewModel.initiatePayment()
+
+    // Event ID should match
+    Assert.assertEquals("event-123", capturedEventId)
+  }
+
+  @Test
+  fun eventDetailViewModel_initiatePayment_passesCorrectDescription() = runTest {
+    val paidEvent =
+        testEvent.copy(
+            title = "Amazing Concert", pricingTiers = listOf(PricingTier("General", 25.0, 100, 50)))
+
+    every { mockEventRepository.getEventById("event-123") } returns flowOf(paidEvent)
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flowOf(testOrganization)
+
+    var capturedDescription: String? = null
+    coEvery {
+      mockPaymentRepository.createPaymentIntent(
+          amount = any(),
+          eventId = any(),
+          ticketTypeId = any(),
+          quantity = any(),
+          description = any())
+    } answers
+        {
+          capturedDescription = arg(4) // description is the 5th parameter (index 4)
+          Result.success(
+              PaymentIntentResponse(
+                  clientSecret = "pi_test_secret", paymentIntentId = "pi_test_id"))
+        }
+
+    val viewModel = createViewModel()
+
+    viewModel.initiatePayment()
+
+    // Description should include event title
+    Assert.assertEquals("Ticket purchase for Amazing Concert", capturedDescription)
+  }
+
+  @Test
+  fun eventDetailViewModel_paymentStateTransitions_followCorrectFlow() {
+    every { mockEventRepository.getEventById("event-123") } returns flowOf(testEvent)
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flowOf(testOrganization)
+
+    val viewModel = createViewModel()
+
+    // Initial state should be Idle
+    Assert.assertTrue(viewModel.paymentState.value is PaymentState.Idle)
+
+    // Transition to ProcessingPayment
+    viewModel.onPaymentSheetPresented()
+    Assert.assertTrue(viewModel.paymentState.value is PaymentState.ProcessingPayment)
+
+    // Transition to PaymentSucceeded
+    viewModel.onPaymentSuccess()
+    Assert.assertTrue(viewModel.paymentState.value is PaymentState.PaymentSucceeded)
+
+    // Reset to Idle
+    viewModel.resetPaymentState()
+    Assert.assertTrue(viewModel.paymentState.value is PaymentState.Idle)
+  }
+
+  @Test
+  fun eventDetailViewModel_paymentStateTransitions_cancelledFlow() {
+    every { mockEventRepository.getEventById("event-123") } returns flowOf(testEvent)
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flowOf(testOrganization)
+
+    val viewModel = createViewModel()
+
+    // Start with Idle
+    Assert.assertTrue(viewModel.paymentState.value is PaymentState.Idle)
+
+    // User cancels payment
+    viewModel.onPaymentCancelled()
+    Assert.assertTrue(viewModel.paymentState.value is PaymentState.PaymentCancelled)
+
+    // Reset to Idle
+    viewModel.resetPaymentState()
+    Assert.assertTrue(viewModel.paymentState.value is PaymentState.Idle)
+  }
+
+  @Test
+  fun eventDetailViewModel_paymentStateTransitions_failedFlow() {
+    every { mockEventRepository.getEventById("event-123") } returns flowOf(testEvent)
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flowOf(testOrganization)
+
+    val viewModel = createViewModel()
+
+    // Start with Idle
+    Assert.assertTrue(viewModel.paymentState.value is PaymentState.Idle)
+
+    // Payment fails
+    viewModel.onPaymentFailed("Network error")
+    val failedState = viewModel.paymentState.value
+    Assert.assertTrue(failedState is PaymentState.PaymentFailed)
+    Assert.assertEquals("Network error", (failedState as PaymentState.PaymentFailed).errorMessage)
+
+    // Reset to Idle
+    viewModel.resetPaymentState()
+    Assert.assertTrue(viewModel.paymentState.value is PaymentState.Idle)
+  }
+
+  @Test
+  fun eventDetailViewModel_initiatePayment_transitionsToReadyToPay() = runTest {
+    val paidEvent = testEvent.copy(pricingTiers = listOf(PricingTier("General", 25.0, 100, 50)))
+
+    every { mockEventRepository.getEventById("event-123") } returns flowOf(paidEvent)
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flowOf(testOrganization)
+
+    coEvery {
+      mockPaymentRepository.createPaymentIntent(
+          amount = any(),
+          eventId = any(),
+          ticketTypeId = any(),
+          quantity = any(),
+          description = any())
+    } returns
+        Result.success(
+            PaymentIntentResponse(clientSecret = "pi_test_secret", paymentIntentId = "pi_test_id"))
+
+    val viewModel = createViewModel()
+
+    viewModel.initiatePayment()
+
+    // State should be ReadyToPay after payment intent is created
+    // With UnconfinedTestDispatcher, this happens immediately
+    Assert.assertTrue(viewModel.paymentState.value is PaymentState.ReadyToPay)
+  }
+
+  @Test
+  fun eventDetailViewModel_multiplePaymentAttempts_handledCorrectly() = runTest {
+    val paidEvent = testEvent.copy(pricingTiers = listOf(PricingTier("General", 25.0, 100, 50)))
+
+    every { mockEventRepository.getEventById("event-123") } returns flowOf(paidEvent)
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flowOf(testOrganization)
+    coEvery {
+      mockPaymentRepository.createPaymentIntent(
+          amount = any(),
+          eventId = any(),
+          ticketTypeId = any(),
+          quantity = any(),
+          description = any())
+    } returns
+        Result.success(
+            PaymentIntentResponse(clientSecret = "pi_test_secret", paymentIntentId = "pi_test_id"))
+
+    val viewModel = createViewModel()
+
+    // First payment attempt
+    viewModel.initiatePayment()
+    Assert.assertTrue(viewModel.paymentState.value is PaymentState.ReadyToPay)
+
+    // Reset
+    viewModel.resetPaymentState()
+    Assert.assertTrue(viewModel.paymentState.value is PaymentState.Idle)
+
+    // Second payment attempt
+    viewModel.initiatePayment()
+    Assert.assertTrue(viewModel.paymentState.value is PaymentState.ReadyToPay)
+  }
+
+  @Test
+  fun eventDetailViewModel_isEventFree_withNullEvent_returnsFalse() {
+    every { mockEventRepository.getEventById("event-123") } returns flowOf(null)
+
+    val viewModel = createViewModel()
+
+    // Should return false for null event (safe default)
+    Assert.assertFalse(viewModel.isEventFree())
+  }
+
+  @Test
+  fun eventDetailViewModel_initiatePayment_withEmptyPricingTiers_succeeds() {
+    val freeEvent = testEvent.copy(pricingTiers = emptyList())
+
+    every { mockEventRepository.getEventById("event-123") } returns flowOf(freeEvent)
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flowOf(testOrganization)
+
+    val viewModel = createViewModel()
+
+    viewModel.initiatePayment()
+
+    // Empty pricing tiers means free event (lowestPrice = 0)
+    Assert.assertTrue(viewModel.paymentState.value is PaymentState.PaymentSucceeded)
+  }
+
+  @Test
+  fun eventDetailViewModel_paymentRepository_receivesCorrectParameters() = runTest {
+    val paidEvent =
+        testEvent.copy(
+            eventId = "special-event-456",
+            title = "Special Event",
+            pricingTiers = listOf(PricingTier("VIP", 100.0, 50, 25)))
+
+    every { mockEventRepository.getEventById("special-event-456") } returns flowOf(paidEvent)
+    every { mockOrganizationRepository.getOrganizationById("org-123") } returns
+        flowOf(testOrganization)
+
+    var capturedAmount: Long? = null
+    var capturedEventId: String? = null
+    var capturedDescription: String? = null
+
+    coEvery {
+      mockPaymentRepository.createPaymentIntent(
+          amount = any(),
+          eventId = any(),
+          ticketTypeId = any(),
+          quantity = any(),
+          description = any())
+    } answers
+        {
+          capturedAmount = arg(0)
+          capturedEventId = arg(1)
+          capturedDescription = arg(4)
+          Result.success(
+              PaymentIntentResponse(
+                  clientSecret = "pi_test_secret", paymentIntentId = "pi_test_id"))
+        }
+
+    val viewModel = createViewModel("special-event-456")
+
+    viewModel.initiatePayment()
+
+    // Verify all parameters
+    Assert.assertEquals(10000L, capturedAmount) // 100.0 * 100
+    Assert.assertEquals("special-event-456", capturedEventId)
+    Assert.assertEquals("Ticket purchase for Special Event", capturedDescription)
   }
 }
