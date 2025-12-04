@@ -5,12 +5,16 @@ import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.FloatingActionButton
@@ -45,17 +49,32 @@ object MapScreenTestTags {
   const val FILTER_BUTTON = "filterButton"
   const val ACTIVE_FILTERS_BAR = "activeFiltersBar"
   const val EVENT_CARD = "eventCard"
+  const val TRACKING_INDICATOR = "trackingIndicator"
+}
+
+private object TrackingIndicatorDimensions {
+  val SIZE = 10.dp
+  val BORDER_WIDTH = 2.dp
+  val OFFSET_X = 4.dp
+  val OFFSET_Y = (-4).dp
 }
 
 /**
- * A Composable function that displays a Mapbox map, covering the entire screen. Includes a floating
- * action button to recenter the camera on the user's location puck.
+ * A Composable function that displays a Mapbox map, covering the entire screen with automatic
+ * camera tracking and gesture handling. Includes floating action buttons to recenter the camera and
+ * access filters.
+ *
+ * Features:
+ * - Automatic camera tracking on initial load (when permission is granted)
+ * - Camera follows user location with smooth animation
+ * - Tracking disabled when user pans, zooms, or rotates the map
+ * - Recenter button re-enables tracking and animates back to user location
+ * - Visual indicator shows tracking state
  *
  * @param modifier Optional modifier for the map screen.
  * @param mapViewModel The ViewModel responsible for the map's logic and state.
  * @param filterViewModel The ViewModel responsible for managing and applying event filters.
- * @param onNavigateToEvent Callback invoked when an event card is clicked (e.g., in the info
- *   popup), receives eventId.
+ * @param onNavigateToEvent Callback invoked when an event card is clicked, receives eventId.
  */
 @Composable
 fun MapScreen(
@@ -95,7 +114,7 @@ fun MapScreen(
   LaunchedEffect(Unit) { mapViewModel.clearSelectedEvent() }
 
   Box(modifier = modifier.fillMaxSize()) {
-    // --- Mapbox Map Composable ---
+    // --- Mapbox Map ---
     MapboxMap(
         modifier = modifier.fillMaxSize().testTag(MapScreenTestTags.MAPBOX_MAP_SCREEN),
     ) {
@@ -116,7 +135,7 @@ fun MapScreen(
       mapViewModel.applyFiltersToCurrentEvents(currentFilters)
     }
 
-    // --- Floating Recenter Button ---
+    // --- Recenter Button with Tracking Indicator ---
     FloatingActionButton(
         onClick = { mapViewModel.recenterCamera() },
         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -127,10 +146,30 @@ fun MapScreen(
                 .padding(16.dp)
                 .testTag(MapScreenTestTags.RECENTER_BUTTON),
     ) {
-      Icon(imageVector = Icons.Filled.LocationOn, contentDescription = "Recenter")
+      Box(contentAlignment = Alignment.Center) {
+        // The main Icon
+        Icon(imageVector = Icons.Filled.LocationOn, contentDescription = "Recenter")
+
+        // The Tracking Indicator
+        if (uiState.isCameraTracking) {
+          Box(
+              modifier =
+                  Modifier.size(TrackingIndicatorDimensions.SIZE)
+                      .background(MaterialTheme.colorScheme.error, CircleShape)
+                      .border(
+                          TrackingIndicatorDimensions.BORDER_WIDTH,
+                          MaterialTheme.colorScheme.surface,
+                          CircleShape)
+                      .align(Alignment.TopEnd)
+                      .offset(
+                          x = TrackingIndicatorDimensions.OFFSET_X,
+                          y = TrackingIndicatorDimensions.OFFSET_Y)
+                      .testTag(MapScreenTestTags.TRACKING_INDICATOR))
+        }
+      }
     }
 
-    // --- Floating Filter Button ---
+    // --- Filter Button ---
     FloatingActionButton(
         onClick = { mapViewModel.setShowFilterDialog(true) },
         containerColor = MaterialTheme.colorScheme.primaryContainer,
@@ -148,6 +187,7 @@ fun MapScreen(
           modifier = modifier.padding(4.dp))
     }
 
+    // --- Event Card Popup ---
     uiState.selectedEvent?.let { event ->
       Box(
           modifier =
@@ -177,6 +217,7 @@ fun MapScreen(
           onDismiss = { mapViewModel.setShowFilterDialog(false) },
       )
     }
+
     // --- Active Filters Bar ---
     if (currentFilters.hasActiveFilters) {
       ActiveFiltersBar(
