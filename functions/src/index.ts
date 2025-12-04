@@ -7,34 +7,20 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-import * as functions from "firebase-functions";
-import {setGlobalOptions} from "firebase-functions";
+//import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
+/**
 const db = admin.firestore();
 
-// Start writing functions
-// https://firebase.google.com/docs/functions/typescript
-
-// For cost control, you can set the maximum number of containers that can be
-// running at the same time. This helps mitigate the impact of unexpected
-// traffic spikes by instead downgrading performance. This limit is a
-// per-function limit. You can override the limit for each function using the
-// `maxInstances` option in the function's options, e.g.
-// `onRequest({ maxInstances: 5 }, (req, res) => { ... })`.
-// NOTE: setGlobalOptions does not apply to functions using the v1 API. V1
-// functions should each use functions.runWith({ maxInstances: 10 }) instead.
-// In the v1 API, each function can only serve one request per container, so
-// this will be the maximum concurrent request count.
-setGlobalOptions({ maxInstances: 10 });
-
-export const searchUsers = functions.https.onCall(async (payload: any, context: any) => {
-  const uid = context.auth?.uid;
+export const searchUsers = functions.https.onCall(async (request) => {
+  const uid = request.auth?.uid;
   if (!uid) {
     throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
   }
 
+  const payload = request.data;
   const { query, searchType, organizationId } = payload || {};
   const trimmed = (query ?? "").trim();
   if (!trimmed) {
@@ -61,7 +47,7 @@ export const searchUsers = functions.https.onCall(async (payload: any, context: 
   let exclude = new Set<string>();
   if (organizationId) {
     const membersSnap = await db
-      .collection("orgs")
+      .collection("organizations")
       .doc(organizationId)
       .collection("members")
       .get();
@@ -79,6 +65,12 @@ export const searchUsers = functions.https.onCall(async (payload: any, context: 
 
   return { users };
 });
-
+*/
 export { generateUserPass } from "./generateUserPass";
 export { onUserCreated } from "./onUserCreated";
+
+// Stripe payment functions
+export {
+  createPaymentIntent,
+  stripeWebhook,
+} from "./stripe";

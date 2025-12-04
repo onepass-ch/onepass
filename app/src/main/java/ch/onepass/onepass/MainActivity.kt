@@ -31,7 +31,8 @@ import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.mapbox.common.MapboxOptions
 
 /**
- * Main Activity that sets up Mapbox, the OnePass theme and hosts the root composable navigation.
+ * Main Activity that sets up Mapbox, Stripe, the OnePass theme and hosts the root composable
+ * navigation.
  */
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,7 +40,6 @@ class MainActivity : ComponentActivity() {
 
     // Mapbox access token
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
-
     setContent { OnePassTheme { MainActivityContent() } }
   }
 }

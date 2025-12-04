@@ -31,6 +31,16 @@ android {
         )
     }
 
+    // Get Stripe publishable key from local.properties
+    val stripePublishableKey: String? = localProperties.getProperty("STRIPE_PUBLISHABLE_KEY")
+
+    if (stripePublishableKey.isNullOrBlank()) {
+        logger.warn(
+            "⚠️ Stripe publishable key not found in local.properties. " +
+                    "Payment features will not function correctly until STRIPE_PUBLISHABLE_KEY is set."
+        )
+    }
+
     defaultConfig {
         applicationId = "ch.onepass.onepass"
         minSdk = 28
@@ -41,6 +51,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxToken}\"")
+        buildConfigField("String", "STRIPE_PUBLISHABLE_KEY", "\"${stripePublishableKey ?: ""}\"")
     }
 
     buildTypes {
@@ -163,7 +174,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
     // ML Kit Barcode Scanning
-    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    implementation(libs.mlkit.barcode.scanning)
 
     // CameraX
 
@@ -181,6 +192,8 @@ dependencies {
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.database.ktx)
     implementation(libs.firebase.storage.ktx)
+    implementation(libs.firebase.appcheck.debug)
+    implementation(libs.firebase.appcheck.ktx)
     androidTestImplementation(libs.androidx.navigation.testing)
 
     // ------------- Jetpack Compose ------------------
@@ -227,6 +240,9 @@ dependencies {
 
     // ---------- Navigation --------
     implementation("androidx.navigation:navigation-compose:2.6.0")
+
+    // ---------- Stripe ------------
+    implementation(libs.stripe.android)
 
     // ---------- Google Sign-In (Credential Manager GoogleID) ------------
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")
