@@ -43,6 +43,7 @@ import ch.onepass.onepass.ui.myevents.TicketComponent
 import ch.onepass.onepass.ui.myevents.TicketStatus
 import ch.onepass.onepass.ui.theme.Typography
 import ch.onepass.onepass.ui.theme.White
+import coil.compose.AsyncImage
 import com.google.firebase.Timestamp
 import com.mapbox.maps.extension.style.expressions.dsl.generated.color
 import kotlinx.coroutines.flow.collectLatest
@@ -77,8 +78,8 @@ object OrganizerProfileTestTags {
 
 @Composable
 fun OrganizerHeaderSection(
-    bannerImageRes: Int,
-    profileImageRes: Int,
+    bannerImageUrl: String?,
+    profileImageUrl: String?,
     modifier: Modifier = Modifier
 ) {
   Column(
@@ -86,21 +87,25 @@ fun OrganizerHeaderSection(
       horizontalAlignment = Alignment.CenterHorizontally,
       modifier =
           modifier.width(392.dp).height(310.dp).testTag(OrganizerProfileTestTags.HEADER_SECTION)) {
-        // Banner
-        Image(
-            painter = painterResource(id = bannerImageRes),
+        // Banner - Load from URL if available, otherwise use fallback
+        AsyncImage(
+            model = bannerImageUrl,
             contentDescription = "Organizer Banner",
             contentScale = ContentScale.FillBounds,
+            error = painterResource(id = R.drawable.image_fallback),
+            placeholder = painterResource(id = R.drawable.image_fallback),
             modifier =
                 Modifier.fillMaxWidth()
                     .height(261.dp)
                     .clip(RoundedCornerShape(10.dp))
                     .testTag(OrganizerProfileTestTags.BANNER_IMAGE))
-        // Profile Picture
-        Image(
-            painter = painterResource(id = profileImageRes),
+        // Profile Picture - Load from URL if available, otherwise use fallback
+        AsyncImage(
+            model = profileImageUrl,
             contentDescription = "Profile Picture",
             contentScale = ContentScale.Crop,
+            error = painterResource(id = R.drawable.ic_launcher_foreground),
+            placeholder = painterResource(id = R.drawable.ic_launcher_foreground),
             modifier =
                 Modifier.width(98.dp)
                     .height(98.dp)
@@ -390,6 +395,8 @@ fun OrganizerProfileScreen(
   OrganizerProfileContent(
       name = state.name,
       description = state.description,
+      bannerImageUrl = state.coverImageUrl,
+      profileImageUrl = state.profileImageUrl,
       websiteUrl = state.websiteUrl,
       instagramUrl = state.instagramUrl,
       tiktokUrl = state.tiktokUrl,
@@ -420,8 +427,8 @@ fun OrganizerProfileContent(
     name: String = "No Title",
     description: String =
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vitae nisi nec magna consequat tincidunt. Curabitur suscipit sem vel.",
-    bannerImageRes: Int = R.drawable.image_fallback,
-    profileImageRes: Int = R.drawable.ic_launcher_foreground,
+    bannerImageUrl: String? = null,
+    profileImageUrl: String? = null,
     websiteUrl: String? = "https://example.com",
     instagramUrl: String? = "instagram",
     tiktokUrl: String? = "tiktok",
@@ -451,7 +458,7 @@ fun OrganizerProfileContent(
               .padding(start = 10.dp, top = 20.dp, end = 10.dp, bottom = 12.dp)
               .testTag(OrganizerProfileTestTags.SCREEN)) {
         // Header with banner and profile picture
-        OrganizerHeaderSection(bannerImageRes = bannerImageRes, profileImageRes = profileImageRes)
+        OrganizerHeaderSection(bannerImageUrl = bannerImageUrl, profileImageUrl = profileImageUrl)
 
         // Name and description
         OrganizerInfoSection(name = name, description = description)

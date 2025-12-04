@@ -28,11 +28,7 @@ data class User(
     val phoneE164: String? = null, // e.g. +41998887766
     val country: String? = null, // ISO 3166-1 alpha-2: "CH", "US", "CN"
 
-    // The organizations a user belongs to
-    val organizationIds: List<String> = emptyList()
-) {
-
-  // Is the user an organizer ?
-  val isOrganizer: Boolean
-    get() = organizationIds.isNotEmpty()
-}
+    // Stripe integration
+    val stripeCustomerId: String? = null, // Stripe customer ID for saved payment methods
+    val favoriteEventIds: List<String> = emptyList() // Store liked event IDs here
+)

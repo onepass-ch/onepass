@@ -12,12 +12,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
+import ch.onepass.onepass.model.event.EventTag
+import ch.onepass.onepass.ui.components.buttons.UploadImageButton
 import ch.onepass.onepass.ui.components.forms.DatePickerField
 import ch.onepass.onepass.ui.components.forms.LocationSearchField
 import ch.onepass.onepass.ui.components.forms.TimePickerField
+import ch.onepass.onepass.ui.theme.EventDateColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -347,6 +353,66 @@ fun TicketsInputField(
   }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun TagsSelectionSection(
+    selectedTags: Set<EventTag>,
+    onTagToggle: (EventTag) -> Unit,
+    modifier: Modifier = Modifier
+) {
+  Column(modifier = modifier.fillMaxWidth()) {
+    Text(
+        text = "Tags",
+        style = MaterialTheme.typography.bodyMedium.copy(color = colorResource(id = R.color.white)),
+        modifier = Modifier.padding(bottom = 8.dp))
+    Text(
+        text =
+            "Select up to ${EventFormViewModel.MAX_TAG_COUNT} tags (${selectedTags.size}/${EventFormViewModel.MAX_TAG_COUNT} selected).",
+        style = MaterialTheme.typography.bodySmall.copy(color = colorResource(id = R.color.gray)),
+        modifier = Modifier.padding(bottom = 16.dp))
+
+    EventTag.categories.forEach { (header, tags) ->
+      Text(
+          text = header,
+          style =
+              MaterialTheme.typography.labelMedium.copy(
+                  color = colorResource(id = R.color.white), fontWeight = FontWeight.Bold),
+          modifier = Modifier.padding(vertical = 8.dp))
+      FlowRow(
+          horizontalArrangement = Arrangement.spacedBy(8.dp),
+          verticalArrangement = Arrangement.spacedBy(8.dp),
+          modifier = Modifier.fillMaxWidth()) {
+            tags.forEach { tag ->
+              val isSelected = selectedTags.contains(tag)
+              FilterChip(
+                  selected = isSelected,
+                  onClick = { onTagToggle(tag) },
+                  label = { Text(tag.displayValue) },
+                  modifier =
+                      Modifier.semantics {
+                        contentDescription =
+                            "${tag.displayValue} tag ${if(isSelected) "selected" else "not selected"}"
+                      },
+                  colors =
+                      FilterChipDefaults.filterChipColors(
+                          selectedContainerColor = EventDateColor,
+                          selectedLabelColor = Color.White,
+                          containerColor = colorResource(id = R.color.eventform_field_bg),
+                          labelColor = colorResource(id = R.color.white)),
+                  border =
+                      FilterChipDefaults.filterChipBorder(
+                          enabled = true,
+                          selected = isSelected,
+                          borderColor =
+                              if (isSelected) Color.Transparent
+                              else colorResource(id = R.color.eventform_field_border)))
+            }
+          }
+      Spacer(modifier = Modifier.height(16.dp))
+    }
+  }
+}
+
 @Composable
 fun EventFormFields(
     modifier: Modifier = Modifier,
@@ -458,6 +524,33 @@ fun EventFormFields(
         priceError = fieldErrors["price"],
         capacityError = fieldErrors["capacity"],
         modifier = Modifier.testTag(fieldTestTags["tickets"] ?: ""))
+
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // Tags Selection
+    TagsSelectionSection(
+        selectedTags = formState.selectedTags,
+        onTagToggle = { viewModel.toggleTag(it) },
+        modifier = Modifier.testTag(fieldTestTags["tags_selection"] ?: ""))
+    Spacer(modifier = Modifier.height(16.dp))
+
+    // Upload Image Button
+    UploadImageButton(
+        onImageSelected = { uri -> viewModel.selectImage(uri) },
+        enabled = true,
+        imageDescription = "Event Image*",
+        modifier = Modifier.testTag(fieldTestTags["image_upload"] ?: ""))
+
+    // Display selected images count
+    if (formState.selectedImageUris.isNotEmpty()) {
+      Spacer(modifier = Modifier.height(8.dp))
+      Text(
+          text = "${formState.selectedImageUris.size} image(s) selected",
+          style = MaterialTheme.typography.bodySmall,
+          color = colorResource(id = R.color.white),
+          modifier = Modifier.padding(start = 8.dp))
+    }
+
     Spacer(modifier = Modifier.height(32.dp))
   }
 }

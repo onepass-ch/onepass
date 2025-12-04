@@ -3,7 +3,11 @@ package ch.onepass.onepass.ui.feed
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -35,6 +39,7 @@ object FeedScreenTestTags {
   const val FEED_TITLE = "feedTitle"
   const val FEED_LOCATION = "feedLocation"
   const val FILTER_BUTTON = "filterButton"
+  const val NOTIFICATION_BUTTON = "notificationButton"
   const val EVENT_LIST = "eventList"
   const val LOADING_INDICATOR = "loadingIndicator"
   const val ERROR_MESSAGE = "errorMessage"
@@ -50,6 +55,7 @@ object FeedScreenTestTags {
  *
  * @param modifier Optional modifier for the screen.
  * @param onNavigateToEvent Callback when an event card is clicked, receives eventId.
+ * @param onNavigateToNotifications Callback when the notification button is clicked.
  * @param viewModel FeedViewModel instance, can be overridden for testing.
  * @param filterViewModel EventFilterViewModel instance, providing filter logic.
  */
@@ -58,8 +64,10 @@ object FeedScreenTestTags {
 fun FeedScreen(
     modifier: Modifier = Modifier,
     onNavigateToEvent: (String) -> Unit = {},
+    onNavigateToNotifications: () -> Unit = {},
     viewModel: FeedViewModel = viewModel(),
     filterViewModel: EventFilterViewModel = viewModel(),
+    eventCardViewModel: EventCardViewModel = viewModel()
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val currentFilters by filterViewModel.currentFilters.collectAsState()
@@ -81,7 +89,7 @@ fun FeedScreen(
               currentLocation = uiState.location,
               currentDateRange = "WELCOME",
               onFilterClick = { viewModel.setShowFilterDialog(true) },
-          )
+              onNotificationClick = onNavigateToNotifications)
           if (currentFilters.hasActiveFilters) {
             ActiveFiltersBar(
                 filters = currentFilters,
@@ -96,32 +104,39 @@ fun FeedScreen(
       },
       containerColor = colorResource(id = R.color.screen_background),
   ) { paddingValues ->
-    Box(
+    val pullState = rememberPullToRefreshState()
+    PullToRefreshBox(
+        isRefreshing = uiState.isRefreshing,
+        onRefresh = viewModel::refreshEvents,
+        state = pullState,
         modifier = Modifier.fillMaxSize().padding(paddingValues),
-        contentAlignment = Alignment.Center,
     ) {
       when {
-        uiState.isLoading && uiState.events.isEmpty() -> {
+        // Initial loading state (only show when not refreshing to avoid duplicate indicators)
+        uiState.isLoading && uiState.events.isEmpty() && !uiState.isRefreshing -> {
           LoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR)
         }
+        // Error state (only show when we have no events to display)
         uiState.error != null && uiState.events.isEmpty() -> {
           ErrorState(
               error = uiState.error!!,
               onRetry = { viewModel.refreshEvents() },
               testTag = FeedScreenTestTags.ERROR_MESSAGE)
         }
-        !uiState.isLoading && uiState.events.isEmpty() -> {
+        // Empty state (only when not loading/refreshing and truly empty)
+        !uiState.isLoading && !uiState.isRefreshing && uiState.events.isEmpty() -> {
           EmptyState(
               title = "No Events Found",
               message = "Check back later for new events in your area!",
               testTag = FeedScreenTestTags.EMPTY_STATE)
         }
+        // Normal content display (handles both initial load and refresh scenarios)
         else -> {
           EventListContent(
               events = uiState.events,
-              isLoadingMore = uiState.isLoading,
+              isLoadingMore = uiState.isLoading && !uiState.isRefreshing,
               onEventClick = onNavigateToEvent,
-          )
+              eventCardViewModel = eventCardViewModel)
         }
       }
       // Filter Dialog
@@ -148,6 +163,7 @@ fun FeedScreen(
  * @param currentLocation The string representing the current user location or selected region.
  * @param currentDateRange The string representing the current date range filter.
  * @param onFilterClick Callback invoked when the filter button is clicked.
+ * @param onNotificationClick Callback invoked when the notification button is clicked.
  * @param modifier Optional modifier for the top bar.
  */
 @Composable
@@ -155,6 +171,7 @@ private fun FeedTopBar(
     currentLocation: String,
     currentDateRange: String,
     onFilterClick: () -> Unit,
+    onNotificationClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
   Surface(
@@ -188,6 +205,17 @@ private fun FeedTopBar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+          // Notification Button
+          IconButton(
+              onClick = onNotificationClick,
+              modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.NOTIFICATION_BUTTON)) {
+                Icon(
+                    imageVector = Icons.Default.Notifications,
+                    contentDescription = "Notifications",
+                    tint = colorResource(id = R.color.white),
+                    modifier = Modifier.size(24.dp),
+                )
+              }
           // Filter Button
           IconButton(
               onClick = onFilterClick,
@@ -218,8 +246,8 @@ private fun EventListContent(
     events: List<Event>,
     isLoadingMore: Boolean,
     onEventClick: (String) -> Unit,
+    eventCardViewModel: EventCardViewModel
 ) {
-  val eventCardViewModel = EventCardViewModel.getInstance()
   val likedEvents by eventCardViewModel.likedEvents.collectAsState()
 
   LazyColumn(

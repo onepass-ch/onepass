@@ -2,6 +2,7 @@ package ch.onepass.onepass.ui.organization
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import java.util.*
 import kotlinx.coroutines.delay
@@ -14,7 +15,7 @@ class OrganizationDashboardScreenTest {
 
   private val mockAuth = OrganizationDashboardTestData.createMockAuth().first
   private val mockUser = OrganizationDashboardTestData.createMockAuth().second
-  private val testOrg = OrganizationDashboardTestData.createTestOrganization()
+  private val testOrg = OrganizationDashboardTestData.createTestOrganization(members = emptyMap())
   private val testEvent1 = OrganizationDashboardTestData.createTestEvent()
   private val testEvent2 =
       OrganizationDashboardTestData.createTestEvent(
@@ -23,6 +24,15 @@ class OrganizationDashboardScreenTest {
           status = ch.onepass.onepass.model.event.EventStatus.DRAFT,
           capacity = 200,
           ticketsRemaining = 200)
+
+  private val testMemberships =
+      listOf(
+          OrganizationDashboardTestData.createTestMembership(
+              membershipId = "mem-1", userId = "owner-1", role = OrganizationRole.OWNER),
+          OrganizationDashboardTestData.createTestMembership(
+              membershipId = "mem-2", userId = "member-1", role = OrganizationRole.MEMBER),
+          OrganizationDashboardTestData.createTestMembership(
+              membershipId = "mem-3", userId = "staff-1", role = OrganizationRole.STAFF))
 
   private fun setScreen(
       orgId: String = "test-org-1",
@@ -60,7 +70,9 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)))
+            eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)),
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.ORG_SUMMARY_CARD)
@@ -75,7 +87,9 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.ORG_SUMMARY_CARD)
@@ -100,7 +114,9 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)))
+            eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)),
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.MANAGE_EVENTS_SECTION)
@@ -121,7 +137,9 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.MANAGE_STAFF_SECTION)
@@ -142,7 +160,9 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)))
+            eventRepository = MockEventRepository(events = listOf(testEvent1, testEvent2)),
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN)
@@ -167,7 +187,9 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
@@ -204,7 +226,9 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     var clicked = false
     setScreen(viewModel = viewModel, onNavigateToCreateEvent = { clicked = true })
 
@@ -219,7 +243,9 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     var clicked = false
     setScreen(viewModel = viewModel, onNavigateToAddStaff = { clicked = true })
 
@@ -238,6 +264,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(events = listOf(testEvent1)),
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository(),
             auth = mockAuth)
     var clickedEventId: String? = null
     setScreen(viewModel = viewModel, onNavigateToScanTickets = { clickedEventId = it })
@@ -271,6 +299,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
             eventRepository = MockEventRepository(events = listOf(testEvent1)),
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository(),
             auth = mockAuth)
     var clickedEventId: String? = null
     setScreen(viewModel = viewModel, onNavigateToEditEvent = { clickedEventId = it })
@@ -311,6 +341,8 @@ class OrganizationDashboardScreenTest {
         OrganizationDashboardViewModel(
             organizationRepository = mockOrgRepo,
             eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository(),
             auth = mockAuth)
     setScreen(viewModel = viewModel)
 
@@ -325,7 +357,9 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(shouldThrowError = true),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     composeTestRule.waitUntil(timeoutMillis = 5000) {
@@ -344,7 +378,9 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     var clicked = false
     setScreen(viewModel = viewModel, onNavigateBack = { clicked = true })
 
@@ -359,7 +395,9 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository())
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     var clickedOrgId: String? = null
     setScreen(viewModel = viewModel, onNavigateToProfile = { clickedOrgId = it })
 
@@ -374,7 +412,9 @@ class OrganizationDashboardScreenTest {
     val viewModel =
         OrganizationDashboardViewModel(
             organizationRepository = MockOrganizationRepository(organization = testOrg),
-            eventRepository = MockEventRepository(events = emptyList()))
+            eventRepository = MockEventRepository(events = emptyList()),
+            membershipRepository = MockMembershipRepository(testMemberships),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     waitForTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN)
@@ -387,11 +427,12 @@ class OrganizationDashboardScreenTest {
 
   @Test
   fun organizationDashboardScreen_displaysNoStaffMessage() {
-    val emptyOrg = testOrg.copy(members = emptyMap())
     val viewModel =
         OrganizationDashboardViewModel(
-            organizationRepository = MockOrganizationRepository(organization = emptyOrg),
-            eventRepository = MockEventRepository())
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(members = emptyList()),
+            userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
     composeTestRule.waitForIdle()
@@ -400,5 +441,229 @@ class OrganizationDashboardScreenTest {
     composeTestRule.waitForIdle()
 
     composeTestRule.onNodeWithText("No staff members added yet.").assertIsDisplayed()
+  }
+
+  @Test
+  fun organizationDashboardScreen_displaysAvatar_whenUrlPresent() {
+    val userWithAvatar =
+        OrganizationDashboardTestData.createTestStaffSearchResult(
+            userId = "avatar-user", avatarUrl = "https://example.com/avatar.jpg")
+    val membership =
+        OrganizationDashboardTestData.createTestMembership(
+            userId = "avatar-user", role = OrganizationRole.MEMBER)
+
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(listOf(membership)),
+            userRepository = MockUserRepository(mapOf("avatar-user" to userWithAvatar)))
+    setScreen(viewModel = viewModel)
+
+    waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    // Wait for the avatar to be displayed
+    composeTestRule.waitUntil(timeoutMillis = 20_000) {
+      composeTestRule
+          .onAllNodes(
+              hasContentDescription("Avatar") and
+                  hasAnyAncestor(
+                      hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("avatar-user"))),
+              useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify avatar image is displayed (content description "Avatar")
+    composeTestRule
+        .onNode(
+            hasContentDescription("Avatar") and
+                hasAnyAncestor(
+                    hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("avatar-user"))),
+            useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun organizationDashboardScreen_displaysInitials_whenAvatarMissing() {
+    val userNoAvatar =
+        OrganizationDashboardTestData.createTestStaffSearchResult(
+            userId = "initials-user", displayName = "John Doe", avatarUrl = null)
+    val membership =
+        OrganizationDashboardTestData.createTestMembership(
+            userId = "initials-user", role = OrganizationRole.MEMBER)
+
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(listOf(membership)),
+            userRepository = MockUserRepository(mapOf("initials-user" to userNoAvatar)))
+    setScreen(viewModel = viewModel)
+
+    waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    // Wait for initials to be displayed
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule
+          .onAllNodes(
+              hasText("J") and
+                  hasAnyAncestor(
+                      hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("initials-user"))),
+              useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify initials "J" are displayed
+    composeTestRule
+        .onNode(
+            hasText("J") and
+                hasAnyAncestor(
+                    hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("initials-user"))),
+            useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun organizationDashboardScreen_displaysUnknownUser_whenNameMissing() {
+    val userNoName =
+        OrganizationDashboardTestData.createTestStaffSearchResult(
+            userId = "unknown-user", displayName = "", avatarUrl = null)
+    val membership =
+        OrganizationDashboardTestData.createTestMembership(
+            userId = "unknown-user", role = OrganizationRole.MEMBER)
+
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(listOf(membership)),
+            userRepository = MockUserRepository(mapOf("unknown-user" to userNoName)))
+    setScreen(viewModel = viewModel)
+
+    waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    // Wait for "Unknown User" text
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule
+          .onAllNodes(
+              hasText("Unknown User") and
+                  hasAnyAncestor(
+                      hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("unknown-user"))),
+              useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    // Verify "Unknown User" is displayed
+    composeTestRule
+        .onNode(
+            hasText("Unknown User") and
+                hasAnyAncestor(
+                    hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("unknown-user"))),
+            useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    // Verify fallback initial "?"
+    composeTestRule
+        .onNode(
+            hasText("?") and
+                hasAnyAncestor(
+                    hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("unknown-user"))),
+            useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun skeletonStaffItem_displaysPlaceholders() {
+    val userId = "skeleton-test-user"
+    composeTestRule.setContent { OnePassTheme { SkeletonStaffItem(userId = userId) } }
+
+    // Verify the main container
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.getStaffItemTag(userId))
+        .assertIsDisplayed()
+
+    // Verify internal skeleton parts
+    composeTestRule.onNodeWithTag("skeleton_avatar_$userId").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("skeleton_name_$userId").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("skeleton_email_$userId").assertIsDisplayed()
+  }
+
+  @Test
+  fun organizationDashboardScreen_staffRole_seesScanButNotEdit() {
+    val staffMembership =
+        OrganizationDashboardTestData.createTestMembership(
+            userId = "staff-user", role = OrganizationRole.STAFF)
+    val (mockAuth, _) = OrganizationDashboardTestData.createMockAuth("staff-user")
+
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(listOf(testEvent1)),
+            membershipRepository = MockMembershipRepository(listOf(staffMembership)),
+            userRepository = MockUserRepository(),
+            auth = mockAuth)
+
+    setScreen(viewModel = viewModel)
+    waitForTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN)
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule
+          .onAllNodesWithTag(OrganizationDashboardTestTags.getEventScanButtonTag("event-1"))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.getEventScanButtonTag("event-1"))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.getEventEditButtonTag("event-1"))
+        .assertDoesNotExist()
+  }
+
+  @Test
+  fun organizationDashboardScreen_memberRole_seesScanAndEdit() {
+    val memberMembership =
+        OrganizationDashboardTestData.createTestMembership(
+            userId = "member-user", role = OrganizationRole.MEMBER)
+    val (mockAuth, _) = OrganizationDashboardTestData.createMockAuth("member-user")
+
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(listOf(testEvent1)),
+            membershipRepository = MockMembershipRepository(listOf(memberMembership)),
+            userRepository = MockUserRepository(),
+            auth = mockAuth)
+
+    setScreen(viewModel = viewModel)
+    waitForTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN)
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule
+          .onAllNodesWithTag(OrganizationDashboardTestTags.getEventEditButtonTag("event-1"))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.getEventScanButtonTag("event-1"))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(OrganizationDashboardTestTags.getEventEditButtonTag("event-1"))
+        .assertIsDisplayed()
   }
 }

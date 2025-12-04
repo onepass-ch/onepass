@@ -54,7 +54,7 @@ class EventCardTest {
     composeTestRule.onNodeWithText("Test Organizer").assertExists()
     composeTestRule.onNodeWithText("Test Location").assertExists()
     composeTestRule.onNodeWithText("CHF25").assertExists()
-    composeTestRule.onNodeWithContentDescription("image description").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("event_card_image", useUnmergedTree = true).assertExists()
     composeTestRule.onNodeWithContentDescription("Like").assertExists()
   }
 
@@ -132,7 +132,7 @@ class EventCardTest {
   fun eventCard_handlesAllEmpty() {
     composeTestRule.setContent { MaterialTheme { EventCard(event = createEvent(0u, "", "", "")) } }
     composeTestRule.onNodeWithText("FREE").assertIsDisplayed()
-    composeTestRule.onNodeWithContentDescription("image description").assertIsDisplayed()
+    composeTestRule.onNodeWithTag("event_card_image", useUnmergedTree = true).assertExists()
     composeTestRule.onNodeWithContentDescription("Like").assertIsDisplayed()
   }
 
@@ -215,5 +215,96 @@ class EventCardTest {
         .onChildren()
         .filterToOne(hasContentDescription("Like"))
         .assertIsDisplayed()
+  }
+
+  @Test
+  fun eventCard_displaysAsyncImageWhenUrlPresent() {
+    val eventWithImage =
+        createEvent(25u, "Event", "Location", "Organizer")
+            .copy(images = listOf("https://example.com/image.jpg"))
+
+    composeTestRule.setContent { MaterialTheme { EventCard(event = eventWithImage) } }
+
+    // The image should be present (AsyncImage renders with the URL)
+    composeTestRule.onNodeWithTag("event_card_image", useUnmergedTree = true).assertExists()
+  }
+
+  @Test
+  fun eventCard_displaysFallbackImageWhenUrlEmpty() {
+    val eventWithoutImage =
+        createEvent(25u, "Event", "Location", "Organizer").copy(images = emptyList())
+
+    composeTestRule.setContent { MaterialTheme { EventCard(event = eventWithoutImage) } }
+
+    // The fallback image should be present
+    composeTestRule.onNodeWithTag("event_card_image", useUnmergedTree = true).assertExists()
+  }
+
+  @Test
+  fun eventCard_asyncImageHasCorrectContentDescription() {
+    val eventWithImage =
+        createEvent(25u, "Test Event", "Location", "Organizer")
+            .copy(images = listOf("https://example.com/image.jpg"))
+
+    composeTestRule.setContent { MaterialTheme { EventCard(event = eventWithImage) } }
+
+    // AsyncImage should have content description mentioning the event title
+    composeTestRule
+        .onNodeWithContentDescription("Event image for Test Event", useUnmergedTree = true)
+        .assertExists()
+  }
+
+  @Test
+  fun eventCard_handlesMultipleImageUrls() {
+    val url1 = "https://example.com/image1.jpg"
+    val url2 = "https://example.com/image2.jpg"
+
+    lateinit var currentEvent: MutableState<Event>
+
+    composeTestRule.setContent {
+      currentEvent = remember {
+        mutableStateOf(
+            createEvent(25u, "Event", "Location", "Organizer").copy(images = listOf(url1)))
+      }
+      MaterialTheme { EventCard(event = currentEvent.value) }
+    }
+
+    // First image should be displayed
+    composeTestRule.onNodeWithTag("event_card_image", useUnmergedTree = true).assertExists()
+
+    // Change to second image
+    composeTestRule.runOnIdle {
+      currentEvent.value =
+          createEvent(25u, "Event", "Location", "Organizer").copy(images = listOf(url2))
+    }
+
+    // Second image should be displayed
+    composeTestRule.onNodeWithTag("event_card_image", useUnmergedTree = true).assertExists()
+  }
+
+  @Test
+  fun eventCard_switchesBetweenAsyncImageAndFallback() {
+    lateinit var currentEvent: MutableState<Event>
+
+    composeTestRule.setContent {
+      currentEvent = remember {
+        mutableStateOf(
+            createEvent(25u, "Event", "Location", "Organizer")
+                .copy(images = listOf("https://example.com/image.jpg")))
+      }
+      MaterialTheme { EventCard(event = currentEvent.value) }
+    }
+
+    // AsyncImage with URL should be present
+    composeTestRule.onNodeWithTag("event_card_image", useUnmergedTree = true).assertExists()
+
+    // Switch to empty URL (fallback)
+    composeTestRule.runOnIdle {
+      currentEvent.value =
+          createEvent(25u, "Event", "Location", "Organizer").copy(images = emptyList())
+    }
+
+    // Fallback image should be present
+    composeTestRule.onNodeWithTag("event_card_image", useUnmergedTree = true).assertExists()
   }
 }

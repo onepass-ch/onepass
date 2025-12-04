@@ -1,11 +1,17 @@
 package ch.onepass.onepass.ui.profile
 
+import ch.onepass.onepass.model.membership.Membership
+import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.user.FakeUserRepository
 import ch.onepass.onepass.model.user.User
+import ch.onepass.onepass.utils.TestMockMembershipRepository
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.yield
 import org.junit.Assert.*
 import org.junit.Test
 
@@ -23,7 +29,8 @@ class ProfileViewModelTest {
   @Test
   fun initLoadsUseAndMapsToUIState() = runBlocking {
     val repo = FakeUserRepository(currentUser = makeUser())
-    val vm = ProfileViewModel(userRepository = repo)
+    val membershipRepo = TestMockMembershipRepository()
+    val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
 
     // Wait until loading finishes then grab state
     val state = vm.state.filter { !it.loading }.first()
@@ -37,7 +44,8 @@ class ProfileViewModelTest {
   @Test
   fun whenNoUserFoundSetsErrorState() = runBlocking {
     val repo = FakeUserRepository(currentUser = null, createdUser = null)
-    val vm = ProfileViewModel(userRepository = repo)
+    val membershipRepo = TestMockMembershipRepository()
+    val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
 
     val state = vm.state.filter { !it.loading }.first()
 
@@ -47,7 +55,8 @@ class ProfileViewModelTest {
   @Test
   fun exceptionFromRepoSurfacesAsErrorState() = runBlocking {
     val repo = FakeUserRepository(throwOnLoad = true)
-    val vm = ProfileViewModel(userRepository = repo)
+    val membershipRepo = TestMockMembershipRepository()
+    val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
 
     val state = vm.state.filter { !it.loading }.first()
 
@@ -55,30 +64,180 @@ class ProfileViewModelTest {
   }
 
   @Test
-  fun onCreateEventClickedEmitsOnboardingWhenNotOrganizer() = runBlocking {
-    val repo = FakeUserRepository(currentUser = makeUser())
-    val vm = ProfileViewModel(userRepository = repo)
+  fun onOrganizationButtonEmitsNavigateToMyOrganizationsWhenUserIsOrganizer() = runBlocking {
+    val user = makeUser(uid = "user-1")
+    val repo = FakeUserRepository(currentUser = user)
+    val membership = Membership(userId = "user-1", orgId = "org-1", role = OrganizationRole.OWNER)
+    val membershipRepo =
+        TestMockMembershipRepository(organizationsByUser = mapOf("user-1" to listOf(membership)))
+    val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
 
     // Ensure state is ready before triggering effect
     vm.state.filter { !it.loading }.first()
 
-    val effect =
-        withTimeout(1000) {
-          vm.onOrganizationButton()
-          vm.effects.first()
-        }
+    // Start collecting effects BEFORE triggering the action to avoid race condition
+    val effectDeferred = async { vm.effects.first() }
+
+    // Give a small delay to ensure the collection coroutine starts
+    yield()
+
+    vm.onOrganizationButton()
+
+    // Give viewModelScope time to execute and emit the effect
+    delay(10)
+
+    val effect = withTimeout(30000) { effectDeferred.await() }
+    assertEquals(ProfileEffect.NavigateToMyOrganizations, effect)
+  }
+
+  @Test
+  fun onOrganizationButtonEmitsNavigateToBecomeOrganizerWhenUserIsNotOrganizer() = runBlocking {
+    val user = makeUser(uid = "user-1")
+    val repo = FakeUserRepository(currentUser = user)
+    val membershipRepo = TestMockMembershipRepository()
+    val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
+
+    // Ensure state is ready before triggering effect
+    vm.state.filter { !it.loading }.first()
+
+    // Start collecting effects BEFORE triggering the action to avoid race condition
+    val effectDeferred = async { vm.effects.first() }
+
+    // Give a small delay to ensure the collection coroutine starts
+    yield()
+
+    vm.onOrganizationButton()
+
+    // Give viewModelScope time to execute and emit the effect
+    delay(10)
+
+    val effect = withTimeout(30000) { effectDeferred.await() }
     assertEquals(ProfileEffect.NavigateToBecomeOrganizer, effect)
+  }
+
+  @Test
+  fun onOrganizationButtonEmitsNavigateToMyOrganizationsWhenUserHasOnlyMemberRole() = runBlocking {
+    val user = makeUser(uid = "user-1")
+    val repo = FakeUserRepository(currentUser = user)
+    val membership = Membership(userId = "user-1", orgId = "org-1", role = OrganizationRole.MEMBER)
+    val membershipRepo =
+        TestMockMembershipRepository(organizationsByUser = mapOf("user-1" to listOf(membership)))
+    val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
+
+    // Ensure state is ready and isOrganizer is set correctly before triggering effect
+    val readyState = vm.state.filter { !it.loading && it.isOrganizer }.first()
+    assertTrue("User with MEMBER role should be organizer", readyState.isOrganizer)
+
+    // Start collecting effects BEFORE triggering the action to avoid race condition
+    val effectDeferred = async { vm.effects.first() }
+
+    // Give a small delay to ensure the collection coroutine starts
+    yield()
+
+    vm.onOrganizationButton()
+
+    // Give viewModelScope time to execute and emit the effect
+    delay(10)
+
+    val effect = withTimeout(30000) { effectDeferred.await() }
+    assertEquals(ProfileEffect.NavigateToMyOrganizations, effect)
+  }
+
+  @Test
+  fun isOrganizerIsTrueWhenUserHasOwnerRoleMembership() = runBlocking {
+    val user = makeUser(uid = "user-1")
+    val repo = FakeUserRepository(currentUser = user)
+    val membership = Membership(userId = "user-1", orgId = "org-1", role = OrganizationRole.OWNER)
+    val membershipRepo =
+        TestMockMembershipRepository(organizationsByUser = mapOf("user-1" to listOf(membership)))
+    val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
+
+    val state = vm.state.filter { !it.loading }.first()
+
+    assertTrue("User with any membership should be organizer", state.isOrganizer)
+  }
+
+  @Test
+  fun isOrganizerIsFalseWhenUserHasNoMemberships() = runBlocking {
+    val user = makeUser(uid = "user-1")
+    val repo = FakeUserRepository(currentUser = user)
+    val membershipRepo = TestMockMembershipRepository()
+    val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
+
+    val state = vm.state.filter { !it.loading }.first()
+
+    assertFalse("User with no memberships should not be organizer", state.isOrganizer)
+  }
+
+  @Test
+  fun isOrganizerIsTrueWhenUserHasOnlyMemberRoleMembership() = runBlocking {
+    val user = makeUser(uid = "user-1")
+    val repo = FakeUserRepository(currentUser = user)
+    val membership = Membership(userId = "user-1", orgId = "org-1", role = OrganizationRole.MEMBER)
+    val membershipRepo =
+        TestMockMembershipRepository(organizationsByUser = mapOf("user-1" to listOf(membership)))
+    val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
+
+    val state = vm.state.filter { !it.loading }.first()
+
+    assertTrue(
+        "User with any membership (including MEMBER role) should be organizer", state.isOrganizer)
+  }
+
+  @Test
+  fun isOrganizerIsTrueWhenUserHasMultipleMemberships() = runBlocking {
+    val user = makeUser(uid = "user-1")
+    val repo = FakeUserRepository(currentUser = user)
+    val memberships =
+        listOf(
+            Membership(userId = "user-1", orgId = "org-1", role = OrganizationRole.MEMBER),
+            Membership(userId = "user-1", orgId = "org-2", role = OrganizationRole.OWNER),
+            Membership(userId = "user-1", orgId = "org-3", role = OrganizationRole.STAFF))
+    val membershipRepo =
+        TestMockMembershipRepository(organizationsByUser = mapOf("user-1" to memberships))
+    val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
+
+    val state = vm.state.filter { !it.loading }.first()
+
+    assertTrue("User with any memberships should be organizer", state.isOrganizer)
+  }
+
+  @Test
+  fun isOrganizerIsFalseWhenMembershipRepositoryReturnsError() = runBlocking {
+    val user = makeUser(uid = "user-1")
+    val repo = FakeUserRepository(currentUser = user)
+    val membershipRepo =
+        TestMockMembershipRepository(
+            getOrganizationsByUserError = RuntimeException("Network error"))
+    val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
+
+    val state = vm.state.filter { !it.loading }.first()
+
+    // When getOrganizationsByUser fails, getOrNull() returns null, which becomes emptyList(),
+    // so isOrganizer should be false
+    assertFalse("User should not be organizer when membership check fails", state.isOrganizer)
   }
 
   @Test
   fun onInvitationsEmitsNavigateToMyInvitations() = runBlocking {
     val repo = FakeUserRepository(currentUser = makeUser())
-    val vm = ProfileViewModel(userRepository = repo)
+    val membershipRepo = TestMockMembershipRepository()
+    val vm = ProfileViewModel(userRepository = repo, membershipRepository = membershipRepo)
 
     vm.state.filter { !it.loading }.first()
 
+    // Start collecting effects BEFORE triggering the action to avoid race condition
+    val effectDeferred = async { vm.effects.first() }
+
+    // Give a small delay to ensure the collection coroutine starts
+    yield()
+
     vm.onInvitations()
-    val effect = vm.effects.first()
+
+    // Give viewModelScope time to execute and emit the effect
+    delay(10)
+
+    val effect = effectDeferred.await()
 
     assertEquals(ProfileEffect.NavigateToMyInvitations, effect)
   }

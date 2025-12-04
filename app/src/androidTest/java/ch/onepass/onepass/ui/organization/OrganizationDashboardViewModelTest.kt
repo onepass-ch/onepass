@@ -1,5 +1,7 @@
 package ch.onepass.onepass.ui.organization
 
+import ch.onepass.onepass.model.membership.Membership
+import ch.onepass.onepass.model.organization.OrganizationRole
 import io.mockk.every
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -17,7 +19,7 @@ class OrganizationDashboardViewModelTest {
   private lateinit var mockUser: com.google.firebase.auth.FirebaseUser
 
   // Test data
-  private val testOrg = OrganizationDashboardTestData.createTestOrganization()
+  private val testOrg = OrganizationDashboardTestData.createTestOrganization(members = emptyMap())
   private val testEvent1 = OrganizationDashboardTestData.createTestEvent()
   private val testEvent2 =
       OrganizationDashboardTestData.createTestEvent(
@@ -26,6 +28,15 @@ class OrganizationDashboardViewModelTest {
           status = ch.onepass.onepass.model.event.EventStatus.DRAFT,
           capacity = 200,
           ticketsRemaining = 200)
+
+  private val testMemberships =
+      listOf(
+          OrganizationDashboardTestData.createTestMembership(
+              membershipId = "mem-1", userId = "owner-1", role = OrganizationRole.OWNER),
+          OrganizationDashboardTestData.createTestMembership(
+              membershipId = "mem-2", userId = "member-1", role = OrganizationRole.MEMBER),
+          OrganizationDashboardTestData.createTestMembership(
+              membershipId = "mem-3", userId = "staff-1", role = OrganizationRole.STAFF))
 
   @Before
   fun setup() {
@@ -43,6 +54,7 @@ class OrganizationDashboardViewModelTest {
   private fun createViewModel(
       organization: ch.onepass.onepass.model.organization.Organization? = null,
       events: List<ch.onepass.onepass.model.event.Event> = emptyList(),
+      memberships: List<Membership> = testMemberships,
       shouldThrowError: Boolean = false,
       removeResult: Result<Unit> = Result.success(Unit)
   ) =
@@ -50,6 +62,8 @@ class OrganizationDashboardViewModelTest {
           organizationRepository =
               MockOrganizationRepository(organization, shouldThrowError, removeResult),
           eventRepository = MockEventRepository(events),
+          membershipRepository = MockMembershipRepository(memberships, removeResult),
+          userRepository = MockUserRepository(),
           auth = mockAuth)
 
   private suspend fun loadAndAdvance(
@@ -74,7 +88,7 @@ class OrganizationDashboardViewModelTest {
   }
 
   @Test
-  fun viewModel_loadOrganization_updatesStateWithOrganization() = runTest {
+  fun viewModel_loadOrganization_updatesStateWithOrganizationAndMembers() = runTest {
     val viewModel = createViewModel(organization = testOrg, events = listOf(testEvent1, testEvent2))
     loadAndAdvance(viewModel)
 
@@ -194,7 +208,7 @@ class OrganizationDashboardViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     val state = viewModel.uiState.value
-    assertFalse(state.staffMembers.containsKey("member-1"))
+    assertFalse(state.staffMembers.any { it.userId == "member-1" })
     assertEquals(2, state.staffMembers.size)
   }
 
@@ -221,7 +235,7 @@ class OrganizationDashboardViewModelTest {
     testDispatcher.scheduler.advanceUntilIdle()
 
     assertEquals(beforeCount, viewModel.uiState.value.staffMembers.size)
-    assertTrue(viewModel.uiState.value.staffMembers.containsKey("owner-1"))
+    assertTrue(viewModel.uiState.value.staffMembers.any { it.userId == "owner-1" })
   }
 
   @Test
@@ -304,8 +318,8 @@ class OrganizationDashboardViewModelTest {
 
     val state = viewModel.uiState.value
     assertEquals(3, state.staffMembers.size)
-    assertTrue(state.staffMembers.containsKey("owner-1"))
-    assertTrue(state.staffMembers.containsKey("member-1"))
-    assertTrue(state.staffMembers.containsKey("staff-1"))
+    assertTrue(state.staffMembers.any { it.userId == "owner-1" })
+    assertTrue(state.staffMembers.any { it.userId == "member-1" })
+    assertTrue(state.staffMembers.any { it.userId == "staff-1" })
   }
 }

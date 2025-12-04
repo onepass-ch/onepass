@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.lifecycle.ViewModelProvider
@@ -17,6 +18,7 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import ch.onepass.onepass.model.pass.PassRepositoryFirebase
 import ch.onepass.onepass.ui.auth.AuthScreen
 import ch.onepass.onepass.ui.auth.AuthViewModel
 import ch.onepass.onepass.ui.eventdetail.EventDetailScreen
@@ -30,9 +32,12 @@ import ch.onepass.onepass.ui.map.MapScreen
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.myevents.MyEventsScreen
 import ch.onepass.onepass.ui.myevents.MyEventsViewModel
+import ch.onepass.onepass.ui.myevents.passDataStore
 import ch.onepass.onepass.ui.myinvitations.MyInvitationsScreen
 import ch.onepass.onepass.ui.myinvitations.MyInvitationsViewModel
 import ch.onepass.onepass.ui.navigation.NavigationDestinations.Screen
+import ch.onepass.onepass.ui.notification.NotificationsScreen
+import ch.onepass.onepass.ui.notification.NotificationsViewModel
 import ch.onepass.onepass.ui.organization.OrganizationDashboardScreen
 import ch.onepass.onepass.ui.organization.OrganizationDashboardViewModel
 import ch.onepass.onepass.ui.organization.OrganizationFeedScreen
@@ -50,6 +55,8 @@ import ch.onepass.onepass.ui.profile.ProfileViewModel
 import ch.onepass.onepass.ui.staff.StaffInvitationScreen
 import ch.onepass.onepass.ui.staff.StaffInvitationViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.functions.FirebaseFunctions
 
 /**
  * Navigation host that registers all app routes and wires view models to screens.
@@ -66,7 +73,7 @@ import com.google.firebase.auth.FirebaseAuth
 fun AppNavHost(
     navController: NavHostController,
     modifier: Modifier = Modifier,
-    mapViewModel: MapViewModel,
+    mapViewModel: MapViewModel? = null,
     testAuthButtonTag: String? = null,
     authViewModelFactory: ViewModelProvider.Factory = viewModelFactory {
       initializer { AuthViewModel() }
@@ -75,6 +82,9 @@ fun AppNavHost(
       initializer { ProfileViewModel() }
     }
 ) {
+  // Get context for DataStore
+  val context = LocalContext.current
+
   // Create a single AuthViewModel instance for the entire nav host
   val authViewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
   val authState by authViewModel.uiState.collectAsState()
@@ -113,7 +123,16 @@ fun AppNavHost(
           onNavigateToEvent = { eventId ->
             navController.navigate(Screen.EventDetail.route(eventId))
           },
-      )
+          onNavigateToNotifications = { navController.navigate(Screen.Notification.route) })
+    }
+
+    // ------------------ Notifications ------------------
+    composable(Screen.Notification.route) {
+      val notificationViewModel: NotificationsViewModel = viewModel()
+      NotificationsScreen(
+          navController = navController,
+          viewModel = notificationViewModel,
+          onNavigateBack = { navController.popBackStack() })
     }
 
     // ------------------ Event Detail ------------------
@@ -126,7 +145,7 @@ fun AppNavHost(
       EventDetailScreen(
           eventId = eventId,
           viewModel = eventDetailVm,
-          onNavigateToMap = { navController.navigate(Screen.Map.route) },
+          onNavigateToMap = { navController.navigateToTopLevel(Screen.Map.route) },
           onNavigateToOrganizerProfile = { orgId ->
             navController.navigate(Screen.OrganizationProfile.route(orgId))
           },
@@ -138,14 +157,27 @@ fun AppNavHost(
       val uid = FirebaseAuth.getInstance().currentUser?.uid ?: "LOCAL_TEST_UID"
 
       val myEventsVm: MyEventsViewModel =
-          viewModel(factory = viewModelFactory { initializer { MyEventsViewModel(userId = uid) } })
+          viewModel(
+              factory =
+                  viewModelFactory {
+                    initializer {
+                      MyEventsViewModel(
+                          dataStore = context.passDataStore,
+                          passRepository =
+                              PassRepositoryFirebase(
+                                  FirebaseFirestore.getInstance(), FirebaseFunctions.getInstance()),
+                          userId = uid)
+                    }
+                  })
       MyEventsScreen(viewModel = myEventsVm, userQrData = "USER-QR-DEMO")
     }
 
     // ------------------ Map ------------------
     composable(Screen.Map.route) {
+      // Each map screen will create its own ViewModel and handle its own location permission
+      val mapScreenViewModel: MapViewModel = mapViewModel ?: viewModel()
       MapScreen(
-          mapViewModel = mapViewModel,
+          mapViewModel = mapScreenViewModel,
           onNavigateToEvent = { eventId ->
             navController.navigate(Screen.EventDetail.route(eventId))
           })
@@ -317,5 +349,19 @@ fun AppNavHost(
     composable(Screen.ComingSoon.route) {
       ComingSoonScreen(onBack = { navController.popBackStack() })
     }
+  }
+}
+
+/**
+ * Navigates to a top-level destination, clearing any existing back stack to avoid multiple copies
+ * of the same destination.
+ *
+ * @param route The route string of the top-level destination to navigate to.
+ */
+fun NavHostController.navigateToTopLevel(route: String) {
+  this.navigate(route) {
+    launchSingleTop = true
+    restoreState = false
+    popUpTo(route) { inclusive = true }
   }
 }
