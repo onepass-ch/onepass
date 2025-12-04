@@ -151,6 +151,7 @@ class EditEventFormViewModel(
                 capacity = parsed.capacity,
                 location = parsed.selectedLocation,
                 images = original.images,
+                tags = parsed.tags,
                 pricingTiers =
                     listOf(
                         PricingTier(

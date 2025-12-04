@@ -37,7 +37,7 @@ object FeedScreenTestTags {
   const val FEED_TITLE = "feedTitle"
   const val FEED_LOCATION = "feedLocation"
   const val FILTER_BUTTON = "filterButton"
-  const val NOTIFICATION_BUTTON = "notificationButton" // Added tag
+  const val NOTIFICATION_BUTTON = "notificationButton"
   const val EVENT_LIST = "eventList"
   const val LOADING_INDICATOR = "loadingIndicator"
   const val ERROR_MESSAGE = "errorMessage"
@@ -65,6 +65,7 @@ fun FeedScreen(
     onNavigateToNotifications: () -> Unit = {},
     viewModel: FeedViewModel = viewModel(),
     filterViewModel: EventFilterViewModel = viewModel(),
+    eventCardViewModel: EventCardViewModel = viewModel()
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val currentFilters by filterViewModel.currentFilters.collectAsState()
@@ -126,7 +127,7 @@ fun FeedScreen(
               events = uiState.events,
               isLoadingMore = uiState.isLoading,
               onEventClick = onNavigateToEvent,
-          )
+              eventCardViewModel = eventCardViewModel)
         }
       }
       // Filter Dialog
@@ -236,8 +237,8 @@ private fun EventListContent(
     events: List<Event>,
     isLoadingMore: Boolean,
     onEventClick: (String) -> Unit,
+    eventCardViewModel: EventCardViewModel
 ) {
-  val eventCardViewModel = EventCardViewModel.getInstance()
   val likedEvents by eventCardViewModel.likedEvents.collectAsState()
 
   LazyColumn(

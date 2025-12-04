@@ -1,6 +1,9 @@
 package ch.onepass.onepass.model.user
 
 import ch.onepass.onepass.model.staff.StaffSearchResult
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * Fake implementation of UserRepository for testing purposes.
@@ -16,6 +19,7 @@ class FakeUserRepository(
     private var createdUser: User? = null,
     private var throwOnLoad: Boolean = false
 ) : UserRepository {
+  private val _favoriteEventIds = MutableStateFlow<Set<String>>(emptySet())
 
   override suspend fun getCurrentUser(): User? {
     if (throwOnLoad) throw RuntimeException("boom")
@@ -73,6 +77,20 @@ class FakeUserRepository(
       organizationId: String?
   ): Result<List<StaffSearchResult>> {
     return searchResultsFunction(query, searchType, organizationId)
+  }
+
+  override fun getFavoriteEvents(uid: String): Flow<Set<String>> {
+    return _favoriteEventIds
+  }
+
+  override suspend fun addFavoriteEvent(uid: String, eventId: String): Result<Unit> {
+    _favoriteEventIds.update { it + eventId }
+    return Result.success(Unit)
+  }
+
+  override suspend fun removeFavoriteEvent(uid: String, eventId: String): Result<Unit> {
+    _favoriteEventIds.update { it - eventId }
+    return Result.success(Unit)
   }
 
   /** Override searchUsers to return specific results. */

@@ -107,7 +107,7 @@ open class CreateEventFormViewModel(
                           quantity = parsed.capacity,
                           remaining = parsed.capacity)),
               images = emptyList(), // No images yet
-              tags = emptyList())
+              tags = parsed.tags)
 
       android.util.Log.d("CreateEventFormVM", "Creating event in repository...")
       // Create event in repository first to get the real event ID
