@@ -223,14 +223,33 @@ class MapCameraTrackingIntegrationTest {
   }
 
   @Test
-  fun cameraTracking_independentOfPermissionState() = runTest {
-    mapViewModel.setLocationPermission(true)
-    assertFalse("Should not affect initial tracking state", mapViewModel.isCameraTracking())
+  fun cameraTracking_clearingEventMultipleTimes_doesNotAffectTracking() = runTest {
+    val event =
+        Event(
+            eventId = "evt-multi-clear",
+            title = "Event For Multiple Clears",
+            status = EventStatus.PUBLISHED,
+            location = Location(GeoPoint(46.5191, 6.5668), "EPFL", "Vaud"),
+            startTime = Timestamp.now(),
+            ticketsRemaining = 50)
+
+    fakeRepo.setEvents(listOf(event))
+    mapViewModel.refreshEvents()
 
     mapViewModel.enableCameraTracking()
-    assertTrue(mapViewModel.isCameraTracking())
+    assertTrue("Tracking should be enabled", mapViewModel.isCameraTracking())
 
-    mapViewModel.setLocationPermission(false)
+    val eventToSelect = mapViewModel.uiState.value.events.first()
+    mapViewModel.selectEvent(eventToSelect)
+
+    // Clear multiple times
+    mapViewModel.clearSelectedEvent()
+    mapViewModel.clearSelectedEvent() // Second clear
+    mapViewModel.clearSelectedEvent() // Third clear
+
+    assertTrue(
+        "Tracking should remain enabled after multiple clears", mapViewModel.isCameraTracking())
+    assertNull("Event selection should be cleared", mapViewModel.uiState.value.selectedEvent)
   }
 }
 
@@ -247,7 +266,7 @@ class TestEventRepository : EventRepository {
   override fun getAllEvents(): Flow<List<Event>> = flowOf(events)
 
   override fun searchEvents(query: String): Flow<List<Event>> =
-      flowOf(events.filter { it.title.contains(query, ignoreCase = true) })
+      flowOf(events.filter { it.title.contains(query.trim(), ignoreCase = true) })
 
   override fun getEventsByOrganization(orgId: String): Flow<List<Event>> = flowOf(events)
 
