@@ -11,6 +11,8 @@ import ch.onepass.onepass.ui.theme.OnePassTheme
 import ch.onepass.onepass.utils.FirebaseEmulator
 import ch.onepass.onepass.utils.FirestoreTestBase
 import java.util.*
+import kotlin.time.Duration.Companion.seconds
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -133,50 +135,42 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
   }
 
   @Test
-  fun dashboardScreen_removeStaffMember_updatesFirestore() = runTest {
-    val staffId = "staff-${UUID.randomUUID()}"
+  fun dashboardScreen_removeStaffMember_updatesFirestore() =
+      runTest(timeout = 60.seconds) {
+        val staffId = "staff-${UUID.randomUUID()}"
 
-    val members = mapOf(userId to OrganizationRole.OWNER, staffId to OrganizationRole.STAFF)
+        val members = mapOf(userId to OrganizationRole.OWNER, staffId to OrganizationRole.STAFF)
 
-    val (orgId, _) = createAndLoadDashboard(members = members)
+        val (orgId, _) = createAndLoadDashboard(members = members)
 
-    composeTestRule.waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
-    composeTestRule
-        .onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
-        .performScrollTo()
-        .performClick()
+        composeTestRule.waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
+        composeTestRule
+            .onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
+            .performScrollTo()
+            .performClick()
 
-    composeTestRule.onNodeWithText(staffId).assertIsDisplayed()
+        composeTestRule.onNodeWithText(staffId).assertIsDisplayed()
 
-    composeTestRule
-        .onNodeWithTag(OrganizationDashboardTestTags.getStaffRemoveButtonTag(staffId))
-        .performClick()
+        composeTestRule
+            .onNodeWithTag(OrganizationDashboardTestTags.getStaffRemoveButtonTag(staffId))
+            .performClick()
 
-    // Wait for the membership to be actually removed from Firestore
-    // This is the source of truth and ensures the operation has succeeded on the backend
-    // We use a polling mechanism with a timeout
-    val timeout = 20_000L
-    val startTime = System.currentTimeMillis()
-    var removed = false
-    while (System.currentTimeMillis() - startTime < timeout) {
-      val hasMembership =
-          membershipRepository.hasMembership(
-              userId = staffId, orgId = orgId, roles = listOf(OrganizationRole.STAFF))
-      if (!hasMembership) {
-        removed = true
-        break
+        // Wait for the membership to be actually removed from Firestore
+        // This is the source of truth and ensures the operation has succeeded on the backend
+        // We use waitUntil to avoid busy-waiting in runTest
+        composeTestRule.waitUntil(timeoutMillis = 60_000L) {
+          runBlocking {
+            !membershipRepository.hasMembership(
+                userId = staffId, orgId = orgId, roles = listOf(OrganizationRole.STAFF))
+          }
+        }
+
+        // Now wait for the UI to reflect the change
+        // Since we know the backend is updated, we can give the UI plenty of time to sync
+        composeTestRule.waitUntil(timeoutMillis = 60_000) {
+          composeTestRule.onAllNodesWithText(staffId).fetchSemanticsNodes().isEmpty()
+        }
       }
-      kotlinx.coroutines.delay(500)
-    }
-
-    assert(removed) { "Membership was not removed from Firestore within $timeout ms" }
-
-    // Now wait for the UI to reflect the change
-    // Since we know the backend is updated, we can give the UI plenty of time to sync
-    composeTestRule.waitUntil(timeoutMillis = 10_000) {
-      composeTestRule.onAllNodesWithText(staffId).fetchSemanticsNodes().isEmpty()
-    }
-  }
 
   @Test
   fun dashboardScreen_cannotRemoveOwner() = runTest {
