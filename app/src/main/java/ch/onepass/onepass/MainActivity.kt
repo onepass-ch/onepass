@@ -29,7 +29,6 @@ import ch.onepass.onepass.ui.navigation.navigateToTopLevel
 import ch.onepass.onepass.ui.profile.ProfileViewModel
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.mapbox.common.MapboxOptions
-import com.stripe.android.PaymentConfiguration
 
 /**
  * Main Activity that sets up Mapbox, Stripe, the OnePass theme and hosts the root composable
@@ -41,13 +40,6 @@ class MainActivity : ComponentActivity() {
 
     // Mapbox access token
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
-
-    // Initialize Stripe
-    val stripePublishableKey = BuildConfig.STRIPE_PUBLISHABLE_KEY
-    if (stripePublishableKey.isNotEmpty()) {
-      PaymentConfiguration.init(applicationContext, stripePublishableKey)
-    }
-
     setContent { OnePassTheme { MainActivityContent() } }
   }
 }
