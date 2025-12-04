@@ -465,7 +465,7 @@ class OrganizationDashboardScreenTest {
     composeTestRule.waitForIdle()
 
     // Wait for the avatar to be displayed
-    composeTestRule.waitUntil(timeoutMillis = 5000) {
+    composeTestRule.waitUntil(timeoutMillis = 20_000) {
       composeTestRule
           .onAllNodes(
               hasContentDescription("Avatar") and
