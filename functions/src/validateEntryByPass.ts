@@ -5,9 +5,53 @@ import { verifySignature } from "./crypto";
 
 const db = admin.firestore();
 
+/**
+ * Validates a user's entry to an event by verifying their cryptographically signed QR pass.
+ *
+ * Security Flow:
+ * 1. Authenticates the scanner (must be logged in)
+ * 2. Authorizes the scanner (must have STAFF, SECURITY, ADMIN, or ORGANIZER role)
+ * 3. Parses and validates the QR code format
+ * 4. Verifies the Ed25519 cryptographic signature
+ * 5. Checks the pass status (active, not revoked)
+ * 6. Finds the corresponding ticket for the event
+ * 7. Validates the ticket hasn't been redeemed
+ * 8. Prevents replay attacks (30-second window)
+ * 9. Atomically updates ticket, pass, event counters, and validation logs
+ *
+ * @param data.qrText - Raw QR code string in format: "onepass:user:v1.<payload>.<signature>"
+ * @param data.eventId - The event ID to validate entry for
+ * @param context.auth - Firebase Auth context containing the scanner's UID
+ *
+ * @returns Object with status ("accepted" | "rejected"), reason, ticketId, scannedAt, and remaining capacity
+ *
+ * @throws HttpsError
+ * - "unauthenticated": Scanner not logged in
+ * - "invalid-argument": Missing qrText or eventId
+ * - "permission-denied": Scanner doesn't have required role
+ *
+ * @example
+ * // Accepted response
+ * {
+ *   status: "accepted",
+ *   ticketId: "T-12345",
+ *   scannedAt: 1701234567,
+ *   remaining: 42
+ * }
+ *
+ * @example
+ * // Rejected response
+ * {
+ *   status: "rejected",
+ *   reason: "ALREADY_SCANNED",
+ *   scannedAt: 1701234000
+ * }
+ */
 export const validateEntryByPass = functions.https.onCall(
   async (data: any, context: any) => {
-    // 1. AUTH CHECK - OBLIGATOIRE
+    // ============================================================================
+    // 1. AUTHENTICATION CHECK
+    // ============================================================================
     const scannerUid = context.auth?.uid;
     if (!scannerUid) {
       throw new functions.https.HttpsError(
@@ -24,7 +68,9 @@ export const validateEntryByPass = functions.https.onCall(
       );
     }
 
-    // 2. AUTHORIZATION CHECK - Vérifier les permissions
+    // ============================================================================
+    // 2. AUTHORIZATION CHECK
+    // ============================================================================
     const scannerDoc = await db.collection("users").doc(scannerUid).get();
     const scannerData = scannerDoc.data();
     const scannerRole = scannerData?.role;
@@ -44,7 +90,14 @@ export const validateEntryByPass = functions.https.onCall(
       `Scanner ${scannerUid} (${scannerRole}) validating entry for event ${eventId}`
     );
 
-    // Helper function to log all validation attempts
+    /**
+     * Logs validation attempts to the validations collection for audit trail.
+     *
+     * @param uid - User ID being validated (null if QR parsing failed)
+     * @param ticketId - Ticket ID being validated (null if not found)
+     * @param result - Result of validation: "accepted", "rejected", or "error"
+     * @param reason - Optional reason for rejection (e.g., "bad_format", "already_scanned")
+     */
     const logValidation = async (
       uid: string | null,
       ticketId: string | null,
@@ -67,7 +120,9 @@ export const validateEntryByPass = functions.https.onCall(
       }
     };
 
+    // ============================================================================
     // 3. PARSE QR CODE
+    // ============================================================================
     const prefix = "onepass:user:v1.";
     if (!qrText.startsWith(prefix)) {
       await logValidation(null, null, "rejected", "bad_format");
@@ -84,11 +139,14 @@ export const validateEntryByPass = functions.https.onCall(
 
     const [payloadB64Url, signatureB64Url] = parts;
 
-    // 4. DECODE PAYLOAD (with proper base64url handling)
+    // ============================================================================
+    // 4. DECODE PAYLOAD (Base64URL with proper padding)
+    // ============================================================================
     let payloadJson: string;
     let payload: any;
 
     try {
+      // Convert Base64URL to standard Base64 and add padding if needed
       const payloadB64 = payloadB64Url
         .replace(/-/g, "+")
         .replace(/_/g, "/")
@@ -112,7 +170,9 @@ export const validateEntryByPass = functions.https.onCall(
       return { status: "rejected", reason: "BAD_SIGNATURE" };
     }
 
-    // 5. VERIFY CRYPTOGRAPHIC SIGNATURE
+    // ============================================================================
+    // 5. VERIFY CRYPTOGRAPHIC SIGNATURE (Ed25519)
+    // ============================================================================
     const isValid = await verifySignature(payloadJson, signatureB64Url, kid);
     if (!isValid) {
       logger.warn(`Invalid signature for uid=${uid}`);
@@ -120,7 +180,9 @@ export const validateEntryByPass = functions.https.onCall(
       return { status: "rejected", reason: "BAD_SIGNATURE" };
     }
 
+    // ============================================================================
     // 6. CHECK PASS STATUS
+    // ============================================================================
     const userDoc = await db.collection("users").doc(uid).get();
     const pass = userDoc.data()?.pass;
 
@@ -130,7 +192,9 @@ export const validateEntryByPass = functions.https.onCall(
       return { status: "rejected", reason: "REVOKED" };
     }
 
-    // 7. FIND TICKET
+    // ============================================================================
+    // 7. FIND TICKET FOR EVENT
+    // ============================================================================
     const ticketsSnap = await db
       .collection("tickets")
       .where("ownerId", "==", uid)
@@ -149,7 +213,9 @@ export const validateEntryByPass = functions.https.onCall(
     const ticketId = ticketDoc.id;
     const ticket = ticketDoc.data();
 
+    // ============================================================================
     // 8. CHECK IF ALREADY REDEEMED
+    // ============================================================================
     if (ticket.state === "REDEEMED") {
       const redeemedAt = ticket.redeemedAt?.seconds;
       const previousScanner = ticket.scannedBy || "unknown";
@@ -164,7 +230,9 @@ export const validateEntryByPass = functions.https.onCall(
       };
     }
 
-    // 9. ANTI-REPLAY (30 seconds window for same scan)
+    // ============================================================================
+    // 9. ANTI-REPLAY PROTECTION (30-second window)
+    // ============================================================================
     const now = Date.now();
     const recentValidations = await db
       .collection("validations")
@@ -180,7 +248,9 @@ export const validateEntryByPass = functions.https.onCall(
       return { status: "rejected", reason: "ALREADY_SCANNED" };
     }
 
-    // 10. ATOMIC TRANSACTION
+    // ============================================================================
+    // 10. ATOMIC TRANSACTION (Update ticket, pass, event, validations)
+    // ============================================================================
     const scannedAtSeconds = Math.floor(now / 1000);
 
     try {
@@ -195,12 +265,12 @@ export const validateEntryByPass = functions.https.onCall(
         const eventData = eventSnap.data()!;
         const remaining = eventData.ticketsRemaining ?? 0;
 
-        // Check capacity - IMPORTANT pour les événements à capacité limitée
+        // Prevent entry if event is at full capacity
         if (remaining <= 0) {
           throw new Error("Event at full capacity");
         }
 
-        // Update ticket to REDEEMED
+        // Mark ticket as redeemed
         transaction.update(ticketDoc.ref, {
           state: "REDEEMED",
           redeemedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -208,18 +278,18 @@ export const validateEntryByPass = functions.https.onCall(
           scannerRole,
         });
 
-        // Update pass.lastScannedAt
+        // Update user's pass with last scan timestamp
         transaction.update(db.collection("users").doc(uid), {
           "pass.lastScannedAt": scannedAtSeconds,
         });
 
-        // Increment event counters
+        // Increment event counters (atomic)
         transaction.update(eventRef, {
           ticketsRedeemed: admin.firestore.FieldValue.increment(1),
           ticketsRemaining: admin.firestore.FieldValue.increment(-1),
         });
 
-        // Create success validation record
+        // Log successful validation
         transaction.set(db.collection("validations").doc(), {
           uid,
           eventId,
@@ -231,7 +301,7 @@ export const validateEntryByPass = functions.https.onCall(
         });
       });
 
-      // Get updated remaining count
+      // Fetch updated remaining count
       const updatedEvent = await db.collection("events").doc(eventId).get();
       const remaining = updatedEvent.data()?.ticketsRemaining ?? 0;
 
