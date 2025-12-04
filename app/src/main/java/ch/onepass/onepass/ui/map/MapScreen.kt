@@ -52,6 +52,13 @@ object MapScreenTestTags {
   const val TRACKING_INDICATOR = "trackingIndicator"
 }
 
+private object TrackingIndicatorDimensions {
+  val SIZE = 10.dp
+  val BORDER_WIDTH = 2.dp
+  val OFFSET_X = 4.dp
+  val OFFSET_Y = (-4).dp
+}
+
 /**
  * A Composable function that displays a Mapbox map, covering the entire screen with automatic
  * camera tracking and gesture handling. Includes floating action buttons to recenter the camera and
@@ -147,11 +154,16 @@ fun MapScreen(
         if (uiState.isCameraTracking) {
           Box(
               modifier =
-                  Modifier.size(10.dp)
+                  Modifier.size(TrackingIndicatorDimensions.SIZE)
                       .background(MaterialTheme.colorScheme.error, CircleShape)
-                      .border(2.dp, MaterialTheme.colorScheme.surface, CircleShape)
+                      .border(
+                          TrackingIndicatorDimensions.BORDER_WIDTH,
+                          MaterialTheme.colorScheme.surface,
+                          CircleShape)
                       .align(Alignment.TopEnd)
-                      .offset(x = 4.dp, y = -4.dp)
+                      .offset(
+                          x = TrackingIndicatorDimensions.OFFSET_X,
+                          y = TrackingIndicatorDimensions.OFFSET_Y)
                       .testTag(MapScreenTestTags.TRACKING_INDICATOR))
         }
       }
