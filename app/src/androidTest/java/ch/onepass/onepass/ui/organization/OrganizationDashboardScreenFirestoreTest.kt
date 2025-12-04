@@ -138,7 +138,7 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
 
     val members = mapOf(userId to OrganizationRole.OWNER, staffId to OrganizationRole.STAFF)
 
-    createAndLoadDashboard(members = members)
+    val (orgId, _) = createAndLoadDashboard(members = members)
 
     composeTestRule.waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
     composeTestRule
@@ -152,8 +152,28 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
         .onNodeWithTag(OrganizationDashboardTestTags.getStaffRemoveButtonTag(staffId))
         .performClick()
 
-    // Wait until the staff item is removed from the UI
-    composeTestRule.waitUntil(timeoutMillis = 20_000) {
+    // Wait for the membership to be actually removed from Firestore
+    // This is the source of truth and ensures the operation has succeeded on the backend
+    // We use a polling mechanism with a timeout
+    val timeout = 20_000L
+    val startTime = System.currentTimeMillis()
+    var removed = false
+    while (System.currentTimeMillis() - startTime < timeout) {
+      val hasMembership =
+          membershipRepository.hasMembership(
+              userId = staffId, orgId = orgId, roles = listOf(OrganizationRole.STAFF))
+      if (!hasMembership) {
+        removed = true
+        break
+      }
+      kotlinx.coroutines.delay(500)
+    }
+
+    assert(removed) { "Membership was not removed from Firestore within $timeout ms" }
+
+    // Now wait for the UI to reflect the change
+    // Since we know the backend is updated, we can give the UI plenty of time to sync
+    composeTestRule.waitUntil(timeoutMillis = 10_000) {
       composeTestRule.onAllNodesWithText(staffId).fetchSemanticsNodes().isEmpty()
     }
   }
