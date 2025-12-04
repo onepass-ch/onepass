@@ -30,7 +30,6 @@ object FirestoreTestHelper {
           description = "Test Description",
           ownerId = ownerId,
           status = OrganizationStatus.ACTIVE,
-          members = emptyMap(), // Decoupled from legacy members field
           verified = false,
           followerCount = 1000,
           averageRating = 4.0f)

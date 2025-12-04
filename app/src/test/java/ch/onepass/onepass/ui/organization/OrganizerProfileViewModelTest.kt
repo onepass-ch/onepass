@@ -9,7 +9,6 @@ import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationInvitation
 import ch.onepass.onepass.model.organization.OrganizationRepository
-import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.organization.OrganizationStatus
 import ch.onepass.onepass.utils.EventTestData
 import ch.onepass.onepass.utils.OrganizationTestData
@@ -71,9 +70,6 @@ class OrganizerProfileViewModelTest {
     override fun getOrganizationsByOwner(ownerId: String): Flow<List<Organization>> =
         flowOf(organizations.values.filter { it.ownerId == ownerId })
 
-    override fun getOrganizationsByMember(userId: String): Flow<List<Organization>> =
-        flowOf(emptyList())
-
     override fun getOrganizationsByStatus(status: OrganizationStatus): Flow<List<Organization>> =
         flowOf(organizations.values.filter { it.status == status })
 
@@ -81,21 +77,6 @@ class OrganizerProfileViewModelTest {
 
     override fun getVerifiedOrganizations(): Flow<List<Organization>> =
         flowOf(organizations.values.filter { it.verified })
-
-    override suspend fun addMember(
-        organizationId: String,
-        userId: String,
-        role: OrganizationRole
-    ): Result<Unit> = Result.success(Unit)
-
-    override suspend fun removeMember(organizationId: String, userId: String): Result<Unit> =
-        Result.success(Unit)
-
-    override suspend fun updateMemberRole(
-        organizationId: String,
-        userId: String,
-        newRole: OrganizationRole
-    ): Result<Unit> = Result.success(Unit)
 
     override suspend fun createInvitation(invitation: OrganizationInvitation): Result<String> =
         Result.success("invite-id")

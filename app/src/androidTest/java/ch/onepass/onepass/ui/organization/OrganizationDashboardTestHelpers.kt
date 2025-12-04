@@ -10,7 +10,6 @@ import ch.onepass.onepass.model.membership.MembershipRepository
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationInvitation
-import ch.onepass.onepass.model.organization.OrganizationMember
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.organization.OrganizationStatus
@@ -45,8 +44,6 @@ object OrganizationDashboardTestData {
       id: String = "test-org-1",
       name: String = "Test Organization",
       ownerId: String = "owner-1",
-      // Deprecated: members are now handled via MembershipRepository
-      members: Map<String, OrganizationMember> = emptyMap(),
       followerCount: Int = 1500,
       averageRating: Float = 4.5f,
       eventIds: List<String> = listOf("event-1", "event-2")
@@ -57,7 +54,6 @@ object OrganizationDashboardTestData {
           description = "Test Description",
           ownerId = ownerId,
           status = OrganizationStatus.ACTIVE,
-          members = members,
           verified = true,
           followerCount = followerCount,
           averageRating = averageRating,
@@ -139,30 +135,12 @@ open class MockOrganizationRepository(
   override fun getOrganizationsByOwner(ownerId: String): Flow<List<Organization>> =
       flowOf(emptyList())
 
-  override fun getOrganizationsByMember(userId: String): Flow<List<Organization>> =
-      flowOf(emptyList())
-
   override fun getOrganizationsByStatus(status: OrganizationStatus): Flow<List<Organization>> =
       flowOf(emptyList())
 
   override fun searchOrganizations(query: String): Flow<List<Organization>> = flowOf(emptyList())
 
   override fun getVerifiedOrganizations(): Flow<List<Organization>> = flowOf(emptyList())
-
-  override suspend fun addMember(
-      organizationId: String,
-      userId: String,
-      role: OrganizationRole
-  ): Result<Unit> = Result.success(Unit)
-
-  override suspend fun removeMember(organizationId: String, userId: String): Result<Unit> =
-      removeResult
-
-  override suspend fun updateMemberRole(
-      organizationId: String,
-      userId: String,
-      newRole: OrganizationRole
-  ): Result<Unit> = Result.success(Unit)
 
   override suspend fun createInvitation(invitation: OrganizationInvitation): Result<String> =
       Result.success("test-id")
@@ -246,17 +224,13 @@ class MockUserRepository(private val users: Map<String, StaffSearchResult> = emp
       organizationId: String?
   ): Result<List<StaffSearchResult>> = Result.success(emptyList())
 
-  override fun getFavoriteEvents(uid: String): Flow<Set<String>> {
-    TODO("Not yet implemented")
-  }
+  override fun getFavoriteEvents(uid: String): Flow<Set<String>> = flowOf(emptySet())
 
-  override suspend fun addFavoriteEvent(uid: String, eventId: String): Result<Unit> {
-    TODO("Not yet implemented")
-  }
+  override suspend fun addFavoriteEvent(uid: String, eventId: String): Result<Unit> =
+      Result.success(Unit)
 
-  override suspend fun removeFavoriteEvent(uid: String, eventId: String): Result<Unit> {
-    TODO("Not yet implemented")
-  }
+  override suspend fun removeFavoriteEvent(uid: String, eventId: String): Result<Unit> =
+      Result.success(Unit)
 }
 
 /** Mock Event Repository with configurable behavior. */
