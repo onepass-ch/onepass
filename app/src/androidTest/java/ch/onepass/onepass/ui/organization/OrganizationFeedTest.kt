@@ -264,16 +264,8 @@ class OrganizationFeedTest {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
     }
 
-    // Wait for loading to finish and list to appear
+    // Wait for the first organization to be rendered (this implicitly waits for the list to exist)
     composeTestRule.waitUntil(timeoutMillis = 10_000) {
-      composeTestRule
-          .onAllNodesWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST)
-          .fetchSemanticsNodes()
-          .isNotEmpty()
-    }
-
-    // Wait for the first organization to be rendered
-    composeTestRule.waitUntil(timeoutMillis = 5_000) {
       composeTestRule.onAllNodesWithText("Organization 1").fetchSemanticsNodes().isNotEmpty()
     }
 
@@ -281,6 +273,9 @@ class OrganizationFeedTest {
 
     // Verify first item is visible
     composeTestRule.onNodeWithText("Organization 1").assertExists().assertIsDisplayed()
+
+    // Verify the list exists
+    composeTestRule.onNodeWithTag(OrganizationFeedTestTags.ORGANIZATION_LIST).assertExists()
 
     // Scroll to last item
     composeTestRule
