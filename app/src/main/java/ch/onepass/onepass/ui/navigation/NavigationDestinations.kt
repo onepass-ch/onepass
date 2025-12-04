@@ -14,9 +14,9 @@ object NavigationDestinations {
    * @property isTopLevelDestination Appears on bottom bar when true.
    */
   sealed class Screen(
-    val route: String,
-    val name: String,
-    val isTopLevelDestination: Boolean = false
+      val route: String,
+      val name: String,
+      val isTopLevelDestination: Boolean = false
   ) {
     // --- Top-level tabs ---
     object Events : Screen("events", "Events", true)
@@ -74,28 +74,28 @@ object NavigationDestinations {
     object OrganizationFeed : Screen("organization_feed", "My Organizations", false)
 
     object OrganizationDashboard :
-      Screen("organization/{organizationId}", "Organization Dashboard", false) {
+        Screen("organization/{organizationId}", "Organization Dashboard", false) {
       const val ARG_ORGANIZATION_ID = "organizationId"
 
       fun route(organizationId: String) = "organization/$organizationId"
     }
 
     object StaffInvitation :
-      Screen("staff_invitation/{organizationId}", "Staff Invitation", false) {
+        Screen("staff_invitation/{organizationId}", "Staff Invitation", false) {
       const val ARG_ORGANIZATION_ID = "organizationId"
 
       fun route(organizationId: String) = "staff_invitation/$organizationId"
     }
 
     object OrganizationProfile :
-      Screen("organization_profile/{organizationId}", "Organization Profile", false) {
+        Screen("organization_profile/{organizationId}", "Organization Profile", false) {
       const val ARG_ORGANIZATION_ID = "organizationId"
 
       fun route(organizationId: String) = "organization_profile/$organizationId"
     }
 
     object EditOrganization :
-      Screen("edit_organization/{organizationId}", "Edit Organization", false) {
+        Screen("edit_organization/{organizationId}", "Edit Organization", false) {
       private const val BASE_ROUTE = "edit_organization"
       const val ARG_ORGANIZATION_ID = "organizationId"
 
