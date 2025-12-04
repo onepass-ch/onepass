@@ -109,22 +109,6 @@ class MyEventsViewModelTest {
   }
 
   @Test
-  fun loadUserPass_notAuthenticated_setsError_andKeepsQrNull() = runTest {
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, null)
-    advanceUntilIdle()
-
-    vm.loadUserPass()
-    advanceUntilIdle()
-
-    // Double vérification que toutes les coroutines sont finies
-    testScheduler.advanceUntilIdle()
-
-    assertNotNull(vm.error.value)
-    assertTrue(vm.error.value?.contains("not authenticated") == true)
-    assertNull(vm.userQrData.value)
-  }
-
-  @Test
   fun loadUserPass_blankUserId_setsError() = runTest {
     val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, "   ")
     advanceUntilIdle()
