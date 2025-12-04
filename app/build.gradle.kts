@@ -174,7 +174,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
     // ML Kit Barcode Scanning
-    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    implementation(libs.mlkit.barcode.scanning)
 
     // CameraX
 
@@ -192,8 +192,8 @@ dependencies {
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.database.ktx)
     implementation(libs.firebase.storage.ktx)
-    implementation("com.google.firebase:firebase-appcheck-debug")
-    implementation("com.google.firebase:firebase-appcheck-ktx")
+    implementation(libs.firebase.appcheck.debug)
+    implementation(libs.firebase.appcheck.ktx)
     androidTestImplementation(libs.androidx.navigation.testing)
 
     // ------------- Jetpack Compose ------------------
