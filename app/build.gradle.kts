@@ -45,12 +45,6 @@ android {
         // Enable multidex for handling large number of methods (Compose UI, etc.)
         multiDexEnabled = true
     }
-    
-    // Dex options for handling large libraries in CI
-    dexOptions {
-        javaMaxHeapSize = "4g"
-        preDexLibraries = true
-    }
 
     buildTypes {
         release {
@@ -91,9 +85,7 @@ android {
             merges += "META-INF/LICENSE-notice.md"
             excludes += "META-INF/DEPENDENCIES"
         }
-        packagingOptions {
-            jniLibs { useLegacyPackaging = true }
-        }
+        jniLibs { useLegacyPackaging = true }
     }
 
     testOptions {
