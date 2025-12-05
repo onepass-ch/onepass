@@ -19,7 +19,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
-class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
+class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
 
   private lateinit var userId: String
   private lateinit var orgRepository: OrganizationRepositoryFirebase
