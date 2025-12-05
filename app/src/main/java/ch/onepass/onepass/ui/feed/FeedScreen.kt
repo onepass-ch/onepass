@@ -6,7 +6,9 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -43,6 +45,7 @@ object FeedScreenTestTags {
   const val FEED_LOCATION = "feedLocation"
   const val FILTER_BUTTON = "filterButton"
   const val NOTIFICATION_BUTTON = "notificationButton"
+  const val FAVORITES_BUTTON = "favoritesButton"
   const val EVENT_LIST = "eventList"
   const val LOADING_INDICATOR = "loadingIndicator"
   const val ERROR_MESSAGE = "errorMessage"
@@ -100,15 +103,19 @@ fun FeedScreen(
     wasRefreshing = uiState.isRefreshing
   }
 
+  val displayTitle = if (uiState.isShowingFavorites) "FAVORITES" else "WELCOME"
+
   Scaffold(
       modifier = modifier.fillMaxSize().testTag(FeedScreenTestTags.FEED_SCREEN),
       topBar = {
         Column {
           FeedTopBar(
               currentLocation = uiState.location,
-              currentDateRange = "WELCOME",
+              currentDateRange = displayTitle,
+              isShowingFavorites = uiState.isShowingFavorites,
               onFilterClick = { viewModel.setShowFilterDialog(true) },
-              onNotificationClick = onNavigateToNotifications)
+              onNotificationClick = onNavigateToNotifications,
+              onFavoritesClick = { viewModel.toggleFavoritesMode() })
           if (currentFilters.hasActiveFilters) {
             ActiveFiltersBar(
                 filters = currentFilters,
@@ -145,8 +152,10 @@ fun FeedScreen(
         // Empty state (only when not loading/refreshing and truly empty)
         !uiState.isLoading && !uiState.isRefreshing && uiState.events.isEmpty() -> {
           EmptyState(
-              title = "No Events Found",
-              message = "Check back later for new events in your area!",
+              title = if (uiState.isShowingFavorites) "No Favorites" else "No Events Found",
+              message =
+                  if (uiState.isShowingFavorites) "You haven't liked any events yet."
+                  else "Check back later for new events in your area!",
               testTag = FeedScreenTestTags.EMPTY_STATE)
         }
         // Normal content display (handles both initial load and refresh scenarios)
@@ -181,17 +190,21 @@ fun FeedScreen(
  * Top bar with title, location, and action buttons.
  *
  * @param currentLocation The string representing the current user location or selected region.
- * @param currentDateRange The string representing the current date range filter.
+ * @param currentDateRange The string representing the title (WELCOME or FAVORITES).
+ * @param isShowingFavorites Boolean indicating if favorites mode is active.
  * @param onFilterClick Callback invoked when the filter button is clicked.
  * @param onNotificationClick Callback invoked when the notification button is clicked.
+ * @param onFavoritesClick Callback invoked when the favorites button is clicked.
  * @param modifier Optional modifier for the top bar.
  */
 @Composable
 private fun FeedTopBar(
     currentLocation: String,
     currentDateRange: String,
+    isShowingFavorites: Boolean,
     onFilterClick: () -> Unit,
     onNotificationClick: () -> Unit,
+    onFavoritesClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
   Surface(
@@ -225,6 +238,19 @@ private fun FeedTopBar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+          // Favorites Button
+          IconButton(
+              onClick = onFavoritesClick,
+              modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.FAVORITES_BUTTON)) {
+                Icon(
+                    imageVector =
+                        if (isShowingFavorites) Icons.Filled.Favorite
+                        else Icons.Outlined.FavoriteBorder,
+                    contentDescription = "Favorites",
+                    tint = colorResource(id = R.color.white),
+                    modifier = Modifier.size(24.dp),
+                )
+              }
           // Notification Button
           IconButton(
               onClick = onNotificationClick,
