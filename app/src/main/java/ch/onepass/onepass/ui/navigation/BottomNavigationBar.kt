@@ -1,8 +1,6 @@
 package ch.onepass.onepass.ui.navigation
 
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
@@ -13,15 +11,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.ui.navigation.NavigationDestinations.Screen
 import ch.onepass.onepass.ui.navigation.NavigationDestinations.tabs
 import ch.onepass.onepass.ui.theme.BackgroundDark
 import ch.onepass.onepass.ui.theme.GrayStroke
-import ch.onepass.onepass.ui.theme.OnePassTheme
 import ch.onepass.onepass.ui.theme.PurplePrimary
 
+/**
+ * Bottom navigation bar for the main screens of the app.
+ *
+ * @param currentRoute The current navigation route to determine the selected tab.
+ * @param onNavigate Lambda function to handle navigation when a tab is selected.
+ * @param modifier Modifier for styling.
+ */
 @Composable
 fun BottomNavigationBar(
     currentRoute: String,
@@ -64,15 +67,4 @@ fun BottomNavigationBar(
               colors = itemColors)
         }
       }
-}
-
-@Preview(name = "BottomNav (Dark)", showBackground = true, widthDp = 412, heightDp = 85)
-@Composable
-private fun BottomNavigationBarPreviewDark() {
-  OnePassTheme(darkTheme = true) {
-    BottomNavigationBar(
-        currentRoute = Screen.Tickets.route,
-        onNavigate = {},
-        modifier = Modifier.width(412.dp).height(85.dp))
-  }
 }

@@ -5,24 +5,22 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistAdd
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 
 object OrganizationFeedTestTags {
   const val ORGANIZATION_FEED_SCREEN = "organizationFeedScreen"
@@ -84,14 +82,20 @@ fun OrganizationFeedScaffold(
     error: String?,
     onOrganizationClick: (String) -> Unit = {},
     onFabClick: () -> Unit = {},
-    onNavigateBack: () -> Unit = {},
+    onNavigateBack: (() -> Unit) = {},
     onRetry: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-  Scaffold(
+  BackNavigationScaffold(
+      TopBarConfig(
+          title = "MY ORGANIZATIONS",
+          topBarTestTag = OrganizationFeedTestTags.ORGANIZATION_FEED_TOP_BAR,
+          backButtonTestTag = OrganizationFeedTestTags.BACK_BUTTON,
+          titleTestTag = OrganizationFeedTestTags.ORGANIZATION_FEED_TITLE),
+      onBack = onNavigateBack,
       modifier = modifier.fillMaxSize(),
-      topBar = { OrganizationFeedTopBar(onNavigateBack = onNavigateBack) },
-      containerColor = colorResource(id = R.color.screen_background)) { paddingValues ->
+      containerColor = colorResource(id = R.color.screen_background),
+      content = { paddingValues ->
         Box(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
             contentAlignment = Alignment.Center,
@@ -119,6 +123,7 @@ fun OrganizationFeedScaffold(
               )
             }
           }
+
           AddOrganizationButton(
               modifier =
                   Modifier.align(Alignment.BottomEnd)
@@ -126,39 +131,7 @@ fun OrganizationFeedScaffold(
                       .testTag(OrganizationFeedTestTags.ADD_ORG_FAB),
               onClick = onFabClick)
         }
-      }
-}
-
-/** Top bar with title and back button. */
-@OptIn(ExperimentalMaterial3Api::class)
-@SuppressLint("ModifierParameter")
-@Composable
-private fun OrganizationFeedTopBar(onNavigateBack: () -> Unit = {}, modifier: Modifier = Modifier) {
-  CenterAlignedTopAppBar(
-      modifier = modifier.testTag(OrganizationFeedTestTags.ORGANIZATION_FEED_TOP_BAR),
-      navigationIcon = {
-        IconButton(
-            onClick = onNavigateBack,
-            modifier = modifier.size(48.dp).testTag(OrganizationFeedTestTags.BACK_BUTTON)) {
-              Icon(
-                  imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                  contentDescription = "Back",
-                  tint = Color.White,
-                  modifier = modifier.size(24.dp))
-            }
-      },
-      title = {
-        Text(
-            text = "MY ORGANIZATIONS",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = Color.White,
-            letterSpacing = 2.sp,
-            modifier = modifier.testTag(OrganizationFeedTestTags.ORGANIZATION_FEED_TITLE))
-      },
-      colors =
-          TopAppBarDefaults.centerAlignedTopAppBarColors(
-              containerColor = colorResource(id = R.color.org_feed_top_bar)))
+      })
 }
 
 /** Organization list content with scrollable cards. */

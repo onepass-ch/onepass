@@ -9,7 +9,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -34,7 +33,8 @@ import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
-import ch.onepass.onepass.ui.theme.DefaultBackground
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.TextSecondary
 import coil.compose.SubcomposeAsyncImage
@@ -97,7 +97,6 @@ object OrganizationDashboardTestTags {
  * @param viewModel The [OrganizationDashboardViewModel] responsible for fetching and managing the
  *   dashboard data.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrganizationDashboardScreen(
     organizationId: String,
@@ -114,33 +113,13 @@ fun OrganizationDashboardScreen(
 
   LaunchedEffect(organizationId) { viewModel.loadOrganization(organizationId) }
 
-  Scaffold(
-      modifier = modifier.fillMaxSize().testTag(OrganizationDashboardTestTags.SCREEN),
-      topBar = {
-        TopAppBar(
-            title = {
-              Text(
-                  text = "DASHBOARD",
-                  style = MaterialTheme.typography.headlineMedium,
-                  fontWeight = FontWeight.Bold,
-                  modifier = Modifier.testTag(OrganizationDashboardTestTags.TITLE))
-            },
-            navigationIcon = {
-              IconButton(
-                  onClick = onNavigateBack,
-                  modifier = Modifier.testTag(OrganizationDashboardTestTags.BACK_BUTTON)) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.onSurface)
-                  }
-            },
-            colors =
-                TopAppBarDefaults.topAppBarColors(
-                    containerColor = DefaultBackground,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface))
-      },
-      containerColor = DefaultBackground) { paddingValues ->
+  BackNavigationScaffold(
+      TopBarConfig(
+          title = "DASHBOARD",
+          titleTestTag = OrganizationDashboardTestTags.TITLE,
+          backButtonTestTag = OrganizationDashboardTestTags.BACK_BUTTON),
+      onBack = onNavigateBack,
+      modifier = modifier.testTag(OrganizationDashboardTestTags.SCREEN)) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
           when {
             uiState.isLoading -> {

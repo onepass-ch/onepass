@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,6 +42,8 @@ import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.ui.myevents.TicketComponent
 import ch.onepass.onepass.ui.myevents.TicketStatus
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 import ch.onepass.onepass.ui.theme.Typography
 import ch.onepass.onepass.ui.theme.White
 import coil.compose.AsyncImage
@@ -381,40 +384,48 @@ fun TabSection(
  * Main OrganizerProfileScreen that integrates with ViewModel. This is the entry point for the
  * organizer profile feature.
  */
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrganizerProfileScreen(
     organizationId: String,
     viewModel: OrganizerProfileViewModel = viewModel(),
-    onEffect: (OrganizerProfileEffect) -> Unit = {}
+    onEffect: (OrganizerProfileEffect) -> Unit = {},
+    onNavigateBack: () -> Unit = {}
 ) {
   val state by viewModel.state.collectAsState()
 
   LaunchedEffect(organizationId) { viewModel.loadOrganizationProfile(organizationId) }
 
   LaunchedEffect(viewModel) { viewModel.effects.collectLatest { effect -> onEffect(effect) } }
-  OrganizerProfileContent(
-      name = state.name,
-      description = state.description,
-      bannerImageUrl = state.coverImageUrl,
-      profileImageUrl = state.profileImageUrl,
-      websiteUrl = state.websiteUrl,
-      instagramUrl = state.instagramUrl,
-      tiktokUrl = state.tiktokUrl,
-      facebookUrl = state.facebookUrl,
-      followersCount = state.followersCountFormatted,
-      isFollowing = state.isFollowing,
-      isOwner = state.isOwner,
-      selectedTab = state.selectedTab,
-      upcomingEvents = state.upcomingEvents,
-      pastEvents = state.pastEvents,
-      onFollowClick = { viewModel.onFollowClicked() },
-      onWebsiteClick = { viewModel.onWebsiteClicked() },
-      onInstagramClick = { viewModel.onSocialMediaClicked("instagram") },
-      onTiktokClick = { viewModel.onSocialMediaClicked("tiktok") },
-      onFacebookClick = { viewModel.onSocialMediaClicked("facebook") },
-      onEditOrganizationClick = { viewModel.onEditOrganizationClicked() },
-      onTabSelected = { viewModel.onTabSelected(it) },
-      onEventClick = { viewModel.onEventClicked(it) })
+
+  BackNavigationScaffold(
+      TopBarConfig(title = "Organizer Profile"),
+      onBack = onNavigateBack,
+  ) {
+    OrganizerProfileContent(
+        name = state.name,
+        description = state.description,
+        bannerImageUrl = state.coverImageUrl,
+        profileImageUrl = state.profileImageUrl,
+        websiteUrl = state.websiteUrl,
+        instagramUrl = state.instagramUrl,
+        tiktokUrl = state.tiktokUrl,
+        facebookUrl = state.facebookUrl,
+        followersCount = state.followersCountFormatted,
+        isFollowing = state.isFollowing,
+        isOwner = state.isOwner,
+        selectedTab = state.selectedTab,
+        upcomingEvents = state.upcomingEvents,
+        pastEvents = state.pastEvents,
+        onFollowClick = { viewModel.onFollowClicked() },
+        onWebsiteClick = { viewModel.onWebsiteClicked() },
+        onInstagramClick = { viewModel.onSocialMediaClicked("instagram") },
+        onTiktokClick = { viewModel.onSocialMediaClicked("tiktok") },
+        onFacebookClick = { viewModel.onSocialMediaClicked("facebook") },
+        onEditOrganizationClick = { viewModel.onEditOrganizationClicked() },
+        onTabSelected = { viewModel.onTabSelected(it) },
+        onEventClick = { viewModel.onEventClicked(it) })
+  }
 }
 
 /**

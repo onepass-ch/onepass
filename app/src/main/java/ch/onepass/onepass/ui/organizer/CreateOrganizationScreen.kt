@@ -27,21 +27,6 @@ import androidx.compose.ui.res.colorResource
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 
-/** Test tags for CreateOrganization screen components */
-object CreateOrganizationTestTags {
-  const val NAME_FIELD = "CreateOrganizationNameField"
-  const val DESCRIPTION_FIELD = "CreateOrganizationDescriptionField"
-  const val EMAIL_FIELD = "CreateOrganizationEmailField"
-  const val PHONE_FIELD = "CreateOrganizationPhoneField"
-  const val WEBSITE_FIELD = "CreateOrganizationWebsiteField"
-  const val INSTAGRAM_FIELD = "CreateOrganizationInstagramField"
-  const val FACEBOOK_FIELD = "CreateOrganizationFacebookField"
-  const val TIKTOK_FIELD = "CreateOrganizationTiktokField"
-  const val ADDRESS_FIELD = "CreateOrganizationAddressField"
-  const val SUBMIT_BUTTON = "CreateOrganizationSubmitButton"
-  const val PREFIX_DROPDOWN = "CreateOrganizationPrefixDropdown"
-}
-
 /**
  * Composable screen for users to fill out a form to create a new organization.
  *
@@ -126,7 +111,6 @@ fun CreateOrganizationScreen(
                   onDropdownDismiss = { prefixDropdownExpanded = false },
                   onSubmit = { viewModel.createOrganization(ownerId) },
                   submitText = "Submit",
-                  testTags = CreateOrganizationTestTags,
                   viewModel = viewModel,
                   modifier = Modifier.padding(padding))
             }

@@ -27,7 +27,7 @@ import ch.onepass.onepass.ui.map.MapScreenTestTags
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.myevents.MyEventsTestTags
 import ch.onepass.onepass.ui.navigation.NavigationDestinations
-import ch.onepass.onepass.ui.organizer.CreateOrganizationTestTags
+import ch.onepass.onepass.ui.organizer.OrganizationTestTags
 import ch.onepass.onepass.ui.profile.ProfileTestTags
 import com.mapbox.common.MapboxOptions
 import org.junit.Before
@@ -328,17 +328,15 @@ class AppE2E {
     compose.waitForIdle()
 
     // Fill out Create Organization Form
+    compose.onNodeWithTag(OrganizationTestTags.NAME_FIELD).performTextInput("Test Organization")
     compose
-        .onNodeWithTag(CreateOrganizationTestTags.NAME_FIELD)
-        .performTextInput("Test Organization")
-    compose
-        .onNodeWithTag(CreateOrganizationTestTags.DESCRIPTION_FIELD)
+        .onNodeWithTag(OrganizationTestTags.DESCRIPTION_FIELD)
         .performTextInput("This is a test organization for Compose E2E test.")
-    compose.onNodeWithTag(CreateOrganizationTestTags.PHONE_FIELD).performTextInput("791234567")
+    compose.onNodeWithTag(OrganizationTestTags.PHONE_FIELD).performTextInput("791234567")
     compose.waitForIdle()
 
     // Submit the form
-    compose.onNodeWithTag(CreateOrganizationTestTags.SUBMIT_BUTTON).performScrollTo().performClick()
+    compose.onNodeWithTag(OrganizationTestTags.SUBMIT_BUTTON).performScrollTo().performClick()
   }
 
   private fun hasTestTagStartingWith(prefix: String) =
