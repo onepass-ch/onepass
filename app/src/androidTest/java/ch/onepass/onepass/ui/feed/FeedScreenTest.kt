@@ -8,9 +8,14 @@ import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.GeoPoint
+import io.mockk.every
+import io.mockk.mockk
 import java.util.*
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.flow.Flow
@@ -50,6 +55,17 @@ class FeedScreenTest {
           ticketsRemaining = 100,
           ticketsIssued = 100,
           pricingTiers = emptyList())
+
+  // Mocks needed for FeedViewModel instantiation in tests
+  private val mockUserRepository = mockk<UserRepository>(relaxed = true)
+  private val mockAuth = mockk<FirebaseAuth>(relaxed = true)
+  private val mockUser = mockk<FirebaseUser>(relaxed = true)
+
+  init {
+    every { mockAuth.currentUser } returns mockUser
+    every { mockUser.uid } returns "test-user-id"
+    every { mockUserRepository.getFavoriteEvents(any()) } returns flowOf(emptySet())
+  }
 
   private class MockEventRepository(
       private val events: List<Event> = emptyList(),
@@ -97,7 +113,7 @@ class FeedScreenTest {
   @Test
   fun feedScreen_displayAllComponents_whenEventsExist() {
     val mockRepository = MockEventRepository(listOf(testEvent1, testEvent2))
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
@@ -112,7 +128,7 @@ class FeedScreenTest {
   @Test
   fun feedScreen_displayEventList_whenEventsExist() {
     val mockRepository = MockEventRepository(listOf(testEvent1, testEvent2))
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
@@ -130,7 +146,7 @@ class FeedScreenTest {
   @Test
   fun feedScreen_displayEmptyState_whenNoEvents() {
     val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
@@ -143,7 +159,7 @@ class FeedScreenTest {
   @Test
   fun feedScreen_eventCard_isClickable() {
     val mockRepository = MockEventRepository(listOf(testEvent1))
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
     var clickedEventId: String? = null
 
     composeTestRule.setContent {
@@ -164,7 +180,7 @@ class FeedScreenTest {
   @Test
   fun feedScreen_displayLocationText() {
     val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
@@ -176,7 +192,7 @@ class FeedScreenTest {
   @Test
   fun feedScreen_displayTitleText() {
     val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
@@ -189,7 +205,7 @@ class FeedScreenTest {
   fun feedScreen_displayMultipleEvents() {
     val events = listOf(testEvent1, testEvent2)
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
@@ -207,7 +223,7 @@ class FeedScreenTest {
     val manyEvents =
         (1..20).map { index -> testEvent1.copy(eventId = "test$index", title = "Event $index") }
     val mockRepository = MockEventRepository(manyEvents)
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
@@ -230,10 +246,12 @@ class FeedScreenTest {
         .assertIsDisplayed()
   }
 
+  // ============ NEW TESTS TO COVER MISSING LINES ============
+
   @Test
   fun feedScreen_displayErrorState_whenLoadingFails() {
     val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
@@ -251,7 +269,7 @@ class FeedScreenTest {
   @Test
   fun feedScreen_retryButton_triggersRefresh() {
     val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
@@ -274,7 +292,7 @@ class FeedScreenTest {
   fun feedScreen_displayLoadingIndicator_initialLoad() {
     // Create a repository that simulates loading
     val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
@@ -290,7 +308,7 @@ class FeedScreenTest {
   @Test
   fun feedScreen_displayEmptyStateMessage_correctly() {
     val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
@@ -307,7 +325,7 @@ class FeedScreenTest {
   @Test
   fun feedScreen_errorState_displaysAllComponents() {
     val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
@@ -326,7 +344,7 @@ class FeedScreenTest {
   @Test
   fun feedScreen_errorMessage_displaysCorrectErrorText() {
     val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
@@ -339,7 +357,7 @@ class FeedScreenTest {
   @Test
   fun feedScreen_retryButton_hasCorrectStyling() {
     val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
@@ -361,7 +379,7 @@ class FeedScreenTest {
   @Test
   fun feedScreen_notificationButton_isDisplayed_and_clickable() {
     val repo = MockEventRepository(emptyList())
-    val vm = FeedViewModel(repo)
+    val vm = FeedViewModel(repo, mockUserRepository, mockAuth)
     var notificationClicked = false
 
     composeTestRule.setContent {
@@ -389,8 +407,8 @@ class FeedScreenTest {
     val mockRepository = MockEventRepository(events)
     var refreshTriggered = false
     val testViewModel =
-        object : FeedViewModel(mockRepository) {
-          override fun refreshEvents(currentFilters: EventFilters?) {
+        object : FeedViewModel(mockRepository, mockUserRepository, mockAuth) {
+          override fun refreshEvents() {
             refreshTriggered = true
             super.refreshEvents(currentFilters)
           }
@@ -410,7 +428,7 @@ class FeedScreenTest {
   fun feedScreen_showsRefreshingState_duringPullToRefresh() {
     val events = listOf(testEvent1)
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
     composeTestRule.waitForIdle()
     // Initially not refreshing
@@ -428,7 +446,7 @@ class FeedScreenTest {
   fun feedScreen_eventListShows_whenNotLoadingAndNotRefreshing() {
     val events = listOf(testEvent1, testEvent2)
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
     composeTestRule.waitForIdle()
     // Should show event list when not loading and not refreshing
@@ -444,7 +462,7 @@ class FeedScreenTest {
   @Test
   fun feedScreen_emptyState_showsOnlyWhenNotLoadingAndNotRefreshing() {
     val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
     composeTestRule.waitForIdle()
     // Should show empty state when not loading and not refreshing with no events
@@ -456,7 +474,7 @@ class FeedScreenTest {
   fun feedScreen_isLoadingMore_showsLoadingInEventList() {
     val events = listOf(testEvent1, testEvent2)
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
     composeTestRule.waitForIdle()
     viewModel.loadEvents()
@@ -471,7 +489,7 @@ class FeedScreenTest {
   fun feedScreen_stateTransitions_correctlyDuringRefreshCycle() {
     val events = listOf(testEvent1)
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
     composeTestRule.waitForIdle()
     // Initial state - events displayed
