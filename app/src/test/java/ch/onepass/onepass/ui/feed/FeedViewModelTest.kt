@@ -14,6 +14,8 @@ import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.GeoPoint
 import io.mockk.every
 import io.mockk.mockk
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.Calendar
 import java.util.Date
 import kotlin.test.assertEquals
@@ -546,19 +548,6 @@ class FeedViewModelTest {
   }
 
   @Test
-  fun feedViewModel_recommendEvents_noLikes_sortsByRecency() = runTest {
-    val mockRepository = MockEventRepository()
-    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
-
-    val events = listOf(testEvent1, testEvent2)
-    val recommended = viewModel.recommendEvents(events, emptySet())
-
-    // testEvent2 is newer (timestamp 2000) than testEvent1 (timestamp 1000)
-    Assert.assertEquals(testEvent2.eventId, recommended[0].eventId)
-    Assert.assertEquals(testEvent1.eventId, recommended[1].eventId)
-  }
-
-  @Test
   fun feedViewModel_applyFiltersToCurrentEvents_updatesState() = runTest {
     val events = listOf(testEvent1, testEvent2)
     val mockRepository = MockEventRepository(events)
@@ -576,27 +565,6 @@ class FeedViewModelTest {
     val filteredState = viewModel.uiState.value
     Assert.assertEquals(1, filteredState.events.size)
     Assert.assertEquals(testEvent1.eventId, filteredState.events.first().eventId)
-  }
-
-  @Test
-  fun feedViewModel_init_observesUserLikes() = runTest {
-    // Setup mock to return a specific favorite event
-    every { mockUserRepository.getFavoriteEvents("test-uid") } returns flowOf(setOf("test1"))
-
-    val events = listOf(testEvent1, testEvent2)
-    val mockRepository = MockEventRepository(events)
-    // Initialize viewModel triggers init block
-    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
-
-    viewModel.loadEvents()
-    testDispatcher.scheduler.advanceUntilIdle()
-
-    // recommendations should prioritize liked event "test1" even though "test2" is newer
-    // Tag match weight: 0 (no common tags), Recency: test2 wins, User Affinity: test1 wins (10.0
-    // points)
-    // With current weights, Affinity (10.0) > Recency (5.0)
-    val state = viewModel.uiState.value
-    Assert.assertEquals("test1", state.events[0].eventId)
   }
 
   @Test
@@ -636,8 +604,7 @@ class FeedViewModelTest {
 
   @Test
   fun recommendEvents_sorts_by_tag_affinity_recency_and_like_status() {
-    val mockRepository = MockEventRepository()
-    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
+    val viewModel = FeedViewModel(MockEventRepository(), mockUserRepository, mockAuth)
 
     val currentTimestamp = Timestamp.now().seconds
 
@@ -675,5 +642,178 @@ class FeedViewModelTest {
     assertEquals("C", recommended[1].eventId)
     assertEquals("B", recommended[2].eventId)
     assertEquals("D", recommended[3].eventId)
+  }
+
+  @Test
+  fun recommendEvents_penalizes_expiration_soon() = runTest {
+    val viewModel = FeedViewModel(MockEventRepository(), mockUserRepository, mockAuth)
+
+    val now = Instant.now()
+
+    // Ends in 30 minutes (should be penalized)
+    val endingSoonEvent =
+        EventTestData.createTestEvent(
+            eventId = "ending-soon",
+            endTime = Timestamp(Date.from(now.plus(30, ChronoUnit.MINUTES))),
+            tags = listOf("TECH"))
+
+    // Ends tomorrow (should be normal)
+    val normalEvent =
+        EventTestData.createTestEvent(
+            eventId = "normal",
+            endTime = Timestamp(Date.from(now.plus(24, ChronoUnit.HOURS))),
+            tags = listOf("TECH"))
+
+    val events = listOf(endingSoonEvent, normalEvent)
+
+    // Both match user interest "TECH" equally, but endingSoon should be penalized
+    val recommended = viewModel.recommendEvents(events, emptySet())
+
+    assertEquals("normal", recommended[0].eventId)
+    assertEquals("ending-soon", recommended[1].eventId)
+  }
+
+  @Test
+  fun recommendEvents_boosts_urgency_starts_soon() = runTest {
+    val viewModel = FeedViewModel(MockEventRepository(), mockUserRepository, mockAuth)
+
+    val now = Instant.now()
+
+    // Starts in 3 hours (should be boosted)
+    val startingSoonEvent =
+        EventTestData.createTestEvent(
+            eventId = "starting-soon",
+            startTime = Timestamp(Date.from(now.plus(3, ChronoUnit.HOURS))),
+            endTime = Timestamp(Date.from(now.plus(5, ChronoUnit.HOURS))),
+            createdAt =
+                Timestamp(
+                    Date.from(
+                        now.minus(10, ChronoUnit.DAYS))) // Old creation to avoid recency boost
+            )
+
+    // Starts next week
+    val futureEvent =
+        EventTestData.createTestEvent(
+            eventId = "future",
+            startTime = Timestamp(Date.from(now.plus(7, ChronoUnit.DAYS))),
+            endTime = Timestamp(Date.from(now.plus(8, ChronoUnit.DAYS))),
+            createdAt = Timestamp(Date.from(now.minus(10, ChronoUnit.DAYS))))
+
+    val events = listOf(startingSoonEvent, futureEvent)
+    val recommended = viewModel.recommendEvents(events, emptySet())
+
+    assertEquals("starting-soon", recommended[0].eventId)
+    assertEquals("future", recommended[1].eventId)
+  }
+
+  @Test
+  fun toggleFavoritesMode_filtersLikedEvents() = runTest {
+    val likedEvent = testEvent1 // ID: test1
+    val unlikedEvent = testEvent2 // ID: test2
+    val allEvents = listOf(likedEvent, unlikedEvent)
+
+    val mockRepository = MockEventRepository(allEvents)
+    // Set up user repo to return 'test1' as liked
+    every { mockUserRepository.getFavoriteEvents("test-uid") } returns flowOf(setOf("test1"))
+
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
+    viewModel.loadEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Initial state: Main feed should exclude liked event (test1) and show unliked (test2)
+    Assert.assertFalse(viewModel.uiState.value.isShowingFavorites)
+    Assert.assertEquals(1, viewModel.uiState.value.events.size)
+    Assert.assertEquals("test2", viewModel.uiState.value.events[0].eventId)
+
+    // Toggle to favorites mode
+    viewModel.toggleFavoritesMode()
+
+    // Favorites feed: Should ONLY show liked event (test1)
+    Assert.assertTrue(viewModel.uiState.value.isShowingFavorites)
+    Assert.assertEquals(1, viewModel.uiState.value.events.size)
+    Assert.assertEquals("test1", viewModel.uiState.value.events[0].eventId)
+
+    // Toggle back
+    viewModel.toggleFavoritesMode()
+    Assert.assertFalse(viewModel.uiState.value.isShowingFavorites)
+    Assert.assertEquals("test2", viewModel.uiState.value.events[0].eventId)
+  }
+
+  @Test
+  fun feedViewModel_loadEvents_filtersPastEvents() = runTest {
+    val now = System.currentTimeMillis()
+    val pastEvent =
+        testEvent1.copy(
+            eventId = "past", endTime = Timestamp(Date(now - 86400000)) // Ended yesterday
+            )
+    val futureEvent =
+        testEvent2.copy(
+            eventId = "future", endTime = Timestamp(Date(now + 86400000)) // Ends tomorrow
+            )
+
+    val events = listOf(pastEvent, futureEvent)
+    val mockRepository = MockEventRepository(events)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
+
+    viewModel.loadEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.uiState.value
+
+    // Should only show future event, not past event
+    Assert.assertEquals(1, state.events.size)
+    Assert.assertEquals("future", state.events.first().eventId)
+  }
+
+  @Test
+  fun feedViewModel_loadEvents_filtersSoldOutEvents() = runTest {
+    val availableEvent = testEvent1.copy(eventId = "available", ticketsRemaining = 10)
+    val soldOutEvent = testEvent2.copy(eventId = "soldout", ticketsRemaining = 0)
+
+    val events = listOf(availableEvent, soldOutEvent)
+    val mockRepository = MockEventRepository(events)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
+
+    viewModel.loadEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.uiState.value
+
+    // Should only show available event, not sold out
+    Assert.assertEquals(1, state.events.size)
+    Assert.assertEquals("available", state.events.first().eventId)
+  }
+
+  @Test
+  fun feedViewModel_loadEvents_filtersPastAndSoldOutEvents() = runTest {
+    val now = System.currentTimeMillis()
+
+    val activeEvent =
+        testEvent1.copy(
+            eventId = "active", ticketsRemaining = 10, endTime = Timestamp(Date(now + 86400000)))
+    val pastEvent =
+        testEvent1.copy(
+            eventId = "past", ticketsRemaining = 10, endTime = Timestamp(Date(now - 86400000)))
+    val soldOutEvent =
+        testEvent1.copy(
+            eventId = "soldout", ticketsRemaining = 0, endTime = Timestamp(Date(now + 86400000)))
+    val pastAndSoldOut =
+        testEvent1.copy(
+            eventId = "past-soldout",
+            ticketsRemaining = 0,
+            endTime = Timestamp(Date(now - 86400000)))
+
+    val events = listOf(activeEvent, pastEvent, soldOutEvent, pastAndSoldOut)
+    val mockRepository = MockEventRepository(events)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
+
+    viewModel.loadEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.uiState.value
+
+    // Should only show active event
+    Assert.assertEquals(1, state.events.size)
+    Assert.assertEquals("active", state.events.first().eventId)
   }
 }
