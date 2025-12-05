@@ -31,6 +31,7 @@ import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.TextSecondary
 import java.util.Locale
@@ -108,11 +109,12 @@ fun OrganizationDashboardScreen(
   LaunchedEffect(organizationId) { viewModel.loadOrganization(organizationId) }
 
   BackNavigationScaffold(
-      title = "DASHBOARD",
+      TopBarConfig(
+          title = "DASHBOARD",
+          titleTestTag = OrganizationDashboardTestTags.TITLE,
+          backButtonTestTag = OrganizationDashboardTestTags.BACK_BUTTON),
       onBack = onNavigateBack,
-      modifier = modifier.testTag(OrganizationDashboardTestTags.SCREEN),
-      titleTestTag = OrganizationDashboardTestTags.TITLE,
-      backButtonTestTag = OrganizationDashboardTestTags.BACK_BUTTON) { paddingValues ->
+      modifier = modifier.testTag(OrganizationDashboardTestTags.SCREEN)) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
           when {
             uiState.isLoading -> {

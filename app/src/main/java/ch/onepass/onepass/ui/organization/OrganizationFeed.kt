@@ -20,6 +20,7 @@ import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 
 object OrganizationFeedTestTags {
   const val ORGANIZATION_FEED_SCREEN = "organizationFeedScreen"
@@ -86,13 +87,14 @@ fun OrganizationFeedScaffold(
     modifier: Modifier = Modifier
 ) {
   BackNavigationScaffold(
-      title = "MY ORGANIZATIONS",
+      TopBarConfig(
+          title = "MY ORGANIZATIONS",
+          topBarTestTag = OrganizationFeedTestTags.ORGANIZATION_FEED_TOP_BAR,
+          backButtonTestTag = OrganizationFeedTestTags.BACK_BUTTON,
+          titleTestTag = OrganizationFeedTestTags.ORGANIZATION_FEED_TITLE),
       onBack = onNavigateBack,
       modifier = modifier.fillMaxSize(),
       containerColor = colorResource(id = R.color.screen_background),
-      topBarTestTag = OrganizationFeedTestTags.ORGANIZATION_FEED_TOP_BAR,
-      backButtonTestTag = OrganizationFeedTestTags.BACK_BUTTON,
-      titleTestTag = OrganizationFeedTestTags.ORGANIZATION_FEED_TITLE,
       content = { paddingValues ->
         Box(
             modifier = Modifier.fillMaxSize().padding(paddingValues),

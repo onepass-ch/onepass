@@ -43,6 +43,7 @@ import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.ui.myevents.TicketComponent
 import ch.onepass.onepass.ui.myevents.TicketStatus
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 import ch.onepass.onepass.ui.theme.Typography
 import ch.onepass.onepass.ui.theme.White
 import coil.compose.AsyncImage
@@ -398,7 +399,7 @@ fun OrganizerProfileScreen(
   LaunchedEffect(viewModel) { viewModel.effects.collectLatest { effect -> onEffect(effect) } }
 
   BackNavigationScaffold(
-      title = "Organizer Profile",
+      TopBarConfig(title = "Organizer Profile"),
       onBack = onNavigateBack,
   ) {
     OrganizerProfileContent(

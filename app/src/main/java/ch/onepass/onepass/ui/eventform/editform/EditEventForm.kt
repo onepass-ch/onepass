@@ -19,6 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.eventform.EventFormFields
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
 
@@ -120,11 +121,10 @@ fun EditEventForm(
   }
 
   BackNavigationScaffold(
-      title = "Edit Event",
+      TopBarConfig(title = "Edit Event", backButtonTestTag = EditEventFormTestTags.BACK_BUTTON),
       onBack = onNavigateBack,
       containerColor = DefaultBackground,
-      modifier = Modifier.testTag(EditEventFormTestTags.SCREEN),
-      backButtonTestTag = EditEventFormTestTags.BACK_BUTTON) { padding ->
+      modifier = Modifier.testTag(EditEventFormTestTags.SCREEN)) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
           when (uiState) {
             is EditEventUiState.Loading -> {

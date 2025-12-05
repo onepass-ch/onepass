@@ -19,6 +19,7 @@ import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 import kotlinx.coroutines.flow.first
 
 /**
@@ -136,7 +137,7 @@ internal fun MyInvitationsContent(
   }
 
   BackNavigationScaffold(
-      title = "My Invitations",
+      TopBarConfig(title = "My Invitations"),
       onBack = onNavigateBack,
       modifier = modifier.testTag(MyInvitationsScreenTestTags.SCREEN),
       containerColor = colorResource(id = R.color.screen_background),

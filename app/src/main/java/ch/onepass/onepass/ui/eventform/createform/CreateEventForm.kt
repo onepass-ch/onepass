@@ -20,6 +20,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.eventform.EventFormFields
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
 import com.mapbox.maps.extension.style.expressions.dsl.generated.color
@@ -31,8 +32,9 @@ fun EventFormScaffold(
     content: @Composable ColumnScope.() -> Unit
 ) {
   BackNavigationScaffold(
-      title = "Create your Event", onBack = onNavigateBack, containerColor = DefaultBackground) {
-          paddingValues ->
+      topBarConfig = TopBarConfig(title = "Create your Event"),
+      onBack = onNavigateBack,
+      containerColor = DefaultBackground) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
           Column(
               modifier =

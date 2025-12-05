@@ -22,35 +22,35 @@ import androidx.compose.ui.res.colorResource
 import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.DefaultBackground
 
+/** Configuration data class for BackNavigationScaffold */
+data class TopBarConfig(
+    val title: String,
+    val subtitle: String? = null,
+    val topBarTestTag: String? = null,
+    val titleTestTag: String? = null,
+    val subtitleTestTag: String? = null,
+    val backButtonTestTag: String? = null,
+    val actions: @Composable RowScope.() -> Unit = {}
+)
+
 /**
  * A Scaffold with a TopAppBar that includes a back navigation button.
  *
- * @param title The title to display in the TopAppBar.
- * @param onBack The callback to be invoked when the back button is pressed. If null, the composable
- *   will not be displayed.
- * @param modifier The Modifier to be applied to the Scaffold.
- * @param containerColor The background color of the Scaffold.
- * @param topBarTestTag Optional test tag for the TopAppBar.
- * @param backButtonTestTag Optional test tag for the back button.
- * @param titleTestTag Optional test tag for the title text.
- * @param subtitle Optional subtitle text to display below the title.
- * @param subtitleTestTag Optional test tag for the subtitle text.
- * @param actions Composable lambda for additional action icons in the TopAppBar.
- * @param content Composable lambda for the main content of the Scaffold, receiving PaddingValues.
+ * @param topBarConfig Configuration for the top bar including title, subtitle, and actions.
+ * @param onBack Optional lambda function to handle back navigation. If null, no back button is
+ *   displayed.
+ * @param modifier Modifier for styling the Scaffold.
+ * @param containerColor Background color of the Scaffold.
+ * @param content Composable content to be displayed within the Scaffold.
+ * @see TopBarConfig
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BackNavigationScaffold(
-    title: String,
+    topBarConfig: TopBarConfig,
     onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
     containerColor: Color = DefaultBackground,
-    topBarTestTag: String? = null,
-    backButtonTestTag: String? = null,
-    titleTestTag: String? = null,
-    subtitle: String? = null,
-    subtitleTestTag: String? = null,
-    actions: @Composable RowScope.() -> Unit = {},
     content: @Composable (PaddingValues) -> Unit
 ) {
   // Exit composable early if onBack is null
@@ -59,14 +59,14 @@ fun BackNavigationScaffold(
     TopAppBar(
         title = {
           Text(
-              text = title,
+              text = topBarConfig.title,
               color = colorResource(id = R.color.white),
               style = MaterialTheme.typography.titleLarge,
-              modifier = titleTestTag?.let { Modifier.testTag(it) } ?: Modifier)
+              modifier = topBarConfig.titleTestTag?.let { Modifier.testTag(it) } ?: Modifier)
         },
-        actions = actions,
+        actions = topBarConfig.actions,
         colors = TopAppBarDefaults.topAppBarColors(containerColor = containerColor),
-        modifier = topBarTestTag?.let { Modifier.testTag(it) } ?: Modifier)
+        modifier = topBarConfig.topBarTestTag?.let { Modifier.testTag(it) } ?: Modifier)
   } else {
     // Full Scaffold with TopAppBar and back navigation
     Scaffold(
@@ -77,32 +77,35 @@ fun BackNavigationScaffold(
               title = {
                 Column {
                   Text(
-                      text = title,
+                      text = topBarConfig.title,
                       color = colorResource(id = R.color.white),
                       style = MaterialTheme.typography.titleLarge,
-                      modifier = titleTestTag?.let { Modifier.testTag(it) } ?: Modifier)
-                  subtitle?.let {
+                      modifier =
+                          topBarConfig.titleTestTag?.let { Modifier.testTag(it) } ?: Modifier)
+                  topBarConfig.subtitle?.let {
                     Text(
                         text = it,
                         color = colorResource(id = R.color.gray),
                         style = MaterialTheme.typography.bodyMedium,
-                        modifier = subtitleTestTag?.let { Modifier.testTag(it) } ?: Modifier)
+                        modifier =
+                            topBarConfig.subtitleTestTag?.let { Modifier.testTag(it) } ?: Modifier)
                   }
                 }
               },
               navigationIcon = {
                 IconButton(
                     onClick = onBack,
-                    modifier = backButtonTestTag?.let { Modifier.testTag(it) } ?: Modifier) {
+                    modifier =
+                        topBarConfig.backButtonTestTag?.let { Modifier.testTag(it) } ?: Modifier) {
                       Icon(
                           imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                           contentDescription = "Back",
                           tint = colorResource(id = R.color.white))
                     }
               },
-              actions = actions,
+              actions = topBarConfig.actions,
               colors = TopAppBarDefaults.topAppBarColors(containerColor = containerColor),
-              modifier = topBarTestTag?.let { Modifier.testTag(it) } ?: Modifier)
+              modifier = topBarConfig.topBarTestTag?.let { Modifier.testTag(it) } ?: Modifier)
         }) { padding ->
           content(padding)
         }

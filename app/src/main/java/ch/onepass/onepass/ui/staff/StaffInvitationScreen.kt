@@ -35,6 +35,7 @@ import ch.onepass.onepass.model.user.UserSearchType
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 
 object StaffInvitationTestTags {
   const val SCREEN = "staffInvitation_screen"
@@ -68,12 +69,13 @@ fun StaffInvitationScreen(
   val selectedTabIndex = if (uiState.selectedTab == UserSearchType.DISPLAY_NAME) 0 else 1
 
   BackNavigationScaffold(
-      title = "Add staff",
+      TopBarConfig(
+          title = "Add staff",
+          topBarTestTag = StaffInvitationTestTags.TOP_BAR,
+          backButtonTestTag = StaffInvitationTestTags.BACK_BUTTON,
+          titleTestTag = StaffInvitationTestTags.TITLE),
       onBack = onNavigateBack,
-      modifier = modifier.testTag(StaffInvitationTestTags.SCREEN),
-      topBarTestTag = StaffInvitationTestTags.TOP_BAR,
-      backButtonTestTag = StaffInvitationTestTags.BACK_BUTTON,
-      titleTestTag = StaffInvitationTestTags.TITLE) { paddingValues ->
+      modifier = modifier.testTag(StaffInvitationTestTags.SCREEN)) { paddingValues ->
         Column(
             modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 16.dp)) {
               // Tab Row
