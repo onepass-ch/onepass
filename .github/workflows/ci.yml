@@ -162,6 +162,9 @@ jobs:
       SHARD_COUNT: 3
     steps:
       - uses: actions/checkout@v4
+      
+      # Setup Gradle (JDK + caching) - REQUIRED for ./gradlew commands
+      - uses: ./.github/actions/setup-gradle
 
       - name: Decode secrets
         uses: ./.github/actions/decode-secrets
