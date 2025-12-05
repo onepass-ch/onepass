@@ -54,43 +54,57 @@ fun BackNavigationScaffold(
     content: @Composable (PaddingValues) -> Unit
 ) {
   // Exit composable early if onBack is null
-  if (onBack == null) return
-
-  Scaffold(
-      modifier = modifier.fillMaxSize(),
-      containerColor = containerColor,
-      topBar = {
-        TopAppBar(
-            title = {
-              Column {
-                Text(
-                    text = title,
-                    color = colorResource(id = R.color.white),
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = titleTestTag?.let { Modifier.testTag(it) } ?: Modifier)
-                subtitle?.let {
+  if (onBack == null) {
+    // Simple TopAppBar without back navigation
+    TopAppBar(
+        title = {
+          Text(
+              text = title,
+              color = colorResource(id = R.color.white),
+              style = MaterialTheme.typography.titleLarge,
+              modifier = titleTestTag?.let { Modifier.testTag(it) } ?: Modifier)
+        },
+        actions = actions,
+        colors = TopAppBarDefaults.topAppBarColors(containerColor = containerColor),
+        modifier = topBarTestTag?.let { Modifier.testTag(it) } ?: Modifier)
+  } else {
+    // Full Scaffold with TopAppBar and back navigation
+    Scaffold(
+        modifier = modifier.fillMaxSize(),
+        containerColor = containerColor,
+        topBar = {
+          TopAppBar(
+              title = {
+                Column {
                   Text(
-                      text = it,
-                      color = colorResource(id = R.color.gray),
-                      style = MaterialTheme.typography.bodyMedium,
-                      modifier = subtitleTestTag?.let { Modifier.testTag(it) } ?: Modifier)
-                }
-              }
-            },
-            navigationIcon = {
-              IconButton(
-                  onClick = onBack,
-                  modifier = backButtonTestTag?.let { Modifier.testTag(it) } ?: Modifier) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = colorResource(id = R.color.white))
+                      text = title,
+                      color = colorResource(id = R.color.white),
+                      style = MaterialTheme.typography.titleLarge,
+                      modifier = titleTestTag?.let { Modifier.testTag(it) } ?: Modifier)
+                  subtitle?.let {
+                    Text(
+                        text = it,
+                        color = colorResource(id = R.color.gray),
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = subtitleTestTag?.let { Modifier.testTag(it) } ?: Modifier)
                   }
-            },
-            actions = actions,
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = containerColor),
-            modifier = topBarTestTag?.let { Modifier.testTag(it) } ?: Modifier)
-      }) { padding ->
-        content(padding)
-      }
+                }
+              },
+              navigationIcon = {
+                IconButton(
+                    onClick = onBack,
+                    modifier = backButtonTestTag?.let { Modifier.testTag(it) } ?: Modifier) {
+                      Icon(
+                          imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                          contentDescription = "Back",
+                          tint = colorResource(id = R.color.white))
+                    }
+              },
+              actions = actions,
+              colors = TopAppBarDefaults.topAppBarColors(containerColor = containerColor),
+              modifier = topBarTestTag?.let { Modifier.testTag(it) } ?: Modifier)
+        }) { padding ->
+          content(padding)
+        }
+  }
 }
