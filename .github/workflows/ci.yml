@@ -72,7 +72,7 @@ jobs:
           name: unit-test-results
           path: app/build/test-results/testDebugUnitTest/
 
-  build-test-apks:
+  build-release-apk:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -112,11 +112,30 @@ jobs:
             -destkeystore /tmp/test.p12 -deststoretype PKCS12 -deststorepass testpass -destalias testalias >/dev/null
           echo "Private key decryption succeeded."
 
-      - name: Assemble app and androidTest APKs
-        run: ./gradlew assembleDebug assembleDebugAndroidTest --parallel --build-cache
-
       - name: Assemble release APK
         run: ./gradlew assembleRelease --parallel --build-cache
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: app/build/outputs/apk/release/*.apk
+
+  build-test-apks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-gradle
+
+      # Decode secrets for local.properties, google-services.json and keystore
+      - name: Decode secrets
+        uses: ./.github/actions/decode-secrets
+        with:
+          local_properties: ${{ secrets.LOCAL_PROPERTIES }}
+          google_services: ${{ secrets.GOOGLE_SERVICES }}
+
+      - name: Assemble app and androidTest APKs
+        run: ./gradlew assembleDebug assembleDebugAndroidTest --parallel --build-cache
 
       - name: Upload test APKs
         uses: actions/upload-artifact@v4
@@ -125,12 +144,6 @@ jobs:
           path: |
             app/build/outputs/apk/debug/*.apk
             app/build/outputs/apk/androidTest/debug/*.apk
-
-      - name: Upload release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: release-apk
-          path: app/build/outputs/apk/release/*.apk
 
       - name: Upload kotlin-classes (for Jacoco)
         uses: actions/upload-artifact@v4
@@ -289,10 +302,7 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            ./gradlew connectedCheck \
-              --parallel --build-cache \
-              -Pandroid.testInstrumentationRunnerArguments.numShards=${{ env.SHARD_COUNT }} \
-              -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard_index }}
+            ./gradlew connectedCheck --parallel --build-cache -Pandroid.testInstrumentationRunnerArguments.numShards=${{ env.SHARD_COUNT }} -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard_index }}
 
       - name: Upload coverage for this shard
         uses: actions/upload-artifact@v4
