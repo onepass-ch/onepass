@@ -17,7 +17,6 @@ class OrganizationTest {
     assertEquals("", org.description)
     assertEquals("", org.ownerId)
     assertEquals(OrganizationStatus.PENDING, org.status)
-    assertTrue(org.members.isEmpty())
     assertFalse(org.verified)
     assertNull(org.profileImageUrl)
     assertNull(org.coverImageUrl)
@@ -112,23 +111,6 @@ class OrganizationTest {
   }
 
   @Test
-  fun memberCountReturnsCorrectCount() {
-    val members =
-        mapOf(
-            "member1" to OrganizationTestData.createTestMember(),
-            "member2" to OrganizationTestData.createTestMember(),
-            "member3" to OrganizationTestData.createTestMember())
-    val org = OrganizationTestData.createTestOrganization(members = members)
-    assertEquals(3, org.memberCount)
-  }
-
-  @Test
-  fun memberCountReturnsZeroForNoMembers() {
-    val org = OrganizationTestData.createTestOrganization(members = emptyMap())
-    assertEquals(0, org.memberCount)
-  }
-
-  @Test
   fun eventCountReturnsCorrectCount() {
     val eventIds = listOf("event1", "event2", "event3", "event4")
     val org = OrganizationTestData.createTestOrganization(eventIds = eventIds)
@@ -190,29 +172,6 @@ class OrganizationTest {
     assertTrue("Should include org ID", stringRepresentation.contains("test_123"))
     assertTrue("Should include name", stringRepresentation.contains("Test Org"))
     assertTrue("Should include status", stringRepresentation.contains("ACTIVE"))
-  }
-
-  @Test
-  fun organizationMemberHasCorrectDefaults() {
-    val member = OrganizationMember()
-
-    assertEquals(OrganizationRole.MEMBER, member.role)
-    assertNull(member.joinedAt)
-    assertTrue(member.assignedEvents.isEmpty())
-  }
-
-  @Test
-  fun organizationMemberCanBeCreatedWithValues() {
-    val timestamp = Timestamp.now()
-    val eventIds = listOf("event1", "event2")
-
-    val member =
-        OrganizationMember(
-            role = OrganizationRole.OWNER, joinedAt = timestamp, assignedEvents = eventIds)
-
-    assertEquals(OrganizationRole.OWNER, member.role)
-    assertEquals(timestamp, member.joinedAt)
-    assertEquals(eventIds, member.assignedEvents)
   }
 
   @Test
@@ -302,31 +261,5 @@ class OrganizationTest {
     assertEquals(OrganizationStatus.ACTIVE, org.status)
     assertEquals(500, org.followerCount)
     assertEquals(4.5f, org.averageRating)
-  }
-
-  @Test
-  fun organizationWithMembersPreservesRoles() {
-    val members =
-        mapOf(
-            "owner" to OrganizationMember(role = OrganizationRole.OWNER),
-            "member" to OrganizationMember(role = OrganizationRole.MEMBER),
-            "staff" to OrganizationMember(role = OrganizationRole.STAFF))
-
-    val org = OrganizationTestData.createTestOrganization(members = members)
-
-    assertEquals(OrganizationRole.OWNER, org.members["owner"]?.role)
-    assertEquals(OrganizationRole.MEMBER, org.members["member"]?.role)
-    assertEquals(OrganizationRole.STAFF, org.members["staff"]?.role)
-  }
-
-  @Test
-  fun organizationMemberWithAssignedEvents() {
-    val eventIds = listOf("event1", "event2", "event3")
-    val member = OrganizationMember(role = OrganizationRole.STAFF, assignedEvents = eventIds)
-
-    assertEquals(3, member.assignedEvents.size)
-    assertTrue(member.assignedEvents.contains("event1"))
-    assertTrue(member.assignedEvents.contains("event2"))
-    assertTrue(member.assignedEvents.contains("event3"))
   }
 }

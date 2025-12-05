@@ -19,7 +19,7 @@ class OrganizationDashboardViewModelTest {
   private lateinit var mockUser: com.google.firebase.auth.FirebaseUser
 
   // Test data
-  private val testOrg = OrganizationDashboardTestData.createTestOrganization(members = emptyMap())
+  private val testOrg = OrganizationDashboardTestData.createTestOrganization()
   private val testEvent1 = OrganizationDashboardTestData.createTestEvent()
   private val testEvent2 =
       OrganizationDashboardTestData.createTestEvent(

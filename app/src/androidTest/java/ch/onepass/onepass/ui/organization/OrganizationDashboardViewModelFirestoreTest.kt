@@ -61,7 +61,6 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
           name = name,
           ownerId = userId,
           status = OrganizationStatus.ACTIVE,
-          members = emptyMap(), // Ensure decoupled from legacy members field
           followerCount = followerCount,
           averageRating = averageRating)
 

@@ -8,9 +8,7 @@ import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationInvitation
-import ch.onepass.onepass.model.organization.OrganizationMember
 import ch.onepass.onepass.model.organization.OrganizationRepository
-import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.organization.OrganizationStatus
 import ch.onepass.onepass.ui.organization.OrganizerProfileEffect
 import ch.onepass.onepass.ui.organization.OrganizerProfileUiState
@@ -42,14 +40,6 @@ object OrganizationDashboardTestData {
       id: String = "test-org-1",
       name: String = "Test Organization",
       ownerId: String = "owner-1",
-      members: Map<String, OrganizationMember> =
-          mapOf(
-              "owner-1" to
-                  OrganizationMember(role = OrganizationRole.OWNER, assignedEvents = emptyList()),
-              "member-1" to
-                  OrganizationMember(role = OrganizationRole.MEMBER, assignedEvents = emptyList()),
-              "staff-1" to
-                  OrganizationMember(role = OrganizationRole.STAFF, assignedEvents = emptyList())),
       followerCount: Int = 1500,
       averageRating: Float = 4.5f,
       eventIds: List<String> = listOf("event-1", "event-2")
@@ -60,7 +50,6 @@ object OrganizationDashboardTestData {
           description = "Test Description",
           ownerId = ownerId,
           status = OrganizationStatus.ACTIVE,
-          members = members,
           verified = true,
           followerCount = followerCount,
           averageRating = averageRating,
@@ -119,30 +108,12 @@ open class MockOrganizationRepository(
   override fun getOrganizationsByOwner(ownerId: String): Flow<List<Organization>> =
       flowOf(emptyList())
 
-  override fun getOrganizationsByMember(userId: String): Flow<List<Organization>> =
-      flowOf(emptyList())
-
   override fun getOrganizationsByStatus(status: OrganizationStatus): Flow<List<Organization>> =
       flowOf(emptyList())
 
   override fun searchOrganizations(query: String): Flow<List<Organization>> = flowOf(emptyList())
 
   override fun getVerifiedOrganizations(): Flow<List<Organization>> = flowOf(emptyList())
-
-  override suspend fun addMember(
-      organizationId: String,
-      userId: String,
-      role: OrganizationRole
-  ): Result<Unit> = Result.success(Unit)
-
-  override suspend fun removeMember(organizationId: String, userId: String): Result<Unit> =
-      removeResult
-
-  override suspend fun updateMemberRole(
-      organizationId: String,
-      userId: String,
-      newRole: OrganizationRole
-  ): Result<Unit> = Result.success(Unit)
 
   override suspend fun createInvitation(invitation: OrganizationInvitation): Result<String> =
       Result.success("test-id")

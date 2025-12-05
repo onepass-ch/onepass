@@ -15,7 +15,7 @@ class OrganizationDashboardScreenTest {
 
   private val mockAuth = OrganizationDashboardTestData.createMockAuth().first
   private val mockUser = OrganizationDashboardTestData.createMockAuth().second
-  private val testOrg = OrganizationDashboardTestData.createTestOrganization(members = emptyMap())
+  private val testOrg = OrganizationDashboardTestData.createTestOrganization()
   private val testEvent1 = OrganizationDashboardTestData.createTestEvent()
   private val testEvent2 =
       OrganizationDashboardTestData.createTestEvent(

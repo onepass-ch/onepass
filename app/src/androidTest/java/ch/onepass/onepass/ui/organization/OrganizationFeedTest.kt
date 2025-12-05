@@ -2,12 +2,15 @@ package ch.onepass.onepass.ui.organization
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import ch.onepass.onepass.model.membership.Membership
+import ch.onepass.onepass.model.membership.MembershipRepository
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import ch.onepass.onepass.model.organization.OrganizationStatus
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.google.firebase.Timestamp
 import io.mockk.*
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import org.junit.After
 import org.junit.Assert.assertTrue
@@ -18,6 +21,7 @@ import org.junit.Test
 class OrganizationFeedTest {
   @get:Rule val composeTestRule = createComposeRule()
   private lateinit var mockRepository: OrganizationRepositoryFirebase
+  private lateinit var mockMembershipRepository: MembershipRepository
   private lateinit var viewModel: OrganizationFeedViewModel
   private val testUserId = "testUser123"
   private val testOrganizations =
@@ -42,7 +46,10 @@ class OrganizationFeedTest {
   @Before
   fun setup() {
     mockRepository = mockk(relaxed = true)
+    mockMembershipRepository = mockk(relaxed = true)
     coEvery { mockRepository.getOrganizationsByOwner(any()) } returns flowOf(emptyList())
+    coEvery { mockMembershipRepository.getOrganizationsByUserFlow(any()) } returns
+        flowOf(emptyList())
   }
 
   @After
@@ -52,10 +59,20 @@ class OrganizationFeedTest {
   // ==================== Loading State Tests ====================
   @Test
   fun organizationFeedScreen_displaysLoadingState_whenInitiallyLoading() {
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns flowOf()
-    viewModel = OrganizationFeedViewModel(mockRepository)
+    every { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flow {
+          kotlinx.coroutines.delay(1000)
+          emit(emptyList())
+        }
+    viewModel = OrganizationFeedViewModel(mockRepository, mockMembershipRepository)
     composeTestRule.setContent {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
+    }
+    composeTestRule.waitUntil(timeoutMillis = 3000) {
+      composeTestRule
+          .onAllNodesWithTag(OrganizationFeedTestTags.LOADING_INDICATOR)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
     composeTestRule
         .onNodeWithTag(OrganizationFeedTestTags.LOADING_INDICATOR)
@@ -65,9 +82,14 @@ class OrganizationFeedTest {
   // ==================== Success State Tests ====================
   @Test
   fun organizationFeedScreen_displaysOrganizationsWithDetails_whenDataLoaded() {
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns
-        flowOf(testOrganizations)
-    viewModel = OrganizationFeedViewModel(mockRepository)
+    val memberships = testOrganizations.map { Membership(userId = testUserId, orgId = it.id) }
+    coEvery { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flowOf(memberships)
+    testOrganizations.forEach { org ->
+      coEvery { mockRepository.getOrganizationById(org.id) } returns flowOf(org)
+    }
+
+    viewModel = OrganizationFeedViewModel(mockRepository, mockMembershipRepository)
 
     composeTestRule.setContent {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
@@ -94,9 +116,14 @@ class OrganizationFeedTest {
   @Test
   fun organizationFeedScreen_organizationCard_clickTriggersNavigation() {
     coEvery { mockRepository.getOrganizationsByOwner(testUserId) } returns flowOf(emptyList())
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns
-        flowOf(testOrganizations)
-    viewModel = OrganizationFeedViewModel(mockRepository)
+    val memberships = testOrganizations.map { Membership(userId = testUserId, orgId = it.id) }
+    coEvery { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flowOf(memberships)
+    testOrganizations.forEach { org ->
+      coEvery { mockRepository.getOrganizationById(org.id) } returns flowOf(org)
+    }
+
+    viewModel = OrganizationFeedViewModel(mockRepository, mockMembershipRepository)
     var clickedOrgId = ""
     composeTestRule.setContent {
       OnePassTheme {
@@ -116,8 +143,9 @@ class OrganizationFeedTest {
   @Test
   fun organizationFeedScreen_displaysEmptyState_whenNoOrganizations() {
     coEvery { mockRepository.getOrganizationsByOwner(testUserId) } returns flowOf(emptyList())
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns flowOf(emptyList())
-    viewModel = OrganizationFeedViewModel(mockRepository)
+    coEvery { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flowOf(emptyList())
+    viewModel = OrganizationFeedViewModel(mockRepository, mockMembershipRepository)
     composeTestRule.setContent {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
     }
@@ -133,11 +161,19 @@ class OrganizationFeedTest {
   @Test
   fun organizationFeedScreen_displaysErrorState_whenLoadingFails() {
     val errorMessage = "Network connection failed"
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } throws Exception(errorMessage)
-    viewModel = OrganizationFeedViewModel(mockRepository)
+    every { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flow { throw Exception(errorMessage) }
+    viewModel = OrganizationFeedViewModel(mockRepository, mockMembershipRepository)
     composeTestRule.setContent {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
     }
+    composeTestRule.waitUntil {
+      composeTestRule
+          .onAllNodesWithTag(OrganizationFeedTestTags.ERROR_MESSAGE)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
     composeTestRule
         .onNodeWithTag(OrganizationFeedTestTags.ERROR_MESSAGE)
         .assertExists()
@@ -156,10 +192,16 @@ class OrganizationFeedTest {
   @Test
   fun organizationFeedScreen_retryButton_reloadsOrganizations() {
     val errorMessage = "Network error"
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } throws
-        Exception(errorMessage) andThen
-        flowOf(testOrganizations)
-    viewModel = OrganizationFeedViewModel(mockRepository)
+    val memberships = testOrganizations.map { Membership(userId = testUserId, orgId = it.id) }
+
+    every { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flow { throw Exception(errorMessage) } andThen
+        flowOf(memberships)
+    testOrganizations.forEach { org ->
+      coEvery { mockRepository.getOrganizationById(org.id) } returns flowOf(org)
+    }
+
+    viewModel = OrganizationFeedViewModel(mockRepository, mockMembershipRepository)
     composeTestRule.setContent {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
     }
@@ -177,9 +219,14 @@ class OrganizationFeedTest {
   // ==================== Top Bar Tests ====================
   @Test
   fun organizationFeedScreen_displaysTopBarWithTitle() {
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns
-        flowOf(testOrganizations)
-    viewModel = OrganizationFeedViewModel(mockRepository)
+    val memberships = testOrganizations.map { Membership(userId = testUserId, orgId = it.id) }
+    coEvery { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flowOf(memberships)
+    testOrganizations.forEach { org ->
+      coEvery { mockRepository.getOrganizationById(org.id) } returns flowOf(org)
+    }
+
+    viewModel = OrganizationFeedViewModel(mockRepository, mockMembershipRepository)
     composeTestRule.setContent {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
     }
@@ -197,9 +244,14 @@ class OrganizationFeedTest {
 
   @Test
   fun organizationFeedScreen_backButton_triggersNavigation() {
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns
-        flowOf(testOrganizations)
-    viewModel = OrganizationFeedViewModel(mockRepository)
+    val memberships = testOrganizations.map { Membership(userId = testUserId, orgId = it.id) }
+    coEvery { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flowOf(memberships)
+    testOrganizations.forEach { org ->
+      coEvery { mockRepository.getOrganizationById(org.id) } returns flowOf(org)
+    }
+
+    viewModel = OrganizationFeedViewModel(mockRepository, mockMembershipRepository)
 
     var backPressed = false
     composeTestRule.setContent {
@@ -218,22 +270,28 @@ class OrganizationFeedTest {
   // ==================== ViewModel Tests ====================
   @Test
   fun viewModel_loadsOrganizations_onInit() {
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns
-        flowOf(testOrganizations)
-    viewModel = OrganizationFeedViewModel(mockRepository)
+    val memberships = testOrganizations.map { Membership(userId = testUserId, orgId = it.id) }
+    coEvery { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flowOf(memberships)
+    testOrganizations.forEach { org ->
+      coEvery { mockRepository.getOrganizationById(org.id) } returns flowOf(org)
+    }
+
+    viewModel = OrganizationFeedViewModel(mockRepository, mockMembershipRepository)
     viewModel.loadUserOrganizations(testUserId)
 
     composeTestRule.waitForIdle()
-    coVerify { mockRepository.getOrganizationsByMember(testUserId) }
+    coVerify { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) }
   }
 
   @Test
   fun viewModel_handlesRepositoryError_correctly() {
     val errorMessage = "Database error"
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } throws Exception(errorMessage)
-    viewModel = OrganizationFeedViewModel(mockRepository)
+    every { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flow { throw Exception(errorMessage) }
+    viewModel = OrganizationFeedViewModel(mockRepository, mockMembershipRepository)
     viewModel.loadUserOrganizations(testUserId)
-    composeTestRule.waitForIdle()
+    composeTestRule.waitUntil { viewModel.uiState.value.error == errorMessage }
     assert(viewModel.uiState.value.error == errorMessage)
     assert(!viewModel.uiState.value.isLoading)
   }
@@ -259,9 +317,15 @@ class OrganizationFeedTest {
 
     // Mock both flows to ensure combine() works properly
     coEvery { mockRepository.getOrganizationsByOwner(testUserId) } returns flowOf(emptyList())
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns flowOf(manyOrgs)
 
-    viewModel = OrganizationFeedViewModel(mockRepository)
+    val memberships = manyOrgs.map { Membership(userId = testUserId, orgId = it.id) }
+    coEvery { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flowOf(memberships)
+    manyOrgs.forEach { org ->
+      coEvery { mockRepository.getOrganizationById(org.id) } returns flowOf(org)
+    }
+
+    viewModel = OrganizationFeedViewModel(mockRepository, mockMembershipRepository)
 
     composeTestRule.setContent {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
@@ -294,9 +358,14 @@ class OrganizationFeedTest {
   @Test
   fun organizationFeedScreen_displaysVerifiedBadge_forVerifiedOrganizations() {
     coEvery { mockRepository.getOrganizationsByOwner(testUserId) } returns flowOf(emptyList())
-    coEvery { mockRepository.getOrganizationsByMember(testUserId) } returns
-        flowOf(testOrganizations)
-    viewModel = OrganizationFeedViewModel(mockRepository)
+    val memberships = testOrganizations.map { Membership(userId = testUserId, orgId = it.id) }
+    coEvery { mockMembershipRepository.getOrganizationsByUserFlow(testUserId) } returns
+        flowOf(memberships)
+    testOrganizations.forEach { org ->
+      coEvery { mockRepository.getOrganizationById(org.id) } returns flowOf(org)
+    }
+
+    viewModel = OrganizationFeedViewModel(mockRepository, mockMembershipRepository)
     composeTestRule.setContent {
       OnePassTheme { OrganizationFeedScreen(userId = testUserId, viewModel = viewModel) }
     }
