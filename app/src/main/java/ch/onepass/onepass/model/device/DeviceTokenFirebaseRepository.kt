@@ -20,11 +20,10 @@ class DeviceTokenRepositoryFirebase : DeviceTokenRepository {
                 .collection("users")
                 .document(userId)
                 .collection("device_tokens")
-                .document(deviceToken.deviceId)
+                .document(deviceToken.oneSignalPlayerId)
         val exists = docRef.get().await().exists()
 
         val tokenData = buildMap {
-          put("deviceId", deviceToken.deviceId)
           put("oneSignalPlayerId", deviceToken.oneSignalPlayerId)
           put("platform", deviceToken.platform)
           put("deviceModel", deviceToken.deviceModel)
@@ -51,16 +50,18 @@ class DeviceTokenRepositoryFirebase : DeviceTokenRepository {
     snapshot.documents.mapNotNull { it.toObject(DeviceToken::class.java) }
   }
 
-  override suspend fun deactivateDeviceToken(userId: String, deviceId: String): Result<Unit> =
-      runCatching {
-        firestore
-            .collection("users")
-            .document(userId)
-            .collection("device_tokens")
-            .document(deviceId)
-            .update(mapOf("isActive" to false))
-            .await()
-      }
+  override suspend fun deactivateDeviceToken(
+      userId: String,
+      oneSignalPlayerId: String
+  ): Result<Unit> = runCatching {
+    firestore
+        .collection("users")
+        .document(userId)
+        .collection("device_tokens")
+        .document(oneSignalPlayerId)
+        .update(mapOf("isActive" to false))
+        .await()
+  }
 
   override suspend fun getPlayerIds(userId: String): Result<List<String>> = runCatching {
     val snapshot =

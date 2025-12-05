@@ -11,7 +11,6 @@ class DeviceTokenTest {
   fun `default values are set correctly`() {
     val token = DeviceToken()
 
-    assertEquals("", token.deviceId)
     assertEquals("", token.oneSignalPlayerId)
     assertEquals("android", token.platform)
     assertTrue(token.isActive)
@@ -22,13 +21,11 @@ class DeviceTokenTest {
   fun `can create token with custom values`() {
     val token =
         DeviceToken(
-            deviceId = "device123",
             oneSignalPlayerId = "player456",
             platform = "android",
             deviceModel = "Pixel 7",
             appVersion = "1.0.0")
 
-    assertEquals("device123", token.deviceId)
     assertEquals("player456", token.oneSignalPlayerId)
     assertEquals("Pixel 7", token.deviceModel)
   }
