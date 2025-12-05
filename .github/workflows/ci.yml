@@ -5,170 +5,77 @@ on:
   push:
     branches:
       - main
+
   pull_request:
     types:
       - opened
       - synchronize
       - reopened
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  ci:
-    name: CI
-    # Execute the CI on the course's runners
+  static-checks:
     runs-on: ubuntu-latest
-    env:
-      MODULE_DIR: app
-      RELEASE_STORE_FILE: ${{ github.workspace }}/apk/keystore.jks
-      RELEASE_STORE_PASSWORD: ${{ secrets.RELEASE_STORE_PASSWORD }}
-      RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
-      RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-      RELEASE_STORE_TYPE: ${{ secrets.RELEASE_STORE_TYPE }}
-
     steps:
-      # First step : Checkout the repository on the runner
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0 # Shallow clones should be disabled for a better relevancy of Sonar analysis (if we use Sonar Later)
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-gradle
 
-      # Node.js setup for Firebase CLI
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      # Install Firebase CLI
-      - name: Install Firebase CLI
+      - name: KTFmt Check and Lint
         run: |
-          npm install -g firebase-tools
-          firebase --version
+          ./gradlew ktfmtCheck lint --parallel --build-cache
 
-      # Enable KVM for better emulator performance
-      - name: Enable KVM group perms
-        run: |
-          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
-          sudo udevadm control --reload-rules
-          sudo udevadm trigger --name-match=kvm
-          ls -l /dev/kvm
-
-      - name: Setup JDK
-        uses: actions/setup-java@v4
+      - name: Upload lint report
+        uses: actions/upload-artifact@v4
         with:
-          distribution: "temurin"
-          java-version: "17"
+          name: lint-report
+          path: app/build/reports/lint-*
 
-      # Decode and save google-services.json from GitHub secrets
-      - name: Decode google-services.json
-        env:
-          GOOGLE_SERVICES: ${{ secrets.GOOGLE_SERVICES }}
-        run: |
-          echo "$GOOGLE_SERVICES" | base64 --decode > $MODULE_DIR/google-services.json
-          ls -la $MODULE_DIR/google-services.json
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-gradle
 
-      # Gradle cache
-      - name: Gradle cache
-        uses: gradle/actions/setup-gradle@v3
-
-      # Create firebase.json if it doesn't exist
-      - name: Create Firebase config
-        run: |
-          if [ ! -f firebase.json ]; then
-            cat > firebase.json << 'EOF'
-          {
-            "emulators": {
-              "auth": {
-                "port": 9099
-              },
-              "firestore": {
-                "port": 8080
-              },
-              "ui": {
-                "enabled": false
-              }
-            }
-          }
-          EOF
-          fi
-          cat firebase.json
-
-      # Start Firebase Emulators in background with debugging
-      - name: Start Firebase Emulators
-        run: |
-          nohup firebase emulators:start --only auth,firestore --project demo-project > emulator.log 2>&1 &
-          EMULATOR_PID=$!
-          echo "Emulator PID: $EMULATOR_PID"
-          # Wait for emulators with increased timeout and logging
-          timeout=120
-          while ! (curl -s -f http://localhost:9099/ && curl -s -f http://localhost:8080/); do
-            if [ $timeout -le 0 ]; then
-              echo "Firebase emulators failed to start within 120s"
-              cat emulator.log
-              exit 1
-            fi
-            echo "Waiting for emulators... $timeout seconds remaining"
-            sleep 5
-            timeout=$((timeout - 5))
-          done
-          echo "Firebase emulators are running"
-          cat emulator.log
-
-      # Cache the Emulator
-      - name: AVD cache
-        uses: actions/cache@v4
-        id: avd-cache
-        with:
-          path: |
-            ~/.android/avd/*
-            ~/.android/adb*
-          key: avd-34
-
-      - name: Create AVD and generate snapshot for caching
-        if: steps.avd-cache.outputs.cache-hit != 'true'
-        uses: reactivecircus/android-emulator-runner@v2
-        with:
-          api-level: 34
-          target: google_apis
-          arch: x86_64
-          force-avd-creation: false
-          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
-          disable-animations: false
-          script: |
-            echo "Generating AVD snapshot..."
-            adb devices
-
-      # Load local.properties from the secrets
       - name: Decode secrets
-        env:
-          LOCAL_PROPERTIES: ${{ secrets.LOCAL_PROPERTIES }}
-        run: |
-          if [ -n "$LOCAL_PROPERTIES" ]; then
-          echo "$LOCAL_PROPERTIES" | base64 --decode > ./local.properties
-          else
-          echo "::warning::LOCAL_PROPERTIES secret is not set. local.properties will not be created."
-          fi
+        uses: ./.github/actions/decode-secrets
+        with:
+          local_properties: ${{ secrets.LOCAL_PROPERTIES }}
+          android_keystore_base64: ${{ secrets.KEYSTORE_B64 }}
 
-      - name: Grant execute permission for gradlew
+      - name: Run unit tests
         run: |
-          chmod +x ./gradlew
+          # To run the CI with debug information, add --info
+          ./gradlew testDebugUnitTest --parallel --build-cache
 
-      # Check formatting
-      - name: KTFmt Check
-        run: |
-          ./gradlew ktfmtCheck --stacktrace
+      - name: Upload unit exec
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-exec
+          path: app/build/outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec
 
-      - name: Decode keystore from KEYSTORE_B64
-        env:
-          KEYSTORE_B64: ${{ secrets.KEYSTORE_B64 }}
-        run: |
-          set -e
-          mkdir -p "$(dirname "$RELEASE_STORE_FILE")"
-          if [ -z "$KEYSTORE_B64" ]; then
-            echo "KEYSTORE_B64 secret not set!" && exit 1
-          fi
-          echo "$KEYSTORE_B64" | base64 --decode > "$RELEASE_STORE_FILE"
-          ls -l "$RELEASE_STORE_FILE"
+      - name: Upload unit test results
+        uses: actions/upload-artifact@v4
+        with:
+          name: unit-test-results
+          path: app/build/test-results/testDebugUnitTest/
 
+  build-test-apks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup-gradle
+
+      # Decode secrets for local.properties and keystore
+      - name: Decode secrets
+        uses: ./.github/actions/decode-secrets
+        with:
+          local_properties: ${{ secrets.LOCAL_PROPERTIES }}
+          android_keystore_base64: ${{ secrets.KEYSTORE_B64 }}
+
+      # Keystore management for signing APKs (after decoding)
       - name: Verify keystore open
         run: |
           keytool -list -keystore "$RELEASE_STORE_FILE" \
@@ -189,26 +96,151 @@ jobs:
             -srcalias "$RELEASE_KEY_ALIAS" -srckeypass "$RELEASE_KEY_PASSWORD" \
             -destkeystore /tmp/test.p12 -deststoretype PKCS12 -deststorepass testpass -destalias testalias >/dev/null
           echo "Private key decryption succeeded."
-          
 
-      # Assemble and lint
-      - name: Assemble
+      - name: Assemble app and androidTest APKs
+        run: ./gradlew assembleDebug assembleDebugAndroidTest --parallel --build-cache
+
+      - name: Assemble release APK
+        run: ./gradlew assembleRelease --parallel --build-cache
+
+      - name: Upload test APKs
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-apks
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/androidTest/debug/*.apk
+
+      - name: Upload release APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-apk
+          path: app/build/outputs/apk/release/*.apk
+
+      - name: Upload kotlin-classes (for Jacoco)
+        uses: actions/upload-artifact@v4
+        with:
+          name: kotlin-classes
+          path: app/build/tmp/kotlin-classes/debug/
+
+  connected-tests:
+    runs-on: ubuntu-latest
+    needs: build-test-apks
+    strategy:
+      fail-fast: false
+      matrix:
+        shard_index: [0, 1, 2]
+    env:
+      SHARD_COUNT: 3
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Decode secrets
+        uses: ./.github/actions/decode-secrets
+        with:
+          local_properties: ${{ secrets.LOCAL_PROPERTIES }}
+          android_keystore_base64: ${{ secrets.KEYSTORE_B64 }}
+
+      # Kernel-based Virtual Machine (KVM) for emulator performance
+      - name: Enable KVM group perms
         run: |
-          ./gradlew assemble lint --parallel --build-cache --stacktrace \
-            -PRELEASE_STORE_FILE="$RELEASE_STORE_FILE" \
-            -PRELEASE_STORE_PASSWORD="$RELEASE_STORE_PASSWORD" \
-            -PRELEASE_KEY_ALIAS="$RELEASE_KEY_ALIAS" \
-            -PRELEASE_KEY_PASSWORD="$RELEASE_KEY_PASSWORD" \
-            -PRELEASE_STORE_TYPE="$RELEASE_STORE_TYPE"
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
 
-      # Run Unit tests
-      - name: Run tests
+      # Cache Android SDK
+      - name: Cache Android SDK
+        uses: actions/cache@v4
+        id: android-sdk
+        with:
+          path: ~/android-sdk
+          key: ${{ runner.os }}-android-sdk-a34-googleapis-x86_64-bt35.0.0
+
+      - name: Install Android SDK (if not cached)
+        if: steps.android-sdk.outputs.cache-hit != 'true'
         run: |
-          ./gradlew check --parallel --build-cache --stacktrace
+          set -e
 
-      # Run connected tests on the emulator
-      - name: Run connected tests
+          mkdir -p "$HOME/android-sdk"
+
+          if command -v sdkmanager >/dev/null 2>&1; then
+            SDKMANAGER="sdkmanager"
+          elif [ -x "${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager" ]; then
+            SDKMANAGER="${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager"
+          else
+            echo "sdkmanager not found on this runner"
+            exit 1
+          fi
+
+          yes | "$SDKMANAGER" --sdk_root="$HOME/android-sdk" \
+            "platform-tools" \
+            "platforms;android-34" \
+            "build-tools;35.0.0" \
+            "system-images;android-34;google_apis;x86_64" \
+            "emulator"
+
+      - name: Export Android SDK env
+        run: |
+          echo "ANDROID_SDK_ROOT=$HOME/android-sdk" >> "$GITHUB_ENV"
+          echo "ANDROID_HOME=$HOME/android-sdk" >> "$GITHUB_ENV"
+          echo "$HOME/android-sdk/platform-tools" >> "$GITHUB_PATH"
+
+      # Cache AVD (Android Emulator)
+      - name: Cache AVD
+        uses: actions/cache@v4
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: ${{ runner.os }}-avd-34
+
+      - name: Create AVD and generate snapshot for caching
+        if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      # Start Firebase Emulators
+      - name: Start Firebase Emulators
+        run: |
+          nohup firebase emulators:start --only auth,firestore --project demo-project > emulator.log 2>&1 &
+          EMULATOR_PID=$!
+          echo "Emulator PID: $EMULATOR_PID"
+          timeout=120
+          while ! (curl -s -f http://localhost:9099/ && curl -s -f http://localhost:8080/); do
+            if [ $timeout -le 0 ]; then
+              echo "Firebase emulators failed to start within 120s"
+              cat emulator.log
+              exit 1
+            fi
+            echo "Waiting for emulators... $timeout seconds remaining"
+            sleep 5
+            timeout=$((timeout - 5))
+          done
+          echo "Firebase emulators are running"
+          cat emulator.log
+
+      - name: Download test APKs
+        uses: actions/download-artifact@v4
+        with:
+          name: test-apks
+          path: ./app/build/outputs/apk/
+
+      # Run connected tests
+      - name: Run connected tests (shard ${{ matrix.shard_index }})
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          APP_DEBUG_APK: app/build/outputs/apk/debug/app-debug.apk
+          APP_DEBUG_TEST_APK: app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
+          PACKAGE: com.android.sample
+          TEST_RUNNER: androidx.test.runner.AndroidJUnitRunner
         with:
           api-level: 34
           target: google_apis
@@ -217,44 +249,118 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            echo "Starting connected tests..."
-            ./gradlew connectedCheck --parallel --build-cache --stacktrace
+            set -e
+            adb uninstall com.android.sample || true
+            adb uninstall com.android.sample.test || true
+            adb install -t "$APP_DEBUG_APK"
+            adb install "$APP_DEBUG_TEST_APK"
+            ./pretty-instrument.sh
+            adb exec-out run-as $PACKAGE cat files/coverage.ec > coverage.ec
 
-      # Stop Firebase Emulators
-      - name: Stop Firebase Emulators
-        if: always()
-        run: |
-          pkill -f "firebase emulators:start" || true
-          echo "Firebase emulators stopped"
-
-      # Generate Coverage Report
-      - name: Generate Coverage Report
-        run: |
-          ./gradlew jacocoTestReport --stacktrace
-
-      # Upload test results (even on failure)
-      - name: Upload test results
-        if: always()
+      - name: Upload android ec for this shard
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: |
-            $MODULE_DIR/build/reports/tests/
-            $MODULE_DIR/build/test-results/
-          retention-days: 7
+          name: android-ec-${{ matrix.shard_index }}
+          path: ./coverage.ec
 
-      # Upload coverage reports
-      - name: Upload coverage reports
-        if: always()
+  sonar:
+    needs: [static-checks, unit-tests, build-test-apks, connected-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - uses: ./.github/actions/setup-gradle
+
+      - name: Cache SonarQube packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+
+      - name: Download unit exec
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-exec
+          path: app/build/outputs/unit_test_code_coverage/debugUnitTest/
+
+      - name: Download unit test results
+        uses: actions/download-artifact@v4
+        with:
+          name: unit-test-results
+          path: app/build/test-results/testDebugUnitTest/
+
+      - name: Download android ec for all shards
+        uses: actions/download-artifact@v4
+        with:
+          pattern: android-ec-*
+          path: .
+
+      - name: Arrange android ec files
+        env:
+          BASE: app/build/outputs/code_coverage/debugAndroidTest/connected
+        run: |
+          mkdir -p $BASE
+          for dir in android-ec-*; do
+            shard="${dir##android-ec-}"
+            mkdir -p "$BASE/shard-$shard"
+            mv "$dir"/coverage.ec "$BASE/shard-$shard/"
+          done
+
+      - name: Download lint report
+        uses: actions/download-artifact@v4
+        with:
+          name: lint-report
+          path: app/build/reports/
+
+      - name: Download kotlin-classes
+        uses: actions/download-artifact@v4
+        with:
+          name: kotlin-classes
+          path: app/build/tmp/kotlin-classes/debug/
+
+      - name: Generate coverage report
+        run: |
+          ./gradlew jacocoTestReport
+
+      - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-reports
-          path: $MODULE_DIR/build/reports/jacoco/
-          retention-days: 7
+          name: jacoco-test-report
+          path: app/build/reports/jacoco/jacocoTestReport
 
-      # Upload the various reports to sonar
-      - name: Upload report to SonarCloud
+      - name: Verify Sonar report paths exist
+        run: |
+          echo "Checking JUnit report directory..."
+          if [ ! -d "app/build/test-results/testDebugUnitTest" ]; then
+            echo "::error::JUnit report directory missing: app/build/test-results/testDebugUnitTest/"
+            exit 1
+          fi
+          if [ -z "$(ls -A app/build/test-results/testDebugUnitTest/*.xml 2>/dev/null)" ]; then
+            echo "::error::No JUnit XML files found in app/build/test-results/testDebugUnitTest/"
+            exit 1
+          fi
+
+          echo "Checking Android Lint report..."
+          if [ ! -f "app/build/reports/lint-results-debug.xml" ]; then
+            echo "::error::Lint report missing: app/build/reports/lint-results-debug.xml"
+            exit 1
+          fi
+
+          echo "Checking Jacoco XML coverage report..."
+          if [ ! -f "app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml" ]; then
+            echo "::error::Jacoco XML coverage report missing: app/build/reports/jacoco/jacocoTestReport/jacocoTestReport.xml"
+            exit 1
+          fi
+
+          echo "All Sonar report files exist"
+
+      - name: Upload reports to SonarCloud
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.fork == false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: ./gradlew sonar --parallel --build-cache
+        run: ./gradlew sonar --parallel --build-cache --stacktrace --info

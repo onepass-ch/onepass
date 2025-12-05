@@ -1,0 +1,22 @@
+name: Decode GitHub secrets
+description: Decode and setup local.properties, and ~/.android/release.keystore
+
+inputs:
+  local_properties:
+    required: false
+  android_keystore_base64:
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Decode local.properties from secrets
+      env:
+        LOCAL_PROPERTIES: ${{ inputs.local_properties }}
+      shell: bash
+      run: |
+        if [ -n "$LOCAL_PROPERTIES" ]; then
+          echo "$LOCAL_PROPERTIES" | base64 --decode > ./local.properties
+        else
+          echo "::warning::LOCAL_PROPERTIES secret is not set. local.properties will not be created."
+        fi
