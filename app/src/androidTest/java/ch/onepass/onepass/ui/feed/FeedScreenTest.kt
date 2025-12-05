@@ -20,7 +20,7 @@ import java.util.*
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import org.junit.Before // Added import for @Before
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -58,18 +58,11 @@ class FeedScreenTest {
           pricingTiers = emptyList())
 
   // Mocks needed for FeedViewModel instantiation in tests
-  private lateinit var mockUserRepository: UserRepository
-  private lateinit var mockAuth: FirebaseAuth
-  private lateinit var mockUser: FirebaseUser
+  private val mockUserRepository = mockk<UserRepository>(relaxed = true)
+  private val mockAuth = mockk<FirebaseAuth>(relaxed = true)
+  private val mockUser = mockk<FirebaseUser>(relaxed = true)
 
-  @Before
-  fun setup() {
-    // Initialize mocks using lateinit vars
-    mockUserRepository = mockk(relaxed = true)
-    mockAuth = mockk(relaxed = true)
-    mockUser = mockk(relaxed = true)
-
-    // Setup mock behavior
+  init {
     every { mockAuth.currentUser } returns mockUser
     every { mockUser.uid } returns "test-user-id"
     every { mockUserRepository.getFavoriteEvents(any()) } returns flowOf(emptySet())
