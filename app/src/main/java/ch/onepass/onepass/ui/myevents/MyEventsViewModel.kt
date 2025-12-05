@@ -1,14 +1,16 @@
 package ch.onepass.onepass.ui.myevents
 
-import androidx.annotation.ColorRes
+import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.ticket.TicketRepository
 import ch.onepass.onepass.model.ticket.TicketRepositoryFirebase
 import ch.onepass.onepass.model.ticket.toUiTicket
+import ch.onepass.onepass.ui.theme.TicketCurrent
+import ch.onepass.onepass.ui.theme.TicketExpired
+import ch.onepass.onepass.ui.theme.TicketUpcoming
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -37,10 +39,10 @@ data class Ticket(
  *
  * @param colorRes The color resource associated with the status.
  */
-enum class TicketStatus(@ColorRes val colorRes: Int) {
-  CURRENTLY(R.color.status_currently),
-  UPCOMING(R.color.status_upcoming),
-  EXPIRED(R.color.status_expired)
+enum class TicketStatus(val colorRes: Color) {
+  CURRENTLY(TicketCurrent),
+  UPCOMING(TicketUpcoming),
+  EXPIRED(TicketExpired)
 }
 
 /**

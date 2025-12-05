@@ -31,7 +31,6 @@ import ch.onepass.onepass.model.organization.OrganizationMember
 import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
-import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.TextSecondary
 import java.util.Locale
@@ -132,10 +131,8 @@ fun OrganizationDashboardScreen(
             },
             colors =
                 TopAppBarDefaults.topAppBarColors(
-                    containerColor = DefaultBackground,
                     titleContentColor = MaterialTheme.colorScheme.onSurface))
-      },
-      containerColor = DefaultBackground) { paddingValues ->
+      }) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
           when {
             uiState.isLoading -> {

@@ -43,6 +43,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
+import ch.onepass.onepass.ui.theme.Background
+import ch.onepass.onepass.ui.theme.DarkGray
+import ch.onepass.onepass.ui.theme.Error
+import ch.onepass.onepass.ui.theme.Gray
+import ch.onepass.onepass.ui.theme.LightGray
+import ch.onepass.onepass.ui.theme.Secondary
+import ch.onepass.onepass.ui.theme.Surface
 import kotlinx.coroutines.flow.collectLatest
 
 object ProfileTestTags {
@@ -96,17 +103,14 @@ private fun ProfileContent(
 ) {
   if (state.loading) {
     Box(
-        modifier =
-            Modifier.fillMaxSize()
-                .background(colorResource(id = R.color.profile_background))
-                .testTag(ProfileTestTags.LOADING),
+        modifier = Modifier.fillMaxSize().background(Background).testTag(ProfileTestTags.LOADING),
         contentAlignment = Alignment.Center) {
-          CircularProgressIndicator(color = colorResource(id = R.color.profile_accent))
+          CircularProgressIndicator(color = Secondary)
         }
     return
   }
 
-  Scaffold(containerColor = colorResource(id = R.color.profile_background)) { padding ->
+  Scaffold(containerColor = Background) { padding ->
     Column(
         modifier =
             Modifier.fillMaxSize()
@@ -135,10 +139,7 @@ private fun ProfileContent(
 
           Spacer(Modifier.height(12.dp))
 
-          HorizontalDivider(
-              modifier = Modifier.alpha(0.2f),
-              thickness = 1.dp,
-              color = colorResource(id = R.color.profile_divider))
+          HorizontalDivider(modifier = Modifier.alpha(0.2f), thickness = 1.dp, color = DarkGray)
 
           Spacer(Modifier.height(8.dp))
 
@@ -169,7 +170,7 @@ private fun ProfileContent(
           SettingsItem(
               icon = Icons.AutoMirrored.Outlined.ExitToApp,
               title = "Sign Out",
-              titleColor = colorResource(id = R.color.profile_sign_out_red),
+              titleColor = Error,
               onClick = onSignOut,
               testTag = ProfileTestTags.SETTINGS_SIGN_OUT)
         }
@@ -207,7 +208,7 @@ private fun HeaderBlock(initials: String, name: String, email: String) {
             modifier =
                 Modifier.size(72.dp)
                     .clip(CircleShape)
-                    .background(colorResource(id = R.color.profile_header_avatar_bg))
+                    .background(Secondary)
                     .testTag(ProfileTestTags.HEADER_INITIALS),
             contentAlignment = Alignment.Center) {
               Text(initials, color = Color.White, fontWeight = FontWeight.Bold)
@@ -226,7 +227,7 @@ private fun HeaderBlock(initials: String, name: String, email: String) {
               modifier = Modifier.testTag(ProfileTestTags.HEADER_NAME))
           Text(
               text = email,
-              color = colorResource(id = R.color.profile_text_secondary),
+              color = Gray,
               style = MaterialTheme.typography.bodyMedium,
               modifier = Modifier.testTag(ProfileTestTags.HEADER_EMAIL))
         }
@@ -237,7 +238,7 @@ private fun HeaderBlock(initials: String, name: String, email: String) {
 @Composable
 private fun StatCard(value: Int, label: String, modifier: Modifier = Modifier) {
   Surface(
-      color = colorResource(id = R.color.profile_card),
+      color = Surface,
       shape = RoundedCornerShape(16.dp),
       tonalElevation = 0.dp,
       modifier = modifier.height(96.dp)) {
@@ -246,12 +247,9 @@ private fun StatCard(value: Int, label: String, modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally) {
               Text(
                   value.toString(),
-                  color = colorResource(id = R.color.profile_accent),
+                  color = Secondary,
                   style = MaterialTheme.typography.headlineSmall)
-              Text(
-                  label,
-                  color = colorResource(id = R.color.profile_text_secondary),
-                  style = MaterialTheme.typography.bodyMedium)
+              Text(label, color = Gray, style = MaterialTheme.typography.bodyMedium)
             }
       }
 }
@@ -259,7 +257,7 @@ private fun StatCard(value: Int, label: String, modifier: Modifier = Modifier) {
 /** Card for the organizer section. */
 @Composable
 private fun OrganizerCard(isOrganizer: Boolean, onOrganizationButton: () -> Unit) {
-  Surface(color = colorResource(id = R.color.profile_card), shape = RoundedCornerShape(16.dp)) {
+  Surface(color = Surface, shape = RoundedCornerShape(16.dp)) {
     Column(Modifier.padding(16.dp).testTag(ProfileTestTags.ORG_CARD)) {
       Text(
           text = if (isOrganizer) "Organization Management" else "Start Your Journey",
@@ -272,7 +270,7 @@ private fun OrganizerCard(isOrganizer: Boolean, onOrganizationButton: () -> Unit
           text =
               if (isOrganizer) "Create and manage your organizations."
               else "Create epic events, build your community, and grow your audience.",
-          color = colorResource(id = R.color.profile_text_secondary),
+          color = Gray,
           style = MaterialTheme.typography.bodyMedium)
 
       Spacer(Modifier.height(16.dp))
@@ -281,9 +279,7 @@ private fun OrganizerCard(isOrganizer: Boolean, onOrganizationButton: () -> Unit
           onClick = onOrganizationButton,
           modifier = Modifier.fillMaxWidth().testTag(ProfileTestTags.ORG_CTA),
           shape = RoundedCornerShape(10.dp),
-          colors =
-              ButtonDefaults.buttonColors(
-                  containerColor = colorResource(id = R.color.profile_accent))) {
+          colors = ButtonDefaults.buttonColors(containerColor = Secondary)) {
             if (!isOrganizer)
                 Icon(imageVector = Icons.Filled.Add, contentDescription = null, tint = Color.White)
             Spacer(Modifier.width(8.dp))
@@ -316,10 +312,7 @@ private fun SettingsItem(
               .padding(horizontal = 6.dp)
               .testTag(testTag),
       verticalAlignment = Alignment.CenterVertically) {
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = colorResource(id = R.color.profile_settings_icon))
+        Icon(icon, contentDescription = null, tint = LightGray)
         Spacer(Modifier.width(16.dp))
         Text(title, color = titleColor, style = MaterialTheme.typography.bodyLarge)
       }

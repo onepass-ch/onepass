@@ -24,12 +24,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
+import ch.onepass.onepass.ui.theme.Background
+import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.MarcFontFamily
+import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.OnSurface
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import ch.onepass.onepass.ui.theme.Surface
+import ch.onepass.onepass.ui.theme.TextSecondary
 
 /** Test tags for MyEvents screen components */
 object MyEventsTestTags {
@@ -81,24 +85,24 @@ fun MyEventsContent(
   val tabs = listOf("Current", "Expired")
   val tickets = if (selectedTab == 0) currentTickets else expiredTickets
 
-  Surface(modifier = Modifier.fillMaxSize(), color = colorResource(id = R.color.background)) {
-    Column(modifier = Modifier.fillMaxSize().background(colorResource(id = R.color.background))) {
+  Surface(modifier = Modifier.fillMaxSize(), color = Background) {
+    Column(modifier = Modifier.fillMaxSize().background(Background)) {
       Text(
           text = "YOUR TICKETS",
           modifier = Modifier.padding(16.dp),
           style = MaterialTheme.typography.titleLarge.copy(fontFamily = MarcFontFamily),
-          color = colorResource(id = R.color.on_background))
+          color = OnBackground)
 
       TabRow(
           modifier = Modifier.testTag(MyEventsTestTags.TABS_ROW),
           selectedTabIndex = selectedTab,
-          containerColor = colorResource(id = R.color.surface),
-          contentColor = colorResource(id = R.color.on_surface),
+          containerColor = Surface,
+          contentColor = OnSurface,
           indicator = { tabPositions ->
-            TabRowDefaults.Indicator(
+            TabRowDefaults.SecondaryIndicator(
                 modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTab]),
                 height = 4.dp,
-                color = colorResource(id = R.color.tab_indicator))
+                color = EventDateColor)
           }) {
             tabs.forEachIndexed { index, title ->
               val tabTestTag =
@@ -114,8 +118,8 @@ fun MyEventsContent(
                         text = title,
                         style = MaterialTheme.typography.bodyLarge,
                         color =
-                            if (selectedTab == index) colorResource(id = R.color.tab_selected)
-                            else colorResource(id = R.color.tab_unselected).copy(alpha = 0.6f))
+                            if (selectedTab == index) EventDateColor
+                            else TextSecondary.copy(alpha = 0.6f))
                   },
                   selected = selectedTab == index,
                   onClick = { selectedTab = index },

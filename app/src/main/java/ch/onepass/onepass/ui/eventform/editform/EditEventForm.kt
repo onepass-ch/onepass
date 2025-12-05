@@ -14,13 +14,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.eventform.EventFormFields
-import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
+import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.Secondary
+import ch.onepass.onepass.ui.theme.TextSecondary
 
 object EditEventFormTestTags {
   const val SCREEN = "edit_event_form_screen"
@@ -54,16 +54,12 @@ fun UpdateEventButton(
               .fillMaxWidth()
               .height(48.dp)
               .padding(start = 63.dp, top = 14.dp, end = 63.dp, bottom = 14.dp)
-              .background(
-                  color = colorResource(id = R.color.edit_update_btn_bg_primary),
-                  shape = RoundedCornerShape(size = 5.dp))
-              .background(
-                  color = colorResource(id = R.color.edit_update_btn_bg_overlay),
-                  shape = RoundedCornerShape(size = 5.dp)),
+              .background(color = Secondary, shape = RoundedCornerShape(size = 5.dp))
+              .background(color = Secondary, shape = RoundedCornerShape(size = 5.dp)),
       shape = RoundedCornerShape(5.dp),
       colors =
           ButtonDefaults.buttonColors(
-              containerColor = Color.Transparent, contentColor = colorResource(id = R.color.white)),
+              containerColor = Color.Transparent, contentColor = OnBackground),
       contentPadding = PaddingValues(0.dp),
       elevation = ButtonDefaults.buttonElevation(0.dp),
       enabled = !isLoading) {
@@ -73,9 +69,7 @@ fun UpdateEventButton(
             verticalAlignment = Alignment.CenterVertically) {
               if (isLoading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
-                    color = colorResource(id = R.color.white),
-                    strokeWidth = 2.dp)
+                    modifier = Modifier.size(16.dp), color = OnBackground, strokeWidth = 2.dp)
               } else {
                 Icon(
                     imageVector = Icons.Default.Edit,
@@ -130,7 +124,7 @@ fun EditEventForm(
       modifier = Modifier.testTag(EditEventFormTestTags.SCREEN),
       topBar = {
         TopAppBar(
-            title = { Text(text = "Edit Event", color = colorResource(id = R.color.white)) },
+            title = { Text(text = "Edit Event", color = OnBackground) },
             navigationIcon = {
               IconButton(
                   onClick = onNavigateBack,
@@ -138,10 +132,9 @@ fun EditEventForm(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = colorResource(id = R.color.white))
+                        tint = OnBackground)
                   }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = DefaultBackground))
+            })
       }) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
           when (uiState) {
@@ -162,12 +155,12 @@ fun EditEventForm(
                     Text(
                         text = "Failed to load event",
                         style = MaterialTheme.typography.titleMedium,
-                        color = colorResource(id = R.color.white))
+                        color = OnBackground)
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = (uiState as EditEventUiState.LoadError).message,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = colorResource(id = R.color.gray))
+                        color = TextSecondary)
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
                         onClick = { viewModel.loadEvent(eventId) },
@@ -181,7 +174,6 @@ fun EditEventForm(
               Column(
                   modifier =
                       Modifier.fillMaxSize()
-                          .background(DefaultBackground)
                           .verticalScroll(scrollState)
                           .padding(start = 22.dp, end = 22.dp, bottom = 48.dp)
                           .testTag(EditEventFormTestTags.FORM_COLUMN)) {

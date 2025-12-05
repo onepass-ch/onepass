@@ -26,6 +26,7 @@ import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
 import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
 import ch.onepass.onepass.ui.eventfilters.FilterDialog
+import ch.onepass.onepass.ui.theme.Secondary
 
 /**
  * Feed screen showing all published events. Displays a list of events with loading, error, and
@@ -98,53 +99,51 @@ fun FeedScreen(
             )
           }
         }
-      },
-      containerColor = colorResource(id = R.color.screen_background),
-  ) { paddingValues ->
-    Box(
-        modifier = Modifier.fillMaxSize().padding(paddingValues),
-        contentAlignment = Alignment.Center,
-    ) {
-      when {
-        uiState.isLoading && uiState.events.isEmpty() -> {
-          LoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR)
-        }
-        uiState.error != null && uiState.events.isEmpty() -> {
-          ErrorState(
-              error = uiState.error!!,
-              onRetry = { viewModel.refreshEvents() },
-              testTag = FeedScreenTestTags.ERROR_MESSAGE)
-        }
-        !uiState.isLoading && uiState.events.isEmpty() -> {
-          EmptyState(
-              title = "No Events Found",
-              message = "Check back later for new events in your area!",
-              testTag = FeedScreenTestTags.EMPTY_STATE)
-        }
-        else -> {
-          EventListContent(
-              events = uiState.events,
-              isLoadingMore = uiState.isLoading,
-              onEventClick = onNavigateToEvent,
-          )
-        }
-      }
-      // Filter Dialog
-      if (uiState.showFilterDialog) {
-        // Sync localFilters to current global filters on dialog open
-        LaunchedEffect(Unit) { filterViewModel.updateLocalFilters(currentFilters) }
+      }) { paddingValues ->
+        Box(
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+            contentAlignment = Alignment.Center,
+        ) {
+          when {
+            uiState.isLoading && uiState.events.isEmpty() -> {
+              LoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR)
+            }
+            uiState.error != null && uiState.events.isEmpty() -> {
+              ErrorState(
+                  error = uiState.error!!,
+                  onRetry = { viewModel.refreshEvents() },
+                  testTag = FeedScreenTestTags.ERROR_MESSAGE)
+            }
+            !uiState.isLoading && uiState.events.isEmpty() -> {
+              EmptyState(
+                  title = "No Events Found",
+                  message = "Check back later for new events in your area!",
+                  testTag = FeedScreenTestTags.EMPTY_STATE)
+            }
+            else -> {
+              EventListContent(
+                  events = uiState.events,
+                  isLoadingMore = uiState.isLoading,
+                  onEventClick = onNavigateToEvent,
+              )
+            }
+          }
+          // Filter Dialog
+          if (uiState.showFilterDialog) {
+            // Sync localFilters to current global filters on dialog open
+            LaunchedEffect(Unit) { filterViewModel.updateLocalFilters(currentFilters) }
 
-        FilterDialog(
-            viewModel = filterViewModel,
-            onApply = { newFilters ->
-              filterViewModel.applyFilters(newFilters)
-              viewModel.setShowFilterDialog(false)
-            },
-            onDismiss = { viewModel.setShowFilterDialog(false) },
-        )
+            FilterDialog(
+                viewModel = filterViewModel,
+                onApply = { newFilters ->
+                  filterViewModel.applyFilters(newFilters)
+                  viewModel.setShowFilterDialog(false)
+                },
+                onDismiss = { viewModel.setShowFilterDialog(false) },
+            )
+          }
+        }
       }
-    }
-  }
 }
 
 /**
@@ -166,7 +165,6 @@ private fun FeedTopBar(
 ) {
   Surface(
       modifier = modifier.fillMaxWidth().testTag(FeedScreenTestTags.FEED_TOP_BAR),
-      color = colorResource(id = R.color.screen_background),
       tonalElevation = 0.dp,
   ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)) {
@@ -187,7 +185,7 @@ private fun FeedTopBar(
           Text(
               text = currentLocation.uppercase(),
               style = MaterialTheme.typography.bodyMedium,
-              color = colorResource(id = R.color.gray),
+              color = Secondary,
               modifier = Modifier.padding(top = 4.dp).testTag(FeedScreenTestTags.FEED_LOCATION),
           )
         }

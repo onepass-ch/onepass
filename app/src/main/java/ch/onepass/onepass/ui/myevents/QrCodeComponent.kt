@@ -24,7 +24,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -32,7 +31,15 @@ import androidx.compose.ui.window.Dialog
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 import ch.onepass.onepass.R
+import ch.onepass.onepass.ui.theme.Background
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import ch.onepass.onepass.ui.theme.QRLilac
+import ch.onepass.onepass.ui.theme.QROrange
+import ch.onepass.onepass.ui.theme.QRPink
+import ch.onepass.onepass.ui.theme.QRPurple
+import ch.onepass.onepass.ui.theme.QRRed
+import ch.onepass.onepass.ui.theme.QRYellow
+import ch.onepass.onepass.ui.theme.Surface
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 
@@ -66,9 +73,7 @@ fun QrCodeComponent(qrData: String, modifier: Modifier = Modifier) {
     Dialog(onDismissRequest = { showQrDialog = false }) {
       Card(
           shape = RoundedCornerShape(16.dp),
-          colors =
-              CardDefaults.cardColors(
-                  containerColor = colorResource(id = R.color.surface_container)),
+          colors = CardDefaults.cardColors(containerColor = Surface),
           modifier = Modifier.padding(16.dp)) {
             Box(
                 modifier = Modifier.size(300.dp).padding(24.dp),
@@ -89,7 +94,7 @@ fun QrCodeComponent(qrData: String, modifier: Modifier = Modifier) {
               .clickable { showQrDialog = true }
               .testTag(MyEventsTestTags.QR_CODE_ICON),
       shape = RoundedCornerShape(12.dp),
-      colors = CardDefaults.cardColors(containerColor = colorResource(id = R.color.background))) {
+      colors = CardDefaults.cardColors(containerColor = Background)) {
         Box(
             modifier =
                 Modifier.fillMaxSize()
@@ -98,13 +103,12 @@ fun QrCodeComponent(qrData: String, modifier: Modifier = Modifier) {
                         brush =
                             Brush.horizontalGradient(
                                 listOf(
-                                    colorResource(id = R.color.qr_red).copy(alpha = 0.2f),
-                                    colorResource(id = R.color.qr_pink).copy(alpha = 0.2f),
-                                    colorResource(id = R.color.qr_purple).copy(alpha = 0.2f),
-                                    colorResource(id = R.color.qr_lilac).copy(alpha = 0.2f),
-                                    colorResource(id = R.color.qr_orange).copy(alpha = 0.2f),
-                                    colorResource(id = R.color.qr_yellow).copy(alpha = 0.2f))),
-                    ),
+                                    QRRed.copy(alpha = 0.2f),
+                                    QRPink.copy(alpha = 0.2f),
+                                    QRPurple.copy(alpha = 0.2f),
+                                    QRLilac.copy(alpha = 0.2f),
+                                    QROrange.copy(alpha = 0.2f),
+                                    QRYellow.copy(alpha = 0.2f)))),
             contentAlignment = Alignment.Center) {
               Image(
                   painter = painterResource(id = R.drawable.qr_code_icon),

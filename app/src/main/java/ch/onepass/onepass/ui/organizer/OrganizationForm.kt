@@ -11,13 +11,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.components.forms.FormTextField
 import ch.onepass.onepass.ui.components.forms.PrefixPhoneRow
 import ch.onepass.onepass.ui.components.forms.SubmitButton
+import ch.onepass.onepass.ui.theme.Background
 
 /**
  * Composable for the organization form used in both creation and editing.
@@ -61,7 +60,7 @@ fun OrganizerForm(
           modifier
               .fillMaxSize()
               .verticalScroll(scrollState)
-              .background(color = colorResource(id = R.color.background))
+              .background(color = Background)
               .padding(16.dp)) {
 
         // Organization Name Field

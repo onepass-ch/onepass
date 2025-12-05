@@ -13,16 +13,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
+import ch.onepass.onepass.ui.theme.Background
+import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.Primary
 
 object OrganizationFeedTestTags {
   const val ORGANIZATION_FEED_SCREEN = "organizationFeedScreen"
@@ -91,7 +92,7 @@ fun OrganizationFeedScaffold(
   Scaffold(
       modifier = modifier.fillMaxSize(),
       topBar = { OrganizationFeedTopBar(onNavigateBack = onNavigateBack) },
-      containerColor = colorResource(id = R.color.screen_background)) { paddingValues ->
+      containerColor = Background) { paddingValues ->
         Box(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
             contentAlignment = Alignment.Center,
@@ -156,9 +157,7 @@ private fun OrganizationFeedTopBar(onNavigateBack: () -> Unit = {}, modifier: Mo
             letterSpacing = 2.sp,
             modifier = modifier.testTag(OrganizationFeedTestTags.ORGANIZATION_FEED_TITLE))
       },
-      colors =
-          TopAppBarDefaults.centerAlignedTopAppBarColors(
-              containerColor = colorResource(id = R.color.org_feed_top_bar)))
+      colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Primary))
 }
 
 /** Organization list content with scrollable cards. */
@@ -188,8 +187,8 @@ private fun AddOrganizationButton(modifier: Modifier = Modifier, onClick: () -> 
   FloatingActionButton(
       modifier = modifier,
       onClick = onClick,
-      containerColor = colorResource(R.color.accent_purple),
-      contentColor = colorResource(R.color.white)) {
+      containerColor = Primary,
+      contentColor = OnBackground) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
             contentDescription = "Create a new organization")
