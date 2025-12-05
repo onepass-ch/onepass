@@ -41,6 +41,15 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxToken}\"")
+        
+        // Enable multidex for handling large number of methods (Compose UI, etc.)
+        multiDexEnabled = true
+    }
+    
+    // Dex options for handling large libraries in CI
+    dexOptions {
+        javaMaxHeapSize = "4g"
+        preDexLibraries = true
     }
 
     buildTypes {
@@ -156,6 +165,9 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 }
 
 dependencies {
+    // Multidex support for handling large number of methods
+    implementation("androidx.multidex:multidex:2.0.1")
+    
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)

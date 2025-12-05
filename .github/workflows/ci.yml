@@ -331,7 +331,9 @@ jobs:
             echo "▶  Executing: ./gradlew connectedCheck with sharding parameters"
             echo "────────────────────────────────────────────────────────────"
             
-            ./gradlew connectedCheck --parallel --build-cache --console=plain --info -Pandroid.testInstrumentationRunnerArguments.numShards=${{ env.SHARD_COUNT }} -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard_index }} | tee test_output.log
+            # Note: --build-cache removed for connectedCheck as dexing transforms don't support it
+            # Gradle caching is still enabled via gradle.properties for supported tasks
+            ./gradlew connectedCheck --parallel --console=plain --info -Pandroid.testInstrumentationRunnerArguments.numShards=${{ env.SHARD_COUNT }} -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard_index }} | tee test_output.log
             
             TEST_EXIT_CODE=${PIPESTATUS[0]}
             
