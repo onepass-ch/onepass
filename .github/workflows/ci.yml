@@ -305,6 +305,7 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
+            #!/bin/bash
             set -e
             
             echo "════════════════════════════════════════════════════════════"

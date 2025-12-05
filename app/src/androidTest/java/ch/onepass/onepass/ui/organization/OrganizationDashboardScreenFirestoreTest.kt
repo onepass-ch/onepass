@@ -10,6 +10,7 @@ import ch.onepass.onepass.ui.theme.OnePassTheme
 import ch.onepass.onepass.utils.FirebaseEmulator
 import ch.onepass.onepass.utils.FirestoreTestBase
 import java.util.*
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -128,7 +129,7 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
 
     val members = mapOf(userId to OrganizationRole.OWNER, staffId to OrganizationRole.STAFF)
 
-    createAndLoadDashboard(members = members)
+    val (_, viewModel) = createAndLoadDashboard(members = members)
 
     composeTestRule.waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
     composeTestRule
@@ -141,6 +142,9 @@ class OrganizationDashboardScreenFirestoreTest : FirestoreTestBase() {
     composeTestRule
         .onNodeWithTag(OrganizationDashboardTestTags.getStaffRemoveButtonTag(staffId))
         .performClick()
+
+    // Wait for the ViewModel state to update (ensures the remove operation completes)
+    viewModel.uiState.first { !it.staffMembers.containsKey(staffId) }
 
     // Wait until the staff item is removed from the UI
     composeTestRule.waitUntil(timeoutMillis = 5000) {
