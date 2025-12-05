@@ -124,6 +124,8 @@ class FeedScreenTest {
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TOP_BAR).assertIsDisplayed()
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertIsDisplayed()
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_LOCATION).assertIsDisplayed()
+    // Check for new favorites button
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.FAVORITES_BUTTON).assertIsDisplayed()
   }
 
   @Test
@@ -400,6 +402,32 @@ class FeedScreenTest {
 
     // Verify callback invocation
     assertTrue(notificationClicked)
+  }
+
+  @Test
+  fun feedScreen_favoritesButton_togglesMode_andUpdatesTitle() {
+    val repo = MockEventRepository(emptyList())
+    val vm = FeedViewModel(repo, mockUserRepository, mockAuth)
+
+    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = vm) } }
+
+    composeTestRule.waitForIdle()
+
+    // Initial state: Welcome
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("WELCOME")
+
+    // Click favorites
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.FAVORITES_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+
+    // Title should change
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("FAVORITES")
+
+    // Click again to toggle back
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.FAVORITES_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("WELCOME")
   }
 
   @Test
