@@ -12,7 +12,6 @@ import java.util.Locale
  * @property description Short description of the organization's purpose or activity.
  * @property ownerId User ID of the organization owner.
  * @property status Current lifecycle status of the organization.
- * @property members Map of user IDs to their member information.
  * @property verified Whether the organization has been verified by an admin.
  * @property profileImageUrl Optional URL to the organization's profile image.
  * @property coverImageUrl Optional URL to the organization's cover/banner image.
@@ -35,7 +34,6 @@ data class Organization(
     val description: String = "",
     val ownerId: String = "",
     val status: OrganizationStatus = OrganizationStatus.PENDING,
-    val members: Map<String, OrganizationMember> = emptyMap(),
     val verified: Boolean = false,
     val profileImageUrl: String? = null,
     val coverImageUrl: String? = null,
@@ -51,7 +49,14 @@ data class Organization(
     val followerCount: Int = 0,
     val averageRating: Float = 0f,
     @ServerTimestamp val createdAt: Timestamp? = null,
-    @ServerTimestamp val updatedAt: Timestamp? = null
+    @ServerTimestamp val updatedAt: Timestamp? = null,
+
+    // Stripe Connect integration for payment processing
+    val stripeConnectedAccountId: String? = null, // Stripe Connect account ID
+    val stripeAccountStatus: String? = null, // "incomplete", "complete", or "error"
+    val stripeChargesEnabled: Boolean = false, // Can accept payments
+    val stripePayoutsEnabled: Boolean = false, // Can receive payouts
+    val stripeAccountError: String? = null // Error message if account creation failed
 ) {
   /** Returns organization name in lowercase for case-insensitive searching. */
   val nameLower: String
@@ -61,27 +66,10 @@ data class Organization(
   val isActive: Boolean
     get() = status == OrganizationStatus.ACTIVE
 
-  /** Returns the total number of members in the organization. */
-  val memberCount: Int
-    get() = members.size
-
   /** Returns the number of events created by this organization. */
   val eventCount: Int
     get() = eventIds.size
 }
-
-/**
- * Represents a member of an organization.
- *
- * @property role Role assigned within the organization (e.g., OWNER, MEMBER).
- * @property joinedAt Timestamp when the member joined.
- * @property assignedEvents List of event IDs this member is specifically assigned to help manage.
- */
-data class OrganizationMember(
-    val role: OrganizationRole = OrganizationRole.MEMBER,
-    @ServerTimestamp val joinedAt: Timestamp? = null,
-    val assignedEvents: List<String> = emptyList()
-)
 
 /**
  * Represents an invitation to join an organization.

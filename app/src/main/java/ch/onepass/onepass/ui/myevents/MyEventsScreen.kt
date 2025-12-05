@@ -135,7 +135,7 @@ fun MyEventsContent(userQrData: String, viewModel: MyEventsViewModel = viewModel
           modifier = Modifier.fillMaxWidth().weight(1f),
           contentPadding = PaddingValues(16.dp),
           verticalArrangement = Arrangement.spacedBy(16.dp)) {
-            items(items = tickets, key = { it.title + it.dateTime }) { ticket ->
+            items(items = tickets, key = { it.ticketId }) { ticket ->
               TicketComponent(
                   title = ticket.title,
                   status = ticket.status,

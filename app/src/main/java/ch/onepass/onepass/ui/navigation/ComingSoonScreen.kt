@@ -14,6 +14,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ch.onepass.onepass.R
 
+/**
+ * A simple "Coming Soon" screen to indicate that a feature is not yet available.
+ *
+ * @param onBack Lambda to be invoked when the back button is clicked.
+ */
 @Composable
 fun ComingSoonScreen(onBack: () -> Unit) {
   Surface(

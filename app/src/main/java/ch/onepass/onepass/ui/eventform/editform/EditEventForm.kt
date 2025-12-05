@@ -6,7 +6,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,6 +18,8 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.eventform.EventFormFields
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
 
@@ -39,6 +40,15 @@ object EditEventFormTestTags {
   const val ERROR_DIALOG_OK_BUTTON = "edit_error_dialog_ok_button"
   const val BACK_BUTTON = "edit_back_button"
 }
+
+val fieldTestTags =
+    mapOf(
+        "title" to EditEventFormTestTags.TITLE_FIELD,
+        "description" to EditEventFormTestTags.DESCRIPTION_FIELD,
+        "time" to EditEventFormTestTags.TIME_FIELD,
+        "date" to EditEventFormTestTags.DATE_FIELD,
+        "location" to EditEventFormTestTags.LOCATION_FIELD,
+        "tickets" to EditEventFormTestTags.TICKETS_FIELD)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -101,48 +111,20 @@ fun EditEventForm(
   val uiState by viewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
 
-  // Load event when composable is first displayed
   LaunchedEffect(eventId) { viewModel.loadEvent(eventId) }
 
   LaunchedEffect(uiState) {
     when (uiState) {
-      is EditEventUiState.Success -> {
-        onEventUpdated()
-        // Don't reset form after update - user might want to stay on page
-      }
-      is EditEventUiState.Error -> {
-        // Error state handled in UI, can be cleared by viewModel
-      }
+      is EditEventUiState.Success -> onEventUpdated()
       else -> {}
     }
   }
 
-  val fieldTestTags =
-      mapOf(
-          "title" to EditEventFormTestTags.TITLE_FIELD,
-          "description" to EditEventFormTestTags.DESCRIPTION_FIELD,
-          "time" to EditEventFormTestTags.TIME_FIELD,
-          "date" to EditEventFormTestTags.DATE_FIELD,
-          "location" to EditEventFormTestTags.LOCATION_FIELD,
-          "tickets" to EditEventFormTestTags.TICKETS_FIELD)
-
-  Scaffold(
-      modifier = Modifier.testTag(EditEventFormTestTags.SCREEN),
-      topBar = {
-        TopAppBar(
-            title = { Text(text = "Edit Event", color = colorResource(id = R.color.white)) },
-            navigationIcon = {
-              IconButton(
-                  onClick = onNavigateBack,
-                  modifier = Modifier.testTag(EditEventFormTestTags.BACK_BUTTON)) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = colorResource(id = R.color.white))
-                  }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = DefaultBackground))
-      }) { padding ->
+  BackNavigationScaffold(
+      TopBarConfig(title = "Edit Event", backButtonTestTag = EditEventFormTestTags.BACK_BUTTON),
+      onBack = onNavigateBack,
+      containerColor = DefaultBackground,
+      modifier = Modifier.testTag(EditEventFormTestTags.SCREEN)) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
           when (uiState) {
             is EditEventUiState.Loading -> {
@@ -187,11 +169,11 @@ fun EditEventForm(
                           .testTag(EditEventFormTestTags.FORM_COLUMN)) {
                     EventFormFields(viewModel = viewModel, fieldTestTags = fieldTestTags)
 
-                    // Update Button
                     UpdateEventButton(
                         onClick = { viewModel.updateEvent() },
                         isLoading = uiState is EditEventUiState.Updating,
                         modifier = Modifier.testTag(EditEventFormTestTags.UPDATE_BUTTON))
+
                     Spacer(modifier = Modifier.height(24.dp))
                   }
             }
@@ -199,7 +181,7 @@ fun EditEventForm(
         }
       }
 
-  // Show error dialog if update failed
+  // Error dialog on update failure
   if (uiState is EditEventUiState.Error) {
     AlertDialog(
         onDismissRequest = { viewModel.clearError() },

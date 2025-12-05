@@ -44,22 +44,6 @@ class OrganizationRepositoryAdvancedTest : FirestoreTestBase() {
   }
 
   @Test
-  fun canCreateOrganizationWithMultipleMembers() = runTest {
-    val org =
-        OrganizationTestData.createOrganizationWithMembers(
-            ownerId = userId, memberIds = listOf("member1", "member2", "member3"))
-
-    val result = orgRepository.createOrganization(org)
-    assertTrue("Create organization should succeed", result.isSuccess)
-
-    val orgId = result.getOrNull()!!
-    val retrievedOrg = orgRepository.getOrganizationById(orgId).first()
-
-    assertNotNull("Retrieved org should not be null", retrievedOrg)
-    assertEquals("Should have 3 members", 3, retrievedOrg?.memberCount)
-  }
-
-  @Test
   fun canCreateOrganizationWithEvents() = runTest {
     val org = OrganizationTestData.createOrganizationWithEvents(ownerId = userId, eventCount = 5)
 
@@ -193,58 +177,6 @@ class OrganizationRepositoryAdvancedTest : FirestoreTestBase() {
   }
 
   @Test
-  fun addMemberWithDifferentRoles() = runTest {
-    val testOrg = OrganizationTestData.createTestOrganization(ownerId = userId)
-    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
-
-    orgRepository.addMember(orgId, "member1", OrganizationRole.MEMBER)
-    orgRepository.addMember(orgId, "staff1", OrganizationRole.STAFF)
-    orgRepository.addMember(orgId, "owner2", OrganizationRole.OWNER)
-
-    val updatedOrg = orgRepository.getOrganizationById(orgId).first()
-
-    assertEquals("Should have 3 members", 3, updatedOrg?.memberCount)
-    assertEquals(
-        "member1 should have MEMBER role",
-        OrganizationRole.MEMBER,
-        updatedOrg?.members?.get("member1")?.role)
-    assertEquals(
-        "staff1 should have STAFF role",
-        OrganizationRole.STAFF,
-        updatedOrg?.members?.get("staff1")?.role)
-    assertEquals(
-        "owner2 should have OWNER role",
-        OrganizationRole.OWNER,
-        updatedOrg?.members?.get("owner2")?.role)
-  }
-
-  @Test
-  fun canUpdateMemberFromMemberToOwner() = runTest {
-    val memberId = "member-to-promote"
-    val members =
-        mapOf(memberId to OrganizationTestData.createTestMember(role = OrganizationRole.MEMBER))
-    val testOrg = OrganizationTestData.createTestOrganization(ownerId = userId, members = members)
-    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
-
-    orgRepository.updateMemberRole(orgId, memberId, OrganizationRole.OWNER)
-
-    val updatedOrg = orgRepository.getOrganizationById(orgId).first()
-    assertEquals(
-        "Member should be promoted to OWNER",
-        OrganizationRole.OWNER,
-        updatedOrg?.members?.get(memberId)?.role)
-  }
-
-  @Test
-  fun removingNonExistentMemberDoesNotFail() = runTest {
-    val testOrg = OrganizationTestData.createTestOrganization(ownerId = userId)
-    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
-
-    val removeResult = orgRepository.removeMember(orgId, "non-existent-member")
-    assertTrue("Remove should not fail for non-existent member", removeResult.isSuccess)
-  }
-
-  @Test
   fun canCreateMultipleInvitationsForSameOrganization() = runTest {
     val testOrg = OrganizationTestData.createTestOrganization(ownerId = userId)
     val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
@@ -305,16 +237,6 @@ class OrganizationRepositoryAdvancedTest : FirestoreTestBase() {
   }
 
   @Test
-  fun organizationWithNoMembersHasZeroMemberCount() = runTest {
-    val testOrg =
-        OrganizationTestData.createTestOrganization(ownerId = userId, members = emptyMap())
-    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
-
-    val retrievedOrg = orgRepository.getOrganizationById(orgId).first()
-    assertEquals("Should have 0 members", 0, retrievedOrg?.memberCount)
-  }
-
-  @Test
   fun canHandleOrganizationWithMaximumFields() = runTest {
     val fullOrg =
         OrganizationTestData.createTestOrganization(
@@ -358,23 +280,6 @@ class OrganizationRepositoryAdvancedTest : FirestoreTestBase() {
 
     val retrievedOrg = orgRepository.getOrganizationById(orgId).first()
     assertEquals("Should have 0 events", 0, retrievedOrg?.eventCount)
-  }
-
-  @Test
-  fun updateMemberRoleFailsForNonExistentMember() = runTest {
-    val testOrg = OrganizationTestData.createTestOrganization(ownerId = userId)
-    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
-
-    val updateResult =
-        orgRepository.updateMemberRole(orgId, "non-existent-member", OrganizationRole.STAFF)
-    assertTrue("Update should fail for non-existent member", updateResult.isFailure)
-  }
-
-  @Test
-  fun updateMemberRoleFailsForNonExistentOrganization() = runTest {
-    val updateResult =
-        orgRepository.updateMemberRole("non-existent-org", "member-id", OrganizationRole.STAFF)
-    assertTrue("Update should fail for non-existent organization", updateResult.isFailure)
   }
 
   @Test
@@ -446,36 +351,6 @@ class OrganizationRepositoryAdvancedTest : FirestoreTestBase() {
     val suspendedOrg = orgRepository.getOrganizationById(orgId).first()
     assertEquals("Status should be SUSPENDED", OrganizationStatus.SUSPENDED, suspendedOrg?.status)
     assertFalse("isActive should be false", suspendedOrg?.isActive ?: true)
-  }
-
-  @Test
-  fun addingMultipleMembersIncreasesCount() = runTest {
-    val testOrg = OrganizationTestData.createTestOrganization(ownerId = userId)
-    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
-
-    orgRepository.addMember(orgId, "member1", OrganizationRole.MEMBER)
-    orgRepository.addMember(orgId, "member2", OrganizationRole.MEMBER)
-    orgRepository.addMember(orgId, "member3", OrganizationRole.STAFF)
-
-    val updatedOrg = orgRepository.getOrganizationById(orgId).first()
-    assertEquals("Should have 3 members", 3, updatedOrg?.memberCount)
-  }
-
-  @Test
-  fun removingMembersDecreasesCount() = runTest {
-    val members =
-        mapOf(
-            "member1" to OrganizationTestData.createTestMember(),
-            "member2" to OrganizationTestData.createTestMember(),
-            "member3" to OrganizationTestData.createTestMember())
-    val testOrg = OrganizationTestData.createTestOrganization(ownerId = userId, members = members)
-    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
-
-    orgRepository.removeMember(orgId, "member1")
-    orgRepository.removeMember(orgId, "member2")
-
-    val updatedOrg = orgRepository.getOrganizationById(orgId).first()
-    assertEquals("Should have 1 member remaining", 1, updatedOrg?.memberCount)
   }
 
   @Test
@@ -606,18 +481,6 @@ class OrganizationRepositoryAdvancedTest : FirestoreTestBase() {
 
     val deleteResult = orgRepository.deleteInvitation(inviteId)
     assertTrue("Delete invitation should succeed", deleteResult.isSuccess)
-  }
-
-  @Test
-  fun canGetOrganizationsByMember() = runTest {
-    val memberId = "member-user-123"
-    val members = mapOf(memberId to OrganizationTestData.createTestMember())
-    val testOrg = OrganizationTestData.createTestOrganization(ownerId = userId, members = members)
-    val orgId = orgRepository.createOrganization(testOrg).getOrNull()!!
-
-    val memberOrgs = orgRepository.getOrganizationsByMember(memberId).first()
-    assertEquals("Should find 1 organization for member", 1, memberOrgs.size)
-    assertEquals("Organization ID should match", orgId, memberOrgs.first().id)
   }
 
   // ===== NEW TESTS FOR IMAGE FUNCTIONALITY =====

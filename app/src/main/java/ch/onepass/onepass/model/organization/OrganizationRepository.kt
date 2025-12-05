@@ -45,14 +45,6 @@ interface OrganizationRepository {
   fun getOrganizationsByOwner(ownerId: String): Flow<List<Organization>>
 
   /**
-   * Retrieves all organizations where a user is a member.
-   *
-   * @param userId The user's unique ID.
-   * @return A [Flow] emitting a list of organizations the user belongs to.
-   */
-  fun getOrganizationsByMember(userId: String): Flow<List<Organization>>
-
-  /**
    * Retrieves all organizations with a specific status.
    *
    * @param status The [OrganizationStatus] to filter by.
@@ -75,43 +67,6 @@ interface OrganizationRepository {
    * @return A [Flow] emitting a list of verified organizations.
    */
   fun getVerifiedOrganizations(): Flow<List<Organization>>
-
-  /**
-   * Adds a member to an organization.
-   *
-   * @param organizationId The organization's ID.
-   * @param userId The user's ID to add as a member.
-   * @param role The role to assign to the member.
-   * @return A [Result] indicating success or failure.
-   */
-  suspend fun addMember(
-      organizationId: String,
-      userId: String,
-      role: OrganizationRole
-  ): Result<Unit>
-
-  /**
-   * Removes a member from an organization.
-   *
-   * @param organizationId The organization's ID.
-   * @param userId The user's ID to remove.
-   * @return A [Result] indicating success or failure.
-   */
-  suspend fun removeMember(organizationId: String, userId: String): Result<Unit>
-
-  /**
-   * Updates a member's role within an organization.
-   *
-   * @param organizationId The organization's ID.
-   * @param userId The user's ID.
-   * @param newRole The new role to assign.
-   * @return A [Result] indicating success or failure.
-   */
-  suspend fun updateMemberRole(
-      organizationId: String,
-      userId: String,
-      newRole: OrganizationRole
-  ): Result<Unit>
 
   /**
    * Creates an invitation to join an organization.

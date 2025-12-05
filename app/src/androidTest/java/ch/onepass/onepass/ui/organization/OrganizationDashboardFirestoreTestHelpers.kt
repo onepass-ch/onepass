@@ -9,10 +9,13 @@ import ch.onepass.onepass.model.event.PricingTier
 import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.model.membership.MembershipRepository
 import ch.onepass.onepass.model.organization.*
+import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.utils.UI_WAIT_TIMEOUT
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.GeoPoint
 import java.util.*
+import kotlinx.coroutines.tasks.await
 
 /** Helper class for Firestore integration tests. Provides common setup and utility functions. */
 object FirestoreTestHelper {
@@ -27,7 +30,6 @@ object FirestoreTestHelper {
           description = "Test Description",
           ownerId = ownerId,
           status = OrganizationStatus.ACTIVE,
-          members = emptyMap(), // Decoupled from legacy members field
           verified = false,
           followerCount = 1000,
           averageRating = 4.0f)
@@ -59,6 +61,22 @@ object FirestoreTestHelper {
     members.forEach { (userId, role) ->
       membershipRepository.addMembership(userId, organizationId, role)
     }
+  }
+
+  /** Creates a user in Firestore to ensure profile fetching works. */
+  suspend fun createFirestoreUser(
+      userId: String,
+      displayName: String = "User $userId",
+      email: String = "$userId@example.com",
+      db: FirebaseFirestore = FirebaseFirestore.getInstance()
+  ) {
+    val user =
+        User(
+            uid = userId, // Note: @Exclude means this won't be in the doc body, which matches
+            // Firestore behavior
+            displayName = displayName,
+            email = email)
+    db.collection("users").document(userId).set(user).await()
   }
 
   fun ComposeTestRule.waitForTag(tag: String) {

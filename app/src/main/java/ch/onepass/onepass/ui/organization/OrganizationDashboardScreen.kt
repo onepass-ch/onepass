@@ -5,10 +5,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -16,8 +16,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -27,13 +30,15 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventStatus
-import ch.onepass.onepass.model.organization.OrganizationMember
 import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
-import ch.onepass.onepass.ui.theme.DefaultBackground
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.TextSecondary
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import java.util.Locale
 
 /** Test tags for identifying composables in UI tests for the Organization Dashboard screen. */
@@ -92,7 +97,6 @@ object OrganizationDashboardTestTags {
  * @param viewModel The [OrganizationDashboardViewModel] responsible for fetching and managing the
  *   dashboard data.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrganizationDashboardScreen(
     organizationId: String,
@@ -109,33 +113,13 @@ fun OrganizationDashboardScreen(
 
   LaunchedEffect(organizationId) { viewModel.loadOrganization(organizationId) }
 
-  Scaffold(
-      modifier = modifier.fillMaxSize().testTag(OrganizationDashboardTestTags.SCREEN),
-      topBar = {
-        TopAppBar(
-            title = {
-              Text(
-                  text = "DASHBOARD",
-                  style = MaterialTheme.typography.headlineMedium,
-                  fontWeight = FontWeight.Bold,
-                  modifier = Modifier.testTag(OrganizationDashboardTestTags.TITLE))
-            },
-            navigationIcon = {
-              IconButton(
-                  onClick = onNavigateBack,
-                  modifier = Modifier.testTag(OrganizationDashboardTestTags.BACK_BUTTON)) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = MaterialTheme.colorScheme.onSurface)
-                  }
-            },
-            colors =
-                TopAppBarDefaults.topAppBarColors(
-                    containerColor = DefaultBackground,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface))
-      },
-      containerColor = DefaultBackground) { paddingValues ->
+  BackNavigationScaffold(
+      TopBarConfig(
+          title = "DASHBOARD",
+          titleTestTag = OrganizationDashboardTestTags.TITLE,
+          backButtonTestTag = OrganizationDashboardTestTags.BACK_BUTTON),
+      onBack = onNavigateBack,
+      modifier = modifier.testTag(OrganizationDashboardTestTags.SCREEN)) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
           when {
             uiState.isLoading -> {
@@ -512,14 +496,14 @@ private fun EventCard(
  * Displays the "Manage Staff" section, including the "Add new staff" button and the expandable
  * "Staff list" dropdown.
  *
- * @param staffMembers A map of user IDs to [OrganizationMember] objects.
+ * @param staffMembers List of staff members with their profiles.
  * @param currentUserRole The role of the currently logged-in user.
  * @param onAddStaff Callback for the "Add new staff" button.
  * @param onRemoveStaff Callback for removing a staff member.
  */
 @Composable
 private fun ManageStaffSection(
-    staffMembers: Map<String, OrganizationMember>,
+    staffMembers: List<StaffMemberUiState>,
     currentUserRole: OrganizationRole?,
     onAddStaff: () -> Unit,
     onRemoveStaff: (String) -> Unit
@@ -592,15 +576,11 @@ private fun ManageStaffSection(
                         color = TextSecondary,
                         modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally))
                   } else {
-                    staffMembers.forEach { (userId, member) ->
+                    staffMembers.forEach { memberState ->
                       StaffItem(
-                          userId = userId,
-                          email = userId, // In real implementation, fetch from user repository once
-                          // implemented (current user repository doesn't offer such
-                          // methods)
-                          role = member.role,
-                          canRemove = canManageStaff && member.role != OrganizationRole.OWNER,
-                          onRemove = { onRemoveStaff(userId) })
+                          memberState = memberState,
+                          canRemove = canManageStaff && memberState.role != OrganizationRole.OWNER,
+                          onRemove = { onRemoveStaff(memberState.userId) })
                     }
                   }
                 }
@@ -612,35 +592,82 @@ private fun ManageStaffSection(
 /**
  * Displays a single staff member in the "Staff list".
  *
- * @param userId The unique ID of the staff member.
- * @param email The email (or display name) of the staff member.
- * @param role The [OrganizationRole] of the staff member.
+ * @param memberState The UI state of the staff member.
  * @param canRemove Whether the current user has permission to remove this member.
  * @param onRemove Callback invoked when the remove button is clicked.
  */
 @Composable
-private fun StaffItem(
-    userId: String,
-    email: String,
-    role: OrganizationRole,
-    canRemove: Boolean,
-    onRemove: () -> Unit
-) {
+private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRemove: () -> Unit) {
+  if (memberState.isLoading || memberState.userProfile == null) {
+    SkeletonStaffItem(userId = memberState.userId)
+    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+    return
+  }
+
+  val user = memberState.userProfile
+  val role = memberState.role
+  val initials =
+      remember(user.displayName) {
+        if (user.displayName.isBlank()) "?" else user.displayName.take(1).uppercase(Locale.ROOT)
+      }
+
   Row(
       modifier =
           Modifier.fillMaxWidth()
               .padding(16.dp)
-              .testTag(OrganizationDashboardTestTags.getStaffItemTag(userId)),
+              .testTag(OrganizationDashboardTestTags.getStaffItemTag(memberState.userId)),
       horizontalArrangement = Arrangement.SpaceBetween,
       verticalAlignment = Alignment.CenterVertically) {
-        Column(modifier = Modifier.weight(1f)) {
-          Text(
-              text = email,
-              style = MaterialTheme.typography.bodyMedium,
-              color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+          // Avatar
+          Box(
+              modifier =
+                  Modifier.size(40.dp)
+                      .clip(CircleShape)
+                      .background(MaterialTheme.colorScheme.primaryContainer),
+              contentAlignment = Alignment.Center) {
+                if (user.avatarUrl.isNullOrBlank()) {
+                  Text(
+                      text = initials,
+                      style =
+                          MaterialTheme.typography.labelLarge.copy(
+                              fontWeight = FontWeight.SemiBold),
+                      color = MaterialTheme.colorScheme.onPrimaryContainer)
+                } else {
+                  SubcomposeAsyncImage(
+                      model =
+                          ImageRequest.Builder(LocalContext.current)
+                              .data(user.avatarUrl)
+                              .crossfade(true)
+                              .build(),
+                      contentDescription = "Avatar",
+                      contentScale = ContentScale.Crop,
+                      modifier = Modifier.fillMaxSize().clip(CircleShape),
+                      loading = {
+                        Box(
+                            modifier =
+                                Modifier.fillMaxSize()
+                                    .background(MaterialTheme.colorScheme.surfaceVariant))
+                      })
+                }
+              }
+
+          Spacer(modifier = Modifier.width(12.dp))
+
+          Column {
+            Text(
+                text = user.displayName.ifBlank { "Unknown User" },
+                style = MaterialTheme.typography.bodyLarge,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                text = user.email,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
+          }
         }
 
-        Spacer(modifier = Modifier.width(12.dp))
+        Spacer(modifier = Modifier.width(8.dp))
 
         Surface(
             shape = RoundedCornerShape(4.dp),
@@ -654,7 +681,7 @@ private fun StaffItem(
                   text = role.name,
                   style = MaterialTheme.typography.labelMedium,
                   color = Color.White,
-                  modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp))
+                  modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
             }
 
         if (canRemove) {
@@ -663,7 +690,9 @@ private fun StaffItem(
               onClick = onRemove,
               modifier =
                   Modifier.size(32.dp)
-                      .testTag(OrganizationDashboardTestTags.getStaffRemoveButtonTag(userId))) {
+                      .testTag(
+                          OrganizationDashboardTestTags.getStaffRemoveButtonTag(
+                              memberState.userId))) {
                 Icon(
                     painter = painterResource(id = android.R.drawable.ic_menu_close_clear_cancel),
                     contentDescription = "Remove",
@@ -674,4 +703,45 @@ private fun StaffItem(
       }
 
   HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+}
+
+@Composable
+fun SkeletonStaffItem(userId: String) {
+  Row(
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(16.dp)
+              .testTag(OrganizationDashboardTestTags.getStaffItemTag(userId)),
+      verticalAlignment = Alignment.CenterVertically) {
+
+        // Avatar Skeleton
+        Box(
+            modifier =
+                Modifier.size(40.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .testTag("skeleton_avatar_$userId"))
+
+        Spacer(modifier = Modifier.width(12.dp))
+
+        Column(modifier = Modifier.weight(1f)) {
+          // Name Skeleton
+          Box(
+              modifier =
+                  Modifier.height(16.dp)
+                      .fillMaxWidth(0.5f)
+                      .background(
+                          MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+                      .testTag("skeleton_name_$userId"))
+          Spacer(modifier = Modifier.height(4.dp))
+          // Email Skeleton
+          Box(
+              modifier =
+                  Modifier.height(12.dp)
+                      .fillMaxWidth(0.7f)
+                      .background(
+                          MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+                      .testTag("skeleton_email_$userId"))
+        }
+      }
 }

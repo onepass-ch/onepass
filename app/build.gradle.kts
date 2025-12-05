@@ -31,6 +31,16 @@ android {
         )
     }
 
+    // Get Stripe publishable key from local.properties
+    val stripePublishableKey: String? = localProperties.getProperty("STRIPE_PUBLISHABLE_KEY")
+
+    if (stripePublishableKey.isNullOrBlank()) {
+        logger.warn(
+            "⚠️ Stripe publishable key not found in local.properties. " +
+                    "Payment features will not function correctly until STRIPE_PUBLISHABLE_KEY is set."
+        )
+    }
+
     defaultConfig {
         applicationId = "ch.onepass.onepass"
         minSdk = 28
@@ -41,7 +51,8 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxToken}\"")
-        
+        buildConfigField("String", "STRIPE_PUBLISHABLE_KEY", "\"${stripePublishableKey ?: ""}\"")
+
         // Enable multidex for handling large number of methods (Compose UI, etc.)
         multiDexEnabled = true
     }
@@ -112,21 +123,28 @@ android {
         resources.setSrcDirs(emptyList<File>())
     }
 
-  signingConfigs {
-    create("release") {
-      storeFile = file((project.findProperty("RELEASE_STORE_FILE") as String?) ?: "keystore.jks")
-      storePassword = project.findProperty("RELEASE_STORE_PASSWORD") as String?
-      keyAlias      = project.findProperty("RELEASE_KEY_ALIAS") as String?
-      keyPassword   = project.findProperty("RELEASE_KEY_PASSWORD") as String?
-      storeType     = (project.findProperty("RELEASE_STORE_TYPE") as String?) ?: "pkcs12"
-    }
-  }
+    val keystorePath = (project.findProperty("RELEASE_STORE_FILE") as String?) ?: "keystore.jks"
+    val keystoreFile = file(keystorePath)
 
-  buildTypes {
-    getByName("release") {
-      signingConfig = signingConfigs.getByName("release")
+    if (keystoreFile.exists()) {
+        signingConfigs {
+            create("release") {
+                storeFile = keystoreFile
+                storePassword = project.findProperty("RELEASE_STORE_PASSWORD") as String?
+                keyAlias      = project.findProperty("RELEASE_KEY_ALIAS") as String?
+                keyPassword   = project.findProperty("RELEASE_KEY_PASSWORD") as String?
+                storeType     = (project.findProperty("RELEASE_STORE_TYPE") as String?) ?: "pkcs12"
+            }
+        }
+
+        buildTypes {
+            getByName("release") {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
+    } else {
+        logger.warn("⚠️ Keystore file not found at: $keystorePath. Release builds will not be signed.")
     }
-  }
 }
 
 sonar {
@@ -159,7 +177,7 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 dependencies {
     // Multidex support for handling large number of methods
     implementation("androidx.multidex:multidex:2.0.1")
-    
+
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat)
@@ -167,7 +185,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
 
     // ML Kit Barcode Scanning
-    implementation("com.google.mlkit:barcode-scanning:17.3.0")
+    implementation(libs.mlkit.barcode.scanning)
 
     // CameraX
 
@@ -177,6 +195,11 @@ dependencies {
     implementation(libs.camerax.view)
 
 
+    // ------------- Datastore ------------------
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
+    testImplementation("androidx.datastore:datastore-preferences:1.1.1")
+    androidTestImplementation("androidx.datastore:datastore-preferences:1.1.1")
+
     // ------------- Firebase ------------------
     implementation(libs.firebase.functions.ktx)
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
@@ -185,6 +208,8 @@ dependencies {
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.database.ktx)
     implementation(libs.firebase.storage.ktx)
+    implementation(libs.firebase.appcheck.debug)
+    implementation(libs.firebase.appcheck.ktx)
     androidTestImplementation(libs.androidx.navigation.testing)
 
     // ------------- Jetpack Compose ------------------
@@ -231,6 +256,9 @@ dependencies {
 
     // ---------- Navigation --------
     implementation("androidx.navigation:navigation-compose:2.6.0")
+
+    // ---------- Stripe ------------
+    implementation(libs.stripe.android)
 
     // ---------- Google Sign-In (Credential Manager GoogleID) ------------
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.0")

@@ -67,17 +67,17 @@ class EditOrganizationScreenTest {
 
     val tags =
         listOf(
-            EditOrganizationTestTags.NAME_FIELD,
-            EditOrganizationTestTags.DESCRIPTION_FIELD,
-            EditOrganizationTestTags.EMAIL_FIELD,
-            EditOrganizationTestTags.PHONE_FIELD,
-            EditOrganizationTestTags.WEBSITE_FIELD,
-            EditOrganizationTestTags.INSTAGRAM_FIELD,
-            EditOrganizationTestTags.FACEBOOK_FIELD,
-            EditOrganizationTestTags.TIKTOK_FIELD,
-            EditOrganizationTestTags.ADDRESS_FIELD,
-            EditOrganizationTestTags.SUBMIT_BUTTON,
-            EditOrganizationTestTags.PREFIX_DROPDOWN)
+            OrganizationTestTags.NAME_FIELD,
+            OrganizationTestTags.DESCRIPTION_FIELD,
+            OrganizationTestTags.EMAIL_FIELD,
+            OrganizationTestTags.PHONE_FIELD,
+            OrganizationTestTags.WEBSITE_FIELD,
+            OrganizationTestTags.INSTAGRAM_FIELD,
+            OrganizationTestTags.FACEBOOK_FIELD,
+            OrganizationTestTags.TIKTOK_FIELD,
+            OrganizationTestTags.ADDRESS_FIELD,
+            OrganizationTestTags.SUBMIT_BUTTON,
+            OrganizationTestTags.PREFIX_DROPDOWN)
 
     tags.forEach { tag -> composeTestRule.onNodeWithTag(tag).performScrollTo().assertIsDisplayed() }
   }
@@ -92,47 +92,47 @@ class EditOrganizationScreenTest {
     }
 
     composeTestRule
-        .onNodeWithTag(EditOrganizationTestTags.NAME_FIELD)
+        .onNodeWithTag(OrganizationTestTags.NAME_FIELD)
         .performScrollTo()
         .performTextInput("Test Org")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizationTestTags.DESCRIPTION_FIELD)
+        .onNodeWithTag(OrganizationTestTags.DESCRIPTION_FIELD)
         .performScrollTo()
         .performTextInput("Cool description")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizationTestTags.EMAIL_FIELD)
+        .onNodeWithTag(OrganizationTestTags.EMAIL_FIELD)
         .performScrollTo()
         .performTextInput("test@email.com")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizationTestTags.WEBSITE_FIELD)
+        .onNodeWithTag(OrganizationTestTags.WEBSITE_FIELD)
         .performScrollTo()
         .performTextInput("example.com")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizationTestTags.INSTAGRAM_FIELD)
+        .onNodeWithTag(OrganizationTestTags.INSTAGRAM_FIELD)
         .performScrollTo()
         .performTextInput("test_insta")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizationTestTags.FACEBOOK_FIELD)
+        .onNodeWithTag(OrganizationTestTags.FACEBOOK_FIELD)
         .performScrollTo()
         .performTextInput("test_fb")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizationTestTags.TIKTOK_FIELD)
+        .onNodeWithTag(OrganizationTestTags.TIKTOK_FIELD)
         .performScrollTo()
         .performTextInput("test_tiktok")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizationTestTags.ADDRESS_FIELD)
+        .onNodeWithTag(OrganizationTestTags.ADDRESS_FIELD)
         .performScrollTo()
         .performTextInput("123 Test Street")
 
     composeTestRule
-        .onNodeWithTag(EditOrganizationTestTags.PREFIX_DROPDOWN)
+        .onNodeWithTag(OrganizationTestTags.PREFIX_DROPDOWN)
         .performScrollTo()
         .performClick()
 
@@ -142,7 +142,7 @@ class EditOrganizationScreenTest {
         .performClick()
 
     composeTestRule
-        .onNodeWithTag(EditOrganizationTestTags.PHONE_FIELD)
+        .onNodeWithTag(OrganizationTestTags.PHONE_FIELD)
         .performScrollTo()
         .performTextInput("123456789")
   }
@@ -157,7 +157,7 @@ class EditOrganizationScreenTest {
     }
 
     composeTestRule
-        .onNodeWithTag(EditOrganizationTestTags.PREFIX_DROPDOWN)
+        .onNodeWithTag(OrganizationTestTags.PREFIX_DROPDOWN)
         .performScrollTo()
         .performClick()
 
