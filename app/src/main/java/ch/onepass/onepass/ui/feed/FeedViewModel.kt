@@ -9,7 +9,6 @@ import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
-import ch.onepass.onepass.utils.EventFilteringUtils.applyFiltersLocally
 import com.google.firebase.auth.FirebaseAuth
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -27,6 +26,7 @@ import kotlinx.coroutines.withTimeout
  * @property isLoading Whether data is currently being fetched.
  * @property error Error message if fetching failed, null otherwise.
  * @property location Current location name to display.
+ * @property isShowingFavorites Whether the feed is currently showing only liked events.
  */
 data class FeedUIState(
     val events: List<Event> = emptyList(),
@@ -35,6 +35,7 @@ data class FeedUIState(
     val error: String? = null,
     val location: String = "SWITZERLAND",
     val showFilterDialog: Boolean = false,
+    val isShowingFavorites: Boolean = false
 )
 
 /**
@@ -58,6 +59,8 @@ open class FeedViewModel(
     private const val TAG_MATCH_WEIGHT = 2.0
     private const val RECENCY_BOOST = 5.0
     private const val USER_AFFINITY_BOOST = 10.0
+    private const val URGENCY_BOOST = 8.0
+    private const val EXPIRATION_PENALTY = 50.0
   }
 
   private val _uiState = MutableStateFlow(FeedUIState())
@@ -78,9 +81,11 @@ open class FeedViewModel(
     if (uid != null) {
       viewModelScope.launch {
         userRepository.getFavoriteEvents(uid).collect { likedIds ->
-          // Just update the liked events, don't recalculate recommendations
-          // Recommendations will only update on manual refresh
           _currentLikedEvents.value = likedIds
+          // If we are in favorites mode, we must update the list immediately when likes change
+          if (_uiState.value.isShowingFavorites) {
+            recalculateRecommendations()
+          }
         }
       }
     }
@@ -96,8 +101,9 @@ open class FeedViewModel(
     viewModelScope.launch {
       try {
         repository.getEventsByStatus(EventStatus.PUBLISHED).collect { events ->
-          // Store all events
-          _allEvents.value = events
+          // Filter out past and sold out events before storing
+          val activeEvents = filterActiveEvents(events)
+          _allEvents.value = activeEvents
 
           // Calculate recommendations and apply filters
           recalculateRecommendations()
@@ -106,6 +112,33 @@ open class FeedViewModel(
         _uiState.update { it.copy(isLoading = false, error = e.message ?: "Failed to load events") }
       }
     }
+  }
+
+  /**
+   * Filters events to only show those that are:
+   * - Not yet ended (based on Firebase server timestamp)
+   * - Not sold out
+   */
+  private fun filterActiveEvents(events: List<Event>): List<Event> {
+    // Use Firebase server timestamp for consistency across all devices
+    val nowSeconds = Timestamp.now().seconds
+
+    return events.filter { event ->
+      // Check if event has ended
+      val endTimeSeconds = event.endTime?.seconds ?: Long.MAX_VALUE
+      val hasNotEnded = endTimeSeconds > nowSeconds
+
+      // Check if event is not sold out
+      val isNotSoldOut = !event.isSoldOut
+
+      hasNotEnded && isNotSoldOut
+    }
+  }
+
+  /** Toggles between the main recommendation feed and the favorites feed. */
+  fun toggleFavoritesMode() {
+    _uiState.update { it.copy(isShowingFavorites = !it.isShowingFavorites) }
+    recalculateRecommendations()
   }
 
   /**
@@ -120,26 +153,40 @@ open class FeedViewModel(
     }
 
     val likedIds = _currentLikedEvents.value
-    val recommendedEvents = recommendEvents(currentEvents, likedIds)
-    val filteredEvents = applyFiltersLocally(recommendedEvents, _currentFilters)
-    val limitedEvents = filteredEvents.take(LOADED_EVENTS_LIMIT)
+    val isShowingFavorites = _uiState.value.isShowingFavorites
 
-    _uiState.update { it.copy(events = limitedEvents, isLoading = false, error = null) }
+    val eventsToShow: List<Event> =
+        if (isShowingFavorites) {
+          // In Favorites Mode: Show only liked events, apply filters, sorted by start time
+          val likedEvents = currentEvents.filter { it.eventId in likedIds }
+          applyFiltersLocally(likedEvents, _currentFilters).sortedBy {
+            it.startTime?.seconds ?: Long.MAX_VALUE
+          }
+        } else {
+          // In Main Feed: Exclude liked events, apply recommendations
+          val unlikedEvents = currentEvents.filter { it.eventId !in likedIds }
+          val recommendedEvents = recommendEvents(unlikedEvents, likedIds)
+          val filteredEvents = applyFiltersLocally(recommendedEvents, _currentFilters)
+          filteredEvents.take(LOADED_EVENTS_LIMIT)
+        }
+
+    _uiState.update { it.copy(events = eventsToShow, isLoading = false, error = null) }
   }
 
   /**
    * Content-Based Recommender Algorithm. Sorts events based on tag relevance to the user's liked
-   * history and recency.
+   * history, recency, and urgency.
+   *
+   * Uses Firebase server timestamp to avoid client-side time manipulation.
+   *
+   * Logic:
+   * - Boosts events starting in < 24h (Urgency)
+   * - Penalizes events ending in < 2h (Expiration Closing)
    */
-  fun recommendEvents(allEvents: List<Event>, userLikedEventIds: Set<String>): List<Event> {
-    // If user has no likes, return sorted by recency
-    if (userLikedEventIds.isEmpty()) {
-      return allEvents.sortedByDescending { event -> event.createdAt?.seconds ?: 0L }
-    }
-
-    // 1. Build User Profile (Tag Frequency Map)
-    // Find all events the user has liked that are currently in the loaded list
-    val likedEvents = allEvents.filter { it.eventId in userLikedEventIds }
+  fun recommendEvents(candidateEvents: List<Event>, userLikedEventIds: Set<String>): List<Event> {
+    // 1. Build User Profile (Tag Frequency Map) from ALL loaded events (even those filtered out)
+    val allLoadedEvents = _allEvents.value
+    val likedEvents = allLoadedEvents.filter { it.eventId in userLikedEventIds }
 
     val userInterestProfile = mutableMapOf<String, Int>()
     likedEvents.forEach { event ->
@@ -149,35 +196,53 @@ open class FeedViewModel(
       }
     }
 
+    // Use Firebase server timestamp for all time calculations
+    val nowSeconds = Timestamp.now().seconds
+    val now = Instant.ofEpochSecond(nowSeconds)
+
     // 2. Score Events
     val scoredEvents =
-        allEvents.map { event ->
+        candidateEvents.map { event ->
           var score = 0.0
 
           // A. Tag Matching Score
-          // For every tag in the event, if the user likes it, add points based on frequency
           event.tags.forEach { tag ->
             val normalizedTag = tag.lowercase().trim()
             val interestWeight = userInterestProfile[normalizedTag] ?: 0
             score += interestWeight * TAG_MATCH_WEIGHT
           }
 
-          // B. Recency Boost
-          // Give a bonus to events created in the last 7 days to keep feed fresh
           val createdAtSeconds = event.createdAt?.seconds ?: 0L
+          val startTimeSeconds = event.startTime?.seconds ?: 0L
+          val endTimeSeconds = event.endTime?.seconds ?: 0L
+
+          // B. Recency Boost (Created recently)
           if (createdAtSeconds > 0) {
             val eventDate = Instant.ofEpochSecond(createdAtSeconds)
-            val sevenDaysAgo = Instant.now().minus(7, ChronoUnit.DAYS)
-
+            val sevenDaysAgo = now.minus(7, ChronoUnit.DAYS)
             if (eventDate.isAfter(sevenDaysAgo)) {
               score += RECENCY_BOOST
             }
           }
 
-          // C. User Affinity (Explicit Like)
-          // Boost liked items to keep them visible.
-          if (event.eventId in userLikedEventIds) {
-            score += USER_AFFINITY_BOOST
+          // C. Urgency Boost (Starts within 24h)
+          if (startTimeSeconds > 0) {
+            val startDate = Instant.ofEpochSecond(startTimeSeconds)
+            val tomorrow = now.plus(24, ChronoUnit.HOURS)
+            // If it hasn't started yet but starts soon
+            if (startDate.isAfter(now) && startDate.isBefore(tomorrow)) {
+              score += URGENCY_BOOST
+            }
+          }
+
+          // D. Expiration Penalty (Ends within 2h)
+          // If it ends very soon, it's likely too late to attend
+          if (endTimeSeconds > 0) {
+            val endDate = Instant.ofEpochSecond(endTimeSeconds)
+            val twoHoursFromNow = now.plus(2, ChronoUnit.HOURS)
+            if (endDate.isAfter(now) && endDate.isBefore(twoHoursFromNow)) {
+              score -= EXPIRATION_PENALTY
+            }
           }
 
           event to score
@@ -216,8 +281,9 @@ open class FeedViewModel(
             val events = dataDeferred.await()
             delayDeferred.await()
 
-            // Store all events
-            _allEvents.value = events
+            // Filter out past and sold out events before storing
+            val activeEvents = filterActiveEvents(events)
+            _allEvents.value = activeEvents
 
             // Recalculate recommendations with current likes
             recalculateRecommendations()
