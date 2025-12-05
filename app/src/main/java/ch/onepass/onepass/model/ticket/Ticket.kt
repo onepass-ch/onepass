@@ -58,6 +58,7 @@ enum class TicketState {
  */
 fun Ticket.toUiTicket(event: Event?): ch.onepass.onepass.ui.myevents.Ticket {
   return ch.onepass.onepass.ui.myevents.Ticket(
+      ticketId = ticketId,
       title = event?.title ?: "Unknown Event",
       status = computeUiStatus(), // dynamically compute status
       dateTime = event?.displayDateTime ?: issuedAt.formatAsDisplayDate(),

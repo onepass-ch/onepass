@@ -8,6 +8,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.lifecycle.ViewModelProvider
@@ -18,6 +19,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import ch.onepass.onepass.model.scan.TicketScanRepositoryFirebase
+import ch.onepass.onepass.model.pass.PassRepositoryFirebase
 import ch.onepass.onepass.ui.auth.AuthScreen
 import ch.onepass.onepass.ui.auth.AuthViewModel
 import ch.onepass.onepass.ui.eventdetail.EventDetailScreen
@@ -31,6 +33,7 @@ import ch.onepass.onepass.ui.map.MapScreen
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.myevents.MyEventsScreen
 import ch.onepass.onepass.ui.myevents.MyEventsViewModel
+import ch.onepass.onepass.ui.myevents.passDataStore
 import ch.onepass.onepass.ui.myinvitations.MyInvitationsScreen
 import ch.onepass.onepass.ui.myinvitations.MyInvitationsViewModel
 import ch.onepass.onepass.ui.navigation.NavigationDestinations.Screen
@@ -55,6 +58,8 @@ import ch.onepass.onepass.ui.scan.ScannerViewModel
 import ch.onepass.onepass.ui.staff.StaffInvitationScreen
 import ch.onepass.onepass.ui.staff.StaffInvitationViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.functions.FirebaseFunctions
 
 /**
  * Navigation host that registers all app routes and wires view models to screens.
@@ -80,6 +85,9 @@ fun AppNavHost(
       initializer { ProfileViewModel() }
     }
 ) {
+  // Get context for DataStore
+  val context = LocalContext.current
+
   // Create a single AuthViewModel instance for the entire nav host
   val authViewModel: AuthViewModel = viewModel(factory = authViewModelFactory)
   val authState by authViewModel.uiState.collectAsState()
@@ -152,7 +160,18 @@ fun AppNavHost(
       val uid = FirebaseAuth.getInstance().currentUser?.uid ?: "LOCAL_TEST_UID"
 
       val myEventsVm: MyEventsViewModel =
-          viewModel(factory = viewModelFactory { initializer { MyEventsViewModel(userId = uid) } })
+          viewModel(
+              factory =
+                  viewModelFactory {
+                    initializer {
+                      MyEventsViewModel(
+                          dataStore = context.passDataStore,
+                          passRepository =
+                              PassRepositoryFirebase(
+                                  FirebaseFirestore.getInstance(), FirebaseFunctions.getInstance()),
+                          userId = uid)
+                    }
+                  })
       MyEventsScreen(viewModel = myEventsVm, userQrData = "USER-QR-DEMO")
     }
 
