@@ -306,9 +306,8 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            #!/bin/bash
-            set -e
-
+            #!/usr/bin/env sh
+            
             echo "════════════════════════════════════════════════════════════"
             echo " RUNNING CONNECTED TESTS - SHARD ${{ matrix.shard_index }} of ${{ env.SHARD_COUNT }}"
             echo "════════════════════════════════════════════════════════════"
@@ -340,11 +339,11 @@ jobs:
             # Run tests with detailed output
             echo "▶  Executing: ./gradlew connectedCheck with sharding parameters"
             echo "────────────────────────────────────────────────────────────"
-
+            set +e
             ./gradlew connectedCheck --console=plain --info -Pandroid.testInstrumentationRunnerArguments.numShards=${{ env.SHARD_COUNT }} -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard_index }} | tee test_output.log
 
-            TEST_EXIT_CODE=${PIPESTATUS[0]}
-
+            TEST_EXIT_CODE=$?
+            set -e
             # Calculate execution time
             END_TIME=$(date +%s)
             DURATION=$((END_TIME - START_TIME))
@@ -379,7 +378,7 @@ jobs:
             echo ""
             echo "════════════════════════════════════════════════════════════"
 
-            exit $TEST_EXIT_CODE
+            exit "$TEST_EXIT_CODE"
 
       - name: Upload coverage for this shard
         uses: actions/upload-artifact@v4
