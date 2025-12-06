@@ -13,11 +13,9 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.*
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
@@ -30,6 +28,7 @@ import ch.onepass.onepass.ui.theme.Primary
 import ch.onepass.onepass.ui.theme.Secondary
 import ch.onepass.onepass.ui.theme.Success
 import ch.onepass.onepass.ui.theme.Surface
+import ch.onepass.onepass.ui.theme.White
 import kotlinx.coroutines.flow.first
 
 /**
@@ -162,7 +161,7 @@ internal fun MyInvitationsContent(
                   snackbarData = snackbarData,
                   modifier = Modifier.testTag(MyInvitationsScreenTestTags.SUCCESS_MESSAGE),
                   containerColor = Success,
-                  contentColor = colorResource(id = R.color.white))
+                  contentColor = White)
             })
       },
       topBar = {
@@ -172,14 +171,14 @@ internal fun MyInvitationsContent(
                   text = "My Invitations",
                   style = MaterialTheme.typography.headlineSmall,
                   fontWeight = FontWeight.Bold,
-                  color = colorResource(id = R.color.white))
+                  color = White)
             },
             navigationIcon = {
               IconButton(onClick = onNavigateBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = colorResource(id = R.color.white))
+                    tint = White)
               }
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Background))
@@ -287,7 +286,7 @@ private fun InvitationCard(
               text = organization?.name ?: invitation.orgId,
               style = MaterialTheme.typography.titleMedium,
               fontWeight = FontWeight.Bold,
-              color = colorResource(id = R.color.white),
+              color = White,
               modifier = Modifier.testTag(MyInvitationsScreenTestTags.INVITATION_ORG_NAME))
 
           Spacer(modifier = Modifier.height(8.dp))

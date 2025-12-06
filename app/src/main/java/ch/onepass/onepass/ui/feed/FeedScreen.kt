@@ -10,7 +10,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -27,6 +26,7 @@ import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
 import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
 import ch.onepass.onepass.ui.eventfilters.FilterDialog
 import ch.onepass.onepass.ui.theme.Secondary
+import ch.onepass.onepass.ui.theme.White
 
 /**
  * Feed screen showing all published events. Displays a list of events with loading, error, and
@@ -180,7 +180,7 @@ private fun FeedTopBar(
               text = currentDateRange,
               style = MaterialTheme.typography.headlineLarge,
               fontWeight = FontWeight.Bold,
-              color = colorResource(id = R.color.white),
+              color = White,
               letterSpacing = 2.sp,
               modifier = Modifier.testTag(FeedScreenTestTags.FEED_TITLE),
           )
@@ -202,7 +202,7 @@ private fun FeedTopBar(
                 Icon(
                     imageVector = Icons.Default.Notifications,
                     contentDescription = "Notifications",
-                    tint = colorResource(id = R.color.white),
+                    tint = White,
                     modifier = Modifier.size(24.dp),
                 )
               }
@@ -214,7 +214,7 @@ private fun FeedTopBar(
             Icon(
                 painter = painterResource(id = R.drawable.filter_icon),
                 contentDescription = "Filter events",
-                tint = colorResource(id = R.color.white),
+                tint = White,
                 modifier = Modifier.size(24.dp),
             )
           }

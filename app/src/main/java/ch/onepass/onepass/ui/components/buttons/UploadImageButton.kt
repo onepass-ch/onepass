@@ -15,14 +15,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ch.onepass.onepass.R
+import ch.onepass.onepass.ui.theme.White
 
 /**
  * Upload image button with full-width design.
@@ -59,7 +58,7 @@ fun UploadImageButton(
             text = imageDescription,
             style =
                 MaterialTheme.typography.bodyMedium.copy(
-                    color = colorResource(id = R.color.white), textAlign = TextAlign.Center),
+                    color = White, textAlign = TextAlign.Center),
             modifier = Modifier.fillMaxWidth())
 
         OutlinedButton(

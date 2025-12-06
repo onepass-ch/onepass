@@ -9,7 +9,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -18,6 +17,7 @@ import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.Gray
 import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.White
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -85,9 +85,7 @@ fun TimePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
                             TextButton(onClick = { showDialog = false }) {
                               Text(
                                   "Cancel",
-                                  style =
-                                      MaterialTheme.typography.labelLarge.copy(
-                                          color = colorResource(id = R.color.white)))
+                                  style = MaterialTheme.typography.labelLarge.copy(color = White))
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Button(
@@ -186,11 +184,7 @@ fun DatePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
         },
         dismissButton = {
           TextButton(onClick = { showDialog = false }) {
-            Text(
-                "Cancel",
-                style =
-                    MaterialTheme.typography.labelLarge.copy(
-                        color = colorResource(id = R.color.white)))
+            Text("Cancel", style = MaterialTheme.typography.labelLarge.copy(color = White))
           }
         },
         colors = datePickerColors) {

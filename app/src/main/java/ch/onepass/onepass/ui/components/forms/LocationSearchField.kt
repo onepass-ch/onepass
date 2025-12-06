@@ -9,16 +9,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
 import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.ui.theme.EventBorderGray
 import ch.onepass.onepass.ui.theme.Gray
 import ch.onepass.onepass.ui.theme.OnBackground
 import ch.onepass.onepass.ui.theme.Surface
+import ch.onepass.onepass.ui.theme.White
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,7 +48,7 @@ fun LocationSearchField(
             text = "Location*",
             style =
                 MaterialTheme.typography.bodyMedium.copy(
-                    color = colorResource(id = R.color.white), textAlign = TextAlign.Center),
+                    color = White, textAlign = TextAlign.Center),
             modifier = Modifier.fillMaxWidth())
 
         ExposedDropdownMenuBox(

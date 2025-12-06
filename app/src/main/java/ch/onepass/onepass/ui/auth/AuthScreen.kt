@@ -157,7 +157,7 @@ fun HeroTitle(
 fun GoogleSignInButton(onSignInClick: () -> Unit) {
   Button(
       onClick = onSignInClick,
-      colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), // Button color
+      colors = ButtonDefaults.buttonColors(containerColor = Color.White), // Button color
       shape = RoundedCornerShape(25), // Circular edges for the button
       modifier =
           Modifier.padding(8.dp)

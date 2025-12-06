@@ -34,7 +34,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -42,7 +41,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.Background
 import ch.onepass.onepass.ui.theme.DarkGray
 import ch.onepass.onepass.ui.theme.Error
@@ -50,6 +48,7 @@ import ch.onepass.onepass.ui.theme.Gray
 import ch.onepass.onepass.ui.theme.LightGray
 import ch.onepass.onepass.ui.theme.Secondary
 import ch.onepass.onepass.ui.theme.Surface
+import ch.onepass.onepass.ui.theme.White
 import kotlinx.coroutines.flow.collectLatest
 
 object ProfileTestTags {
@@ -128,7 +127,7 @@ private fun ProfileContent(
 
           Text(
               text = "ORGANIZER SETTINGS",
-              color = colorResource(id = R.color.white),
+              color = White,
               style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
               modifier = Modifier.testTag(ProfileTestTags.ORG_SECTION_TITLE))
 
@@ -146,25 +145,25 @@ private fun ProfileContent(
           SettingsItem(
               icon = Icons.Outlined.Diversity3,
               title = "My Invitations",
-              titleColor = colorResource(id = R.color.white),
+              titleColor = White,
               onClick = onInvitations,
               testTag = ProfileTestTags.SETTINGS_INVITATIONS)
           SettingsItem(
               icon = Icons.Outlined.AccountCircle,
               title = "Account Settings",
-              titleColor = colorResource(id = R.color.white),
+              titleColor = White,
               onClick = onAccountSettings,
               testTag = ProfileTestTags.SETTINGS_ACCOUNT)
           SettingsItem(
               icon = Icons.Outlined.Settings,
               title = "Payment Methods",
-              titleColor = colorResource(id = R.color.white),
+              titleColor = White,
               onClick = onPaymentMethods,
               testTag = ProfileTestTags.SETTINGS_PAYMENTS)
           SettingsItem(
               icon = Icons.Outlined.Info,
               title = "Help & Support",
-              titleColor = colorResource(id = R.color.white),
+              titleColor = White,
               onClick = onHelp,
               testTag = ProfileTestTags.SETTINGS_HELP)
           SettingsItem(
@@ -219,7 +218,7 @@ private fun HeaderBlock(initials: String, name: String, email: String) {
         Column(Modifier.weight(1f)) {
           Text(
               text = name,
-              color = colorResource(id = R.color.white),
+              color = White,
               style =
                   MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold),
               maxLines = 1,
@@ -261,7 +260,7 @@ private fun OrganizerCard(isOrganizer: Boolean, onOrganizationButton: () -> Unit
     Column(Modifier.padding(16.dp).testTag(ProfileTestTags.ORG_CARD)) {
       Text(
           text = if (isOrganizer) "Organization Management" else "Start Your Journey",
-          color = colorResource(id = R.color.white),
+          color = White,
           style = MaterialTheme.typography.titleMedium)
 
       Spacer(Modifier.height(8.dp))

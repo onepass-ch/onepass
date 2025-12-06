@@ -34,9 +34,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
 import ch.onepass.onepass.model.user.UserSearchType
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.LoadingState
@@ -46,6 +44,7 @@ import ch.onepass.onepass.ui.theme.Gray
 import ch.onepass.onepass.ui.theme.OnSurface
 import ch.onepass.onepass.ui.theme.Primary
 import ch.onepass.onepass.ui.theme.Surface
+import ch.onepass.onepass.ui.theme.White
 
 object StaffInvitationTestTags {
   const val SCREEN = "staffInvitation_screen"
@@ -85,7 +84,7 @@ fun StaffInvitationScreen(
             title = {
               Text(
                   text = "Add staff",
-                  color = colorResource(R.color.white),
+                  color = White,
                   style = MaterialTheme.typography.titleLarge,
                   modifier = Modifier.testTag(StaffInvitationTestTags.TITLE))
             },
@@ -96,7 +95,7 @@ fun StaffInvitationScreen(
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Back",
-                        tint = colorResource(R.color.white))
+                        tint = White)
                   }
             },
             modifier = Modifier.testTag(StaffInvitationTestTags.TOP_BAR))
@@ -238,8 +237,8 @@ private fun SearchInputField(
               unfocusedContainerColor = DarkGray,
               focusedIndicatorColor = Color.Transparent,
               unfocusedIndicatorColor = Color.Transparent,
-              focusedTextColor = colorResource(R.color.white),
-              unfocusedTextColor = colorResource(R.color.white),
+              focusedTextColor = White,
+              unfocusedTextColor = White,
           ),
       shape = RoundedCornerShape(10.dp),
       textStyle = MaterialTheme.typography.bodySmall,
