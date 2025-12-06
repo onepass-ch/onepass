@@ -63,6 +63,12 @@ object NavigationDestinations {
       fun route(eventId: String) = "edit_event/$eventId"
     }
 
+    object Scan : Screen("scan/{eventId}", "Scan Tickets", false) {
+      const val ARG_EVENT_ID = "eventId"
+
+      fun route(eventId: String) = "scan/$eventId"
+    }
+
     object BecomeOrganizer : Screen("become_organizer", "Become Organizer", false)
 
     object OrganizationFeed : Screen("organization_feed", "My Organizations", false)
