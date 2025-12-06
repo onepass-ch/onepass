@@ -41,6 +41,7 @@ class ProfileScreenComposeTest {
             displayName = "WILL SMITH",
             email = "willsmith@email.com",
             initials = "WS",
+            avatarUrl = "https://example.com/avatar.jpg",
             stats = ProfileStats(events = 12, upcoming = 3, saved = 7),
             isOrganizer = false,
             loading = false)
@@ -54,6 +55,9 @@ class ProfileScreenComposeTest {
     compose.onNodeWithTag(ProfileTestTags.HEADER).assertExists()
     compose.onNodeWithTag(ProfileTestTags.HEADER_NAME).assertExists()
     compose.onNodeWithTag(ProfileTestTags.HEADER_EMAIL).assertExists()
+    // Verify avatar is shown and initials are hidden when avatarUrl is present
+    compose.onNodeWithTag(ProfileTestTags.HEADER_AVATAR).assertIsDisplayed()
+    compose.onNodeWithText("WS").assertDoesNotExist()
 
     compose.onNodeWithTag(ProfileTestTags.STATS_ROW).assertExists()
     compose.onNodeWithTag(ProfileTestTags.STAT_EVENTS).assertExists()
@@ -73,5 +77,25 @@ class ProfileScreenComposeTest {
     // Sanity check for text content
     compose.onNodeWithText("WILL SMITH").assertExists()
     compose.onNodeWithText("ORGANIZER SETTINGS").assertExists()
+  }
+
+  @Test
+  fun content_showsInitialsWhenNoAvatar() {
+    val state =
+        ProfileUiState(
+            displayName = "WILL SMITH",
+            email = "willsmith@email.com",
+            initials = "WS",
+            avatarUrl = null,
+            stats = ProfileStats(events = 12, upcoming = 3, saved = 7),
+            isOrganizer = false,
+            loading = false)
+    val fakeVm = FakeProfileViewModel(state)
+
+    compose.setContent { ProfileScreen(viewModel = fakeVm, onEffect = {}) }
+
+    // Verify avatar is hidden and initials are shown
+    compose.onNodeWithTag(ProfileTestTags.HEADER_AVATAR).assertDoesNotExist()
+    compose.onNodeWithText("WS").assertIsDisplayed()
   }
 }

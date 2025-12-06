@@ -55,12 +55,6 @@ class OrganizationRepositoryFirebase : OrganizationRepository {
         .orderBy("createdAt", Query.Direction.DESCENDING)
   }
 
-  override fun getOrganizationsByMember(userId: String): Flow<List<Organization>> = firestoreFlow {
-    organizationsCollection.whereIn(
-        "members.${userId}.role", OrganizationRole.entries.map { it.name })
-    // Removed orderBy to avoid composite index requirement - sorting done in-memory instead
-  }
-
   override fun getOrganizationsByStatus(status: OrganizationStatus): Flow<List<Organization>> =
       firestoreFlow {
         organizationsCollection
@@ -77,52 +71,6 @@ class OrganizationRepositoryFirebase : OrganizationRepository {
     organizationsCollection
         .whereEqualTo("verified", true)
         .orderBy("followerCount", Query.Direction.DESCENDING)
-  }
-
-  override suspend fun addMember(
-      organizationId: String,
-      userId: String,
-      role: OrganizationRole
-  ): Result<Unit> = runCatching {
-    val member = OrganizationMember(role = role, joinedAt = null)
-    organizationsCollection
-        .document(organizationId)
-        .update(mapOf("members.$userId" to member, "updatedAt" to FieldValue.serverTimestamp()))
-        .await()
-  }
-
-  override suspend fun removeMember(organizationId: String, userId: String): Result<Unit> =
-      runCatching {
-        organizationsCollection
-            .document(organizationId)
-            .update(
-                mapOf(
-                    "members.$userId" to FieldValue.delete(),
-                    "updatedAt" to FieldValue.serverTimestamp()))
-            .await()
-      }
-
-  override suspend fun updateMemberRole(
-      organizationId: String,
-      userId: String,
-      newRole: OrganizationRole
-  ): Result<Unit> = runCatching {
-    val org =
-        organizationsCollection
-            .document(organizationId)
-            .get()
-            .await()
-            .toObject(Organization::class.java)
-            ?: throw IllegalStateException("Organization not found")
-
-    val existingMember = org.members[userId] ?: throw IllegalStateException("Member not found")
-    val updatedMember = existingMember.copy(role = newRole)
-
-    organizationsCollection
-        .document(organizationId)
-        .update(
-            mapOf("members.$userId" to updatedMember, "updatedAt" to FieldValue.serverTimestamp()))
-        .await()
   }
 
   override suspend fun createInvitation(invitation: OrganizationInvitation): Result<String> =

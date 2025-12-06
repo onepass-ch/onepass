@@ -2,7 +2,6 @@ package ch.onepass.onepass.utils
 
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.OrganizationInvitation
-import ch.onepass.onepass.model.organization.OrganizationRole
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flow
@@ -16,16 +15,12 @@ import kotlinx.coroutines.flow.flow
 class TestMockOrganizationRepository(
     private val invitationsByEmail: Map<String, List<OrganizationInvitation>> = emptyMap(),
     private val updateInvitationStatusResult: Result<Unit> = Result.success(Unit),
-    private val addMemberResult: Result<Unit> = Result.success(Unit),
     private val shouldThrowOnGetInvitations: Boolean = false,
     private val shouldThrowOnUpdateStatus: Boolean = false,
     private val exceptionMessage: String? = "Test error"
 ) : MockOrganizationRepository() {
   private val _invitationsFlowsByEmail =
       mutableMapOf<String, MutableStateFlow<List<OrganizationInvitation>>>()
-
-  // Track addMember calls for testing
-  val addMemberCalls = mutableListOf<Triple<String, String, OrganizationRole>>()
 
   init {
     // Initialize flows with data from invitationsByEmail map
@@ -69,15 +64,5 @@ class TestMockOrganizationRepository(
       }
     }
     return updateInvitationStatusResult
-  }
-
-  override suspend fun addMember(
-      organizationId: String,
-      userId: String,
-      role: OrganizationRole
-  ): Result<Unit> {
-    // Track the call for testing
-    addMemberCalls.add(Triple(organizationId, userId, role))
-    return addMemberResult
   }
 }

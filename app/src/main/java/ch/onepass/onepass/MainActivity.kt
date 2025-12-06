@@ -41,7 +41,6 @@ import com.stripe.android.PaymentConfiguration
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-
     // Mapbox access token
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
 

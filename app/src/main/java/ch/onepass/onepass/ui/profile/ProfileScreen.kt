@@ -33,6 +33,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.semantics.Role
@@ -43,6 +45,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
+import coil.compose.SubcomposeAsyncImage
+import coil.request.ImageRequest
 import kotlinx.coroutines.flow.collectLatest
 
 object ProfileTestTags {
@@ -50,6 +54,7 @@ object ProfileTestTags {
   const val LOADING = "profile_loading"
   const val HEADER = "profile_header"
   const val HEADER_INITIALS = "profile_header_initials"
+  const val HEADER_AVATAR = "profile_header_avatar"
   const val HEADER_NAME = "profile_header_name"
   const val HEADER_EMAIL = "profile_header_email"
   const val STATS_ROW = "profile_stats_row"
@@ -114,7 +119,11 @@ private fun ProfileContent(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp, vertical = 12.dp)
                 .testTag(ProfileTestTags.SCREEN)) {
-          HeaderBlock(initials = state.initials, name = state.displayName, email = state.email)
+          HeaderBlock(
+              initials = state.initials,
+              name = state.displayName,
+              email = state.email,
+              avatarUrl = state.avatarUrl)
 
           Spacer(Modifier.height(12.dp))
 
@@ -199,7 +208,7 @@ private fun StatsRow(stats: ProfileStats) {
 
 /** Header with avatar placeholder, name, and email. */
 @Composable
-private fun HeaderBlock(initials: String, name: String, email: String) {
+private fun HeaderBlock(initials: String, name: String, email: String, avatarUrl: String?) {
   Row(
       verticalAlignment = Alignment.CenterVertically,
       modifier = Modifier.testTag(ProfileTestTags.HEADER)) {
@@ -210,7 +219,28 @@ private fun HeaderBlock(initials: String, name: String, email: String) {
                     .background(colorResource(id = R.color.profile_header_avatar_bg))
                     .testTag(ProfileTestTags.HEADER_INITIALS),
             contentAlignment = Alignment.Center) {
-              Text(initials, color = Color.White, fontWeight = FontWeight.Bold)
+              if (avatarUrl.isNullOrBlank()) {
+                Text(initials, color = Color.White, fontWeight = FontWeight.Bold)
+              } else {
+                SubcomposeAsyncImage(
+                    model =
+                        ImageRequest.Builder(LocalContext.current)
+                            .data(avatarUrl)
+                            .crossfade(true)
+                            .build(),
+                    contentDescription = "Avatar",
+                    contentScale = ContentScale.Crop,
+                    modifier =
+                        Modifier.fillMaxSize()
+                            .clip(CircleShape)
+                            .testTag(ProfileTestTags.HEADER_AVATAR),
+                    loading = {
+                      Box(
+                          modifier =
+                              Modifier.fillMaxSize()
+                                  .background(colorResource(id = R.color.profile_header_avatar_bg)))
+                    })
+              }
             }
 
         Spacer(Modifier.width(16.dp))

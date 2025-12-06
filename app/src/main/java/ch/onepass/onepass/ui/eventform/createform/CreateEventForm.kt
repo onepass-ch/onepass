@@ -8,7 +8,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,32 +19,23 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.eventform.EventFormFields
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
 import com.mapbox.maps.extension.style.expressions.dsl.generated.color
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventFormScaffold(
     onNavigateBack: () -> Unit,
     scrollState: ScrollState,
     content: @Composable ColumnScope.() -> Unit
 ) {
-  Scaffold(
-      topBar = {
-        TopAppBar(
-            title = { Text(text = "Create your Event", color = Color.White) },
-            navigationIcon = {
-              IconButton(onClick = onNavigateBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = Color.White)
-              }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = DefaultBackground))
-      }) { padding ->
-        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
+  BackNavigationScaffold(
+      topBarConfig = TopBarConfig(title = "Create your Event"),
+      onBack = onNavigateBack,
+      containerColor = DefaultBackground) { paddingValues ->
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
           Column(
               modifier =
                   Modifier.fillMaxSize()

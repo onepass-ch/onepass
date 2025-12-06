@@ -278,7 +278,8 @@ fun AppNavHost(
                   navController.navigate(Screen.ComingSoon.route)
               is OrganizerProfileEffect.ShowError -> navController.navigate(Screen.ComingSoon.route)
             }
-          })
+          },
+          onNavigateBack = { navController.popBackStack() })
     }
 
     // ------------------ Create Event ------------------

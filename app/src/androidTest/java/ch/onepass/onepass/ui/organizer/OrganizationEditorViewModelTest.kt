@@ -496,7 +496,6 @@ class OrganizationEditorViewModelTest {
           description = description,
           ownerId = "owner1",
           status = OrganizationStatus.ACTIVE,
-          members = emptyMap(),
           verified = false,
           profileImageUrl = null,
           website = null,
@@ -531,24 +530,11 @@ class FakeEditOrganizationRepository : OrganizationRepository {
 
   override fun getOrganizationsByOwner(ownerId: String) = TODO()
 
-  override fun getOrganizationsByMember(userId: String) = TODO()
-
   override fun getOrganizationsByStatus(status: OrganizationStatus) = TODO()
 
   override fun searchOrganizations(query: String) = TODO()
 
   override fun getVerifiedOrganizations() = TODO()
-
-  override suspend fun addMember(organizationId: String, userId: String, role: OrganizationRole) =
-      TODO()
-
-  override suspend fun removeMember(organizationId: String, userId: String) = TODO()
-
-  override suspend fun updateMemberRole(
-      organizationId: String,
-      userId: String,
-      newRole: OrganizationRole
-  ) = TODO()
 
   override suspend fun createInvitation(invitation: OrganizationInvitation) = TODO()
 

@@ -22,6 +22,21 @@ import ch.onepass.onepass.ui.components.forms.FormTextField
 import ch.onepass.onepass.ui.components.forms.PrefixPhoneRow
 import ch.onepass.onepass.ui.components.forms.SubmitButton
 
+/** Test tags for default Organization form components */
+object OrganizationTestTags {
+  const val NAME_FIELD = "OrganizationNameField"
+  const val DESCRIPTION_FIELD = "OrganizationDescriptionField"
+  const val EMAIL_FIELD = "OrganizationEmailField"
+  const val PHONE_FIELD = "OrganizationPhoneField"
+  const val PREFIX_DROPDOWN = "OrganizationPrefixDropdown"
+  const val WEBSITE_FIELD = "OrganizationWebsiteField"
+  const val INSTAGRAM_FIELD = "OrganizationInstagramField"
+  const val FACEBOOK_FIELD = "OrganizationFacebookField"
+  const val TIKTOK_FIELD = "OrganizationTiktokField"
+  const val ADDRESS_FIELD = "OrganizationAddressField"
+  const val SUBMIT_BUTTON = "OrganizationSubmitButton"
+}
+
 /**
  * Composable for the organization form used in both creation and editing.
  *
@@ -53,7 +68,6 @@ fun OrganizerForm(
     onDropdownDismiss: () -> Unit,
     onSubmit: () -> Unit,
     submitText: String,
-    testTags: Any,
     modifier: Modifier = Modifier,
     viewModel: OrganizationFormViewModel
 ) {
@@ -75,7 +89,7 @@ fun OrganizerForm(
             isError = formState.name.error != null,
             onFocusChanged = viewModel::onFocusChangeName,
             errorMessage = formState.name.error,
-            testTag = testTagsField(testTags, "NAME_FIELD"))
+            testTag = OrganizationTestTags.NAME_FIELD)
 
         // Description Field
         FormTextField(
@@ -86,7 +100,7 @@ fun OrganizerForm(
             onFocusChanged = viewModel::onFocusChangeDescription,
             maxLines = 5,
             errorMessage = formState.description.error,
-            testTag = testTagsField(testTags, "DESCRIPTION_FIELD"))
+            testTag = OrganizationTestTags.DESCRIPTION_FIELD)
 
         // Contact Email Field
         FormTextField(
@@ -97,7 +111,7 @@ fun OrganizerForm(
             onFocusChanged = viewModel::onFocusChangeEmail,
             keyboardType = KeyboardType.Email,
             errorMessage = formState.contactEmail.error,
-            testTag = testTagsField(testTags, "EMAIL_FIELD"))
+            testTag = OrganizationTestTags.EMAIL_FIELD)
 
         // Contact Phone Field with Prefix Dropdown
         PrefixPhoneRow(
@@ -111,37 +125,37 @@ fun OrganizerForm(
             onPhoneChange = viewModel::updateContactPhone,
             onPhoneFocusChanged = viewModel::onFocusChangePhone,
             onPrefixClick = onPrefixClick,
-            phoneTestTag = testTagsField(testTags, "PHONE_FIELD"),
-            prefixTestTag = testTagsField(testTags, "PREFIX_DROPDOWN"))
+            phoneTestTag = OrganizationTestTags.PHONE_FIELD,
+            prefixTestTag = OrganizationTestTags.PREFIX_DROPDOWN)
 
         // Social Media
         FormTextField(
             value = formState.website.value,
             onValueChange = viewModel::updateWebsite,
             label = "Website",
-            testTag = testTagsField(testTags, "WEBSITE_FIELD"))
+            testTag = OrganizationTestTags.WEBSITE_FIELD)
         FormTextField(
             value = formState.instagram.value,
             onValueChange = viewModel::updateInstagram,
             label = "Instagram",
-            testTag = testTagsField(testTags, "INSTAGRAM_FIELD"))
+            testTag = OrganizationTestTags.INSTAGRAM_FIELD)
         FormTextField(
             value = formState.facebook.value,
             onValueChange = viewModel::updateFacebook,
             label = "Facebook",
-            testTag = testTagsField(testTags, "FACEBOOK_FIELD"))
+            testTag = OrganizationTestTags.FACEBOOK_FIELD)
         FormTextField(
             value = formState.tiktok.value,
             onValueChange = viewModel::updateTiktok,
             label = "TikTok",
-            testTag = testTagsField(testTags, "TIKTOK_FIELD"))
+            testTag = OrganizationTestTags.TIKTOK_FIELD)
 
         // Address Field
         FormTextField(
             value = formState.address.value,
             onValueChange = viewModel::updateAddress,
             label = "Address",
-            testTag = testTagsField(testTags, "ADDRESS_FIELD"))
+            testTag = OrganizationTestTags.ADDRESS_FIELD)
 
         Spacer(Modifier.height(32.dp))
 
@@ -183,23 +197,6 @@ fun OrganizerForm(
         SubmitButton(
             onClick = onSubmit,
             text = submitText,
-            modifier = Modifier.testTag(testTagsField(testTags, "SUBMIT_BUTTON")))
+            modifier = Modifier.testTag(OrganizationTestTags.SUBMIT_BUTTON))
       }
-}
-
-/**
- * Helper to access test tag fields dynamically.
- *
- * @param obj The object containing the test tag fields.
- * @param fieldName The name of the test tag field to access.
- * @return The test tag string if found, otherwise an empty string.
- */
-@Suppress("UNCHECKED_CAST")
-private fun testTagsField(obj: Any, fieldName: String): String {
-  return try {
-    val field = obj::class.java.getDeclaredField(fieldName)
-    field.get(null) as String
-  } catch (e: Exception) {
-    ""
-  }
 }

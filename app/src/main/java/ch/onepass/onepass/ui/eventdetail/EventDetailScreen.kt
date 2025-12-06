@@ -1,6 +1,7 @@
 package ch.onepass.onepass.ui.eventdetail
 
 import android.annotation.SuppressLint
+import android.widget.Toast
 import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -20,6 +21,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -33,9 +35,11 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.organization.Organization
+import ch.onepass.onepass.model.payment.StripePaymentHelper
 import ch.onepass.onepass.ui.components.buttons.LikeButton
 import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.organization.OrganizationCard
+import ch.onepass.onepass.ui.payment.LocalPaymentSheet
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import coil.compose.AsyncImage
 
@@ -54,6 +58,7 @@ object EventDetailTestTags {
   const val BUY_TICKET_BUTTON = "eventDetailBuyTicketButton"
   const val LOADING = "eventDetailLoading"
   const val ERROR = "eventDetailError"
+  const val PAYMENT_LOADING = "eventDetailPaymentLoading"
 }
 
 /** Event detail screen displaying full event information. */
@@ -73,9 +78,58 @@ fun EventDetailScreen(
   val organization by viewModel.organization.collectAsState()
   val isLoading by viewModel.isLoading.collectAsState()
   val error by viewModel.error.collectAsState()
+  val paymentState by viewModel.paymentState.collectAsState()
 
   val likedEvents by eventCardViewModel.likedEvents.collectAsState()
   val isLiked = likedEvents.contains(eventId)
+
+  // Get PaymentSheet
+  val paymentSheet = LocalPaymentSheet.current
+  val context = LocalContext.current
+
+  // Initialize StripePaymentHelper with PaymentSheet from CompositionLocal
+  val stripeHelper = remember(paymentSheet) { StripePaymentHelper(paymentSheet) }
+
+  // Handle payment state changes
+  LaunchedEffect(paymentState) {
+    when (val state = paymentState) {
+      is PaymentState.ReadyToPay -> {
+        // Present the Stripe Payment Sheet
+        if (stripeHelper.isInitialized) {
+          viewModel.onPaymentSheetPresented()
+          stripeHelper.presentPaymentSheet(
+              clientSecret = state.clientSecret,
+              onSuccess = { viewModel.onPaymentSuccess() },
+              onCancelled = { viewModel.onPaymentCancelled() },
+              onError = { errorMessage -> viewModel.onPaymentFailed(errorMessage) })
+        } else {
+          viewModel.onPaymentFailed(
+              "Payment system not initialized. Please ensure Stripe is configured.")
+        }
+      }
+      is PaymentState.PaymentSucceeded -> {
+        Toast.makeText(context, "Payment successful! Your ticket is ready.", Toast.LENGTH_LONG)
+            .show()
+        viewModel.resetPaymentState()
+      }
+      is PaymentState.PaymentCancelled -> {
+        Toast.makeText(context, "Payment cancelled", Toast.LENGTH_SHORT).show()
+        viewModel.resetPaymentState()
+      }
+      is PaymentState.PaymentFailed -> {
+        Toast.makeText(context, "Payment failed: ${state.errorMessage}", Toast.LENGTH_LONG).show()
+        viewModel.resetPaymentState()
+      }
+      else -> {
+        /* No action needed for other states */
+      }
+    }
+  }
+
+  // Determine if payment is in progress
+  val isPaymentInProgress =
+      paymentState is PaymentState.CreatingPaymentIntent ||
+          paymentState is PaymentState.ProcessingPayment
 
   EventDetailScreenContent(
       uiState =
@@ -84,12 +138,17 @@ fun EventDetailScreen(
               organization = organization,
               isLoading = isLoading,
               errorMessage = error,
-              isLiked = isLiked),
+              isLiked = isLiked,
+              paymentState = paymentState),
       onBack = onBack,
       onLikeToggle = { eventCardViewModel.toggleLike(eventId) },
       onNavigateToMap = { onNavigateToMap(eventId) },
       onNavigateToOrganizerProfile = onNavigateToOrganizerProfile,
-      onBuyTicket = { onBuyTicket(eventId) })
+      onBuyTicket = {
+        if (!isPaymentInProgress) {
+          viewModel.initiatePayment()
+        }
+      })
 }
 
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -98,7 +157,8 @@ internal data class EventDetailUiState(
     val organization: Organization? = null,
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val isLiked: Boolean = false
+    val isLiked: Boolean = false,
+    val paymentState: PaymentState = PaymentState.Idle
 )
 
 @VisibleForTesting(otherwise = VisibleForTesting.PRIVATE)
@@ -111,6 +171,10 @@ internal fun EventDetailScreenContent(
     onNavigateToOrganizerProfile: (String) -> Unit = {},
     onBuyTicket: () -> Unit
 ) {
+  val isPaymentInProgress =
+      uiState.paymentState is PaymentState.CreatingPaymentIntent ||
+          uiState.paymentState is PaymentState.ProcessingPayment
+
   Box(
       modifier =
           Modifier.fillMaxSize()
@@ -148,8 +212,14 @@ internal fun EventDetailScreenContent(
             BuyButton(
                 onBuyTicket = onBuyTicket,
                 priceText = formatPrice(uiState.event),
+                isLoading = isPaymentInProgress,
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth())
           }
+        }
+
+        // Show loading overlay when payment is in progress
+        if (isPaymentInProgress) {
+          LoadingOverlay(uiState)
         }
       }
 }
@@ -158,25 +228,34 @@ internal fun EventDetailScreenContent(
 private fun BuyButton(
     modifier: Modifier = Modifier,
     onBuyTicket: () -> Unit = {},
-    priceText: String = "text"
+    priceText: String = "text",
+    isLoading: Boolean = false
 ) {
   // Buy ticket button - fixed at bottom with padding
   Surface(modifier = modifier, shadowElevation = 8.dp, color = DefaultBackground) {
     Box(modifier = Modifier.padding(horizontal = 10.dp, vertical = 16.dp)) {
       Button(
           onClick = onBuyTicket,
+          enabled = !isLoading,
           modifier = Modifier.fillMaxWidth().testTag(EventDetailTestTags.BUY_TICKET_BUTTON),
           shape = RoundedCornerShape(5.dp),
           colors =
               ButtonDefaults.buttonColors(
-                  containerColor = colorResource(id = R.color.event_buy_button_bg))) {
-            Text(
-                text = priceText,
-                style =
-                    MaterialTheme.typography.titleLarge.copy(
-                        fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold),
-                color = Color.White,
-                modifier = Modifier.padding(horizontal = 63.dp, vertical = 14.dp))
+                  containerColor = colorResource(id = R.color.event_buy_button_bg),
+                  disabledContainerColor =
+                      colorResource(id = R.color.event_buy_button_bg).copy(alpha = 0.6f))) {
+            if (isLoading) {
+              CircularProgressIndicator(
+                  modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+            } else {
+              Text(
+                  text = priceText,
+                  style =
+                      MaterialTheme.typography.titleLarge.copy(
+                          fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold),
+                  color = Color.White,
+                  modifier = Modifier.padding(horizontal = 63.dp, vertical = 14.dp))
+            }
           }
     }
   }
@@ -275,6 +354,9 @@ private fun EventDetailContent(
           AboutEventSection(
               description = event.description, modifier = Modifier.padding(horizontal = 10.dp))
 
+          // TODO tiers section (only show if there are multiple tiers)
+          // TODO : might add in future Quantity selector section (for paid events)
+
           // Event details (date, location, map button, buy ticket button)
           EventDetailsSection(
               event = event,
@@ -344,7 +426,7 @@ private fun EventDetailsSection(
     event: Event,
     onNavigateToMap: () -> Unit, // Information for navigation: This onNavigateToMap takes the event
     // geolocation and navigate to the map at this location for him to see it.
-    onBuyTicket: () -> Unit, // TODO: implement buy ticket action in M3
+    onBuyTicket: () -> Unit,
     modifier: Modifier = Modifier
 ) {
   Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(15.dp)) {
@@ -418,4 +500,27 @@ internal fun formatPrice(event: Event): String {
   } else {
     "Buy ticket for ${lowestPrice}${event.currency.lowercase()}"
   }
+}
+
+@Composable
+private fun LoadingOverlay(uiState: EventDetailUiState) {
+  Box(
+      modifier =
+          Modifier.fillMaxSize()
+              .background(Color.Black.copy(alpha = 0.5f))
+              .testTag(EventDetailTestTags.PAYMENT_LOADING),
+      contentAlignment = Alignment.Center) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)) {
+              CircularProgressIndicator(color = Color.White)
+              Text(
+                  text =
+                      if (uiState.paymentState is PaymentState.CreatingPaymentIntent)
+                          "Preparing payment..."
+                      else "Processing payment...",
+                  color = Color.White,
+                  style = MaterialTheme.typography.bodyLarge)
+            }
+      }
 }
