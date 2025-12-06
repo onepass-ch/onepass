@@ -1,0 +1,38 @@
+name: Setup gradle
+description: Setup JDK, cache Gradle packages, and make gradlew executable
+
+runs:
+  using: "composite"
+  steps:
+    - name: Ensure repository is checked out
+      shell: bash
+      run: |
+        if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+          echo "::error::Missing repository checkout. Please call 'actions/checkout' before this action."
+          exit 1
+        fi
+
+    - name: Setup JDK
+      uses: actions/setup-java@v4
+      with:
+        distribution: "temurin"
+        java-version: "17"
+
+    - name: Cache Gradle wrapper
+      uses: actions/cache@v4
+      with:
+        path: ~/.gradle/wrapper
+        key: ${{ runner.os }}-gradle-wrapper-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+        restore-keys: ${{ runner.os }}-gradle-wrapper-
+
+    - name: Cache Gradle caches
+      uses: actions/cache@v4
+      with:
+        path: ~/.gradle/caches
+        key: ${{ runner.os }}-gradle-caches-${{ hashFiles('gradle/libs.versions.toml', '**/build.gradle*', '**/settings.gradle*') }}
+        restore-keys: ${{ runner.os }}-gradle-caches-
+
+    - name: Grant execute permission for gradlew
+      shell: bash
+      run: |
+        chmod +x ./gradlew
