@@ -315,6 +315,14 @@ jobs:
             echo "Start time: $(date '+%Y-%m-%d %H:%M:%S')"
             echo ""
 
+            # Create source directories expected by coverage task
+            echo " Creating expected source directories for coverage..."
+            mkdir -p app/src/debug/java
+            mkdir -p app/src/main/kotlin
+            mkdir -p app/src/debug/kotlin
+            echo "   Done"
+            echo ""
+
             # Check device status
             echo " Device Information:"
             adb devices -l
@@ -438,6 +446,12 @@ jobs:
         with:
           name: kotlin-classes
           path: app/build/tmp/kotlin-classes/debug/
+
+      - name: Create expected source directories
+        run: |
+          mkdir -p app/src/debug/java
+          mkdir -p app/src/main/kotlin
+          mkdir -p app/src/debug/kotlin
 
       - name: Generate coverage report
         run: |
