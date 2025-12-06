@@ -49,6 +49,8 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunnerArguments["clearPackageData"] = "true"
+        testInstrumentationRunnerArguments["disableAnalytics"] = "true"
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxToken}\"")
         buildConfigField("String", "STRIPE_PUBLISHABLE_KEY", "\"${stripePublishableKey ?: ""}\"")

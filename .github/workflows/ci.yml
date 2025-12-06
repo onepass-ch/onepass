@@ -157,6 +157,7 @@ jobs:
   connected-tests:
     runs-on: ubuntu-latest
     needs: build-test-apks
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -278,11 +279,12 @@ jobs:
       # Start Firebase Emulators
       - name: Start Firebase Emulators
         run: |
-          nohup firebase emulators:start --only auth,firestore --project demo-project > emulator.log 2>&1 &
+          SERVICES="auth,firestore,storage,database"
+          nohup firebase emulators:start --only "$SERVICES" --project demo-project > emulator.log 2>&1 &
           EMULATOR_PID=$!
           echo "Emulator PID: $EMULATOR_PID"
           timeout=120
-          while ! (curl -s -f http://localhost:9099/ && curl -s -f http://localhost:8080/); do
+          while ! (curl -s -f http://localhost:9099/ && curl -s -f http://localhost:8080/ && curl -s -f http://localhost:9199/); do
             if [ $timeout -le 0 ]; then
               echo "Firebase emulators failed to start within 120s"
               cat emulator.log
@@ -332,7 +334,7 @@ jobs:
           echo "────────────────────────────────────────────────────────────"
 
           set +e
-          ./gradlew connectedCheck \
+          timeout "${TIMEOUT_MINUTES:-40}m" ./gradlew connectedCheck \
             --console=plain \
             --info \
             -Pandroid.testInstrumentationRunnerArguments.numShards=$SHARD_COUNT \
@@ -392,10 +394,22 @@ jobs:
             ./pretty-connected-tests.sh
 
       - name: Upload coverage for this shard
+        if: ${{ always() }}
         uses: actions/upload-artifact@v4
         with:
           name: android-ec-${{ matrix.shard_index }}
           path: app/build/outputs/code_coverage/debugAndroidTest/connected/**/*.ec
+          if-no-files-found: warn
+
+      - name: Upload connected test logs
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-connected-logs-${{ matrix.shard_index }}
+          path: |
+            emulator.log
+            test_output.log
+          if-no-files-found: warn
 
   sonar:
     needs: [static-checks, unit-tests, build-release-apk, build-test-apks, connected-tests]
