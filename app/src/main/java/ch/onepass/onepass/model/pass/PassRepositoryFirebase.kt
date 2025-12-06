@@ -3,9 +3,7 @@ package ch.onepass.onepass.model.pass
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import com.google.firebase.functions.FirebaseFunctions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.channels.trySendBlocking
@@ -61,17 +59,21 @@ class PassRepositoryFirebase(
 
   // --------------------- UPDATE (optional business op) ---------------------
 
-  /** Marks pass as revoked (active=false, revokedAt=server time). */
-  override suspend fun revokePass(uid: String): Result<Unit> = runCatching {
-    require(uid.isNotBlank()) { "uid required" }
-    users
-        .document(uid)
-        .set(
-            mapOf("pass" to mapOf("active" to false, "revokedAt" to FieldValue.serverTimestamp())),
-            SetOptions.merge())
-        .await()
-  }
+  /**
+   * Revokes a user's pass via secure Cloud Function (admin only).
+   *
+   * @param targetUid The user ID whose pass should be revoked
+   * @param reason Reason for revocation (e.g., "Fraudulent activity", "Refund requested")
+   * @return Result indicating success or failure
+   */
+  override suspend fun revokePass(targetUid: String, reason: String): Result<Unit> = runCatching {
+    require(targetUid.isNotBlank()) { "targetUid required" }
+    require(reason.isNotBlank()) { "reason required" }
 
+    val payload = mapOf("targetUid" to targetUid, "reason" to reason)
+
+    functions.getHttpsCallable("revokeUserPass").call(payload).await()
+  }
   // --------------------- INTERNAL HELPERS ---------------------
 
   /**
