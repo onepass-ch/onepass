@@ -409,6 +409,13 @@ jobs:
 
       - uses: ./.github/actions/setup-gradle
 
+      # NEW: decode google-services.json (and optionally local.properties) so processDebugGoogleServices can run
+      - name: Decode secrets
+        uses: ./.github/actions/decode-secrets
+        with:
+          google_services: ${{ secrets.GOOGLE_SERVICES }}
+          local_properties: ${{ secrets.LOCAL_PROPERTIES }}
+
       - name: Cache SonarQube packages
         uses: actions/cache@v4
         with:
