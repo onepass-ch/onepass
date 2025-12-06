@@ -188,6 +188,12 @@ jobs:
           npm install -g firebase-tools
           firebase --version
 
+      - name: Cache Firebase emulators
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: ${{ runner.os }}-firebase-emulators
+
       # Create firebase.json if it doesn't exist
       - name: Create Firebase config
         run: |
@@ -279,23 +285,44 @@ jobs:
       # Start Firebase Emulators
       - name: Start Firebase Emulators
         run: |
+          set -euo pipefail
+
           SERVICES="auth,firestore,storage,database"
           nohup firebase emulators:start --only "$SERVICES" --project demo-project > emulator.log 2>&1 &
           EMULATOR_PID=$!
+          trap 'cat emulator.log || true' EXIT
           echo "Emulator PID: $EMULATOR_PID"
-          timeout=120
-          while ! (curl -s -f http://localhost:9099/ && curl -s -f http://localhost:8080/ && curl -s -f http://localhost:9199/); do
-            if [ $timeout -le 0 ]; then
-              echo "Firebase emulators failed to start within 120s"
-              cat emulator.log
-              exit 1
-            fi
-            echo "Waiting for emulators... $timeout seconds remaining"
-            sleep 5
-            timeout=$((timeout - 5))
+
+          wait_for_port() {
+            local port=$1
+            local label=$2
+            local timeout=${EMULATOR_TIMEOUT:-180}
+            local start
+            start=$(date +%s)
+
+            echo "Waiting for $label emulator on port $port (timeout: ${timeout}s)"
+            while true; do
+              if (echo > /dev/tcp/127.0.0.1/$port) >/dev/null 2>&1; then
+                echo "$label emulator is ready on port $port"
+                break
+              fi
+              if (( $(date +%s) - start >= timeout )); then
+                echo "Firebase $label emulator failed to start within ${timeout}s"
+                cat emulator.log
+                exit 1
+              fi
+              sleep 5
+            done
+          }
+
+          for entry in "4400:hub" "8080:firestore" "9099:auth" "9199:storage" "9000:database"; do
+            IFS=":" read -r port label <<< "$entry"
+            wait_for_port "$port" "$label"
           done
+
+          ps -p "$EMULATOR_PID" >/dev/null || { echo "Emulators process died unexpectedly"; exit 1; }
           echo "Firebase emulators are running"
-          cat emulator.log
+          tail -n 60 emulator.log
 
       # Create script for pretty printing connected tests
       - name: Create script for pretty printing connected tests
