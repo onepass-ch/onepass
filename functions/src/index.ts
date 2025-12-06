@@ -15,3 +15,9 @@ export { generateUserPass } from "./generateUserPass";
 export { onUserCreated } from "./onUserCreated";
 export { createPaymentIntent, stripeWebhook } from "./stripe";
 export { searchUsers } from "./searchUsers";
+
+// Stripe payment functions
+export {
+  createPaymentIntent,
+  stripeWebhook,
+} from "./stripe";
