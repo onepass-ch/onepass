@@ -301,8 +301,11 @@ afterEvaluate {
 }
 
 tasks.register("jacocoTestReport", JacocoReport::class) {
+    // You *can* keep this dependsOn if you still want tests to run
+    // when you invoke this task locally. In CI, tests are run in other jobs,
+    // but this won't hurt as long as they still succeed.
     dependsOn("testDebugUnitTest")
-    
+
     reports {
         xml.required = true
         html.required = true
@@ -317,25 +320,30 @@ tasks.register("jacocoTestReport", JacocoReport::class) {
         "android/**/*.*",
     )
 
+    // Class files for debug variant (Kotlin)
     val debugTree = fileTree("${project.layout.buildDirectory.get()}/tmp/kotlin-classes/debug") {
         exclude(fileFilter)
     }
 
-    val mainSrc = "${project.layout.projectDirectory}/src/main/java"
-    sourceDirectories.setFrom(files(mainSrc))
-    classDirectories.setFrom(files(debugTree))
-    
-    // Collect execution data from unit tests and instrumentation tests
-    // Using fileTree to automatically pick up all .ec files from connected tests
-    executionData.setFrom(
-        fileTree(project.layout.buildDirectory.get()) {
-            include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
-            include("outputs/code_coverage/debugAndroidTest/connected/**/*.ec")
-        }
+    // Include both Java and Kotlin source dirs (main + debug)
+    val mainSrc = files(
+        "${project.layout.projectDirectory}/src/main/java",
+        "${project.layout.projectDirectory}/src/main/kotlin",
+        "${project.layout.projectDirectory}/src/debug/java",
+        "${project.layout.projectDirectory}/src/debug/kotlin",
     )
-    
-    // Make this task lenient - don't fail if some execution data files are missing
-    setOnlyIf { true }
+
+    sourceDirectories.setFrom(mainSrc)
+    classDirectories.setFrom(files(debugTree))
+
+    // Collect execution data from unit tests and connected tests
+    // – paths match what CI reconstructs in the sonar job
+    val execDataFiles = fileTree(project.layout.buildDirectory.get()) {
+        include("outputs/unit_test_code_coverage/debugUnitTest/testDebugUnitTest.exec")
+        include("outputs/code_coverage/debugAndroidTest/connected/**/*.ec")
+    }.files.filter { it.exists() }
+
+    executionData.setFrom(execDataFiles)
 }
 
 configurations.forEach { configuration ->
