@@ -4,6 +4,9 @@ import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserSearchType
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 
 /**
  * Fake implementation of UserRepository for testing purposes.
@@ -19,24 +22,7 @@ class FakeUserRepository(
     private var createdUser: User? = null,
     private var throwOnLoad: Boolean = false
 ) : UserRepository {
-
-  private val userOrganizations = mutableMapOf<String, MutableList<String>>()
-
-  override suspend fun isOrganizer(): Boolean {
-    val user = currentUser ?: return false
-    return user.organizationIds.isNotEmpty()
-  }
-
-  override suspend fun addOrganizationToUser(userId: String, orgId: String) {
-    val orgs = userOrganizations.getOrPut(userId) { mutableListOf() }
-    if (!orgs.contains(orgId)) {
-      orgs.add(orgId)
-    }
-  }
-
-  override suspend fun removeOrganizationFromUser(userId: String, orgId: String) {
-    userOrganizations[userId]?.remove(orgId)
-  }
+  private val _favoriteEventIds = MutableStateFlow<Set<String>>(emptySet())
 
   override suspend fun getCurrentUser(): User? {
     if (throwOnLoad) throw RuntimeException("boom")
@@ -52,6 +38,35 @@ class FakeUserRepository(
     /* no-op */
   }
 
+  // Simulate a database table for users
+  private val usersMap = mutableMapOf<String, StaffSearchResult>()
+
+  /** Add a user to the fake database. */
+  fun addTestUser(user: StaffSearchResult) {
+    usersMap[user.id] = user
+  }
+
+  /**
+   * Configurable get user by id results for testing. Default implementation looks up in usersMap.
+   */
+  private var getUserByIdFunction: (String) -> Result<StaffSearchResult?> = { uid ->
+    Result.success(usersMap[uid])
+  }
+
+  override suspend fun getUserById(uid: String): Result<StaffSearchResult?> {
+    return getUserByIdFunction(uid)
+  }
+
+  /** Override getUserById to return specific result regardless of input ID. */
+  fun setGetUserByIdResult(result: StaffSearchResult?) {
+    getUserByIdFunction = { Result.success(result) }
+  }
+
+  /** Override getUserById to return an error. */
+  fun setGetUserByIdError(error: Throwable) {
+    getUserByIdFunction = { Result.failure(error) }
+  }
+
   /** Configurable search results for testing. Set this to customize search behavior in tests. */
   private var searchResultsFunction:
       (String, UserSearchType, String?) -> Result<List<StaffSearchResult>> =
@@ -65,6 +80,20 @@ class FakeUserRepository(
       organizationId: String?
   ): Result<List<StaffSearchResult>> {
     return searchResultsFunction(query, searchType, organizationId)
+  }
+
+  override fun getFavoriteEvents(userId: String): Flow<Set<String>> {
+    return _favoriteEventIds
+  }
+
+  override suspend fun addFavoriteEvent(userId: String, eventId: String): Result<Unit> {
+    _favoriteEventIds.update { it + eventId }
+    return Result.success(Unit)
+  }
+
+  override suspend fun removeFavoriteEvent(userId: String, eventId: String): Result<Unit> {
+    _favoriteEventIds.update { it - eventId }
+    return Result.success(Unit)
   }
 
   /** Override searchUsers to return specific results. */
@@ -108,6 +137,8 @@ class FakeUserRepository(
     currentUser = null
     createdUser = null
     throwOnLoad = false
+    usersMap.clear()
     searchResultsFunction = { _, _, _ -> Result.success(emptyList()) }
+    getUserByIdFunction = { uid -> Result.success(usersMap[uid]) }
   }
 }

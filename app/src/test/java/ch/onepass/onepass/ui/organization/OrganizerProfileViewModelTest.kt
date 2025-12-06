@@ -112,6 +112,14 @@ class OrganizerProfileViewModelTest {
     ): Result<Unit> = Result.success(Unit)
 
     override suspend fun deleteInvitation(invitationId: String): Result<Unit> = Result.success(Unit)
+
+    override suspend fun updateProfileImage(
+        organizationId: String,
+        imageUrl: String?
+    ): Result<Unit> = Result.success(Unit)
+
+    override suspend fun updateCoverImage(organizationId: String, imageUrl: String?): Result<Unit> =
+        Result.success(Unit)
   }
 
   private class MockEventRepository(
@@ -145,6 +153,15 @@ class OrganizerProfileViewModelTest {
     override suspend fun updateEvent(event: Event): Result<Unit> = Result.success(Unit)
 
     override suspend fun deleteEvent(eventId: String): Result<Unit> = Result.success(Unit)
+
+    override suspend fun addEventImage(eventId: String, imageUrl: String): Result<Unit> =
+        Result.success(Unit)
+
+    override suspend fun removeEventImage(eventId: String, imageUrl: String): Result<Unit> =
+        Result.success(Unit)
+
+    override suspend fun updateEventImages(eventId: String, imageUrls: List<String>): Result<Unit> =
+        Result.success(Unit)
   }
 
   // Helper function to create ViewModel with injected mocks

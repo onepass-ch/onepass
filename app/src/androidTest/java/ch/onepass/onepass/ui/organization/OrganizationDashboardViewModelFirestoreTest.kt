@@ -2,6 +2,7 @@ package ch.onepass.onepass.ui.organization
 
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
+import ch.onepass.onepass.model.membership.MembershipRepositoryFirebase
 import ch.onepass.onepass.model.organization.*
 import ch.onepass.onepass.utils.EventTestData
 import ch.onepass.onepass.utils.FirebaseEmulator
@@ -22,6 +23,7 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
   private lateinit var userId: String
   private lateinit var orgRepository: OrganizationRepositoryFirebase
   private lateinit var eventRepository: EventRepositoryFirebase
+  private lateinit var membershipRepository: MembershipRepositoryFirebase
   private lateinit var auth: FirebaseAuth
 
   @Before
@@ -32,21 +34,21 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
       userId = FirebaseEmulator.auth.currentUser?.uid ?: "test-user"
       orgRepository = OrganizationRepositoryFirebase()
       eventRepository = EventRepositoryFirebase()
+      membershipRepository = MembershipRepositoryFirebase()
       auth = FirebaseEmulator.auth
     }
   }
 
   private fun createViewModel() =
       OrganizationDashboardViewModel(
-          organizationRepository = orgRepository, eventRepository = eventRepository, auth = auth)
+          organizationRepository = orgRepository,
+          eventRepository = eventRepository,
+          membershipRepository = membershipRepository,
+          auth = auth)
 
   private fun createOrg(
       id: String,
       name: String = "Test Org",
-      members: Map<String, OrganizationMember> =
-          mapOf(
-              userId to
-                  OrganizationMember(role = OrganizationRole.OWNER, assignedEvents = emptyList())),
       followerCount: Int = 0,
       averageRating: Float = 0f
   ) =
@@ -55,7 +57,7 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
           name = name,
           ownerId = userId,
           status = OrganizationStatus.ACTIVE,
-          members = members,
+          members = emptyMap(), // Ensure decoupled from legacy members field
           followerCount = followerCount,
           averageRating = averageRating)
 
@@ -73,6 +75,9 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
   fun viewModel_loadsOrganizationFromFirestore() = runTest {
     val org = createOrg("vm-org-1", "VM Test Org", followerCount = 2000, averageRating = 4.8f)
     val orgId = orgRepository.createOrganization(org).getOrThrow()
+
+    val members = mapOf(userId to OrganizationRole.OWNER)
+    FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
 
     val viewModel = createViewModel()
     val state =
@@ -93,6 +98,9 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
             "Event Test Org",
         )
     val orgId = orgRepository.createOrganization(org).getOrThrow()
+
+    val members = mapOf(userId to OrganizationRole.OWNER)
+    FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
 
     val event1 = EventTestData.createPublishedEvent("vm-evt-1", organizerId = orgId, capacity = 150)
     val event2 = EventTestData.createPublishedEvent("vm-evt-2", organizerId = orgId, capacity = 250)
@@ -115,19 +123,15 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
         createOrg(
             "vm-org-3",
             "Staff Test Org",
-            members =
-                mapOf(
-                    userId to
-                        OrganizationMember(
-                            role = OrganizationRole.OWNER, assignedEvents = emptyList()),
-                    "member-2" to
-                        OrganizationMember(
-                            role = OrganizationRole.MEMBER, assignedEvents = emptyList()),
-                    "staff-2" to
-                        OrganizationMember(
-                            role = OrganizationRole.STAFF, assignedEvents = emptyList())),
         )
     val orgId = orgRepository.createOrganization(org).getOrThrow()
+
+    val members =
+        mapOf(
+            userId to OrganizationRole.OWNER,
+            "member-2" to OrganizationRole.MEMBER,
+            "staff-2" to OrganizationRole.STAFF)
+    FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
 
     val viewModel = createViewModel()
     val state =
@@ -147,16 +151,12 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
         createOrg(
             "vm-org-4",
             "Remove Test Org",
-            members =
-                mapOf(
-                    userId to
-                        OrganizationMember(
-                            role = OrganizationRole.OWNER, assignedEvents = emptyList()),
-                    "removable-member" to
-                        OrganizationMember(
-                            role = OrganizationRole.MEMBER, assignedEvents = emptyList())),
         )
     val orgId = orgRepository.createOrganization(org).getOrThrow()
+
+    val members =
+        mapOf(userId to OrganizationRole.OWNER, "removable-member" to OrganizationRole.MEMBER)
+    FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
 
     val viewModel = createViewModel()
     loadOrgAndWait(viewModel, orgId) { !it.isLoading && it.organization != null }
@@ -175,16 +175,11 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
         createOrg(
             "vm-org-5",
             "Owner Test Org",
-            members =
-                mapOf(
-                    userId to
-                        OrganizationMember(
-                            role = OrganizationRole.OWNER, assignedEvents = emptyList()),
-                    "safe-member" to
-                        OrganizationMember(
-                            role = OrganizationRole.MEMBER, assignedEvents = emptyList())),
         )
     val orgId = orgRepository.createOrganization(org).getOrThrow()
+
+    val members = mapOf(userId to OrganizationRole.OWNER, "safe-member" to OrganizationRole.MEMBER)
+    FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
 
     val viewModel = createViewModel()
     loadOrgAndWait(viewModel, orgId) { !it.isLoading && it.organization != null }
@@ -218,6 +213,8 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
             "Refresh Test Org",
         )
     val orgId = orgRepository.createOrganization(org).getOrThrow()
+    val members = mapOf(userId to OrganizationRole.OWNER)
+    FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
 
     val viewModel = createViewModel()
     loadOrgAndWait(viewModel, orgId) { !it.isLoading && it.organization != null }
@@ -249,6 +246,8 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
             "Owner Role Org",
         )
     val orgId = orgRepository.createOrganization(org).getOrThrow()
+    val members = mapOf(userId to OrganizationRole.OWNER)
+    FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
 
     val viewModel = createViewModel()
     val state =
@@ -265,6 +264,8 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
             "No Events Org",
         )
     val orgId = orgRepository.createOrganization(org).getOrThrow()
+    val members = mapOf(userId to OrganizationRole.OWNER)
+    FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
 
     val viewModel = createViewModel()
     val state =
@@ -279,9 +280,10 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
         createOrg(
             "vm-org-9",
             "No Staff Org",
-            members = emptyMap(),
         )
     val orgId = orgRepository.createOrganization(org).getOrThrow()
+    // Explicitly create NO memberships (empty map)
+    FirestoreTestHelper.populateMemberships(orgId, emptyMap(), membershipRepository)
 
     val viewModel = createViewModel()
     val state =
@@ -296,19 +298,15 @@ class OrganizationDashboardViewModelFirestoreTest : FirestoreTestBase() {
         createOrg(
             "vm-org-10",
             "Protection Test Org",
-            members =
-                mapOf(
-                    userId to
-                        OrganizationMember(
-                            role = OrganizationRole.OWNER, assignedEvents = emptyList()),
-                    "member-x" to
-                        OrganizationMember(
-                            role = OrganizationRole.MEMBER, assignedEvents = emptyList()),
-                    "staff-x" to
-                        OrganizationMember(
-                            role = OrganizationRole.STAFF, assignedEvents = emptyList())),
         )
     val orgId = orgRepository.createOrganization(org).getOrThrow()
+
+    val members =
+        mapOf(
+            userId to OrganizationRole.OWNER,
+            "member-x" to OrganizationRole.MEMBER,
+            "staff-x" to OrganizationRole.STAFF)
+    FirestoreTestHelper.populateMemberships(orgId, members, membershipRepository)
 
     val viewModel = createViewModel()
     loadOrgAndWait(viewModel, orgId) { !it.isLoading && it.organization != null }

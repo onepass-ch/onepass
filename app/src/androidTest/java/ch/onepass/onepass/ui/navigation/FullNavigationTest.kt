@@ -61,7 +61,8 @@ class FullNavigationTest {
     mockUserRepo = mockk(relaxed = true)
 
     every { mockAuthRepo.isUserSignedIn() } returns signedIn
-    coEvery { mockUserRepo.isOrganizer() } returns false
+    // Note: isOrganizer() method has been removed from UserRepository
+    // Organization membership is now checked via MembershipRepository
 
     val authVmFactory = viewModelFactory { initializer { AuthViewModel(mockAuthRepo) } }
 

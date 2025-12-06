@@ -2,6 +2,8 @@ package ch.onepass.onepass.ui.profile
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ch.onepass.onepass.model.membership.MembershipRepository
+import ch.onepass.onepass.model.membership.MembershipRepositoryFirebase
 import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
@@ -46,8 +48,10 @@ sealed interface ProfileEffect {
   object NavigateToBecomeOrganizer : ProfileEffect
 }
 
-open class ProfileViewModel(private val userRepository: UserRepository = UserRepositoryFirebase()) :
-    ViewModel() {
+open class ProfileViewModel(
+    private val userRepository: UserRepository = UserRepositoryFirebase(),
+    private val membershipRepository: MembershipRepository = MembershipRepositoryFirebase()
+) : ViewModel() {
 
   private val _state = MutableStateFlow(ProfileUiState())
   open val state: StateFlow<ProfileUiState> = _state.asStateFlow()
@@ -67,7 +71,11 @@ open class ProfileViewModel(private val userRepository: UserRepository = UserRep
         val user = userRepository.getCurrentUser() ?: userRepository.getOrCreateUser()
 
         if (user != null) {
-          _state.value = user.toUiState()
+          // Check if user has any organization membership
+          val memberships =
+              membershipRepository.getOrganizationsByUser(user.uid).getOrNull() ?: emptyList()
+          val isOrganizer = memberships.isNotEmpty()
+          _state.value = user.toUiState(isOrganizer)
         } else {
           _state.value =
               _state.value.copy(loading = false, errorMessage = "User not found or not logged in")
@@ -87,9 +95,11 @@ open class ProfileViewModel(private val userRepository: UserRepository = UserRep
    */
   fun onOrganizationButton() =
       viewModelScope.launch {
-        val isOrganizer = userRepository.isOrganizer()
-        if (isOrganizer) _effects.emit(ProfileEffect.NavigateToMyOrganizations)
-        else _effects.emit(ProfileEffect.NavigateToBecomeOrganizer)
+        if (_state.value.isOrganizer) {
+          _effects.emit(ProfileEffect.NavigateToMyOrganizations)
+        } else {
+          _effects.emit(ProfileEffect.NavigateToBecomeOrganizer)
+        }
       }
 
   // --- Placeholder stubs to avoid navigating to non-existent screens ---
@@ -119,7 +129,7 @@ open class ProfileViewModel(private val userRepository: UserRepository = UserRep
 }
 
 // --- Extension: Map User model to UI state ---
-private fun User.toUiState(): ProfileUiState {
+private fun User.toUiState(isOrganizer: Boolean): ProfileUiState {
   val initials =
       displayName
           .split(" ")
@@ -133,6 +143,6 @@ private fun User.toUiState(): ProfileUiState {
       avatarUrl = avatarUrl,
       initials = initials,
       stats = ProfileStats(events = 0, upcoming = 0, saved = 0),
-      isOrganizer = this.isOrganizer,
+      isOrganizer = isOrganizer,
       loading = false)
 }

@@ -16,7 +16,8 @@ class UserTest {
       avatarUrl: String? = "https://example.com/avatar.png",
       coverUrl: String? = "https://example.com/cover.png",
       phoneE164: String? = "+41998887766",
-      country: String? = "CH"
+      country: String? = "CH",
+      favoriteEventIds: List<String> = listOf<String>()
   ): User {
     return User(
         uid = uid,
@@ -29,7 +30,8 @@ class UserTest {
         avatarUrl = avatarUrl,
         coverUrl = coverUrl,
         phoneE164 = phoneE164,
-        country = country)
+        country = country,
+        favoriteEventIds = favoriteEventIds)
   }
 
   @Test
@@ -46,6 +48,26 @@ class UserTest {
     Assert.assertNull(user.coverUrl)
     Assert.assertNull(user.phoneE164)
     Assert.assertNull(user.country)
+    Assert.assertTrue(user.favoriteEventIds.isEmpty())
+  }
+
+  @Test
+  fun canCreateUserWithFavorites() {
+    val favorites = listOf("event1", "event2")
+    val user = User(favoriteEventIds = favorites)
+
+    Assert.assertEquals(2, user.favoriteEventIds.size)
+    Assert.assertTrue(user.favoriteEventIds.contains("event1"))
+  }
+
+  @Test
+  fun equalityCheckIncludesFavorites() {
+    val user1 = createTestUser(favoriteEventIds = listOf("A"))
+    val user2 = createTestUser(favoriteEventIds = listOf("A"))
+    val user3 = createTestUser(favoriteEventIds = listOf("B"))
+
+    Assert.assertEquals(user1, user2)
+    Assert.assertNotEquals(user1, user3)
   }
 
   @Test

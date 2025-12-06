@@ -4,6 +4,8 @@ import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.auth
 import com.google.firebase.firestore.firestore
+import com.google.firebase.storage.ktx.storage
+import com.google.firebase.storage.storage
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -23,6 +25,7 @@ object FirebaseEmulator {
   const val EMULATORS_PORT = 4400
   const val FIRESTORE_PORT = 8080
   const val AUTH_PORT = 9099
+  const val STORAGE_PORT = 9199
 
   val projectID by lazy { FirebaseApp.getInstance().options.projectId }
 
@@ -52,6 +55,7 @@ object FirebaseEmulator {
     if (isRunning) {
       auth.useEmulator(HOST, AUTH_PORT)
       firestore.useEmulator(HOST, FIRESTORE_PORT)
+      Firebase.storage.useEmulator(HOST, STORAGE_PORT)
       assert(Firebase.firestore.firestoreSettings.host.contains(HOST)) {
         "Failed to connect to Firebase Firestore Emulator."
       }

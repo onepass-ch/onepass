@@ -38,7 +38,7 @@ object FeedScreenTestTags {
   const val FEED_TITLE = "feedTitle"
   const val FEED_LOCATION = "feedLocation"
   const val FILTER_BUTTON = "filterButton"
-  const val NOTIFICATION_BUTTON = "notificationButton" // Added tag
+  const val NOTIFICATION_BUTTON = "notificationButton"
   const val EVENT_LIST = "eventList"
   const val LOADING_INDICATOR = "loadingIndicator"
   const val ERROR_MESSAGE = "errorMessage"
@@ -66,6 +66,7 @@ fun FeedScreen(
     onNavigateToNotifications: () -> Unit = {},
     viewModel: FeedViewModel = viewModel(),
     filterViewModel: EventFilterViewModel = viewModel(),
+    eventCardViewModel: EventCardViewModel = viewModel()
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val currentFilters by filterViewModel.currentFilters.collectAsState()
@@ -99,51 +100,52 @@ fun FeedScreen(
             )
           }
         }
-      }) { paddingValues ->
-        Box(
-            modifier = Modifier.fillMaxSize().padding(paddingValues),
-            contentAlignment = Alignment.Center,
-        ) {
-          when {
-            uiState.isLoading && uiState.events.isEmpty() -> {
-              LoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR)
-            }
-            uiState.error != null && uiState.events.isEmpty() -> {
-              ErrorState(
-                  error = uiState.error!!,
-                  onRetry = { viewModel.refreshEvents() },
-                  testTag = FeedScreenTestTags.ERROR_MESSAGE)
-            }
-            !uiState.isLoading && uiState.events.isEmpty() -> {
-              EmptyState(
-                  title = "No Events Found",
-                  message = "Check back later for new events in your area!",
-                  testTag = FeedScreenTestTags.EMPTY_STATE)
-            }
-            else -> {
-              EventListContent(
-                  events = uiState.events,
-                  isLoadingMore = uiState.isLoading,
-                  onEventClick = onNavigateToEvent,
-              )
-            }
-          }
-          // Filter Dialog
-          if (uiState.showFilterDialog) {
-            // Sync localFilters to current global filters on dialog open
-            LaunchedEffect(Unit) { filterViewModel.updateLocalFilters(currentFilters) }
-
-            FilterDialog(
-                viewModel = filterViewModel,
-                onApply = { newFilters ->
-                  filterViewModel.applyFilters(newFilters)
-                  viewModel.setShowFilterDialog(false)
-                },
-                onDismiss = { viewModel.setShowFilterDialog(false) },
-            )
-          }
+      },
+  ) { paddingValues ->
+    Box(
+        modifier = Modifier.fillMaxSize().padding(paddingValues),
+        contentAlignment = Alignment.Center,
+    ) {
+      when {
+        uiState.isLoading && uiState.events.isEmpty() -> {
+          LoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR)
+        }
+        uiState.error != null && uiState.events.isEmpty() -> {
+          ErrorState(
+              error = uiState.error!!,
+              onRetry = { viewModel.refreshEvents() },
+              testTag = FeedScreenTestTags.ERROR_MESSAGE)
+        }
+        !uiState.isLoading && uiState.events.isEmpty() -> {
+          EmptyState(
+              title = "No Events Found",
+              message = "Check back later for new events in your area!",
+              testTag = FeedScreenTestTags.EMPTY_STATE)
+        }
+        else -> {
+          EventListContent(
+              events = uiState.events,
+              isLoadingMore = uiState.isLoading,
+              onEventClick = onNavigateToEvent,
+              eventCardViewModel = eventCardViewModel)
         }
       }
+      // Filter Dialog
+      if (uiState.showFilterDialog) {
+        // Sync localFilters to current global filters on dialog open
+        LaunchedEffect(Unit) { filterViewModel.updateLocalFilters(currentFilters) }
+
+        FilterDialog(
+            viewModel = filterViewModel,
+            onApply = { newFilters ->
+              filterViewModel.applyFilters(newFilters)
+              viewModel.setShowFilterDialog(false)
+            },
+            onDismiss = { viewModel.setShowFilterDialog(false) },
+        )
+      }
+    }
+  }
 }
 
 /**
@@ -234,8 +236,8 @@ private fun EventListContent(
     events: List<Event>,
     isLoadingMore: Boolean,
     onEventClick: (String) -> Unit,
+    eventCardViewModel: EventCardViewModel
 ) {
-  val eventCardViewModel = EventCardViewModel.getInstance()
   val likedEvents by eventCardViewModel.likedEvents.collectAsState()
 
   LazyColumn(

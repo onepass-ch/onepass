@@ -58,9 +58,10 @@ fun EventFormScaffold(
 }
 
 @Composable
-fun CreateEventButton(onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun CreateEventButton(modifier: Modifier = Modifier, onClick: () -> Unit, enabled: Boolean = true) {
   Button(
       onClick = onClick,
+      enabled = enabled,
       modifier =
           modifier
               .fillMaxWidth()
@@ -99,36 +100,46 @@ fun CreateEventForm(
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
+  val snackbarHostState = remember { SnackbarHostState() }
 
   LaunchedEffect(Unit) { viewModel.setOrganizationId(organizationId) }
 
   LaunchedEffect(uiState) {
-    when (uiState) {
+    when (val state = uiState) {
       is CreateEventUiState.Success -> {
         onEventCreated()
         viewModel.resetForm()
       }
       is CreateEventUiState.Error -> {
+        snackbarHostState.showSnackbar(message = state.message, duration = SnackbarDuration.Long)
         viewModel.clearError()
       }
       else -> {}
     }
   }
 
-  EventFormScaffold(onNavigateBack, scrollState) {
-    // Use the shared EventFormFields composable
-    EventFormFields(viewModel = viewModel)
+  Box(modifier = Modifier.fillMaxSize()) {
+    EventFormScaffold(onNavigateBack, scrollState) {
+      // Use the shared EventFormFields composable
+      EventFormFields(viewModel = viewModel)
 
-    // Create Button
-    CreateEventButton(onClick = { viewModel.createEvent() })
-    Spacer(modifier = Modifier.height(24.dp))
-  }
+      // Create Button - disabled during loading
+      CreateEventButton(
+          onClick = { viewModel.createEvent() }, enabled = uiState !is CreateEventUiState.Loading)
+      Spacer(modifier = Modifier.height(24.dp))
+    }
 
-  if (uiState is CreateEventUiState.Loading) {
-    Box(
-        modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)),
-        contentAlignment = Alignment.Center) {
-          CircularProgressIndicator(color = EventDateColor)
-        }
+    if (uiState is CreateEventUiState.Loading) {
+      Box(
+          modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)),
+          contentAlignment = Alignment.Center) {
+            CircularProgressIndicator(color = EventDateColor)
+          }
+    }
+
+    // Snackbar for error messages
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp))
   }
 }

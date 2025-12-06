@@ -1,12 +1,16 @@
 package ch.onepass.onepass.ui.eventform
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
+import ch.onepass.onepass.model.event.EventTag
 import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.model.map.LocationRepository
 import ch.onepass.onepass.model.map.NominatimLocationRepository
+import ch.onepass.onepass.model.storage.StorageRepository
+import ch.onepass.onepass.model.storage.StorageRepositoryFirebase
 import ch.onepass.onepass.utils.DateTimeUtils
 import ch.onepass.onepass.utils.ValidationUtils
 import com.google.firebase.Timestamp
@@ -23,11 +27,16 @@ import kotlinx.coroutines.launch
  * validation, and parsing.
  *
  * @property eventRepository Repository for event operations
+ * @property storageRepository Repository for image storage operations
  */
 abstract class EventFormViewModel(
     protected val eventRepository: EventRepository = EventRepositoryFirebase(),
-    protected val locationRepository: LocationRepository = NominatimLocationRepository()
+    protected val locationRepository: LocationRepository = NominatimLocationRepository(),
+    protected val storageRepository: StorageRepository = StorageRepositoryFirebase()
 ) : ViewModel() {
+  companion object {
+    const val MAX_TAG_COUNT = 5
+  }
 
   enum class ValidationError(val key: String, val message: String) {
     TITLE("title", "Title cannot be empty"),
@@ -57,7 +66,9 @@ abstract class EventFormViewModel(
       val location: String = "",
       val price: String = "",
       val capacity: String = "",
-      val selectedLocation: Location? = null
+      val selectedLocation: Location? = null,
+      val selectedImageUris: List<Uri> = emptyList(),
+      val selectedTags: Set<EventTag> = emptySet()
   )
 
   data class ParsedFormData(
@@ -67,14 +78,34 @@ abstract class EventFormViewModel(
       val capacity: Int,
       val startTime: Timestamp,
       val endTime: Timestamp,
-      val selectedLocation: Location?
+      val selectedLocation: Location?,
+      val tags: List<String>
   )
+
+  /** Sealed class representing the state of image upload operations */
+  sealed class ImageUploadState {
+    /** No upload operation in progress */
+    object Idle : ImageUploadState()
+
+    /** Images are being uploaded */
+    object Uploading : ImageUploadState()
+
+    /** Upload completed successfully */
+    data class Success(val urls: List<String>) : ImageUploadState()
+
+    /** Upload failed */
+    data class Error(val message: String) : ImageUploadState()
+  }
 
   protected val _formState = MutableStateFlow(EventFormState())
   val formState: StateFlow<EventFormState> = _formState.asStateFlow()
 
   protected val _fieldErrors = MutableStateFlow<Map<String, String>>(emptyMap())
   val fieldErrors: StateFlow<Map<String, String>> = _fieldErrors.asStateFlow()
+
+  // Image upload state
+  protected val _imageUploadState = MutableStateFlow<ImageUploadState>(ImageUploadState.Idle)
+  val imageUploadState: StateFlow<ImageUploadState> = _imageUploadState.asStateFlow()
 
   // Location search state
   private val _locationSearchResults = MutableStateFlow<List<Location>>(emptyList())
@@ -114,6 +145,21 @@ abstract class EventFormViewModel(
   fun updateDate(date: String) {
     _formState.value = _formState.value.copy(date = date)
     clearFieldError(ValidationError.DATE.key)
+  }
+
+  /**
+   * Toggles the selection of a tag. Adds the tag if not selected (up to a limit of 5), or removes
+   * it if already selected.
+   */
+  fun toggleTag(tag: EventTag) {
+    val currentTags = _formState.value.selectedTags
+    val newTags =
+        if (currentTags.contains(tag)) {
+          currentTags - tag
+        } else {
+          if (currentTags.size < MAX_TAG_COUNT) currentTags + tag else currentTags
+        }
+    _formState.value = _formState.value.copy(selectedTags = newTags)
   }
 
   /** Updates the event location */
@@ -248,6 +294,9 @@ abstract class EventFormViewModel(
     val startTimestamp = parseDateAndTime(state.date, state.startTime) ?: return null
     val endTimestamp = parseDateAndTime(state.date, state.endTime) ?: return null
 
+    // Convert selected tags (Enum) to list of strings (names)
+    val tagsList = state.selectedTags.map { it.name }
+
     return ParsedFormData(
         title = state.title,
         description = state.description,
@@ -255,7 +304,8 @@ abstract class EventFormViewModel(
         capacity = capacity,
         startTime = startTimestamp,
         endTime = endTimestamp,
-        selectedLocation = state.selectedLocation)
+        selectedLocation = state.selectedLocation,
+        tags = tagsList)
   }
 
   /**
@@ -273,6 +323,89 @@ abstract class EventFormViewModel(
     _fieldErrors.update { currentErrors ->
       currentErrors.toMutableMap().apply { fieldKeys.forEach { remove(it) } }
     }
+  }
+
+  /**
+   * Adds a selected image URI to the form state (does not upload yet)
+   *
+   * @param uri The URI of the selected image
+   */
+  fun selectImage(uri: Uri) {
+    _formState.update { currentState ->
+      currentState.copy(selectedImageUris = currentState.selectedImageUris + uri)
+    }
+  }
+
+  /**
+   * Removes an image URI from the form state
+   *
+   * @param uri The URI to remove
+   */
+  fun removeImage(uri: Uri) {
+    _formState.update { currentState ->
+      currentState.copy(selectedImageUris = currentState.selectedImageUris.filter { it != uri })
+    }
+  }
+
+  /**
+   * Starts the image upload process in the background and updates the imageUploadState. Child
+   * classes should observe imageUploadState to handle the result.
+   *
+   * @param eventId The event ID to use for the storage path
+   */
+  protected fun startImageUpload(eventId: String) {
+    viewModelScope.launch {
+      _imageUploadState.value = ImageUploadState.Uploading
+      val result = uploadSelectedImagesInternal(eventId)
+
+      _imageUploadState.value =
+          result.fold(
+              onSuccess = { ImageUploadState.Success(it) },
+              onFailure = { ImageUploadState.Error(it.message ?: "Upload failed") })
+    }
+  }
+
+  /**
+   * Internal suspend function that performs the actual image upload. Protected to allow child
+   * ViewModels to call it within their own coroutine scopes. Should NOT be called from UI layer -
+   * use startImageUpload() instead.
+   *
+   * @param eventId The event ID to use for the storage path
+   * @return Result containing list of uploaded image URLs or error
+   */
+  private suspend fun uploadSelectedImagesInternal(eventId: String): Result<List<String>> {
+    val imageUris = _formState.value.selectedImageUris
+
+    if (imageUris.isEmpty()) {
+      return Result.success(emptyList())
+    }
+
+    val uploadedUrls = mutableListOf<String>()
+
+    try {
+      imageUris.forEachIndexed { index, uri ->
+        // Determine the correct file extension based on the image type
+        val extension = storageRepository.getImageExtension(uri)
+        val storagePath = "events/$eventId/image_$index.$extension"
+        val result = storageRepository.uploadImage(uri, storagePath)
+
+        result.fold(
+            onSuccess = { url -> uploadedUrls.add(url) },
+            onFailure = { error ->
+              return Result.failure(
+                  Exception("Failed to upload image ${index + 1}: ${error.message}"))
+            })
+      }
+
+      return Result.success(uploadedUrls)
+    } catch (e: Exception) {
+      return Result.failure(Exception("Image upload failed: ${e.message}"))
+    }
+  }
+
+  /** Resets the image upload state to Idle */
+  protected fun resetImageUploadState() {
+    _imageUploadState.value = ImageUploadState.Idle
   }
 
   /** Resets the form to initial state */

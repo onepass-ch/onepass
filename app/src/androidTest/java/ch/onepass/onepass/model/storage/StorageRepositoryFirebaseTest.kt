@@ -9,6 +9,7 @@ import java.net.URLEncoder
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertTrue
+import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -191,39 +192,46 @@ class StorageRepositoryFirebaseTest {
   }
 
   @Test
-  fun deleteDirectory_withMultipleImages_deletesAll() = runTest {
-    val directoryPath = "test/directory-${System.currentTimeMillis()}"
+  fun deleteDirectory_withMultipleImages_deletesAll() =
+      runTest(timeout = 30.seconds) {
+        val directoryPath = "test/directory-${System.currentTimeMillis()}"
 
-    // Upload multiple images to the directory
-    val file1 = createTestImageFile()
-    val file2 = createTestImageFile()
-    val file3 = createTestImageFile()
+        // Upload multiple images to the directory
+        val file1 = createTestImageFile()
+        val file2 = createTestImageFile()
+        val file3 = createTestImageFile()
 
-    val path1 = "$directoryPath/image1.jpg"
-    val path2 = "$directoryPath/image2.jpg"
-    val path3 = "$directoryPath/image3.jpg"
+        val path1 = "$directoryPath/image1.jpg"
+        val path2 = "$directoryPath/image2.jpg"
+        val path3 = "$directoryPath/image3.jpg"
 
-    repository.uploadImage(Uri.fromFile(file1), path1)
-    repository.uploadImage(Uri.fromFile(file2), path2)
-    repository.uploadImage(Uri.fromFile(file3), path3)
+        // Await all uploads and verify they succeeded
+        val upload1 = repository.uploadImage(Uri.fromFile(file1), path1)
+        assertTrue("Upload 1 should succeed", upload1.isSuccess)
 
-    // Delete the entire directory
-    val result = repository.deleteDirectory(directoryPath)
+        val upload2 = repository.uploadImage(Uri.fromFile(file2), path2)
+        assertTrue("Upload 2 should succeed", upload2.isSuccess)
 
-    assertTrue("Delete directory should succeed", result.isSuccess)
-    val deletedCount = result.getOrNull()
-    assertEquals("Should delete 3 images", 3, deletedCount)
+        val upload3 = repository.uploadImage(Uri.fromFile(file3), path3)
+        assertTrue("Upload 3 should succeed", upload3.isSuccess)
 
-    // Verify all images are deleted
-    assertTrue("Image 1 should be deleted", repository.getDownloadUrl(path1).isFailure)
-    assertTrue("Image 2 should be deleted", repository.getDownloadUrl(path2).isFailure)
-    assertTrue("Image 3 should be deleted", repository.getDownloadUrl(path3).isFailure)
+        // Delete the entire directory
+        val result = repository.deleteDirectory(directoryPath)
 
-    // Clean up test files
-    file1.delete()
-    file2.delete()
-    file3.delete()
-  }
+        assertTrue("Delete directory should succeed", result.isSuccess)
+        val deletedCount = result.getOrNull()
+        assertEquals("Should delete 3 images", 3, deletedCount)
+
+        // Verify all images are deleted
+        assertTrue("Image 1 should be deleted", repository.getDownloadUrl(path1).isFailure)
+        assertTrue("Image 2 should be deleted", repository.getDownloadUrl(path2).isFailure)
+        assertTrue("Image 3 should be deleted", repository.getDownloadUrl(path3).isFailure)
+
+        // Clean up test files
+        file1.delete()
+        file2.delete()
+        file3.delete()
+      }
 
   @Test
   fun uploadMultipleImages_success() = runTest {

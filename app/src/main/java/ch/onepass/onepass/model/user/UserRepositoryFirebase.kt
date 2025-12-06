@@ -7,6 +7,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.functions.ktx.functions
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 
 class UserRepositoryFirebase(
@@ -53,6 +56,19 @@ class UserRepositoryFirebase(
     docRef.update("lastLoginAt", FieldValue.serverTimestamp()).await()
   }
 
+  override suspend fun getUserById(uid: String): Result<StaffSearchResult?> = runCatching {
+    val snapshot = userCollection.document(uid).get().await()
+    if (snapshot.exists()) {
+      StaffSearchResult(
+          id = snapshot.id,
+          email = snapshot.getString(KEY_EMAIL) ?: "",
+          displayName = snapshot.getString(KEY_DISPLAY_NAME) ?: "",
+          avatarUrl = snapshot.getString(KEY_AVATAR_URL))
+    } else {
+      null
+    }
+  }
+
   override suspend fun searchUsers(
       query: String,
       searchType: UserSearchType,
@@ -86,23 +102,36 @@ class UserRepositoryFirebase(
     }
   }
 
-  override suspend fun isOrganizer(): Boolean {
-    val firebaseUser = auth.currentUser ?: return false
-    val uid = firebaseUser.uid
-
-    val snapshot = userCollection.document(uid).get().await()
-    val user = snapshot.toObject(User::class.java) ?: return false
-
-    return user.organizationIds.isNotEmpty()
+  override fun getFavoriteEvents(uid: String): Flow<Set<String>> = callbackFlow {
+    val docRef = userCollection.document(uid)
+    val listener =
+        docRef.addSnapshotListener { snapshot, error ->
+          if (error != null) {
+            close(error)
+            return@addSnapshotListener
+          }
+          if (snapshot != null && snapshot.exists()) {
+            val user = snapshot.toObject(User::class.java)
+            val favorites = user?.favoriteEventIds?.toSet() ?: emptySet()
+            trySend(favorites)
+          } else {
+            trySend(emptySet())
+          }
+        }
+    awaitClose { listener.remove() }
   }
 
-  override suspend fun addOrganizationToUser(userId: String, orgId: String) {
-    userCollection.document(userId).update("organizationIds", FieldValue.arrayUnion(orgId)).await()
+  override suspend fun addFavoriteEvent(uid: String, eventId: String): Result<Unit> = runCatching {
+    userCollection.document(uid).update("favoriteEventIds", FieldValue.arrayUnion(eventId)).await()
   }
 
-  override suspend fun removeOrganizationFromUser(userId: String, orgId: String) {
-    userCollection.document(userId).update("organizationIds", FieldValue.arrayRemove(orgId)).await()
-  }
+  override suspend fun removeFavoriteEvent(uid: String, eventId: String): Result<Unit> =
+      runCatching {
+        userCollection
+            .document(uid)
+            .update("favoriteEventIds", FieldValue.arrayRemove(eventId))
+            .await()
+      }
 
   private companion object {
     const val FN_SEARCH_USERS = "searchUsers"

@@ -288,4 +288,15 @@ class EditEventFormComposeTest {
 
     assert(viewModel.formState.value.title == "Modified")
   }
+
+  @Test
+  fun tagsSection_isDisplayed_and_Interactable() = runTest {
+    every { mockRepository.getEventById("test-event-id") } returns flowOf(testEvent)
+    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
+
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithText("Tags").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Technology").performScrollTo().assertIsDisplayed()
+  }
 }

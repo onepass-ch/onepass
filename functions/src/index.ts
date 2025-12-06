@@ -9,8 +9,6 @@
 
 import * as functions from "firebase-functions";
 import {setGlobalOptions} from "firebase-functions";
-import {onRequest} from "firebase-functions/https";
-import * as logger from "firebase-functions/logger";
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
@@ -31,7 +29,7 @@ const db = admin.firestore();
 // this will be the maximum concurrent request count.
 setGlobalOptions({ maxInstances: 10 });
 
-export const searchUsers = functions.https.onCall(async (payload, context) => {
+export const searchUsers = functions.https.onCall(async (payload: any, context: any) => {
   const uid = context.auth?.uid;
   if (!uid) {
     throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
@@ -43,7 +41,7 @@ export const searchUsers = functions.https.onCall(async (payload, context) => {
     throw new functions.https.HttpsError("invalid-argument", "Query cannot be blank.");
   }
 
-  let q = db.collection("users");
+  let q: any = db.collection("users");
   if (searchType === "EMAIL") {
     q = q
       .where("emailLower", ">=", trimmed.toLowerCase())
@@ -57,7 +55,7 @@ export const searchUsers = functions.https.onCall(async (payload, context) => {
   }
 
   const snapshot = await q.limit(50).get();
-  const results = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+  const results = snapshot.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
   // If organizationId is not null, exclude all users in the organization
   let exclude = new Set<string>();
@@ -71,8 +69,8 @@ export const searchUsers = functions.https.onCall(async (payload, context) => {
   }
 
   const users = results
-    .filter((u) => !exclude.has(u.id))
-    .map((u) => ({
+    .filter((u: any) => !exclude.has(u.id))
+    .map((u: any) => ({
       id: u.id,
       email: u.email ?? "",
       displayName: u.displayName ?? "",
@@ -81,3 +79,6 @@ export const searchUsers = functions.https.onCall(async (payload, context) => {
 
   return { users };
 });
+
+export { generateUserPass } from "./generateUserPass";
+export { onUserCreated } from "./onUserCreated";

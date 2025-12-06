@@ -1,20 +1,59 @@
 package ch.onepass.onepass.model.user
 
 import ch.onepass.onepass.model.staff.StaffSearchResult
+import kotlinx.coroutines.flow.Flow
 
+/**
+ * Repository interface for managing user-related data and operations.
+ *
+ * Usage Guide:
+ * - Use [getCurrentUser] when you need to retrieve the currently logged-in user's profile.
+ * - Use [getOrCreateUser] during the authentication flow to ensure a user record exists.
+ * - Use [updateLastLogin] to refresh the last login timestamp for a specific user.
+ * - Use [getUserById] to fetch detailed information about a specific user using their unique
+ *   identifier (UID).
+ * - Use [searchUsers] to find users based on specific criteria like display name or email.
+ */
 interface UserRepository {
+
+  /**
+   * Retrieves the currently authenticated user.
+   *
+   * @return The [User] object if a user is currently logged in, or null if not.
+   */
   suspend fun getCurrentUser(): User?
 
+  /**
+   * Retrieves the current user or creates a new one if they do not exist.
+   *
+   * This is typically used during the sign-in process to ensure the user is registered in the
+   * backend.
+   *
+   * @return The existing or newly created [User] object, or null if the operation fails.
+   */
   suspend fun getOrCreateUser(): User?
 
+  /**
+   * Updates the last login timestamp for the specified user.
+   *
+   * @param uid The unique identifier of the user.
+   */
   suspend fun updateLastLogin(uid: String)
+
+  /**
+   * Retrieves a user by their unique ID.
+   *
+   * @param uid The unique user ID.
+   * @return A [Result] containing the [StaffSearchResult] if found, or null if not found.
+   */
+  suspend fun getUserById(uid: String): Result<StaffSearchResult?>
 
   /**
    * Searches for users by the specified search type.
    *
-   * @param query The search query.
-   * @param searchType The type of search to perform (display name or email).
-   * @param organizationId The organization ID to filter results (optional).
+   * @param query The search query (e.g., partial name or email).
+   * @param searchType The criteria to search by (e.g., display name or email).
+   * @param organizationId An optional organization ID to filter the results.
    * @return A [Result] containing a list of [StaffSearchResult] on success, or an error.
    */
   suspend fun searchUsers(
@@ -23,21 +62,30 @@ interface UserRepository {
       organizationId: String? = null
   ): Result<List<StaffSearchResult>>
 
-  suspend fun isOrganizer(): Boolean
+  /**
+   * Retrieves the set of IDs for events marked as favorite by the user.
+   *
+   * @param uid The unique identifier of the user.
+   * @return A [Flow] of [Set] of event IDs that are favorites. The flow emits new sets whenever the
+   *   favorite status changes.
+   */
+  fun getFavoriteEvents(uid: String): Flow<Set<String>>
 
   /**
-   * Adds the organization of ID `orgId` to the `organizationIds` list of user with Id `userId`
+   * Adds an event to the user's list of favorite events.
    *
-   * @param userId The user that belongs to the organization
-   * @param orgId The organization to be added to `organizationIds`
+   * @param uid The unique identifier of the user.
+   * @param eventId The unique identifier of the event to add.
+   * @return A [Result] of [Unit] on success, or an error if the operation fails.
    */
-  suspend fun addOrganizationToUser(userId: String, orgId: String)
+  suspend fun addFavoriteEvent(uid: String, eventId: String): Result<Unit>
 
   /**
-   * Removes the organization of ID `orgId` from the `organizationIds` list of user with Id `userId`
+   * Removes an event from the user's list of favorite events.
    *
-   * @param userId The user that doesn't belong to the organization anymore
-   * @param orgId The organization to be removed from `organizationIds`
+   * @param uid The unique identifier of the user.
+   * @param eventId The unique identifier of the event to remove.
+   * @return A [Result] of [Unit] on success, or an error if the operation fails.
    */
-  suspend fun removeOrganizationFromUser(userId: String, orgId: String)
+  suspend fun removeFavoriteEvent(uid: String, eventId: String): Result<Unit>
 }

@@ -57,4 +57,12 @@ interface StorageRepository {
    * @return A [Result] containing the number of images deleted on success, or an error.
    */
   suspend fun deleteDirectory(directoryPath: String): Result<Int>
+
+  /**
+   * Determines the file extension from the URI.
+   *
+   * @param uri The URI of the image.
+   * @return The file extension (e.g., "jpg", "png", "webp").
+   */
+  fun getImageExtension(uri: Uri): String
 }

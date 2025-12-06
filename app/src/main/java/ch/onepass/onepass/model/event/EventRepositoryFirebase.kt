@@ -2,6 +2,7 @@ package ch.onepass.onepass.model.event
 
 import ch.onepass.onepass.model.map.Location
 import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.GeoPoint
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.ktx.firestore
@@ -221,6 +222,57 @@ class EventRepositoryFirebase : EventRepository {
     eventsCollection.document(eventId).delete().await()
     geoFirestore.removeLocation(eventId)
   }
+
+  /**
+   * Adds an image URL to an event's images list using Firestore array union.
+   *
+   * @param eventId The event's unique ID.
+   * @param imageUrl The image URL to add.
+   * @return A [Result] indicating success or failure.
+   */
+  override suspend fun addEventImage(eventId: String, imageUrl: String): Result<Unit> =
+      runCatching {
+        eventsCollection
+            .document(eventId)
+            .update(
+                mapOf(
+                    "images" to FieldValue.arrayUnion(imageUrl),
+                    "updatedAt" to FieldValue.serverTimestamp()))
+            .await()
+      }
+
+  /**
+   * Removes an image URL from an event's images list using Firestore array remove.
+   *
+   * @param eventId The event's unique ID.
+   * @param imageUrl The image URL to remove.
+   * @return A [Result] indicating success or failure.
+   */
+  override suspend fun removeEventImage(eventId: String, imageUrl: String): Result<Unit> =
+      runCatching {
+        eventsCollection
+            .document(eventId)
+            .update(
+                mapOf(
+                    "images" to FieldValue.arrayRemove(imageUrl),
+                    "updatedAt" to FieldValue.serverTimestamp()))
+            .await()
+      }
+
+  /**
+   * Updates the entire images list for an event.
+   *
+   * @param eventId The event's unique ID.
+   * @param imageUrls The new list of image URLs.
+   * @return A [Result] indicating success or failure.
+   */
+  override suspend fun updateEventImages(eventId: String, imageUrls: List<String>): Result<Unit> =
+      runCatching {
+        eventsCollection
+            .document(eventId)
+            .update(mapOf("images" to imageUrls, "updatedAt" to FieldValue.serverTimestamp()))
+            .await()
+      }
 
   /**
    * Helper function to create a [Flow] from a Firestore query using a snapshot listener.

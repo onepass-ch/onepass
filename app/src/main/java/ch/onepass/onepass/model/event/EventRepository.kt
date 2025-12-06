@@ -91,4 +91,35 @@ interface EventRepository {
    * @return A [Result] indicating success or failure.
    */
   suspend fun deleteEvent(eventId: String): Result<Unit>
+
+  /**
+   * Adds an image URL to an event's images list.
+   *
+   * This is a convenience method to add a single image without updating the entire event object.
+   *
+   * @param eventId The event's unique ID.
+   * @param imageUrl The image URL to add to the event's images list.
+   * @return A [Result] indicating success or failure.
+   */
+  suspend fun addEventImage(eventId: String, imageUrl: String): Result<Unit>
+
+  /**
+   * Removes an image URL from an event's images list.
+   *
+   * @param eventId The event's unique ID.
+   * @param imageUrl The image URL to remove from the event's images list.
+   * @return A [Result] indicating success or failure.
+   */
+  suspend fun removeEventImage(eventId: String, imageUrl: String): Result<Unit>
+
+  /**
+   * Updates the entire images list for an event.
+   *
+   * This replaces the existing images list with a new one.
+   *
+   * @param eventId The event's unique ID.
+   * @param imageUrls The new list of image URLs.
+   * @return A [Result] indicating success or failure.
+   */
+  suspend fun updateEventImages(eventId: String, imageUrls: List<String>): Result<Unit>
 }

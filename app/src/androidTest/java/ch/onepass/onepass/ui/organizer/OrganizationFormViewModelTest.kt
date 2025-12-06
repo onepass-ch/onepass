@@ -6,9 +6,18 @@ import ch.onepass.onepass.model.organization.OrganizationInvitation
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.organization.OrganizationStatus
+import ch.onepass.onepass.model.staff.StaffSearchResult
+import ch.onepass.onepass.model.storage.FakeStorageRepository
+import ch.onepass.onepass.model.user.User
+import ch.onepass.onepass.model.user.UserRepository
+import ch.onepass.onepass.model.user.UserSearchType
+import ch.onepass.onepass.utils.TestMockMembershipRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
@@ -18,12 +27,23 @@ import org.junit.Test
 class OrganizationFormViewModelTest {
 
   private lateinit var repository: FakeOrganizationRepository
+  private lateinit var userRepository: FakeUserRepository
+  private lateinit var storageRepository: FakeStorageRepository
+  private lateinit var membershipRepository: TestMockMembershipRepository
   private lateinit var viewModel: OrganizationFormViewModel
 
   @Before
   fun setup() {
     repository = FakeOrganizationRepository()
-    viewModel = OrganizationFormViewModel(repository)
+    userRepository = FakeUserRepository()
+    storageRepository = FakeStorageRepository()
+    membershipRepository = TestMockMembershipRepository()
+    viewModel =
+        OrganizationFormViewModel(
+            repository = repository,
+            userRepository = userRepository,
+            storageRepository = storageRepository,
+            membershipRepository = membershipRepository)
   }
 
   @Test
@@ -88,6 +108,175 @@ class OrganizationFormViewModelTest {
     assertEquals("Please fix errors", finalState.errorMessage)
   }
 
+  // ===== NEW TESTS FOR IMAGE FUNCTIONALITY =====
+
+  @Test
+  fun selectProfileImageUpdatesFormState() = runTest {
+    val mockUri = android.net.Uri.parse("content://media/image/123")
+
+    viewModel.selectProfileImage(mockUri)
+
+    val state = viewModel.formState.value
+    assertEquals("Profile image URI should be set", mockUri, state.profileImageUri)
+  }
+
+  @Test
+  fun selectCoverImageUpdatesFormState() = runTest {
+    val mockUri = android.net.Uri.parse("content://media/image/456")
+
+    viewModel.selectCoverImage(mockUri)
+
+    val state = viewModel.formState.value
+    assertEquals("Cover image URI should be set", mockUri, state.coverImageUri)
+  }
+
+  @Test
+  fun canSelectBothProfileAndCoverImages() = runTest {
+    val profileUri = android.net.Uri.parse("content://media/image/123")
+    val coverUri = android.net.Uri.parse("content://media/image/456")
+
+    viewModel.selectProfileImage(profileUri)
+    viewModel.selectCoverImage(coverUri)
+
+    val state = viewModel.formState.value
+    assertEquals("Profile image URI should be set", profileUri, state.profileImageUri)
+    assertEquals("Cover image URI should be set", coverUri, state.coverImageUri)
+  }
+
+  @Test
+  fun selectingNewProfileImageReplacesOld() = runTest {
+    val firstUri = android.net.Uri.parse("content://media/image/123")
+    val secondUri = android.net.Uri.parse("content://media/image/789")
+
+    viewModel.selectProfileImage(firstUri)
+    viewModel.selectProfileImage(secondUri)
+
+    val state = viewModel.formState.value
+    assertEquals("Should have the second image", secondUri, state.profileImageUri)
+  }
+
+  @Test
+  fun selectingNewCoverImageReplacesOld() = runTest {
+    val firstUri = android.net.Uri.parse("content://media/image/456")
+    val secondUri = android.net.Uri.parse("content://media/image/999")
+
+    viewModel.selectCoverImage(firstUri)
+    viewModel.selectCoverImage(secondUri)
+
+    val state = viewModel.formState.value
+    assertEquals("Should have the second image", secondUri, state.coverImageUri)
+  }
+
+  @Test
+  fun createOrganizationWithProfileImageUploadsSuccessfully() = runTest {
+    val profileUri = android.net.Uri.parse("content://media/image/profile123")
+    storageRepository.shouldSucceed = true
+
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Test Description")
+    viewModel.selectProfileImage(profileUri)
+    viewModel.updateContactPhone("791234567")
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.successOrganizationId != null }.first()
+
+    assertNotNull(finalState.successOrganizationId)
+    assertNull(finalState.errorMessage)
+  }
+
+  @Test
+  fun createOrganizationWithCoverImageUploadsSuccessfully() = runTest {
+    val coverUri = android.net.Uri.parse("content://media/image/cover456")
+    storageRepository.shouldSucceed = true
+
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Test Description")
+    viewModel.selectCoverImage(coverUri)
+    viewModel.updateContactPhone("791234567")
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.successOrganizationId != null }.first()
+
+    assertNotNull(finalState.successOrganizationId)
+    assertNull(finalState.errorMessage)
+  }
+
+  @Test
+  fun createOrganizationWithBothImagesUploadsSuccessfully() = runTest {
+    val profileUri = android.net.Uri.parse("content://media/image/profile123")
+    val coverUri = android.net.Uri.parse("content://media/image/cover456")
+    storageRepository.shouldSucceed = true
+
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Test Description")
+    viewModel.selectProfileImage(profileUri)
+    viewModel.selectCoverImage(coverUri)
+    viewModel.updateContactPhone("791234567")
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.successOrganizationId != null }.first()
+
+    assertNotNull(finalState.successOrganizationId)
+    assertNull(finalState.errorMessage)
+  }
+
+  @Test
+  fun createOrganizationWithProfileImageFailsWhenUploadFails() = runTest {
+    val profileUri = android.net.Uri.parse("content://media/image/profile123")
+    storageRepository.shouldSucceed = false
+    storageRepository.failureMessage = "Failed to upload profile image"
+
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Test Description")
+    viewModel.selectProfileImage(profileUri)
+    viewModel.updateContactPhone("791234567")
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.errorMessage != null }.first()
+
+    assertNull(finalState.successOrganizationId)
+    assertTrue(finalState.errorMessage?.contains("Failed to upload profile image") ?: false)
+  }
+
+  @Test
+  fun createOrganizationWithCoverImageFailsWhenUploadFails() = runTest {
+    val coverUri = android.net.Uri.parse("content://media/image/cover456")
+    storageRepository.shouldSucceed = false
+    storageRepository.failureMessage = "Failed to upload cover image"
+
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Test Description")
+    viewModel.selectCoverImage(coverUri)
+    viewModel.updateContactPhone("791234567")
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.errorMessage != null }.first()
+
+    assertNull(finalState.successOrganizationId)
+    assertTrue(finalState.errorMessage?.contains("Failed to upload cover image") ?: false)
+  }
+
+  @Test
+  fun createOrganizationWithoutImagesSucceeds() = runTest {
+    storageRepository.shouldSucceed = true
+
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Test Description")
+    viewModel.updateContactPhone("791234567")
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.successOrganizationId != null }.first()
+
+    assertNotNull(finalState.successOrganizationId)
+    assertNull(finalState.errorMessage)
+  }
+
   private fun OrganizationFormViewModel.createOrganizationValidation(): Boolean {
     val method = OrganizationFormViewModel::class.java.getDeclaredMethod("validateForm")
     method.isAccessible = true
@@ -124,9 +313,6 @@ class FakeOrganizationRepository : OrganizationRepository {
 
   override fun getVerifiedOrganizations() = TODO()
 
-  override suspend fun addMember(organizationId: String, userId: String, role: OrganizationRole) =
-      TODO()
-
   override suspend fun removeMember(organizationId: String, userId: String) = TODO()
 
   override suspend fun updateMemberRole(
@@ -145,4 +331,62 @@ class FakeOrganizationRepository : OrganizationRepository {
       TODO()
 
   override suspend fun deleteInvitation(invitationId: String) = TODO()
+
+  override suspend fun updateProfileImage(organizationId: String, imageUrl: String?) =
+      Result.success(Unit)
+
+  override suspend fun updateCoverImage(organizationId: String, imageUrl: String?) =
+      Result.success(Unit)
+
+  override suspend fun addMember(
+      organizationId: String,
+      userId: String,
+      role: OrganizationRole
+  ): Result<Unit> = Result.success(Unit)
+}
+
+class FakeUserRepository : UserRepository {
+  var userToReturn: User? = null
+  var shouldFailAddOrganization = false
+  private val _favoriteEventIds = MutableStateFlow<Set<String>>(emptySet())
+
+  override suspend fun getCurrentUser(): User? = userToReturn
+
+  override suspend fun getOrCreateUser(): User? = userToReturn
+
+  override suspend fun updateLastLogin(uid: String) {}
+
+  override suspend fun getUserById(uid: String): Result<StaffSearchResult?> {
+    return Result.success(null)
+  }
+
+  override suspend fun searchUsers(
+      query: String,
+      searchType: UserSearchType,
+      organizationId: String?
+  ): Result<List<StaffSearchResult>> = Result.success(emptyList())
+
+  suspend fun isOrganizer(): Boolean = false
+
+  suspend fun addOrganizationToUser(userId: String, orgId: String) {
+    if (shouldFailAddOrganization) {
+      throw Exception("Failed to add organization")
+    }
+  }
+
+  suspend fun removeOrganizationFromUser(userId: String, orgId: String) {}
+
+  override fun getFavoriteEvents(uid: String): Flow<Set<String>> {
+    return _favoriteEventIds
+  }
+
+  override suspend fun addFavoriteEvent(uid: String, eventId: String): Result<Unit> {
+    _favoriteEventIds.update { it + eventId }
+    return Result.success(Unit)
+  }
+
+  override suspend fun removeFavoriteEvent(uid: String, eventId: String): Result<Unit> {
+    _favoriteEventIds.update { it - eventId }
+    return Result.success(Unit)
+  }
 }
