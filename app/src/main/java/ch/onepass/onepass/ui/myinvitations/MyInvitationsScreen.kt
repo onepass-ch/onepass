@@ -4,11 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.*
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,13 +16,14 @@ import ch.onepass.onepass.model.organization.*
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 import ch.onepass.onepass.ui.theme.Background
 import ch.onepass.onepass.ui.theme.DarkGray
 import ch.onepass.onepass.ui.theme.Error
 import ch.onepass.onepass.ui.theme.OnBackground
 import ch.onepass.onepass.ui.theme.Primary
 import ch.onepass.onepass.ui.theme.Secondary
-import ch.onepass.onepass.ui.theme.Success
 import ch.onepass.onepass.ui.theme.Surface
 import ch.onepass.onepass.ui.theme.White
 import kotlinx.coroutines.flow.first
@@ -131,58 +128,26 @@ internal fun MyInvitationsContent(
     onRejectInvitation: (String) -> Unit,
     onRetry: () -> Unit = {},
     onClearSuccessMessage: () -> Unit = {},
-    onNavigateBack: () -> Unit = {},
+    onNavigateBack: (() -> Unit)? = null,
     organizationRepository: OrganizationRepository,
     modifier: Modifier = Modifier
 ) {
   val snackbarHostState = remember { SnackbarHostState() }
 
-  // Show success message as snackbar and clear it after displaying
-  // This ensures that subsequent operations with the same success message will trigger
-  // the snackbar to show again (since LaunchedEffect only triggers when the key changes).
   LaunchedEffect(state.successMessage) {
     state.successMessage?.let { message ->
       snackbarHostState.showSnackbar(
           message = message, duration = SnackbarDuration.Short, withDismissAction = true)
-      // Clear the success message after displaying to allow the same message to be shown again
-      // if the same operation is performed multiple times.
       onClearSuccessMessage()
     }
   }
 
-  Scaffold(
-      modifier = modifier.fillMaxSize().testTag(MyInvitationsScreenTestTags.SCREEN),
+  BackNavigationScaffold(
+      TopBarConfig(title = "My Invitations"),
+      onBack = onNavigateBack,
+      modifier = modifier.testTag(MyInvitationsScreenTestTags.SCREEN),
       containerColor = Background,
-      snackbarHost = {
-        SnackbarHost(
-            hostState = snackbarHostState,
-            snackbar = { snackbarData ->
-              Snackbar(
-                  snackbarData = snackbarData,
-                  modifier = Modifier.testTag(MyInvitationsScreenTestTags.SUCCESS_MESSAGE),
-                  containerColor = Success,
-                  contentColor = White)
-            })
-      },
-      topBar = {
-        TopAppBar(
-            title = {
-              Text(
-                  text = "My Invitations",
-                  style = MaterialTheme.typography.headlineSmall,
-                  fontWeight = FontWeight.Bold,
-                  color = White)
-            },
-            navigationIcon = {
-              IconButton(onClick = onNavigateBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = White)
-              }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = Background))
-      }) { paddingValues ->
+      content = { paddingValues ->
         Box(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
             contentAlignment = Alignment.Center) {
@@ -210,8 +175,12 @@ internal fun MyInvitationsContent(
                       organizationRepository = organizationRepository)
                 }
               }
+
+              SnackbarHost(
+                  hostState = snackbarHostState,
+                  modifier = Modifier.testTag(MyInvitationsScreenTestTags.SUCCESS_MESSAGE))
             }
-      }
+      })
 }
 
 /**

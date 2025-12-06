@@ -37,7 +37,7 @@ export const onUserCreated = functions.firestore
         revokedAt: null,
       };
 
-      await db.collection("user").doc(uid).set({ pass }, { merge: true });
+      await db.collection("users").doc(uid).set({ pass }, { merge: true });
 
       logger.info(`Pass generated automatically for user: ${uid}`);
     } catch (error) {

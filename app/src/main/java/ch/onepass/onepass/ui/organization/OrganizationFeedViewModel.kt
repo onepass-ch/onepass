@@ -2,6 +2,8 @@ package ch.onepass.onepass.ui.organization
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ch.onepass.onepass.model.membership.MembershipRepository
+import ch.onepass.onepass.model.membership.MembershipRepositoryFirebase
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import kotlinx.coroutines.flow.*
@@ -27,6 +29,7 @@ data class OrganizationFeedUIState(
  */
 class OrganizationFeedViewModel(
     private val repository: OrganizationRepositoryFirebase = OrganizationRepositoryFirebase(),
+    private val membershipRepository: MembershipRepository = MembershipRepositoryFirebase()
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(OrganizationFeedUIState())
@@ -38,11 +41,23 @@ class OrganizationFeedViewModel(
 
     viewModelScope.launch {
       try {
-        combine(
-                repository.getOrganizationsByOwner(userId),
-                repository.getOrganizationsByMember(userId)) { ownedOrgs, memberOrgs ->
-                  (ownedOrgs + memberOrgs).distinctBy { it.id }.sortedByDescending { it.createdAt }
-                }
+        val ownedOrgsFlow = repository.getOrganizationsByOwner(userId)
+
+        val memberOrgsFlow =
+            membershipRepository.getOrganizationsByUserFlow(userId).flatMapLatest { memberships ->
+              if (memberships.isEmpty()) {
+                flowOf(emptyList())
+              } else {
+                val orgIds = memberships.map { it.orgId }
+                // Fetch all organizations concurrently
+                val orgFlows = orgIds.map { repository.getOrganizationById(it) }
+                combine(orgFlows) { orgs -> orgs.filterNotNull() }
+              }
+            }
+
+        combine(ownedOrgsFlow, memberOrgsFlow) { ownedOrgs, memberOrgs ->
+              (ownedOrgs + memberOrgs).distinctBy { it.id }.sortedByDescending { it.createdAt }
+            }
             .collect { organizations ->
               _uiState.update {
                 it.copy(organizations = organizations, isLoading = false, error = null)

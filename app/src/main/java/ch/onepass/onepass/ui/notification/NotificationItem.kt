@@ -12,6 +12,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.model.notification.Notification
+import ch.onepass.onepass.ui.theme.Background
+import ch.onepass.onepass.ui.theme.CardBackground
+import ch.onepass.onepass.ui.theme.Error
+import ch.onepass.onepass.ui.theme.Surface
 import ch.onepass.onepass.utils.DateTimeUtils.formatNotificationDate
 
 /**
@@ -26,9 +30,9 @@ import ch.onepass.onepass.utils.DateTimeUtils.formatNotificationDate
 fun NotificationItem(notification: Notification, onClick: () -> Unit, onDelete: () -> Unit) {
   val backgroundColor =
       if (notification.isRead) {
-        MaterialTheme.colorScheme.surface
+        Surface
       } else {
-        MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.1f)
+        Background.copy(alpha = 0.1f)
       }
 
   Card(
@@ -54,7 +58,7 @@ fun NotificationItem(notification: Notification, onClick: () -> Unit, onDelete: 
                         Text(
                             text = formatNotificationDate(timestamp.toDate()),
                             style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            color = CardBackground)
                       }
                     }
 
@@ -65,7 +69,7 @@ fun NotificationItem(notification: Notification, onClick: () -> Unit, onDelete: 
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    color = CardBackground)
               }
 
               // Delete Action
@@ -73,7 +77,7 @@ fun NotificationItem(notification: Notification, onClick: () -> Unit, onDelete: 
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete notification",
-                    tint = MaterialTheme.colorScheme.error)
+                    tint = Error)
               }
             }
       }

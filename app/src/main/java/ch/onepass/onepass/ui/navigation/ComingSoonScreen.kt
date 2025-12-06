@@ -17,6 +17,11 @@ import ch.onepass.onepass.ui.theme.OnBackground
 import ch.onepass.onepass.ui.theme.Primary
 import ch.onepass.onepass.ui.theme.Surface
 
+/**
+ * A simple "Coming Soon" screen to indicate that a feature is not yet available.
+ *
+ * @param onBack Lambda to be invoked when the back button is clicked.
+ */
 @Composable
 fun ComingSoonScreen(onBack: () -> Unit) {
   Surface(modifier = Modifier.fillMaxSize(), color = Background) {

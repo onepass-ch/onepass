@@ -10,6 +10,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.model.eventfilters.DateRangePresets
 import ch.onepass.onepass.model.eventfilters.EventFilters
+import ch.onepass.onepass.ui.theme.Primary
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -86,8 +87,7 @@ fun ActiveFiltersBar(
       }
       TextButton(
           onClick = onClearFilters,
-          colors =
-              ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+          colors = ButtonDefaults.textButtonColors(contentColor = Primary),
       ) {
         Text(
             "Clear All",

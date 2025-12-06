@@ -10,10 +10,13 @@ import ch.onepass.onepass.model.membership.MembershipRepository
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationInvitation
-import ch.onepass.onepass.model.organization.OrganizationMember
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.organization.OrganizationStatus
+import ch.onepass.onepass.model.staff.StaffSearchResult
+import ch.onepass.onepass.model.user.User
+import ch.onepass.onepass.model.user.UserRepository
+import ch.onepass.onepass.model.user.UserSearchType
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -41,8 +44,6 @@ object OrganizationDashboardTestData {
       id: String = "test-org-1",
       name: String = "Test Organization",
       ownerId: String = "owner-1",
-      // Deprecated: members are now handled via MembershipRepository
-      members: Map<String, OrganizationMember> = emptyMap(),
       followerCount: Int = 1500,
       averageRating: Float = 4.5f,
       eventIds: List<String> = listOf("event-1", "event-2")
@@ -53,7 +54,6 @@ object OrganizationDashboardTestData {
           description = "Test Description",
           ownerId = ownerId,
           status = OrganizationStatus.ACTIVE,
-          members = members,
           verified = true,
           followerCount = followerCount,
           averageRating = averageRating,
@@ -72,6 +72,15 @@ object OrganizationDashboardTestData {
           role = role,
           createdAt = Timestamp.now(),
           updatedAt = Timestamp.now())
+
+  fun createTestStaffSearchResult(
+      userId: String,
+      displayName: String = "Test User $userId",
+      email: String = "$userId@example.com",
+      avatarUrl: String? = null
+  ): StaffSearchResult =
+      StaffSearchResult(
+          id = userId, email = email, displayName = displayName, avatarUrl = avatarUrl)
 
   fun createTestEvent(
       eventId: String = "event-1",
@@ -126,30 +135,12 @@ open class MockOrganizationRepository(
   override fun getOrganizationsByOwner(ownerId: String): Flow<List<Organization>> =
       flowOf(emptyList())
 
-  override fun getOrganizationsByMember(userId: String): Flow<List<Organization>> =
-      flowOf(emptyList())
-
   override fun getOrganizationsByStatus(status: OrganizationStatus): Flow<List<Organization>> =
       flowOf(emptyList())
 
   override fun searchOrganizations(query: String): Flow<List<Organization>> = flowOf(emptyList())
 
   override fun getVerifiedOrganizations(): Flow<List<Organization>> = flowOf(emptyList())
-
-  override suspend fun addMember(
-      organizationId: String,
-      userId: String,
-      role: OrganizationRole
-  ): Result<Unit> = Result.success(Unit)
-
-  override suspend fun removeMember(organizationId: String, userId: String): Result<Unit> =
-      removeResult
-
-  override suspend fun updateMemberRole(
-      organizationId: String,
-      userId: String,
-      newRole: OrganizationRole
-  ): Result<Unit> = Result.success(Unit)
 
   override suspend fun createInvitation(invitation: OrganizationInvitation): Result<String> =
       Result.success("test-id")
@@ -212,6 +203,34 @@ open class MockMembershipRepository(
   ): Boolean {
     return members.any { it.userId == userId && it.orgId == orgId && it.role in roles }
   }
+}
+
+/** Mock User Repository with configurable behavior. */
+class MockUserRepository(private val users: Map<String, StaffSearchResult> = emptyMap()) :
+    UserRepository {
+  override suspend fun getCurrentUser(): User? = null
+
+  override suspend fun getOrCreateUser(): User? = null
+
+  override suspend fun updateLastLogin(uid: String) {}
+
+  override suspend fun getUserById(uid: String): Result<StaffSearchResult?> {
+    return Result.success(users[uid] ?: StaffSearchResult(uid, "$uid@example.com", "User $uid"))
+  }
+
+  override suspend fun searchUsers(
+      query: String,
+      searchType: UserSearchType,
+      organizationId: String?
+  ): Result<List<StaffSearchResult>> = Result.success(emptyList())
+
+  override fun getFavoriteEvents(uid: String): Flow<Set<String>> = flowOf(emptySet())
+
+  override suspend fun addFavoriteEvent(uid: String, eventId: String): Result<Unit> =
+      Result.success(Unit)
+
+  override suspend fun removeFavoriteEvent(uid: String, eventId: String): Result<Unit> =
+      Result.success(Unit)
 }
 
 /** Mock Event Repository with configurable behavior. */

@@ -23,6 +23,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.model.staff.StaffSearchResult
+import ch.onepass.onepass.ui.theme.Background
+import ch.onepass.onepass.ui.theme.CardBackground
+import ch.onepass.onepass.ui.theme.OnBackground
 import ch.onepass.onepass.ui.theme.Surface
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
@@ -102,7 +105,7 @@ fun StaffListItem(
         Text(
             text = user.email,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = CardBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.testTag(StaffTestTags.Item.SUPPORTING))
@@ -124,16 +127,13 @@ private fun Avatar(displayName: String, avatarUrl: String?, modifier: Modifier =
 
   Box(
       modifier =
-          modifier
-              .clip(CircleShape)
-              .background(MaterialTheme.colorScheme.primaryContainer)
-              .testTag(StaffTestTags.Avatar.ROOT),
+          modifier.clip(CircleShape).background(Background).testTag(StaffTestTags.Avatar.ROOT),
       contentAlignment = Alignment.Center) {
         if (avatarUrl.isNullOrBlank()) {
           Text(
               text = initials,
               style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-              color = MaterialTheme.colorScheme.onPrimaryContainer,
+              color = OnBackground,
               modifier = Modifier.testTag(StaffTestTags.Avatar.Initials.TEXT))
         } else {
           SubcomposeAsyncImage(
@@ -154,7 +154,7 @@ private fun Avatar(displayName: String, avatarUrl: String?, modifier: Modifier =
                           style =
                               MaterialTheme.typography.labelLarge.copy(
                                   fontWeight = FontWeight.SemiBold),
-                          color = MaterialTheme.colorScheme.onPrimaryContainer,
+                          color = OnBackground,
                           modifier = Modifier.testTag(StaffTestTags.Avatar.Loading.TEXT))
                     }
               },
@@ -170,7 +170,7 @@ private fun Avatar(displayName: String, avatarUrl: String?, modifier: Modifier =
                           style =
                               MaterialTheme.typography.labelLarge.copy(
                                   fontWeight = FontWeight.SemiBold),
-                          color = MaterialTheme.colorScheme.onPrimaryContainer,
+                          color = OnBackground,
                           modifier = Modifier.testTag(StaffTestTags.Avatar.Error.TEXT))
                     }
               })

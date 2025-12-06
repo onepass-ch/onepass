@@ -4,7 +4,6 @@ import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationInvitation
 import ch.onepass.onepass.model.organization.OrganizationRepository
-import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.organization.OrganizationStatus
 import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.model.storage.FakeStorageRepository
@@ -305,21 +304,11 @@ class FakeOrganizationRepository : OrganizationRepository {
 
   override fun getOrganizationsByOwner(ownerId: String) = TODO()
 
-  override fun getOrganizationsByMember(userId: String) = TODO()
-
   override fun getOrganizationsByStatus(status: OrganizationStatus) = TODO()
 
   override fun searchOrganizations(query: String) = TODO()
 
   override fun getVerifiedOrganizations() = TODO()
-
-  override suspend fun removeMember(organizationId: String, userId: String) = TODO()
-
-  override suspend fun updateMemberRole(
-      organizationId: String,
-      userId: String,
-      newRole: OrganizationRole
-  ) = TODO()
 
   override suspend fun createInvitation(invitation: OrganizationInvitation) = TODO()
 
@@ -337,12 +326,6 @@ class FakeOrganizationRepository : OrganizationRepository {
 
   override suspend fun updateCoverImage(organizationId: String, imageUrl: String?) =
       Result.success(Unit)
-
-  override suspend fun addMember(
-      organizationId: String,
-      userId: String,
-      role: OrganizationRole
-  ): Result<Unit> = Result.success(Unit)
 }
 
 class FakeUserRepository : UserRepository {

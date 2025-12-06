@@ -19,6 +19,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.model.eventfilters.DateRangePresets
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.eventfilters.SwissRegions
+import ch.onepass.onepass.ui.theme.CardBackground
 import java.util.*
 
 /** Test tags for UI elements in the filter dialog. */
@@ -199,7 +200,7 @@ private fun DateRangeFilter(
           Text(
               formatDateRange(uiState.localFilters.dateRange) ?: "Not set",
               style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              color = CardBackground,
               modifier = Modifier.testTag(EventFilterDialogTestTags.CUSTOM_RANGE_TEXT))
         }
         Button(
@@ -300,7 +301,7 @@ fun DateRangePickerDialog(
                 Text(
                     text = headlineText!!,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = CardBackground,
                     modifier = Modifier.padding(vertical = 8.dp))
               },
               state = state,

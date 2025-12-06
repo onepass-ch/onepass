@@ -45,11 +45,6 @@ class FakeOrganizationRepository(
     return flowOf(organizations.values.filter { it.ownerId == ownerId })
   }
 
-  override fun getOrganizationsByMember(userId: String): Flow<List<Organization>> {
-    return flowOf(
-        organizations.values.filter { organization -> organization.members.containsKey(userId) })
-  }
-
   override fun getOrganizationsByStatus(status: OrganizationStatus): Flow<List<Organization>> {
     return flowOf(organizations.values.filter { it.status == status })
   }
@@ -64,46 +59,6 @@ class FakeOrganizationRepository(
 
   override fun getVerifiedOrganizations(): Flow<List<Organization>> {
     return flowOf(organizations.values.filter { it.verified })
-  }
-
-  override suspend fun addMember(
-      organizationId: String,
-      userId: String,
-      role: OrganizationRole
-  ): Result<Unit> {
-    val org =
-        organizations[organizationId]
-            ?: return Result.failure(IllegalStateException("Organization not found"))
-    val updatedMembers = org.members.toMutableMap()
-    updatedMembers[userId] = OrganizationMember(role = role)
-    organizations[organizationId] = org.copy(members = updatedMembers)
-    return Result.success(Unit)
-  }
-
-  override suspend fun removeMember(organizationId: String, userId: String): Result<Unit> {
-    val org =
-        organizations[organizationId]
-            ?: return Result.failure(IllegalStateException("Organization not found"))
-    val updatedMembers = org.members.toMutableMap()
-    updatedMembers.remove(userId)
-    organizations[organizationId] = org.copy(members = updatedMembers)
-    return Result.success(Unit)
-  }
-
-  override suspend fun updateMemberRole(
-      organizationId: String,
-      userId: String,
-      newRole: OrganizationRole
-  ): Result<Unit> {
-    val org =
-        organizations[organizationId]
-            ?: return Result.failure(IllegalStateException("Organization not found"))
-    val member =
-        org.members[userId] ?: return Result.failure(IllegalStateException("Member not found"))
-    val updatedMembers = org.members.toMutableMap()
-    updatedMembers[userId] = member.copy(role = newRole)
-    organizations[organizationId] = org.copy(members = updatedMembers)
-    return Result.success(Unit)
   }
 
   override suspend fun createInvitation(invitation: OrganizationInvitation): Result<String> {

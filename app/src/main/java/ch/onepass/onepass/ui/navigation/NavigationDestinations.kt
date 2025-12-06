@@ -37,6 +37,13 @@ object NavigationDestinations {
     object Notification : Screen("notifications", "Notifications", false)
 
     // Parameterized routes
+    /*
+     * ----------- PARAMETERIZED ROUTES -----------
+     *
+     * NOTE: These retain the same public API:
+     * - ARG_<paramName> constant for the argument name
+     * - route(...) function to build the route with parameters
+     */
     object EventDetail : Screen("event/{eventId}", "Event Detail", false) {
       const val ARG_EVENT_ID = "eventId"
 
@@ -90,7 +97,13 @@ object NavigationDestinations {
     }
   }
 
-  /** Bottom navigation tabs and their linked screens. */
+  /**
+   * Represents a top-level tab in the bottom navigation bar.
+   *
+   * @property name Human-readable label.
+   * @property iconRes Drawable resource ID for the tab icon.
+   * @property destination Corresponding Screen destination.
+   */
   sealed class Tab(val name: String, @DrawableRes val iconRes: Int, val destination: Screen) {
     object Events : Tab("Events", R.drawable.ic_events, Screen.Events)
 
@@ -100,6 +113,7 @@ object NavigationDestinations {
 
     object Profile : Tab("Profile", R.drawable.ic_profile, Screen.Profile)
   }
-  /** Order determines appearance in the bottom bar. */
+
+  /** List of all top-level tabs in the app. Order determines appearance in the bottom bar. */
   val tabs = listOf(Tab.Events, Tab.Tickets, Tab.Map, Tab.Profile)
 }

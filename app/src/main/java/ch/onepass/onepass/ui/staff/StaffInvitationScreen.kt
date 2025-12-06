@@ -12,13 +12,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
@@ -26,7 +21,6 @@ import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -38,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.model.user.UserSearchType
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.LoadingState
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 import ch.onepass.onepass.ui.theme.DarkGray
 import ch.onepass.onepass.ui.theme.Error
 import ch.onepass.onepass.ui.theme.Gray
@@ -77,29 +73,14 @@ fun StaffInvitationScreen(
   val uiState by viewModel.uiState.collectAsState()
   val selectedTabIndex = if (uiState.selectedTab == UserSearchType.DISPLAY_NAME) 0 else 1
 
-  Scaffold(
-      modifier = modifier.fillMaxSize().testTag(StaffInvitationTestTags.SCREEN),
-      topBar = {
-        TopAppBar(
-            title = {
-              Text(
-                  text = "Add staff",
-                  color = White,
-                  style = MaterialTheme.typography.titleLarge,
-                  modifier = Modifier.testTag(StaffInvitationTestTags.TITLE))
-            },
-            navigationIcon = {
-              IconButton(
-                  onClick = onNavigateBack,
-                  modifier = Modifier.testTag(StaffInvitationTestTags.BACK_BUTTON)) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = White)
-                  }
-            },
-            modifier = Modifier.testTag(StaffInvitationTestTags.TOP_BAR))
-      }) { paddingValues ->
+  BackNavigationScaffold(
+      TopBarConfig(
+          title = "Add staff",
+          topBarTestTag = StaffInvitationTestTags.TOP_BAR,
+          backButtonTestTag = StaffInvitationTestTags.BACK_BUTTON,
+          titleTestTag = StaffInvitationTestTags.TITLE),
+      onBack = onNavigateBack,
+      modifier = modifier.testTag(StaffInvitationTestTags.SCREEN)) { paddingValues ->
         Column(
             modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 16.dp)) {
               // Tab Row

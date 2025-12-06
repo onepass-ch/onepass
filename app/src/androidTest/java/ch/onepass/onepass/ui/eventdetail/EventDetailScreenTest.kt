@@ -195,6 +195,700 @@ class EventDetailScreenTest {
         .assertExists()
   }
 
+  // ==================== Payment State UI Tests ====================
+
+  @Test
+  fun eventDetailScreen_displaysLoadingOverlay_whenCreatingPaymentIntent() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.CreatingPaymentIntent),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    // Loading overlay should be displayed
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    // Loading message should be displayed
+    composeTestRule
+        .onNodeWithText("Preparing payment...", substring = true, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun eventDetailScreen_displaysLoadingOverlay_whenProcessingPayment() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.ProcessingPayment),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    // Loading overlay should be displayed
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    // Processing message should be displayed
+    composeTestRule
+        .onNodeWithText("Processing payment...", substring = true, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun eventDetailScreen_buyButton_showsLoadingIndicator_whenPaymentInProgress() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.CreatingPaymentIntent),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    // Buy button should exist and be disabled
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertIsNotEnabled()
+  }
+
+  @Test
+  fun eventDetailScreen_buyButton_isEnabled_whenPaymentIsIdle() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState = EventDetailUiState(event = testEvent, paymentState = PaymentState.Idle),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    // Buy button should be enabled
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertIsEnabled()
+  }
+
+  @Test
+  fun eventDetailScreen_buyButton_isDisabled_whenProcessingPayment() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.ProcessingPayment),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    // Buy button should be disabled
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+        .assertIsNotEnabled()
+  }
+
+  @Test
+  fun eventDetailScreen_noLoadingOverlay_whenPaymentIsIdle() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState = EventDetailUiState(event = testEvent, paymentState = PaymentState.Idle),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    // Loading overlay should not be displayed
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
+        .assertDoesNotExist()
+  }
+
+  @Test
+  fun eventDetailScreen_noLoadingOverlay_whenPaymentReadyToPay() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent,
+                    paymentState =
+                        PaymentState.ReadyToPay(
+                            clientSecret = "test_secret", paymentIntentId = "test_id")),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    // Loading overlay should not be displayed (payment sheet is shown by Stripe)
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
+        .assertDoesNotExist()
+  }
+
+  @Test
+  fun eventDetailScreen_buyButton_triggersPayment_whenClicked() {
+    val testEvent = createTestEvent()
+    var buyTicketCalled = false
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState = EventDetailUiState(event = testEvent, paymentState = PaymentState.Idle),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = { buyTicketCalled = true })
+      }
+    }
+
+    // Click buy button
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .performClick()
+
+    // Verify callback was invoked
+    assertTrue(buyTicketCalled)
+  }
+
+  @Test
+  fun eventDetailScreen_buyButton_doesNotTrigger_whenPaymentInProgress() {
+    val testEvent = createTestEvent()
+    var buyTicketCalled = false
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.CreatingPaymentIntent),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = { buyTicketCalled = true })
+      }
+    }
+
+    // Try to click buy button (should be disabled)
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .assertIsNotEnabled()
+
+    // Verify callback was not invoked
+    assertTrue(!buyTicketCalled)
+  }
+
+  @Test
+  fun eventDetailScreen_paymentStateIdle_noLoadingOverlay() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState = EventDetailUiState(event = testEvent, paymentState = PaymentState.Idle),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
+        .assertDoesNotExist()
+  }
+
+  @Test
+  fun eventDetailScreen_paymentStateCreating_showsLoadingOverlay() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.CreatingPaymentIntent),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun eventDetailScreen_paymentSucceeded_doesNotShowLoadingOverlay() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(event = testEvent, paymentState = PaymentState.PaymentSucceeded),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    // Loading overlay should not be displayed after success
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
+        .assertDoesNotExist()
+
+    // Buy button should be enabled again
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+  }
+
+  @Test
+  fun eventDetailScreen_paymentCancelled_doesNotShowLoadingOverlay() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(event = testEvent, paymentState = PaymentState.PaymentCancelled),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    // Loading overlay should not be displayed after cancellation
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
+        .assertDoesNotExist()
+
+    // Buy button should be enabled again
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+  }
+
+  @Test
+  fun eventDetailScreen_paymentFailed_doesNotShowLoadingOverlay() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.PaymentFailed("Network error")),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    // Loading overlay should not be displayed after failure
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
+        .assertDoesNotExist()
+
+    // Buy button should be enabled again
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+  }
+
+  @Test
+  fun eventDetailScreen_creatingPaymentIntentState_buyButtonDisabled() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.CreatingPaymentIntent),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .assertIsNotEnabled()
+  }
+
+  @Test
+  fun eventDetailScreen_processingPaymentState_buyButtonDisabled() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.ProcessingPayment),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .assertIsNotEnabled()
+  }
+
+  @Test
+  fun eventDetailScreen_idleState_buyButtonEnabled() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState = EventDetailUiState(event = testEvent, paymentState = PaymentState.Idle),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+  }
+
+  @Test
+  fun eventDetailScreen_succeededState_buyButtonEnabled() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(event = testEvent, paymentState = PaymentState.PaymentSucceeded),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+  }
+
+  @Test
+  fun eventDetailScreen_cancelledState_buyButtonEnabled() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(event = testEvent, paymentState = PaymentState.PaymentCancelled),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+  }
+
+  @Test
+  fun eventDetailScreen_failedState_buyButtonEnabled() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.PaymentFailed("error")),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+  }
+
+  @Test
+  fun eventDetailScreen_readyToPayState_buyButtonEnabled() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.ReadyToPay("secret", "id")),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .assertIsEnabled()
+  }
+
+  @Test
+  fun eventDetailScreen_creatingPaymentState_showsLoadingOverlay() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.CreatingPaymentIntent),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun eventDetailScreen_processingPaymentState_showsLoadingOverlay() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.ProcessingPayment),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun eventDetailScreen_readyToPayState_noLoadingOverlay() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.ReadyToPay("secret", "id")),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
+        .assertDoesNotExist()
+  }
+
+  @Test
+  fun eventDetailScreen_succeededState_noLoadingOverlay() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(event = testEvent, paymentState = PaymentState.PaymentSucceeded),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
+        .assertDoesNotExist()
+  }
+
+  @Test
+  fun eventDetailScreen_cancelledState_noLoadingOverlay() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(event = testEvent, paymentState = PaymentState.PaymentCancelled),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
+        .assertDoesNotExist()
+  }
+
+  @Test
+  fun eventDetailScreen_failedState_noLoadingOverlay() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.PaymentFailed("error")),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
+        .assertDoesNotExist()
+  }
+
+  @Test
+  fun eventDetailScreen_buyButton_showsCorrectTextWhenNotLoading() {
+    val testEvent = createTestEvent(lowestPrice = 50u)
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState = EventDetailUiState(event = testEvent, paymentState = PaymentState.Idle),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    // Button should show price text when not loading
+    composeTestRule
+        .onNodeWithText("Buy ticket for 50chf", substring = true, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun eventDetailScreen_freeEvent_showsCorrectButtonText() {
+    val freeEvent = createTestEvent(lowestPrice = 0u)
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState = EventDetailUiState(event = freeEvent, paymentState = PaymentState.Idle),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    // Free event should show "FREE" text
+    composeTestRule.onNodeWithText("FREE", useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun eventDetailScreen_paymentInProgress_buyButtonStillDisplayed() {
+    val testEvent = createTestEvent()
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState =
+                EventDetailUiState(
+                    event = testEvent, paymentState = PaymentState.CreatingPaymentIntent),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    // Buy button should still be visible (just disabled and showing loading indicator)
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.BUY_TICKET_BUTTON, useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
   // Helper function to create a test event
   private fun createTestEvent(
       title: String = "Test Event",

@@ -5,10 +5,10 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
@@ -26,21 +26,43 @@ import ch.onepass.onepass.ui.navigation.AppNavHost
 import ch.onepass.onepass.ui.navigation.BottomNavigationBar
 import ch.onepass.onepass.ui.navigation.NavigationDestinations
 import ch.onepass.onepass.ui.navigation.navigateToTopLevel
+import ch.onepass.onepass.ui.payment.LocalPaymentSheet
+import ch.onepass.onepass.ui.payment.createPaymentSheet
 import ch.onepass.onepass.ui.profile.ProfileViewModel
+import ch.onepass.onepass.ui.theme.Background
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.mapbox.common.MapboxOptions
+import com.stripe.android.PaymentConfiguration
 
 /**
- * Main Activity that sets up Mapbox, the OnePass theme and hosts the root composable navigation.
+ * Main Activity that sets up Mapbox, Stripe, the OnePass theme and hosts the root composable
+ * navigation.
  */
 class MainActivity : ComponentActivity() {
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
-
     // Mapbox access token
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
 
-    setContent { OnePassTheme { MainActivityContent() } }
+    // Initialize Stripe
+    val stripePublishableKey = BuildConfig.STRIPE_PUBLISHABLE_KEY
+    if (stripePublishableKey.isNotEmpty()) {
+      PaymentConfiguration.init(applicationContext, stripePublishableKey)
+    }
+
+    // Create PaymentSheet instance early in onCreate to avoid lifecycle registration issues
+    val paymentSheet =
+        if (stripePublishableKey.isNotEmpty()) {
+          createPaymentSheet(this)
+        } else {
+          null
+        }
+
+    setContent {
+      OnePassTheme {
+        CompositionLocalProvider(LocalPaymentSheet provides paymentSheet) { MainActivityContent() }
+      }
+    }
   }
 }
 
@@ -52,7 +74,7 @@ class MainActivity : ComponentActivity() {
 internal fun MainActivityContent() {
   Surface(
       modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
-      color = MaterialTheme.colorScheme.background) {
+      color = Background) {
         OnePassApp() // Let each map screen create its own ViewModel
   }
 }

@@ -15,9 +15,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
-import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -27,6 +25,7 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.ui.theme.Error
 import ch.onepass.onepass.ui.theme.OnBackground
 import ch.onepass.onepass.ui.theme.Primary
 import ch.onepass.onepass.ui.theme.Surface
@@ -42,7 +41,7 @@ import ch.onepass.onepass.ui.theme.Surface
  * @param keyboardType Keyboard type for input
  * @param maxLines Maximum number of lines
  * @param errorMessage Optional error message to display
- * @param testTag Optional test tag for UI testing
+ * @param modifier Optional modifier for styling
  */
 @Composable
 fun FormTextField(
@@ -52,11 +51,12 @@ fun FormTextField(
     isError: Boolean = false,
     onFocusChanged: (Boolean) -> Unit = {},
     keyboardType: KeyboardType = KeyboardType.Text,
-    maxLines: Int = 1, // Single line by default
+    maxLines: Int = 1,
     errorMessage: String? = null,
+    modifier: Modifier = Modifier,
     testTag: String? = null
 ) {
-  Column {
+  Column(modifier = modifier) {
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
@@ -64,15 +64,12 @@ fun FormTextField(
         modifier =
             Modifier.fillMaxWidth()
                 .onFocusChanged { onFocusChanged(it.isFocused) }
-                // Apply test tag if provided
                 .then(if (testTag != null) Modifier.testTag(testTag) else Modifier),
         isError = isError,
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         singleLine = maxLines == 1,
         maxLines = maxLines)
-    errorMessage?.let {
-      Text(it, color = colorScheme.error, style = MaterialTheme.typography.bodySmall)
-    }
+    errorMessage?.let { Text(it, color = Error, style = MaterialTheme.typography.bodySmall) }
     Spacer(Modifier.height(16.dp))
   }
 }
@@ -90,6 +87,7 @@ fun FormTextField(
  * @param onPhoneChange Callback for phone number changes
  * @param onPhoneFocusChanged Callback for phone field focus changes
  * @param onPrefixClick Callback when the prefix field is clicked
+ * @param modifier Optional modifier for the row
  * @param phoneTestTag Optional test tag for the phone field
  * @param prefixTestTag Optional test tag for the prefix field
  */
@@ -106,12 +104,12 @@ fun PrefixPhoneRow(
     onPhoneChange: (String) -> Unit,
     onPhoneFocusChanged: (Boolean) -> Unit,
     onPrefixClick: () -> Unit,
+    modifier: Modifier = Modifier,
     phoneTestTag: String? = null,
     prefixTestTag: String? = null
 ) {
-  Column {
+  Column(modifier = modifier) {
     Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-      // Prefix Dropdown
       ExposedDropdownMenuBox(
           expanded = dropdownExpanded,
           onExpandedChange = { if (it) onPrefixClick() else onDropdownDismiss() },
@@ -124,19 +122,16 @@ fun PrefixPhoneRow(
                 readOnly = true,
                 isError = prefixError != null,
                 placeholder = { Text("Country", color = OnBackground) },
-                textStyle = LocalTextStyle.current.copy(color = OnBackground),
                 singleLine = true,
                 trailingIcon = {
                   ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
                 },
                 modifier = Modifier.menuAnchor().fillMaxWidth().height(56.dp))
 
-            // Dropdown Menu Items
             ExposedDropdownMenu(
                 expanded = dropdownExpanded,
                 onDismissRequest = onDropdownDismiss,
-                modifier = Modifier.heightIn(max = 300.dp).background(color = Surface)) {
-                  // Populate dropdown with country list
+                modifier = Modifier.heightIn(max = 300.dp).background(Surface)) {
                   countryList.forEachIndexed { index, (country, code) ->
                     DropdownMenuItem(
                         text = { Text("+$code $country", color = OnBackground) },
@@ -150,10 +145,8 @@ fun PrefixPhoneRow(
 
       Spacer(modifier = Modifier.width(8.dp))
 
-      // Phone Number Field
       OutlinedTextField(
           value = phoneValue,
-          // Allow only digits in phone number
           onValueChange = { onPhoneChange(it.filter(Char::isDigit)) },
           modifier =
               Modifier.weight(0.55f)
@@ -167,9 +160,7 @@ fun PrefixPhoneRow(
           keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
     }
 
-    prefixError?.let {
-      Text(it, color = colorScheme.error, style = MaterialTheme.typography.bodySmall)
-    }
+    prefixError?.let { Text(it, color = Error, style = MaterialTheme.typography.bodySmall) }
 
     Spacer(Modifier.height(16.dp))
   }
@@ -180,6 +171,7 @@ fun PrefixPhoneRow(
  *
  * @param onClick Callback when the button is clicked
  * @param text Text to display on the button
+ * @param modifier Optional modifier for styling
  */
 @Composable
 fun SubmitButton(onClick: () -> Unit, text: String, modifier: Modifier = Modifier) {
