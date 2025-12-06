@@ -295,7 +295,89 @@ jobs:
           echo "Firebase emulators are running"
           cat emulator.log
 
-      # Run connected tests with Gradle (using sharding)
+      # Create script for pretty printing connected tests
+      - name: Create script for pretty printing connected tests
+        run: |
+          cat << 'EOF' > pretty-connected-tests.sh
+          #!/usr/bin/env bash
+          set -e
+          set -o pipefail
+
+          echo "════════════════════════════════════════════════════════════"
+          echo " RUNNING CONNECTED TESTS - SHARD ${{ matrix.shard_index }} of $SHARD_COUNT"
+          echo "════════════════════════════════════════════════════════════"
+          echo "Start time: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo ""
+
+          echo " Creating expected source directories for coverage..."
+          mkdir -p app/src/debug/java
+          mkdir -p app/src/main/kotlin
+          mkdir -p app/src/debug/kotlin
+          echo "   Done"
+          echo ""
+
+          echo " Device Information:"
+          adb devices -l || true
+          echo ""
+
+          START_TIME=$(date +%s)
+
+          echo " Starting test execution with sharding..."
+          echo "   • Total shards: $SHARD_COUNT"
+          echo "   • Current shard: ${{ matrix.shard_index }}"
+          echo "   • This shard will run approximately 1/$SHARD_COUNT of all tests"
+          echo ""
+
+          echo "▶  Executing: ./gradlew connectedCheck with sharding parameters"
+          echo "────────────────────────────────────────────────────────────"
+
+          set +e
+          ./gradlew connectedCheck \
+            --console=plain \
+            --info \
+            -Pandroid.testInstrumentationRunnerArguments.numShards=$SHARD_COUNT \
+            -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard_index }} \
+            | tee test_output.log
+          TEST_EXIT_CODE=${PIPESTATUS[0]}
+          set -e
+
+          END_TIME=$(date +%s)
+          DURATION=$((END_TIME - START_TIME))
+          MINUTES=$((DURATION / 60))
+          SECONDS=$((DURATION % 60))
+
+          echo ""
+          echo "────────────────────────────────────────────────────────────"
+
+          if [ "$TEST_EXIT_CODE" -eq 0 ]; then
+            echo "✅ SHARD ${{ matrix.shard_index }} COMPLETED SUCCESSFULLY"
+          else
+            echo "❌ SHARD ${{ matrix.shard_index }} FAILED (exit code: $TEST_EXIT_CODE)"
+          fi
+
+          echo "⏱️  Execution time: ${MINUTES}m ${SECONDS}s"
+          echo "End time: $(date '+%Y-%m-%d %H:%M:%S')"
+          echo ""
+
+          echo " Test Summary for Shard ${{ matrix.shard_index }}:"
+          if [ -f "app/build/outputs/androidTest-results/connected/test-result.pb" ]; then
+            echo "   Test results generated successfully"
+          fi
+
+          if [ -d "app/build/outputs/code_coverage" ]; then
+            COVERAGE_FILES=$(find app/build/outputs/code_coverage -name "*.ec" | wc -l)
+            echo "   Coverage files found: $COVERAGE_FILES"
+          fi
+
+          echo ""
+          echo "════════════════════════════════════════════════════════════"
+
+          exit "$TEST_EXIT_CODE"
+          EOF
+
+          chmod +x pretty-connected-tests.sh
+
+      # Run connected tests with Gradle (using sharding) via pretty script
       - name: Run connected tests (shard ${{ matrix.shard_index }})
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -306,79 +388,8 @@ jobs:
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           script: |
-            #!/usr/bin/env sh
-            
-            echo "════════════════════════════════════════════════════════════"
-            echo " RUNNING CONNECTED TESTS - SHARD ${{ matrix.shard_index }} of ${{ env.SHARD_COUNT }}"
-            echo "════════════════════════════════════════════════════════════"
-            echo "Start time: $(date '+%Y-%m-%d %H:%M:%S')"
-            echo ""
-
-            # Create source directories expected by coverage task
-            echo " Creating expected source directories for coverage..."
-            mkdir -p app/src/debug/java
-            mkdir -p app/src/main/kotlin
-            mkdir -p app/src/debug/kotlin
-            echo "   Done"
-            echo ""
-
-            # Check device status
-            echo " Device Information:"
-            adb devices -l
-            echo ""
-
-            # Start timing
-            START_TIME=$(date +%s)
-
-            echo " Starting test execution with sharding..."
-            echo "   • Total shards: ${{ env.SHARD_COUNT }}"
-            echo "   • Current shard: ${{ matrix.shard_index }}"
-            echo "   • This shard will run approximately 1/${{ env.SHARD_COUNT }} of all tests"
-            echo ""
-
-            # Run tests with detailed output
-            echo "▶  Executing: ./gradlew connectedCheck with sharding parameters"
-            echo "────────────────────────────────────────────────────────────"
-            set +e
-            ./gradlew connectedCheck --console=plain --info -Pandroid.testInstrumentationRunnerArguments.numShards=${{ env.SHARD_COUNT }} -Pandroid.testInstrumentationRunnerArguments.shardIndex=${{ matrix.shard_index }} | tee test_output.log
-
-            TEST_EXIT_CODE=$?
             set -e
-            # Calculate execution time
-            END_TIME=$(date +%s)
-            DURATION=$((END_TIME - START_TIME))
-            MINUTES=$((DURATION / 60))
-            SECONDS=$((DURATION % 60))
-
-            echo ""
-            echo "────────────────────────────────────────────────────────────"
-
-            if [ $TEST_EXIT_CODE -eq 0 ]; then
-              echo "✅ SHARD ${{ matrix.shard_index }} COMPLETED SUCCESSFULLY"
-            else
-              echo "❌ SHARD ${{ matrix.shard_index }} FAILED (exit code: $TEST_EXIT_CODE)"
-            fi
-
-            echo "⏱️  Execution time: ${MINUTES}m ${SECONDS}s"
-            echo "End time: $(date '+%Y-%m-%d %H:%M:%S')"
-            echo ""
-
-            # Show test summary
-            echo " Test Summary for Shard ${{ matrix.shard_index }}:"
-            if [ -f "app/build/outputs/androidTest-results/connected/test-result.pb" ]; then
-              echo "   Test results generated successfully"
-            fi
-
-            # Check for coverage
-            if [ -d "app/build/outputs/code_coverage" ]; then
-              COVERAGE_FILES=$(find app/build/outputs/code_coverage -name "*.ec" | wc -l)
-              echo "   Coverage files found: $COVERAGE_FILES"
-            fi
-
-            echo ""
-            echo "════════════════════════════════════════════════════════════"
-
-            exit "$TEST_EXIT_CODE"
+            ./pretty-connected-tests.sh
 
       - name: Upload coverage for this shard
         uses: actions/upload-artifact@v4
