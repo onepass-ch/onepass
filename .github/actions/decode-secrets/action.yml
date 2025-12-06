@@ -57,7 +57,7 @@ runs:
           KEYSTORE_FILE="${{ github.workspace }}/apk/keystore.jks"
           echo "$KEYSTORE_B64" | base64 --decode > "$KEYSTORE_FILE"
           ls -l "$KEYSTORE_FILE"
-          
+
           # Export environment variables for subsequent steps
           echo "RELEASE_STORE_FILE=$KEYSTORE_FILE" >> "$GITHUB_ENV"
           echo "RELEASE_STORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
