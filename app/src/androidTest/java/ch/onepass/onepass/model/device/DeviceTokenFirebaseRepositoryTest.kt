@@ -41,11 +41,7 @@ class DeviceTokenRepositoryFirebaseTest : FirestoreTestBase() {
   @Test
   fun saveDeviceToken_storesTokenInFirestore() = runTest {
     val token =
-        DeviceToken(
-            deviceId = "device_123",
-            oneSignalPlayerId = "player_456",
-            deviceModel = "Pixel 7",
-            appVersion = "1.0.0")
+        DeviceToken(oneSignalPlayerId = "player_456", deviceModel = "Pixel 7", appVersion = "1.0.0")
 
     val result = deviceRepository.saveDeviceToken(testUserId, token)
 
@@ -56,7 +52,7 @@ class DeviceTokenRepositoryFirebaseTest : FirestoreTestBase() {
             .collection("users")
             .document(testUserId)
             .collection("device_tokens")
-            .document("device_123")
+            .document("player_456")
             .get()
             .await()
 
@@ -68,12 +64,10 @@ class DeviceTokenRepositoryFirebaseTest : FirestoreTestBase() {
   @Test
   fun getDeviceTokens_returnsOnlyActiveTokens() = runTest {
     // Create active token
-    val activeToken =
-        DeviceToken(deviceId = "active_device", oneSignalPlayerId = "player_1", isActive = true)
+    val activeToken = DeviceToken(oneSignalPlayerId = "player_1", isActive = true)
 
     // Create inactive token
-    val inactiveToken =
-        DeviceToken(deviceId = "inactive_device", oneSignalPlayerId = "player_2", isActive = false)
+    val inactiveToken = DeviceToken(oneSignalPlayerId = "player_2", isActive = false)
 
     deviceRepository.saveDeviceToken(testUserId, activeToken)
     deviceRepository.saveDeviceToken(testUserId, inactiveToken)
@@ -83,7 +77,7 @@ class DeviceTokenRepositoryFirebaseTest : FirestoreTestBase() {
         .collection("users")
         .document(testUserId)
         .collection("device_tokens")
-        .document("inactive_device")
+        .document("player_2")
         .update("isActive", false)
         .await()
 
@@ -92,22 +86,22 @@ class DeviceTokenRepositoryFirebaseTest : FirestoreTestBase() {
     assertTrue(result.isSuccess)
     val tokens = result.getOrNull()!!
     assertEquals(1, tokens.size)
-    assertEquals("active_device", tokens[0].deviceId)
+    assertEquals("player_1", tokens[0].oneSignalPlayerId)
   }
 
   @Test
   fun deactivateDeviceToken_setsIsActiveToFalse() = runTest {
-    val token = DeviceToken(deviceId = "device_to_deactivate", oneSignalPlayerId = "player_999")
+    val token = DeviceToken(oneSignalPlayerId = "player_999")
 
     deviceRepository.saveDeviceToken(testUserId, token)
-    deviceRepository.deactivateDeviceToken(testUserId, "device_to_deactivate")
+    deviceRepository.deactivateDeviceToken(testUserId, "player_999")
 
     val doc =
         firestore
             .collection("users")
             .document(testUserId)
             .collection("device_tokens")
-            .document("device_to_deactivate")
+            .document("player_999")
             .get()
             .await()
 
@@ -116,8 +110,8 @@ class DeviceTokenRepositoryFirebaseTest : FirestoreTestBase() {
 
   @Test
   fun getPlayerIds_returnsOnlyActiveNonEmptyIds() = runTest {
-    val token1 = DeviceToken(deviceId = "device1", oneSignalPlayerId = "player_active_1")
-    val token2 = DeviceToken(deviceId = "device2", oneSignalPlayerId = "player_active_2")
+    val token1 = DeviceToken(oneSignalPlayerId = "player_active_1")
+    val token2 = DeviceToken(oneSignalPlayerId = "player_active_2")
 
     deviceRepository.saveDeviceToken(testUserId, token1)
     deviceRepository.saveDeviceToken(testUserId, token2)
@@ -133,7 +127,7 @@ class DeviceTokenRepositoryFirebaseTest : FirestoreTestBase() {
 
   @Test
   fun saveDeviceToken_setsServerTimestamps() = runTest {
-    val token = DeviceToken(deviceId = "timestamp_test", oneSignalPlayerId = "player_timestamp")
+    val token = DeviceToken(oneSignalPlayerId = "player_timestamp")
 
     deviceRepository.saveDeviceToken(testUserId, token)
 
@@ -142,7 +136,7 @@ class DeviceTokenRepositoryFirebaseTest : FirestoreTestBase() {
             .collection("users")
             .document(testUserId)
             .collection("device_tokens")
-            .document("timestamp_test")
+            .document("player_timestamp")
             .get()
             .await()
 
@@ -168,15 +162,9 @@ class DeviceTokenRepositoryFirebaseTest : FirestoreTestBase() {
 
   @Test
   fun saveDeviceToken_updatesExistingToken() = runTest {
-    val originalToken =
-        DeviceToken(
-            deviceId = "device_456", oneSignalPlayerId = "old_player_id", deviceModel = "Pixel 6")
+    val originalToken = DeviceToken(oneSignalPlayerId = "same_player_id", deviceModel = "Pixel 6")
 
-    val updatedToken =
-        DeviceToken(
-            deviceId = "device_456", // Same deviceId
-            oneSignalPlayerId = "new_player_id",
-            deviceModel = "Pixel 7")
+    val updatedToken = DeviceToken(oneSignalPlayerId = "same_player_id", deviceModel = "Pixel 7")
 
     deviceRepository.saveDeviceToken(testUserId, originalToken)
     deviceRepository.saveDeviceToken(testUserId, updatedToken)
@@ -186,22 +174,22 @@ class DeviceTokenRepositoryFirebaseTest : FirestoreTestBase() {
             .collection("users")
             .document(testUserId)
             .collection("device_tokens")
-            .document("device_456")
+            .document("same_player_id")
             .get()
             .await()
 
     // Should be updated, not duplicated
-    assertEquals("new_player_id", doc.getString("oneSignalPlayerId"))
+    assertEquals("same_player_id", doc.getString("oneSignalPlayerId"))
     assertEquals("Pixel 7", doc.getString("deviceModel"))
   }
 
   @Test
   fun getPlayerIds_filtersEmptyPlayerIds() = runTest {
-    val tokenWithId = DeviceToken(deviceId = "device1", oneSignalPlayerId = "valid_player_id")
+    val tokenWithId = DeviceToken(oneSignalPlayerId = "valid_player_id")
 
     val tokenWithoutId =
         DeviceToken(
-            deviceId = "device2", oneSignalPlayerId = "" // Empty
+            oneSignalPlayerId = "" // Empty
             )
 
     deviceRepository.saveDeviceToken(testUserId, tokenWithId)
@@ -228,9 +216,9 @@ class DeviceTokenRepositoryFirebaseTest : FirestoreTestBase() {
     val user1Id = "user_1"
     val user2Id = "user_2"
 
-    val token1 = DeviceToken(deviceId = "device_user1", oneSignalPlayerId = "player_user1")
+    val token1 = DeviceToken(oneSignalPlayerId = "player_user1")
 
-    val token2 = DeviceToken(deviceId = "device_user2", oneSignalPlayerId = "player_user2")
+    val token2 = DeviceToken(oneSignalPlayerId = "player_user2")
 
     deviceRepository.saveDeviceToken(user1Id, token1)
     deviceRepository.saveDeviceToken(user2Id, token2)
@@ -240,15 +228,14 @@ class DeviceTokenRepositoryFirebaseTest : FirestoreTestBase() {
 
     assertEquals(1, user1Tokens.size)
     assertEquals(1, user2Tokens.size)
-    assertEquals("device_user1", user1Tokens[0].deviceId)
-    assertEquals("device_user2", user2Tokens[0].deviceId)
+    assertEquals("player_user1", user1Tokens[0].oneSignalPlayerId)
+    assertEquals("player_user2", user2Tokens[0].oneSignalPlayerId)
   }
 
   @Test
   fun saveDeviceToken_storesAllFieldsCorrectly() = runTest {
     val token =
         DeviceToken(
-            deviceId = "full_device",
             oneSignalPlayerId = "full_player",
             platform = "android",
             deviceModel = "Samsung Galaxy",
@@ -262,11 +249,10 @@ class DeviceTokenRepositoryFirebaseTest : FirestoreTestBase() {
             .collection("users")
             .document(testUserId)
             .collection("device_tokens")
-            .document("full_device")
+            .document("full_player")
             .get()
             .await()
 
-    assertEquals("full_device", doc.getString("deviceId"))
     assertEquals("full_player", doc.getString("oneSignalPlayerId"))
     assertEquals("android", doc.getString("platform"))
     assertEquals("Samsung Galaxy", doc.getString("deviceModel"))

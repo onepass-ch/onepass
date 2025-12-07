@@ -54,6 +54,8 @@ android {
         vectorDrawables { useSupportLibrary = true }
         buildConfigField("String", "MAPBOX_ACCESS_TOKEN", "\"${mapboxToken}\"")
         buildConfigField("String", "STRIPE_PUBLISHABLE_KEY", "\"${stripePublishableKey ?: ""}\"")
+        val oneSignalAppId: String? = localProperties.getProperty("ONESIGNAL_APP_ID")
+        buildConfigField("String", "ONESIGNAL_APP_ID", "\"${oneSignalAppId ?: ""}\"")
 
         // Enable multidex for handling large number of methods (Compose UI, etc.)
         multiDexEnabled = true
@@ -280,6 +282,9 @@ dependencies {
     globalTestImplementation(libs.androidx.junit)
     globalTestImplementation(libs.androidx.espresso.core)
     testImplementation(kotlin("test"))
+
+    // --------- OneSignal -------
+    implementation(libs.onesignal)
 }
 
 tasks.withType<Test> {

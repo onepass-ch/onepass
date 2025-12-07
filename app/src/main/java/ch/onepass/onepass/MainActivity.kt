@@ -1,6 +1,8 @@
 package ch.onepass.onepass
 
+import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -15,12 +17,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import ch.onepass.onepass.model.device.DeviceTokenRepositoryFirebase
 import ch.onepass.onepass.resources.C
+import ch.onepass.onepass.service.DeviceTokenManager
 import ch.onepass.onepass.ui.auth.AuthViewModel
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.navigation.AppNavHost
@@ -31,18 +36,56 @@ import ch.onepass.onepass.ui.payment.LocalPaymentSheet
 import ch.onepass.onepass.ui.payment.createPaymentSheet
 import ch.onepass.onepass.ui.profile.ProfileViewModel
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import com.google.firebase.auth.FirebaseAuth
 import com.mapbox.common.MapboxOptions
+import com.onesignal.OneSignal
+import com.onesignal.debug.LogLevel
 import com.stripe.android.PaymentConfiguration
+import kotlinx.coroutines.launch
 
 /**
  * Main Activity that sets up Mapbox, Stripe, the OnePass theme and hosts the root composable
  * navigation.
  */
 class MainActivity : ComponentActivity() {
+
+  private val deviceTokenRepository by lazy { DeviceTokenRepositoryFirebase() }
+  private lateinit var authStateListener: FirebaseAuth.AuthStateListener
+  private lateinit var deviceTokenManager: DeviceTokenManager
+
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     // Mapbox access token
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
+    OneSignal.Debug.logLevel = if (BuildConfig.DEBUG) LogLevel.VERBOSE else LogLevel.WARN
+    OneSignal.initWithContext(this, BuildConfig.ONESIGNAL_APP_ID)
+    // Request notification permission (Android 13+)
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+      lifecycleScope.launch { OneSignal.Notifications.requestPermission(fallbackToSettings = true) }
+    }
+    /**
+     * Listens for Firebase authentication state changes. When a user signs in, we wait briefly for
+     * OneSignal to initialize, then store their device token for push notification targeting.
+     */
+    deviceTokenManager =
+        DeviceTokenManager(
+            deviceTokenRepository = deviceTokenRepository,
+            context = this,
+            playerIdProvider = { OneSignal.User.pushSubscription.id },
+            currentUserIdProvider = { FirebaseAuth.getInstance().currentUser?.uid })
+    authStateListener =
+        FirebaseAuth.AuthStateListener { auth ->
+          if (auth.currentUser != null) {
+            Log.d("OneSignal", "User authenticated, storing token...")
+            lifecycleScope.launch { deviceTokenManager.storeDeviceToken() }
+          } else {
+            Log.d("OneSignal", "User signed out")
+            deviceTokenManager.resetRetries()
+          }
+        }
+
+    // Register the auth listener to be notified of sign-in/sign-out events
+    FirebaseAuth.getInstance().addAuthStateListener(authStateListener)
 
     // Initialize Stripe
     val stripePublishableKey = BuildConfig.STRIPE_PUBLISHABLE_KEY
@@ -63,6 +106,12 @@ class MainActivity : ComponentActivity() {
         CompositionLocalProvider(LocalPaymentSheet provides paymentSheet) { MainActivityContent() }
       }
     }
+  }
+
+  override fun onDestroy() {
+    super.onDestroy()
+    // Clean up: remove auth listener to prevent memory leaks
+    FirebaseAuth.getInstance().removeAuthStateListener(authStateListener)
   }
 }
 
