@@ -178,7 +178,7 @@ fun DependencyHandlerScope.globalTestImplementation(dep: Any) {
 
 dependencies {
     // Multidex support for handling large number of methods
-    implementation("androidx.multidex:multidex:2.0.1")
+    implementation(libs.androidx.multidex)
 
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.androidx.core.ktx)
