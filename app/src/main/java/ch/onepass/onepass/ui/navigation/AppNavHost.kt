@@ -19,6 +19,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import ch.onepass.onepass.model.pass.PassRepositoryFirebase
+import ch.onepass.onepass.model.scan.TicketScanRepositoryFirebase
 import ch.onepass.onepass.ui.auth.AuthScreen
 import ch.onepass.onepass.ui.auth.AuthViewModel
 import ch.onepass.onepass.ui.eventdetail.EventDetailScreen
@@ -52,6 +53,8 @@ import ch.onepass.onepass.ui.organizer.OrganizationFormViewModel
 import ch.onepass.onepass.ui.profile.ProfileEffect
 import ch.onepass.onepass.ui.profile.ProfileScreen
 import ch.onepass.onepass.ui.profile.ProfileViewModel
+import ch.onepass.onepass.ui.scan.ScanScreen
+import ch.onepass.onepass.ui.scan.ScannerViewModel
 import ch.onepass.onepass.ui.staff.StaffInvitationScreen
 import ch.onepass.onepass.ui.staff.StaffInvitationViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -247,7 +250,7 @@ fun AppNavHost(
             navController.navigate(Screen.StaffInvitation.route(organizationId))
           },
           onNavigateToScanTickets = { eventId ->
-            // TODO: Navigate to ticket scanner when implemented
+            navController.navigate(Screen.Scan.route(eventId))
           },
           onNavigateToEditEvent = { eventId ->
             navController.navigate(Screen.EditEvent.route(eventId))
@@ -275,9 +278,9 @@ fun AppNavHost(
                   navController.navigate(Screen.ComingSoon.route)
               is OrganizerProfileEffect.ShowError -> navController.navigate(Screen.ComingSoon.route)
             }
-          },
-          onNavigateBack = { navController.popBackStack() })
+          })
     }
+
     // ------------------ Create Event ------------------
     composable(Screen.CreateEvent.route) { backStackEntry ->
       val organizationId =
@@ -299,6 +302,20 @@ fun AppNavHost(
           viewModel = editEventVm,
           onNavigateBack = { navController.popBackStack() },
           onEventUpdated = { navController.popBackStack() })
+    }
+
+    // ------------------ Scan Tickets ------------------
+    composable(Screen.Scan.route) { backStackEntry ->
+      val eventId = backStackEntry.arguments?.getString(Screen.Scan.ARG_EVENT_ID) ?: ""
+      val scannerVm: ScannerViewModel =
+          viewModel(
+              factory =
+                  viewModelFactory {
+                    initializer {
+                      ScannerViewModel(eventId = eventId, repo = TicketScanRepositoryFirebase())
+                    }
+                  })
+      ScanScreen(viewModel = scannerVm)
     }
 
     // ------------------ Staff Invitation ------------------
@@ -329,11 +346,13 @@ fun AppNavHost(
           },
           onNavigateBack = { navController.popBackStack() })
     }
+
     // ------------------ My Invitations ----------------
     composable(Screen.MyInvitations.route) {
       val myInvVm: MyInvitationsViewModel = viewModel()
       MyInvitationsScreen(viewModel = myInvVm, onNavigateBack = { navController.popBackStack() })
     }
+
     // ---------------- Edit Organization -------------
     composable(Screen.EditOrganization.route) { backStackEntry ->
       val organizationId =
