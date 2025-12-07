@@ -59,7 +59,7 @@ jobs:
       - name: Run unit tests (check)
         run: |
           # To run the CI with debug information, add --info
-          ./gradlew check --parallel --build-cache
+          ./gradlew testDebugUnitTest --parallel --build-cache
 
       - name: Upload unit exec
         uses: actions/upload-artifact@v4
@@ -72,6 +72,12 @@ jobs:
         with:
           name: unit-test-results
           path: app/build/test-results/testDebugUnitTest/
+
+      - name: Upload kotlin-classes (for Jacoco)
+        uses: actions/upload-artifact@v4
+        with:
+          name: kotlin-classes
+          path: app/build/tmp/kotlin-classes/debug/
 
   build-release-apk:
     runs-on: ubuntu-latest
@@ -123,40 +129,30 @@ jobs:
           name: release-apk
           path: app/build/outputs/apk/release/*.apk
 
-  build-test-apks:
+  firebase-tools-cache:
     runs-on: ubuntu-latest
+    env:
+      FIREBASE_TOOLS_VERSION: 13.23.1
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: ./.github/actions/setup-gradle
-
-      # Decode secrets for local.properties, google-services.json
-      - name: Decode secrets
-        uses: ./.github/actions/decode-secrets
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          local_properties: ${{ secrets.LOCAL_PROPERTIES }}
-          google_services: ${{ secrets.GOOGLE_SERVICES }}
+          node-version: '18'
 
-      - name: Assemble app and androidTest APKs
-        run: ./gradlew assembleDebug assembleDebugAndroidTest --build-cache
-
-      - name: Upload test APKs
-        uses: actions/upload-artifact@v4
+      - name: Cache npm (firebase-tools)
+        uses: actions/cache@v4
         with:
-          name: test-apks
-          path: |
-            app/build/outputs/apk/debug/*.apk
-            app/build/outputs/apk/androidTest/debug/*.apk
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-firebase-tools-${{ env.FIREBASE_TOOLS_VERSION }}
 
-      - name: Upload kotlin-classes (for Jacoco)
-        uses: actions/upload-artifact@v4
-        with:
-          name: kotlin-classes
-          path: app/build/tmp/kotlin-classes/debug/
+      - name: Preinstall Firebase CLI
+        run: |
+          npm install -g firebase-tools@${FIREBASE_TOOLS_VERSION} --cache ~/.npm --prefer-offline
+          firebase --version
 
   connected-tests:
     runs-on: ubuntu-latest
-    needs: build-test-apks
+    needs: firebase-tools-cache
     timeout-minutes: 60
     strategy:
       fail-fast: false
@@ -164,6 +160,7 @@ jobs:
         shard_index: [0, 1, 2]
     env:
       SHARD_COUNT: 3
+      FIREBASE_TOOLS_VERSION: 13.23.1
     steps:
       - uses: actions/checkout@v4
 
@@ -182,10 +179,16 @@ jobs:
         with:
           node-version: '18'
 
+      - name: Cache npm (firebase-tools)
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-firebase-tools-${{ env.FIREBASE_TOOLS_VERSION }}
+
       # Install Firebase CLI
       - name: Install Firebase CLI
         run: |
-          npm install -g firebase-tools
+          npm install -g firebase-tools@${FIREBASE_TOOLS_VERSION} --cache ~/.npm --prefer-offline
           firebase --version
 
       - name: Cache Firebase emulators
@@ -439,7 +442,7 @@ jobs:
           if-no-files-found: warn
 
   sonar:
-    needs: [static-checks, unit-tests, build-release-apk, build-test-apks, connected-tests]
+    needs: [static-checks, unit-tests, build-release-apk, connected-tests]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
