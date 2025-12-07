@@ -23,10 +23,10 @@ interface DeviceTokenRepository {
    * Deactivate a specific device token.
    *
    * @param userId The user's unique identifier
-   * @param deviceId The device identifier to deactivate
+   * @param oneSignalPlayerId The device identifier to deactivate
    * @return Result indicating success or failure
    */
-  suspend fun deactivateDeviceToken(userId: String, deviceId: String): Result<Unit>
+  suspend fun deactivateDeviceToken(userId: String, oneSignalPlayerId: String): Result<Unit>
 
   /**
    * Get all OneSignal player IDs for a user (for sending notifications).
