@@ -155,25 +155,25 @@ fun AppNavHost(
           onBack = { navController.popBackStack() })
     }
 
-      // ------------------ Tickets (My Events) ------------------
-      composable(Screen.Tickets.route) {
-          val uid = FirebaseAuth.getInstance().currentUser?.uid ?: "LOCAL_TEST_UID"
+    // ------------------ Tickets (My Events) ------------------
+    composable(Screen.Tickets.route) {
+      val uid = FirebaseAuth.getInstance().currentUser?.uid ?: "LOCAL_TEST_UID"
 
-          val myEventsVm: MyEventsViewModel =
-              viewModel(
-                  factory =
-                      viewModelFactory {
-                          initializer {
-                              MyEventsViewModel(
-                                  dataStore = context.passDataStore,
-                                  passRepository =
-                                      PassRepositoryFirebase(
-                                          FirebaseFirestore.getInstance(), FirebaseFunctions.getInstance()),
-                                  userId = uid)
-                          }
-                      })
-          MyEventsScreen(viewModel = myEventsVm)  // ← SUPPRIME userQrData
-      }
+      val myEventsVm: MyEventsViewModel =
+          viewModel(
+              factory =
+                  viewModelFactory {
+                    initializer {
+                      MyEventsViewModel(
+                          dataStore = context.passDataStore,
+                          passRepository =
+                              PassRepositoryFirebase(
+                                  FirebaseFirestore.getInstance(), FirebaseFunctions.getInstance()),
+                          userId = uid)
+                    }
+                  })
+      MyEventsScreen(viewModel = myEventsVm) // ← SUPPRIME userQrData
+    }
 
     // ------------------ Map ------------------
     composable(Screen.Map.route) {
