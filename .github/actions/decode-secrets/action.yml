@@ -1,0 +1,69 @@
+name: Decode GitHub secrets
+description: Decode and setup local.properties, google-services.json, and keystore
+
+inputs:
+  local_properties:
+    required: false
+  android_keystore_base64:
+    required: false
+  google_services:
+    required: false
+  keystore_password:
+    required: false
+  key_alias:
+    required: false
+  key_password:
+    required: false
+  keystore_type:
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+    - name: Decode local.properties from secrets
+      env:
+        LOCAL_PROPERTIES: ${{ inputs.local_properties }}
+      shell: bash
+      run: |
+        if [ -n "$LOCAL_PROPERTIES" ]; then
+          echo "$LOCAL_PROPERTIES" | base64 --decode > ./local.properties
+        else
+          echo "::warning::LOCAL_PROPERTIES secret is not set. local.properties will not be created."
+        fi
+
+    - name: Decode google-services.json
+      env:
+        GOOGLE_SERVICES: ${{ inputs.google_services }}
+      shell: bash
+      run: |
+        if [ -n "$GOOGLE_SERVICES" ]; then
+          echo "$GOOGLE_SERVICES" | base64 --decode > app/google-services.json
+          ls -la app/google-services.json || true
+        else
+          echo "::warning::GOOGLE_SERVICES secret is not set. google-services.json will not be created."
+        fi
+
+    - name: Decode keystore and export environment variables
+      env:
+        KEYSTORE_B64: ${{ inputs.android_keystore_base64 }}
+        KEYSTORE_PASSWORD: ${{ inputs.keystore_password }}
+        KEY_ALIAS: ${{ inputs.key_alias }}
+        KEY_PASSWORD: ${{ inputs.key_password }}
+        KEYSTORE_TYPE: ${{ inputs.keystore_type }}
+      shell: bash
+      run: |
+        if [ -n "$KEYSTORE_B64" ]; then
+          mkdir -p "${{ github.workspace }}/apk"
+          KEYSTORE_FILE="${{ github.workspace }}/apk/keystore.jks"
+          echo "$KEYSTORE_B64" | base64 --decode > "$KEYSTORE_FILE"
+          ls -l "$KEYSTORE_FILE"
+
+          # Export environment variables for subsequent steps
+          echo "RELEASE_STORE_FILE=$KEYSTORE_FILE" >> "$GITHUB_ENV"
+          echo "RELEASE_STORE_PASSWORD=$KEYSTORE_PASSWORD" >> "$GITHUB_ENV"
+          echo "RELEASE_KEY_ALIAS=$KEY_ALIAS" >> "$GITHUB_ENV"
+          echo "RELEASE_KEY_PASSWORD=$KEY_PASSWORD" >> "$GITHUB_ENV"
+          echo "RELEASE_STORE_TYPE=$KEYSTORE_TYPE" >> "$GITHUB_ENV"
+        else
+          echo "::warning::KEYSTORE_B64 secret is not set. Keystore will not be created."
+        fi
