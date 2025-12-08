@@ -45,6 +45,7 @@ abstract class EventFormViewModel(
     START_TIME("startTime", "Start time cannot be empty"),
     END_TIME("endTime", "End time cannot be empty"),
     TIME("time", "End time must be after start time"),
+    DATE_IN_PAST("date", "Event cannot be created in the past"),
     LOCATION("location", "Location cannot be empty"),
     LOCATION_SELECT("location", "Please select a location from the suggestions"),
     PRICE_EMPTY("price", "Price cannot be empty"),
@@ -132,7 +133,8 @@ abstract class EventFormViewModel(
   /** Updates the event start time */
   fun updateStartTime(startTime: String) {
     _formState.value = _formState.value.copy(startTime = startTime)
-    clearFieldError(ValidationError.START_TIME.key, ValidationError.TIME.key)
+    clearFieldError(
+        ValidationError.START_TIME.key, ValidationError.TIME.key, ValidationError.DATE_IN_PAST.key)
   }
 
   /** Updates the event end time */
@@ -144,7 +146,7 @@ abstract class EventFormViewModel(
   /** Updates the event date */
   fun updateDate(date: String) {
     _formState.value = _formState.value.copy(date = date)
-    clearFieldError(ValidationError.DATE.key)
+    clearFieldError(ValidationError.DATE.key, ValidationError.DATE_IN_PAST.key)
   }
 
   /**
@@ -244,6 +246,13 @@ abstract class EventFormViewModel(
         state.endTime.isNotBlank() &&
         state.endTime <= state.startTime)
         errors += ValidationError.TIME.toError()
+
+    if (state.date.isNotBlank() && state.startTime.isNotBlank()) {
+      val startTimestamp = parseDateAndTime(state.date, state.startTime)
+      if ((startTimestamp != null) && startTimestamp.toDate().before(java.util.Date())) {
+        errors += ValidationError.DATE_IN_PAST.toError()
+      }
+    }
 
     if (state.location.isBlank()) {
       errors += ValidationError.LOCATION.toError()
