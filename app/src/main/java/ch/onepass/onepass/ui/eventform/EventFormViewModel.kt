@@ -12,6 +12,7 @@ import ch.onepass.onepass.model.map.NominatimLocationRepository
 import ch.onepass.onepass.model.storage.StorageRepository
 import ch.onepass.onepass.model.storage.StorageRepositoryFirebase
 import ch.onepass.onepass.utils.DateTimeUtils
+import ch.onepass.onepass.utils.InputSanitizer
 import ch.onepass.onepass.utils.ValidationUtils
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.Job
@@ -36,6 +37,10 @@ abstract class EventFormViewModel(
 ) : ViewModel() {
   companion object {
     const val MAX_TAG_COUNT = 5
+    const val MAX_TITLE_LENGTH = 50
+    const val MAX_DESCRIPTION_LENGTH = 200
+    const val MAX_PRICE_LENGTH = 10
+    const val MAX_CAPACITY_LENGTH = 6
   }
 
   enum class ValidationError(val key: String, val message: String) {
@@ -53,7 +58,10 @@ abstract class EventFormViewModel(
     PRICE_NEGATIVE("price", "Price must be positive"),
     CAPACITY_EMPTY("capacity", "Capacity cannot be empty"),
     CAPACITY_INVALID("capacity", "Invalid capacity format"),
-    CAPACITY_NEGATIVE("capacity", "Capacity must be positive");
+    CAPACITY_NEGATIVE("capacity", "Capacity must be positive"),
+    TITLE_DANGEROUS("title", "Title contains invalid characters or dangerous patterns"),
+    DESCRIPTION_DANGEROUS(
+        "description", "Description contains invalid characters or dangerous patterns");
 
     fun toError(): Pair<String, String> = key to message
   }
@@ -118,16 +126,26 @@ abstract class EventFormViewModel(
   private var locationSearchJob: Job? = null
   private val searchDebounceMs = 300L
 
-  /** Updates the event title */
+  /** Updates the event title with sanitization and length limit */
   fun updateTitle(title: String) {
-    _formState.value = _formState.value.copy(title = title)
-    clearFieldError(ValidationError.TITLE.key)
+    try {
+      val sanitized = InputSanitizer.sanitizeTitle(title).take(MAX_TITLE_LENGTH)
+      _formState.value = _formState.value.copy(title = sanitized)
+      clearFieldError(ValidationError.TITLE.key, ValidationError.TITLE_DANGEROUS.key)
+    } catch (_: IllegalArgumentException) {
+      _fieldErrors.value = mapOf(ValidationError.TITLE_DANGEROUS.toError())
+    }
   }
 
-  /** Updates the event description */
+  /** Updates the event description with sanitization and length limit */
   fun updateDescription(description: String) {
-    _formState.value = _formState.value.copy(description = description)
-    clearFieldError(ValidationError.DESCRIPTION.key)
+    try {
+      val sanitized = InputSanitizer.sanitizeDescription(description).take(MAX_DESCRIPTION_LENGTH)
+      _formState.value = _formState.value.copy(description = sanitized)
+      clearFieldError(ValidationError.DESCRIPTION.key, ValidationError.DESCRIPTION_DANGEROUS.key)
+    } catch (_: IllegalArgumentException) {
+      _fieldErrors.value = mapOf(ValidationError.DESCRIPTION_DANGEROUS.toError())
+    }
   }
 
   /** Updates the event start time */
@@ -209,18 +227,20 @@ abstract class EventFormViewModel(
     clearFieldError(ValidationError.LOCATION.key, ValidationError.LOCATION_SELECT.key)
   }
 
-  /** Updates the ticket price */
+  /** Updates the ticket price with sanitization and length limit */
   fun updatePrice(price: String) {
-    _formState.value = _formState.value.copy(price = price)
+    val sanitized = InputSanitizer.sanitizePrice(price).take(MAX_PRICE_LENGTH)
+    _formState.value = _formState.value.copy(price = sanitized)
     clearFieldError(
         ValidationError.PRICE_EMPTY.key,
         ValidationError.PRICE_INVALID.key,
         ValidationError.PRICE_NEGATIVE.key)
   }
 
-  /** Updates the event capacity */
+  /** Updates the event capacity with sanitization and length limit */
   fun updateCapacity(capacity: String) {
-    _formState.value = _formState.value.copy(capacity = capacity)
+    val sanitized = InputSanitizer.sanitizeCapacity(capacity).take(MAX_CAPACITY_LENGTH)
+    _formState.value = _formState.value.copy(capacity = sanitized)
     clearFieldError(
         ValidationError.CAPACITY_EMPTY.key,
         ValidationError.CAPACITY_INVALID.key,

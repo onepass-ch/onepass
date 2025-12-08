@@ -503,19 +503,6 @@ class EditEventFormViewModelTest {
   }
 
   @Test
-  fun updateEventValidationFailsForNegativePrice() = runTest {
-    viewModel.loadEvent("test-event-id")
-    testDispatcher.scheduler.advanceUntilIdle()
-    viewModel.updatePrice("-10")
-
-    viewModel.updateEvent()
-    testDispatcher.scheduler.advanceUntilIdle()
-
-    val errors = viewModel.fieldErrors.value
-    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.PRICE_NEGATIVE.key))
-  }
-
-  @Test
   fun updateEventValidationFailsForInvalidCapacity() = runTest {
     viewModel.loadEvent("test-event-id")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -533,19 +520,6 @@ class EditEventFormViewModelTest {
     viewModel.loadEvent("test-event-id")
     testDispatcher.scheduler.advanceUntilIdle()
     viewModel.updateCapacity("0")
-
-    viewModel.updateEvent()
-    testDispatcher.scheduler.advanceUntilIdle()
-
-    val errors = viewModel.fieldErrors.value
-    Assert.assertTrue(errors.containsKey(EventFormViewModel.ValidationError.CAPACITY_NEGATIVE.key))
-  }
-
-  @Test
-  fun updateEventValidationFailsForNegativeCapacity() = runTest {
-    viewModel.loadEvent("test-event-id")
-    testDispatcher.scheduler.advanceUntilIdle()
-    viewModel.updateCapacity("-5")
 
     viewModel.updateEvent()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -832,5 +806,172 @@ class EditEventFormViewModelTest {
 
     assertEquals(5, viewModel.formState.value.selectedTags.size)
     assertFalse(viewModel.formState.value.selectedTags.contains(EventTag.SPORTS))
+  }
+
+  @Test
+  fun updateTitle_withHtmlScript_setsError() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.updateTitle("<script>alert(1)</script>")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assert(viewModel.fieldErrors.value.containsKey("title"))
+    assertEquals(
+        EventFormViewModel.ValidationError.TITLE_DANGEROUS.message,
+        viewModel.fieldErrors.value["title"])
+  }
+
+  @Test
+  fun updateTitle_withSqlInjection_setsError() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.updateTitle("Event'; DROP TABLE users")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assert(viewModel.fieldErrors.value.containsKey("title"))
+  }
+
+  @Test
+  fun updateTitle_withJavascriptProtocol_setsError() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.updateTitle("javascript:alert(1)")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assert(viewModel.fieldErrors.value.containsKey("title"))
+  }
+
+  @Test
+  fun updateTitle_afterSanitizationError_clearsErrorOnValidInput() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.updateTitle("<img src=x>")
+    Assert.assertTrue(viewModel.fieldErrors.value.containsKey("title"))
+
+    viewModel.updateTitle("Valid Title")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertFalse(viewModel.fieldErrors.value.containsKey("title"))
+  }
+
+  @Test
+  fun updateDescription_withHtmlScript_setsError() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.updateDescription("Nice event<script>alert(1)</script>")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assert(viewModel.fieldErrors.value.containsKey("description"))
+    assertEquals(
+        EventFormViewModel.ValidationError.DESCRIPTION_DANGEROUS.message,
+        viewModel.fieldErrors.value["description"])
+  }
+
+  @Test
+  fun updateDescription_withSqlInjection_setsError() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.updateDescription("Description; DROP TABLE users")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assert(viewModel.fieldErrors.value.containsKey("description"))
+  }
+
+  @Test
+  fun updateDescription_afterSanitizationError_clearsErrorOnValidInput() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.updateDescription("Test<script>alert(1)</script>")
+    assert(viewModel.fieldErrors.value.containsKey("description"))
+
+    viewModel.updateDescription("Valid description")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertFalse(viewModel.fieldErrors.value.containsKey("description"))
+  }
+
+  @Test
+  fun updatePrice_sanitizesSpecialCharactersAndLimitsDecimals() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Tests: special char removal + decimal limiting + multiple decimal points
+    viewModel.updatePrice("$12.999.50")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals("12.99", viewModel.formState.value.price)
+  }
+
+  @Test
+  fun updatePrice_withMinusSign_removesIt() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.updatePrice("-12.99")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals("12.99", viewModel.formState.value.price)
+  }
+
+  @Test
+  fun updateCapacity_sanitizesAllNonDigits() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Tests: leading zeros + special chars + minus sign removal
+    viewModel.updateCapacity("-00#100@abc")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertEquals("100", viewModel.formState.value.capacity)
+  }
+
+  @Test
+  fun updateDate_clearsDateInPastError() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.updateDate("01/01/2020")
+    viewModel.updateStartTime("10:00")
+    viewModel.updateEvent()
+    testDispatcher.scheduler.advanceUntilIdle()
+    assert(
+        viewModel.fieldErrors.value.containsKey(
+            EventFormViewModel.ValidationError.DATE_IN_PAST.key))
+
+    viewModel.updateDate("01/01/2030")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertFalse(
+        viewModel.fieldErrors.value.containsKey(
+            EventFormViewModel.ValidationError.DATE_IN_PAST.key))
+  }
+
+  @Test
+  fun updateStartTime_clearsDateInPastError() = runTest {
+    viewModel.loadEvent("test-event-id")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.updateDate("01/01/2020")
+    viewModel.updateStartTime("10:00")
+    viewModel.updateEvent()
+    testDispatcher.scheduler.advanceUntilIdle()
+    assert(
+        viewModel.fieldErrors.value.containsKey(
+            EventFormViewModel.ValidationError.DATE_IN_PAST.key))
+
+    viewModel.updateDate("01/01/2030")
+    viewModel.updateStartTime("15:00")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    assertFalse(
+        viewModel.fieldErrors.value.containsKey(
+            EventFormViewModel.ValidationError.DATE_IN_PAST.key))
   }
 }
