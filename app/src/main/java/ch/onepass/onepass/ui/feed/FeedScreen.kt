@@ -17,6 +17,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
@@ -26,6 +27,13 @@ import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.event.EventCard
 import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
+import ch.onepass.onepass.ui.theme.OnePassTheme
+import ch.onepass.onepass.model.event.EventStatus
+import ch.onepass.onepass.model.event.PricingTier
+import ch.onepass.onepass.model.map.Location
+import com.google.firebase.Timestamp
+import com.google.firebase.firestore.GeoPoint
+import java.util.Calendar
 import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
 import ch.onepass.onepass.ui.eventfilters.FilterDialog
 
@@ -252,8 +260,8 @@ private fun EventListContent(
 
   LazyColumn(
       modifier = Modifier.fillMaxSize().testTag(FeedScreenTestTags.EVENT_LIST),
-      contentPadding = PaddingValues(16.dp),
-      verticalArrangement = Arrangement.spacedBy(24.dp)) {
+      contentPadding = PaddingValues(10.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp)) {
         items(items = events, key = { it.eventId }) { event ->
           EventCard(
               event = event,
@@ -272,4 +280,248 @@ private fun EventListContent(
           }
         }
       }
+}
+
+/**
+ * Preview function for FeedScreen showing the top bar and event list.
+ */
+@Preview(showBackground = true, name = "Feed Screen")
+@Composable
+private fun FeedScreenPreview() {
+  OnePassTheme {
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+          Column {
+            FeedTopBar(
+                currentLocation = "Lausanne, Switzerland",
+                currentDateRange = "WELCOME",
+                onFilterClick = {},
+                onNotificationClick = {}
+            )
+          }
+        },
+        containerColor = colorResource(id = R.color.screen_background),
+    ) { paddingValues ->
+      FeedScreenEventListPreview(
+          events = createSampleEvents(),
+          modifier = Modifier.padding(paddingValues),
+
+      )
+    }
+  }
+}
+
+/**
+ * Preview function for FeedScreen showing the loading state.
+ */
+@Preview(showBackground = true, name = "Feed Screen - Loading")
+@Composable
+private fun FeedScreenLoadingPreview() {
+  OnePassTheme {
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+          Column {
+            FeedTopBar(
+                currentLocation = "Lausanne, Switzerland",
+                currentDateRange = "WELCOME",
+                onFilterClick = {},
+                onNotificationClick = {}
+            )
+          }
+        },
+        containerColor = colorResource(id = R.color.screen_background),
+    ) { paddingValues ->
+      Box(
+          modifier = Modifier.fillMaxSize().padding(paddingValues),
+          contentAlignment = Alignment.Center
+      ) {
+        LoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR)
+      }
+    }
+  }
+}
+
+/**
+ * Preview function for FeedScreen showing the "loading more" state at the bottom of the list.
+ */
+@Preview(showBackground = true, name = "Feed Screen - Loading More")
+@Composable
+private fun FeedScreenLoadingMorePreview() {
+  OnePassTheme {
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+          Column {
+            FeedTopBar(
+                currentLocation = "Lausanne, Switzerland",
+                currentDateRange = "WELCOME",
+                onFilterClick = {},
+                onNotificationClick = {}
+            )
+          }
+        },
+        containerColor = colorResource(id = R.color.screen_background),
+    ) { paddingValues ->
+      FeedScreenEventListPreview(
+          events = createSampleEvents().take(2), // Show only 2 events
+          modifier = Modifier.padding(paddingValues),
+          isLoadingMore = true
+      )
+    }
+  }
+}
+
+/**
+ * Simplified preview of the event list content for FeedScreen.
+ */
+@Composable
+private fun FeedScreenEventListPreview(
+    events: List<Event>,
+    modifier: Modifier = Modifier,
+    isLoadingMore: Boolean = false
+) {
+  LazyColumn(
+      modifier = modifier
+          .fillMaxSize()
+          .testTag(FeedScreenTestTags.EVENT_LIST),
+      contentPadding = PaddingValues(10.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp)
+  ) {
+    items(items = events, key = { it.eventId }) { event ->
+      EventCard(
+          event = event,
+          modifier = Modifier.testTag(FeedScreenTestTags.getTestTagForEventItem(event.eventId)),
+          isLiked = event.eventId == "1", // First event is liked for preview
+          onLikeToggle = {},
+          onCardClick = {}
+      )
+    }
+    if (isLoadingMore && events.isNotEmpty()) {
+      item {
+        Box(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            contentAlignment = Alignment.Center
+        ) {
+          LoadingState()
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Helper function to create sample events for FeedScreen preview.
+ */
+private fun createSampleEvents(): List<Event> {
+  val calendar = Calendar.getInstance()
+  
+  return listOf(
+      createSampleFeedEvent(
+          eventId = "1",
+          title = "Summer Music Festival",
+          organizerName = "Music Events Inc.",
+          location = Location(
+              coordinates = GeoPoint(46.5197, 6.6323),
+              name = "Lausanne, Flon"
+          ),
+          price = 50.0,
+          imageUrl = "https://picsum.photos/400/300?random=1",
+          daysFromNow = 30
+      ),
+      createSampleFeedEvent(
+          eventId = "2",
+          title = "Tech Conference 2024",
+          organizerName = "Tech Hub",
+          location = Location(
+              coordinates = GeoPoint(47.3769, 8.5417),
+              name = "Zurich, HB"
+          ),
+          price = 75.0,
+          imageUrl = "https://picsum.photos/400/300?random=2",
+          daysFromNow = 45
+      ),
+      createSampleFeedEvent(
+          eventId = "3",
+          title = "Community Meetup",
+          organizerName = "Local Community",
+          location = Location(
+              coordinates = GeoPoint(46.2044, 6.1432),
+              name = "Geneva"
+          ),
+          price = 0.0,
+          imageUrl = "https://picsum.photos/400/300?random=3",
+          daysFromNow = 15
+      ),
+      createSampleFeedEvent(
+          eventId = "4",
+          title = "Art Exhibition Opening",
+          organizerName = "Gallery Modern",
+          location = Location(
+              coordinates = GeoPoint(46.1984, 6.1423),
+              name = "Geneva, Old Town"
+          ),
+          price = 25.0,
+          imageUrl = "https://picsum.photos/400/300?random=4",
+          daysFromNow = 20
+      ),
+      createSampleFeedEvent(
+          eventId = "5",
+          title = "Food & Wine Tasting",
+          organizerName = "Culinary Experiences",
+          location = Location(
+              coordinates = GeoPoint(46.5197, 6.6323),
+              name = "Lausanne"
+          ),
+          price = 100.0,
+          imageUrl = "https://picsum.photos/400/300?random=5",
+          daysFromNow = 60
+      )
+  )
+}
+
+/**
+ * Helper function to create sample Event data for FeedScreen previews.
+ */
+private fun createSampleFeedEvent(
+    eventId: String,
+    title: String,
+    organizerName: String,
+    location: Location,
+    price: Double,
+    imageUrl: String,
+    daysFromNow: Int
+): Event {
+  val calendar = Calendar.getInstance()
+  calendar.add(Calendar.DAY_OF_MONTH, daysFromNow)
+  val startTime = Timestamp(calendar.time)
+  calendar.add(Calendar.HOUR_OF_DAY, 3)
+  val endTime = Timestamp(calendar.time)
+
+  return Event(
+      eventId = eventId,
+      title = title,
+      description = "Sample event description for $title",
+      organizerId = "org-$eventId",
+      organizerName = organizerName,
+      status = EventStatus.PUBLISHED,
+      location = location,
+      startTime = startTime,
+      endTime = endTime,
+      capacity = 100,
+      ticketsRemaining = 75,
+      ticketsIssued = 25,
+      ticketsRedeemed = 0,
+      currency = "CHF",
+      pricingTiers = if (price > 0) {
+        listOf(PricingTier("General", price, 100, 75))
+      } else {
+        emptyList()
+      },
+      images = if (imageUrl.isNotEmpty()) listOf(imageUrl) else emptyList(),
+      tags = listOf("sample", "preview"),
+      createdAt = Timestamp.now(),
+      updatedAt = Timestamp.now()
+  )
 }
