@@ -37,9 +37,7 @@ object InputSanitizer {
 
   /** Sanitizes and validates text against common attacks */
   private fun validateAgainstAttacks(input: String) {
-    if (containsDangerousPatterns(input)) {
-      throw IllegalArgumentException("Input contains potentially dangerous patterns")
-    }
+    require(!containsDangerousPatterns(input)) { "Input contains potentially dangerous patterns" }
   }
 
   /**
