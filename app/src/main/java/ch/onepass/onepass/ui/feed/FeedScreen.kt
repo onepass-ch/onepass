@@ -15,27 +15,27 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
+import ch.onepass.onepass.model.event.EventStatus
+import ch.onepass.onepass.model.event.PricingTier
+import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.event.EventCard
 import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
+import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
+import ch.onepass.onepass.ui.eventfilters.FilterDialog
 import ch.onepass.onepass.ui.theme.OnePassTheme
-import ch.onepass.onepass.model.event.EventStatus
-import ch.onepass.onepass.model.event.PricingTier
-import ch.onepass.onepass.model.map.Location
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
 import java.util.Calendar
-import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
-import ch.onepass.onepass.ui.eventfilters.FilterDialog
 
 /**
  * Feed screen showing all published events. Displays a list of events with loading, error, and
@@ -282,9 +282,7 @@ private fun EventListContent(
       }
 }
 
-/**
- * Preview function for FeedScreen showing the top bar and event list.
- */
+/** Preview function for FeedScreen showing the top bar and event list. */
 @Preview(showBackground = true, name = "Feed Screen")
 @Composable
 private fun FeedScreenPreview() {
@@ -297,8 +295,7 @@ private fun FeedScreenPreview() {
                 currentLocation = "Lausanne, Switzerland",
                 currentDateRange = "WELCOME",
                 onFilterClick = {},
-                onNotificationClick = {}
-            )
+                onNotificationClick = {})
           }
         },
         containerColor = colorResource(id = R.color.screen_background),
@@ -306,15 +303,12 @@ private fun FeedScreenPreview() {
       FeedScreenEventListPreview(
           events = createSampleEvents(),
           modifier = Modifier.padding(paddingValues),
-
       )
     }
   }
 }
 
-/**
- * Preview function for FeedScreen showing the loading state.
- */
+/** Preview function for FeedScreen showing the loading state. */
 @Preview(showBackground = true, name = "Feed Screen - Loading")
 @Composable
 private fun FeedScreenLoadingPreview() {
@@ -327,25 +321,21 @@ private fun FeedScreenLoadingPreview() {
                 currentLocation = "Lausanne, Switzerland",
                 currentDateRange = "WELCOME",
                 onFilterClick = {},
-                onNotificationClick = {}
-            )
+                onNotificationClick = {})
           }
         },
         containerColor = colorResource(id = R.color.screen_background),
     ) { paddingValues ->
       Box(
           modifier = Modifier.fillMaxSize().padding(paddingValues),
-          contentAlignment = Alignment.Center
-      ) {
-        LoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR)
-      }
+          contentAlignment = Alignment.Center) {
+            LoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR)
+          }
     }
   }
 }
 
-/**
- * Preview function for FeedScreen showing the "loading more" state at the bottom of the list.
- */
+/** Preview function for FeedScreen showing the "loading more" state at the bottom of the list. */
 @Preview(showBackground = true, name = "Feed Screen - Loading More")
 @Composable
 private fun FeedScreenLoadingMorePreview() {
@@ -358,8 +348,7 @@ private fun FeedScreenLoadingMorePreview() {
                 currentLocation = "Lausanne, Switzerland",
                 currentDateRange = "WELCOME",
                 onFilterClick = {},
-                onNotificationClick = {}
-            )
+                onNotificationClick = {})
           }
         },
         containerColor = colorResource(id = R.color.screen_background),
@@ -367,15 +356,12 @@ private fun FeedScreenLoadingMorePreview() {
       FeedScreenEventListPreview(
           events = createSampleEvents().take(2), // Show only 2 events
           modifier = Modifier.padding(paddingValues),
-          isLoadingMore = true
-      )
+          isLoadingMore = true)
     }
   }
 }
 
-/**
- * Simplified preview of the event list content for FeedScreen.
- */
+/** Simplified preview of the event list content for FeedScreen. */
 @Composable
 private fun FeedScreenEventListPreview(
     events: List<Event>,
@@ -383,107 +369,77 @@ private fun FeedScreenEventListPreview(
     isLoadingMore: Boolean = false
 ) {
   LazyColumn(
-      modifier = modifier
-          .fillMaxSize()
-          .testTag(FeedScreenTestTags.EVENT_LIST),
+      modifier = modifier.fillMaxSize().testTag(FeedScreenTestTags.EVENT_LIST),
       contentPadding = PaddingValues(10.dp),
-      verticalArrangement = Arrangement.spacedBy(12.dp)
-  ) {
-    items(items = events, key = { it.eventId }) { event ->
-      EventCard(
-          event = event,
-          modifier = Modifier.testTag(FeedScreenTestTags.getTestTagForEventItem(event.eventId)),
-          isLiked = event.eventId == "1", // First event is liked for preview
-          onLikeToggle = {},
-          onCardClick = {}
-      )
-    }
-    if (isLoadingMore && events.isNotEmpty()) {
-      item {
-        Box(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            contentAlignment = Alignment.Center
-        ) {
-          LoadingState()
+      verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        items(items = events, key = { it.eventId }) { event ->
+          EventCard(
+              event = event,
+              modifier = Modifier.testTag(FeedScreenTestTags.getTestTagForEventItem(event.eventId)),
+              isLiked = event.eventId == "1", // First event is liked for preview
+              onLikeToggle = {},
+              onCardClick = {})
+        }
+        if (isLoadingMore && events.isNotEmpty()) {
+          item {
+            Box(
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                contentAlignment = Alignment.Center) {
+                  LoadingState()
+                }
+          }
         }
       }
-    }
-  }
 }
 
-/**
- * Helper function to create sample events for FeedScreen preview.
- */
+/** Helper function to create sample events for FeedScreen preview. */
 private fun createSampleEvents(): List<Event> {
   val calendar = Calendar.getInstance()
-  
+
   return listOf(
       createSampleFeedEvent(
           eventId = "1",
           title = "Summer Music Festival",
           organizerName = "Music Events Inc.",
-          location = Location(
-              coordinates = GeoPoint(46.5197, 6.6323),
-              name = "Lausanne, Flon"
-          ),
+          location = Location(coordinates = GeoPoint(46.5197, 6.6323), name = "Lausanne, Flon"),
           price = 50.0,
           imageUrl = "https://picsum.photos/400/300?random=1",
-          daysFromNow = 30
-      ),
+          daysFromNow = 30),
       createSampleFeedEvent(
           eventId = "2",
           title = "Tech Conference 2024",
           organizerName = "Tech Hub",
-          location = Location(
-              coordinates = GeoPoint(47.3769, 8.5417),
-              name = "Zurich, HB"
-          ),
+          location = Location(coordinates = GeoPoint(47.3769, 8.5417), name = "Zurich, HB"),
           price = 75.0,
           imageUrl = "https://picsum.photos/400/300?random=2",
-          daysFromNow = 45
-      ),
+          daysFromNow = 45),
       createSampleFeedEvent(
           eventId = "3",
           title = "Community Meetup",
           organizerName = "Local Community",
-          location = Location(
-              coordinates = GeoPoint(46.2044, 6.1432),
-              name = "Geneva"
-          ),
+          location = Location(coordinates = GeoPoint(46.2044, 6.1432), name = "Geneva"),
           price = 0.0,
           imageUrl = "https://picsum.photos/400/300?random=3",
-          daysFromNow = 15
-      ),
+          daysFromNow = 15),
       createSampleFeedEvent(
           eventId = "4",
           title = "Art Exhibition Opening",
           organizerName = "Gallery Modern",
-          location = Location(
-              coordinates = GeoPoint(46.1984, 6.1423),
-              name = "Geneva, Old Town"
-          ),
+          location = Location(coordinates = GeoPoint(46.1984, 6.1423), name = "Geneva, Old Town"),
           price = 25.0,
           imageUrl = "https://picsum.photos/400/300?random=4",
-          daysFromNow = 20
-      ),
+          daysFromNow = 20),
       createSampleFeedEvent(
           eventId = "5",
           title = "Food & Wine Tasting",
           organizerName = "Culinary Experiences",
-          location = Location(
-              coordinates = GeoPoint(46.5197, 6.6323),
-              name = "Lausanne"
-          ),
+          location = Location(coordinates = GeoPoint(46.5197, 6.6323), name = "Lausanne"),
           price = 100.0,
           imageUrl = "https://picsum.photos/400/300?random=5",
-          daysFromNow = 60
-      )
-  )
+          daysFromNow = 60))
 }
 
-/**
- * Helper function to create sample Event data for FeedScreen previews.
- */
+/** Helper function to create sample Event data for FeedScreen previews. */
 private fun createSampleFeedEvent(
     eventId: String,
     title: String,
@@ -514,14 +470,14 @@ private fun createSampleFeedEvent(
       ticketsIssued = 25,
       ticketsRedeemed = 0,
       currency = "CHF",
-      pricingTiers = if (price > 0) {
-        listOf(PricingTier("General", price, 100, 75))
-      } else {
-        emptyList()
-      },
+      pricingTiers =
+          if (price > 0) {
+            listOf(PricingTier("General", price, 100, 75))
+          } else {
+            emptyList()
+          },
       images = if (imageUrl.isNotEmpty()) listOf(imageUrl) else emptyList(),
       tags = listOf("sample", "preview"),
       createdAt = Timestamp.now(),
-      updatedAt = Timestamp.now()
-  )
+      updatedAt = Timestamp.now())
 }

@@ -23,26 +23,26 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
+import ch.onepass.onepass.model.event.EventStatus
+import ch.onepass.onepass.model.event.PricingTier
+import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.resources.C
 import ch.onepass.onepass.ui.components.buttons.LikeButton
 import ch.onepass.onepass.ui.theme.CardBackground
 import ch.onepass.onepass.ui.theme.CardShadow
 import ch.onepass.onepass.ui.theme.EventCardDimens
 import ch.onepass.onepass.ui.theme.EventDateColor
-import ch.onepass.onepass.ui.theme.TextSecondary
 import ch.onepass.onepass.ui.theme.OnePassTheme
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import ch.onepass.onepass.model.event.EventStatus
-import ch.onepass.onepass.model.event.PricingTier
-import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.ui.theme.TextSecondary
+import coil.compose.AsyncImage
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
 import java.util.Calendar
-import coil.compose.AsyncImage
 
 /**
  * A card component that displays information about an event.
@@ -80,15 +80,16 @@ fun EventCard(
   val aspectRatio = 392f / 417.93866f // Original Figma ratio
   val density = LocalDensity.current
   var cardWidth by remember { mutableStateOf(0.dp) }
-  
+
   // Calculate responsive height based on measured width
-  val calculatedHeight = remember(cardWidth) {
-    if (cardWidth > 0.dp) {
-      cardWidth / aspectRatio
-    } else {
-      null
-    }
-  }
+  val calculatedHeight =
+      remember(cardWidth) {
+        if (cardWidth > 0.dp) {
+          cardWidth / aspectRatio
+        } else {
+          null
+        }
+      }
 
   Column(
       modifier =
@@ -106,16 +107,9 @@ fun EventCard(
                   ambientColor = CardShadow,
               )
               .fillMaxWidth()
-
               .widthIn(max = EventCardDimens.maxWidth)
-              .onSizeChanged { size ->
-                cardWidth = with(density) { size.width.toDp() }
-              }
-              .then(
-                  calculatedHeight?.let { height ->
-                    Modifier.heightIn(min = height)
-                  } ?: Modifier
-              )
+              .onSizeChanged { size -> cardWidth = with(density) { size.width.toDp() } }
+              .then(calculatedHeight?.let { height -> Modifier.heightIn(min = height) } ?: Modifier)
               .background(
                   color = CardBackground,
                   shape = RoundedCornerShape(size = EventCardDimens.cornerRadius),
@@ -186,7 +180,9 @@ fun EventCard(
         )
         Text(
             text = organizer,
-            style = MaterialTheme.typography.headlineMedium.copy(fontSize = 18.sp, fontWeight = FontWeight.Normal),
+            style =
+                MaterialTheme.typography.headlineMedium.copy(
+                    fontSize = 18.sp, fontWeight = FontWeight.Normal),
             color = TextSecondary,
             modifier = Modifier.testTag(C.Tag.event_card_organizer),
             maxLines = 1,
@@ -234,82 +230,62 @@ fun EventCard(
         )
       }
     }
-    }
   }
+}
 
-
-/**
- * Preview function for EventCard component.
- */
+/** Preview function for EventCard component. */
 @Preview(showBackground = false, name = "Event Card")
 @Composable
 private fun EventCardPreview() {
   OnePassTheme {
-    Column(
-        modifier = Modifier
-            .fillMaxSize(),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
+    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
       // Sample event with image
       EventCard(
-          event = createSampleEvent(
-              eventId = "1",
-              title = "Summer Music Festival",
-              organizerName = "Music Events Inc.",
-              location = Location(
-                  coordinates = GeoPoint(46.5197, 6.6323),
-                  name = "Lausanne, Flon"
-              ),
-              price = 50.0,
-              imageUrl = "https://picsum.photos/400/300"
-          ),
+          event =
+              createSampleEvent(
+                  eventId = "1",
+                  title = "Summer Music Festival",
+                  organizerName = "Music Events Inc.",
+                  location =
+                      Location(coordinates = GeoPoint(46.5197, 6.6323), name = "Lausanne, Flon"),
+                  price = 50.0,
+                  imageUrl = "https://picsum.photos/400/300"),
           isLiked = false,
           onLikeToggle = {},
-          onCardClick = {}
-      )
+          onCardClick = {})
 
       // Sample event without image (fallback)
       EventCard(
-          event = createSampleEvent(
-              eventId = "2",
-              title = "Tech Conference 2024",
-              organizerName = "Tech Hub",
-              location = Location(
-                  coordinates = GeoPoint(47.3769, 8.5417),
-                  name = "Zurich, HB"
-              ),
-              price = 0.0,
-              imageUrl = ""
-          ),
+          event =
+              createSampleEvent(
+                  eventId = "2",
+                  title = "Tech Conference 2024",
+                  organizerName = "Tech Hub",
+                  location = Location(coordinates = GeoPoint(47.3769, 8.5417), name = "Zurich, HB"),
+                  price = 0.0,
+                  imageUrl = ""),
           isLiked = true,
           onLikeToggle = {},
-          onCardClick = {}
-      )
+          onCardClick = {})
 
       // Free event
       EventCard(
-          event = createSampleEvent(
-              eventId = "3",
-              title = "Community Meetup",
-              organizerName = "Local Community",
-              location = Location(
-                  coordinates = GeoPoint(46.2044, 6.1432),
-                  name = "Geneva"
-              ),
-              price = 0.0,
-              imageUrl = "https://picsum.photos/400/300?random=3"
-          ),
+          event =
+              createSampleEvent(
+                  eventId = "3",
+                  title = "Community Meetup",
+                  organizerName = "Local Community",
+                  location = Location(coordinates = GeoPoint(46.2044, 6.1432), name = "Geneva"),
+                  price = 0.0,
+                  imageUrl = "https://picsum.photos/400/300?random=3"),
           isLiked = false,
           onLikeToggle = {},
-          onCardClick = {}
-      )
+          onCardClick = {})
     }
   }
 }
 
-/**
- * Helper function to create sample Event data for previews.
- */
+/** Helper function to create sample Event data for previews. */
 private fun createSampleEvent(
     eventId: String,
     title: String,
@@ -339,14 +315,14 @@ private fun createSampleEvent(
       ticketsIssued = 25,
       ticketsRedeemed = 0,
       currency = "CHF",
-      pricingTiers = if (price > 0) {
-        listOf(PricingTier("General", price, 100, 75))
-      } else {
-        emptyList()
-      },
+      pricingTiers =
+          if (price > 0) {
+            listOf(PricingTier("General", price, 100, 75))
+          } else {
+            emptyList()
+          },
       images = if (imageUrl.isNotEmpty()) listOf(imageUrl) else emptyList(),
       tags = listOf("sample", "preview"),
       createdAt = Timestamp.now(),
-      updatedAt = Timestamp.now()
-  )
+      updatedAt = Timestamp.now())
 }
