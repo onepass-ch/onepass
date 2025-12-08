@@ -32,10 +32,24 @@ fun TitleInputField(value: String, onValueChange: (String) -> Unit, modifier: Mo
       verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
       horizontalAlignment = Alignment.Start,
       modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = "Title*",
-            style =
-                MaterialTheme.typography.bodyMedium.copy(color = colorResource(id = R.color.white)))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically) {
+              Text(
+                  text = "Title*",
+                  style =
+                      MaterialTheme.typography.bodyMedium.copy(
+                          color = colorResource(id = R.color.white)))
+              Text(
+                  text = "${value.length}/${EventFormViewModel.MAX_TITLE_LENGTH} characters",
+                  style =
+                      MaterialTheme.typography.bodySmall.copy(
+                          color =
+                              if (value.length >= EventFormViewModel.MAX_TITLE_LENGTH)
+                                  colorResource(id = R.color.error_red)
+                              else colorResource(id = R.color.gray)))
+            }
         TextField(
             value = value,
             onValueChange = onValueChange,
@@ -81,9 +95,24 @@ fun DescriptionInputField(
       verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
       horizontalAlignment = Alignment.Start,
   ) {
-    Text(
-        text = "Description*",
-        style = MaterialTheme.typography.bodyMedium.copy(color = colorResource(id = R.color.white)))
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically) {
+          Text(
+              text = "Description*",
+              style =
+                  MaterialTheme.typography.bodyMedium.copy(
+                      color = colorResource(id = R.color.white)))
+          Text(
+              text = "${value.length}/${EventFormViewModel.MAX_DESCRIPTION_LENGTH} characters",
+              style =
+                  MaterialTheme.typography.bodySmall.copy(
+                      color =
+                          if (value.length >= EventFormViewModel.MAX_DESCRIPTION_LENGTH)
+                              colorResource(id = R.color.error_red)
+                          else colorResource(id = R.color.gray)))
+        }
 
     Box(
         modifier =
