@@ -19,7 +19,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,6 +38,10 @@ import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
 import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
 import ch.onepass.onepass.ui.eventfilters.FilterDialog
+import ch.onepass.onepass.ui.theme.Background
+import ch.onepass.onepass.ui.theme.Error
+import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.Surface
 import com.mapbox.maps.MapView
 import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
@@ -138,8 +141,8 @@ fun MapScreen(
     // --- Recenter Button with Tracking Indicator ---
     FloatingActionButton(
         onClick = { mapViewModel.recenterCamera() },
-        containerColor = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        containerColor = Background,
+        contentColor = OnBackground,
         modifier =
             modifier
                 .align(Alignment.BottomEnd)
@@ -155,11 +158,8 @@ fun MapScreen(
           Box(
               modifier =
                   Modifier.size(TrackingIndicatorDimensions.SIZE)
-                      .background(MaterialTheme.colorScheme.error, CircleShape)
-                      .border(
-                          TrackingIndicatorDimensions.BORDER_WIDTH,
-                          MaterialTheme.colorScheme.surface,
-                          CircleShape)
+                      .background(Error, CircleShape)
+                      .border(TrackingIndicatorDimensions.BORDER_WIDTH, Surface, CircleShape)
                       .align(Alignment.TopEnd)
                       .offset(
                           x = TrackingIndicatorDimensions.OFFSET_X,
@@ -172,8 +172,8 @@ fun MapScreen(
     // --- Filter Button ---
     FloatingActionButton(
         onClick = { mapViewModel.setShowFilterDialog(true) },
-        containerColor = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        containerColor = Background,
+        contentColor = OnBackground,
         modifier =
             modifier
                 .align(Alignment.BottomEnd)

@@ -1,7 +1,7 @@
 package ch.onepass.onepass.ui.myevents
 
 import android.content.Context
-import androidx.annotation.ColorRes
+import androidx.compose.ui.graphics.Color
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
@@ -9,13 +9,15 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.pass.PassRepository
 import ch.onepass.onepass.model.ticket.TicketRepository
 import ch.onepass.onepass.model.ticket.TicketRepositoryFirebase
 import ch.onepass.onepass.model.ticket.toUiTicket
+import ch.onepass.onepass.ui.theme.TicketCurrent
+import ch.onepass.onepass.ui.theme.TicketExpired
+import ch.onepass.onepass.ui.theme.TicketUpcoming
 import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -62,10 +64,10 @@ data class Ticket(
  *
  * @param colorRes The color resource associated with the status.
  */
-enum class TicketStatus(@ColorRes val colorRes: Int) {
-  CURRENTLY(R.color.status_currently),
-  UPCOMING(R.color.status_upcoming),
-  EXPIRED(R.color.status_expired)
+enum class TicketStatus(val colorRes: Color) {
+  CURRENTLY(TicketCurrent),
+  UPCOMING(TicketUpcoming),
+  EXPIRED(TicketExpired)
 }
 
 /** Enum representing the tabs in the My Events screen. */

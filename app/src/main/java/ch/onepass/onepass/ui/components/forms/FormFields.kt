@@ -16,7 +16,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,10 +23,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
+import ch.onepass.onepass.ui.theme.Error
+import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.Primary
+import ch.onepass.onepass.ui.theme.Surface
 
 /**
  * Reusable text field component for the form.
@@ -59,7 +60,7 @@ fun FormTextField(
     OutlinedTextField(
         value = value,
         onValueChange = onValueChange,
-        label = { Text(label, color = colorResource(id = R.color.on_background)) },
+        label = { Text(label, color = OnBackground) },
         modifier =
             Modifier.fillMaxWidth()
                 .onFocusChanged { onFocusChanged(it.isFocused) }
@@ -68,9 +69,7 @@ fun FormTextField(
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         singleLine = maxLines == 1,
         maxLines = maxLines)
-    errorMessage?.let {
-      Text(it, color = colorScheme.error, style = MaterialTheme.typography.bodySmall)
-    }
+    errorMessage?.let { Text(it, color = Error, style = MaterialTheme.typography.bodySmall) }
     Spacer(Modifier.height(16.dp))
   }
 }
@@ -122,9 +121,7 @@ fun PrefixPhoneRow(
                 onValueChange = {},
                 readOnly = true,
                 isError = prefixError != null,
-                placeholder = {
-                  Text("Country", color = colorResource(id = R.color.on_background))
-                },
+                placeholder = { Text("Country", color = OnBackground) },
                 singleLine = true,
                 trailingIcon = {
                   ExposedDropdownMenuDefaults.TrailingIcon(expanded = dropdownExpanded)
@@ -134,14 +131,10 @@ fun PrefixPhoneRow(
             ExposedDropdownMenu(
                 expanded = dropdownExpanded,
                 onDismissRequest = onDropdownDismiss,
-                modifier =
-                    Modifier.heightIn(max = 300.dp)
-                        .background(colorResource(id = R.color.surface))) {
+                modifier = Modifier.heightIn(max = 300.dp).background(Surface)) {
                   countryList.forEachIndexed { index, (country, code) ->
                     DropdownMenuItem(
-                        text = {
-                          Text("+$code $country", color = colorResource(id = R.color.on_background))
-                        },
+                        text = { Text("+$code $country", color = OnBackground) },
                         onClick = {
                           onCountrySelected(index)
                           onDropdownDismiss()
@@ -161,15 +154,13 @@ fun PrefixPhoneRow(
                   .height(56.dp)
                   .onFocusChanged { onPhoneFocusChanged(it.isFocused) }
                   .then(if (phoneTestTag != null) Modifier.testTag(phoneTestTag) else Modifier),
-          placeholder = { Text("Phone", color = colorResource(id = R.color.on_background)) },
+          placeholder = { Text("Phone", color = OnBackground) },
           isError = prefixError != null,
           singleLine = true,
           keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
     }
 
-    prefixError?.let {
-      Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-    }
+    prefixError?.let { Text(it, color = Error, style = MaterialTheme.typography.bodySmall) }
 
     Spacer(Modifier.height(16.dp))
   }
@@ -187,7 +178,7 @@ fun SubmitButton(onClick: () -> Unit, text: String, modifier: Modifier = Modifie
   Button(
       onClick = onClick,
       modifier = modifier.fillMaxWidth().height(48.dp),
-      colors = ButtonDefaults.buttonColors(containerColor = colorResource(id = R.color.primary))) {
-        Text(text, color = colorResource(id = R.color.on_background))
+      colors = ButtonDefaults.buttonColors(containerColor = Primary)) {
+        Text(text, color = OnBackground)
       }
 }

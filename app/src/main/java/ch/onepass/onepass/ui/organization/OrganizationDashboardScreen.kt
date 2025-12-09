@@ -35,7 +35,13 @@ import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
+import ch.onepass.onepass.ui.theme.Background
+import ch.onepass.onepass.ui.theme.CardBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
+import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.OnSurface
+import ch.onepass.onepass.ui.theme.Primary
+import ch.onepass.onepass.ui.theme.Secondary
 import ch.onepass.onepass.ui.theme.TextSecondary
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
@@ -226,16 +232,12 @@ private fun OrganizationSummaryCard(
               .clickable(onClick = onClick)
               .testTag(OrganizationDashboardTestTags.ORG_SUMMARY_CARD),
       shape = RoundedCornerShape(8.dp),
-      color = MaterialTheme.colorScheme.surfaceVariant) {
+      color = CardBackground) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalAlignment = Alignment.CenterVertically) {
               // Placeholder for organization logo/image
-              Box(
-                  modifier =
-                      Modifier.size(72.dp)
-                          .background(
-                              MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(6.dp)))
+              Box(modifier = Modifier.size(72.dp).background(Background, RoundedCornerShape(6.dp)))
 
               Spacer(modifier = Modifier.width(16.dp))
 
@@ -244,7 +246,7 @@ private fun OrganizationSummaryCard(
                     text = organizationName.uppercase(Locale.getDefault()),
                     style = MaterialTheme.typography.titleLarge,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
+                    color = OnSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     modifier = Modifier.testTag(OrganizationDashboardTestTags.ORG_NAME))
@@ -271,7 +273,7 @@ private fun OrganizationSummaryCard(
                             Text(
                                 text = rating.toString(),
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
+                                color = OnSurface,
                                 modifier =
                                     Modifier.testTag(OrganizationDashboardTestTags.ORG_RATING))
                           }
@@ -308,7 +310,7 @@ private fun ManageEventsSection(
             text = "MANAGE EVENTS",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface)
+            color = OnSurface)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -337,7 +339,7 @@ private fun ManageEventsSection(
                     .clickable { eventsExpanded = !eventsExpanded }
                     .testTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN),
             shape = RoundedCornerShape(6.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant) {
+            color = CardBackground) {
               Column {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -346,18 +348,17 @@ private fun ManageEventsSection(
                       Text(
                           text = "Your events",
                           style = MaterialTheme.typography.bodyLarge,
-                          color = MaterialTheme.colorScheme.onSurfaceVariant)
+                          color = OnBackground)
                       Icon(
                           imageVector =
                               if (eventsExpanded) Icons.Default.KeyboardArrowUp
                               else Icons.Default.KeyboardArrowDown,
                           contentDescription = if (eventsExpanded) "Collapse" else "Expand",
-                          tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                          tint = OnBackground)
                     }
 
                 if (eventsExpanded) {
-                  HorizontalDivider(
-                      color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+                  HorizontalDivider(color = CardBackground, thickness = 1.dp)
 
                   if (events.isEmpty()) {
                     Text(
@@ -411,7 +412,7 @@ private fun EventCard(
             text = event.title.uppercase(),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = OnSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis)
 
@@ -434,7 +435,7 @@ private fun EventCard(
               Text(
                   text = event.status.name.lowercase().replaceFirstChar { it.uppercase() },
                   style = MaterialTheme.typography.bodyMedium,
-                  color = MaterialTheme.colorScheme.onSurface)
+                  color = OnSurface)
             }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -462,10 +463,8 @@ private fun EventCard(
                         Modifier.weight(1f)
                             .testTag(
                                 OrganizationDashboardTestTags.getEventScanButtonTag(event.eventId)),
-                    colors =
-                        ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = OnSurface),
+                    border = BorderStroke(1.dp, Secondary),
                     shape = RoundedCornerShape(4.dp)) {
                       Icon(
                           painter = painterResource(id = R.drawable.qr_code_icon),
@@ -489,7 +488,7 @@ private fun EventCard(
             }
       }
 
-  HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+  HorizontalDivider(color = CardBackground, thickness = 1.dp)
 }
 
 /**
@@ -518,7 +517,7 @@ private fun ManageStaffSection(
             text = "MANAGE STAFF",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface)
+            color = OnSurface)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -547,7 +546,7 @@ private fun ManageStaffSection(
                     .clickable { staffExpanded = !staffExpanded }
                     .testTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN),
             shape = RoundedCornerShape(6.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant) {
+            color = CardBackground) {
               Column {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -556,18 +555,17 @@ private fun ManageStaffSection(
                       Text(
                           text = "Staff list",
                           style = MaterialTheme.typography.bodyLarge,
-                          color = MaterialTheme.colorScheme.onSurfaceVariant)
+                          color = OnBackground)
                       Icon(
                           imageVector =
                               if (staffExpanded) Icons.Default.KeyboardArrowUp
                               else Icons.Default.KeyboardArrowDown,
                           contentDescription = if (staffExpanded) "Collapse" else "Expand",
-                          tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                          tint = OnBackground)
                     }
 
                 if (staffExpanded) {
-                  HorizontalDivider(
-                      color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+                  HorizontalDivider(color = CardBackground, thickness = 1.dp)
 
                   if (staffMembers.isEmpty()) {
                     Text(
@@ -600,7 +598,7 @@ private fun ManageStaffSection(
 private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRemove: () -> Unit) {
   if (memberState.isLoading || memberState.userProfile == null) {
     SkeletonStaffItem(userId = memberState.userId)
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+    HorizontalDivider(color = CardBackground, thickness = 1.dp)
     return
   }
 
@@ -621,10 +619,7 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
         Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
           // Avatar
           Box(
-              modifier =
-                  Modifier.size(40.dp)
-                      .clip(CircleShape)
-                      .background(MaterialTheme.colorScheme.primaryContainer),
+              modifier = Modifier.size(40.dp).clip(CircleShape).background(Background),
               contentAlignment = Alignment.Center) {
                 if (user.avatarUrl.isNullOrBlank()) {
                   Text(
@@ -632,7 +627,7 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
                       style =
                           MaterialTheme.typography.labelLarge.copy(
                               fontWeight = FontWeight.SemiBold),
-                      color = MaterialTheme.colorScheme.onPrimaryContainer)
+                      color = OnBackground)
                 } else {
                   SubcomposeAsyncImage(
                       model =
@@ -644,10 +639,7 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
                       contentScale = ContentScale.Crop,
                       modifier = Modifier.fillMaxSize().clip(CircleShape),
                       loading = {
-                        Box(
-                            modifier =
-                                Modifier.fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.surfaceVariant))
+                        Box(modifier = Modifier.fillMaxSize().background(CardBackground))
                       })
                 }
               }
@@ -659,11 +651,9 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
                 text = user.displayName.ifBlank { "Unknown User" },
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface)
+                color = OnSurface)
             Text(
-                text = user.email,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                text = user.email, style = MaterialTheme.typography.bodySmall, color = OnBackground)
           }
         }
 
@@ -674,8 +664,8 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
             color =
                 when (role) {
                   OrganizationRole.OWNER -> EventDateColor
-                  OrganizationRole.MEMBER -> MaterialTheme.colorScheme.primary
-                  OrganizationRole.STAFF -> MaterialTheme.colorScheme.secondary
+                  OrganizationRole.MEMBER -> Primary
+                  OrganizationRole.STAFF -> Secondary
                 }) {
               Text(
                   text = role.name,
@@ -702,7 +692,7 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
         }
       }
 
-  HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+  HorizontalDivider(color = CardBackground, thickness = 1.dp)
 }
 
 @Composable
@@ -719,7 +709,7 @@ fun SkeletonStaffItem(userId: String) {
             modifier =
                 Modifier.size(40.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(CardBackground)
                     .testTag("skeleton_avatar_$userId"))
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -730,8 +720,7 @@ fun SkeletonStaffItem(userId: String) {
               modifier =
                   Modifier.height(16.dp)
                       .fillMaxWidth(0.5f)
-                      .background(
-                          MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+                      .background(CardBackground, RoundedCornerShape(4.dp))
                       .testTag("skeleton_name_$userId"))
           Spacer(modifier = Modifier.height(4.dp))
           // Email Skeleton
@@ -739,8 +728,7 @@ fun SkeletonStaffItem(userId: String) {
               modifier =
                   Modifier.height(12.dp)
                       .fillMaxWidth(0.7f)
-                      .background(
-                          MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+                      .background(CardBackground, RoundedCornerShape(4.dp))
                       .testTag("skeleton_email_$userId"))
         }
       }

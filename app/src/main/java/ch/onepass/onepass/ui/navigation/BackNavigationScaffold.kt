@@ -20,7 +20,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import ch.onepass.onepass.R
-import ch.onepass.onepass.ui.theme.DefaultBackground
+import ch.onepass.onepass.ui.theme.Background
+import ch.onepass.onepass.ui.theme.Secondary
 
 /** Configuration data class for BackNavigationScaffold */
 data class TopBarConfig(
@@ -50,7 +51,7 @@ fun BackNavigationScaffold(
     topBarConfig: TopBarConfig,
     onBack: (() -> Unit)? = null,
     modifier: Modifier = Modifier,
-    containerColor: Color = DefaultBackground,
+    containerColor: Color = Background,
     content: @Composable (PaddingValues) -> Unit
 ) {
   // Exit composable early if onBack is null
@@ -85,7 +86,7 @@ fun BackNavigationScaffold(
                   topBarConfig.subtitle?.let {
                     Text(
                         text = it,
-                        color = colorResource(id = R.color.gray),
+                        color = Secondary,
                         style = MaterialTheme.typography.bodyMedium,
                         modifier =
                             topBarConfig.subtitleTestTag?.let { Modifier.testTag(it) } ?: Modifier)

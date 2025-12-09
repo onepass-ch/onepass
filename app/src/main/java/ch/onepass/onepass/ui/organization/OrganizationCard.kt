@@ -15,7 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
@@ -26,6 +25,8 @@ import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.ui.organization.OrganizationCardTestTags.getTestTagForOrganizationCard
 import ch.onepass.onepass.ui.theme.CardBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
+import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.Primary
 import ch.onepass.onepass.ui.theme.TextSecondary
 import ch.onepass.onepass.utils.DateTimeUtils
 import ch.onepass.onepass.utils.FormatUtils
@@ -55,7 +56,7 @@ private fun OrganizationProfileImage(imageUrl: String?, modifier: Modifier = Mod
           modifier
               .size(80.dp)
               .clip(RoundedCornerShape(8.dp))
-              .background(MaterialTheme.colorScheme.surfaceVariant)
+              .background(CardBackground)
               .testTag(OrganizationCardTestTags.ORGANIZER_IMAGE),
       contentScale = ContentScale.Crop,
       error = rememberVectorPainter(Icons.Default.Business))
@@ -70,7 +71,7 @@ private fun OrganizationNameRow(name: String, verified: Boolean, modifier: Modif
         Text(
             text = name,
             style = MaterialTheme.typography.titleLarge,
-            color = Color.White,
+            color = OnBackground,
             modifier =
                 Modifier.weight(1f, fill = false)
                     .semantics(mergeDescendants = true) {}
@@ -81,7 +82,7 @@ private fun OrganizationNameRow(name: String, verified: Boolean, modifier: Modif
           Icon(
               imageVector = Icons.Default.CheckCircle,
               contentDescription = "Verified",
-              tint = MaterialTheme.colorScheme.primary,
+              tint = Primary,
               modifier =
                   Modifier.size(18.dp)
                       .semantics(mergeDescendants = true) {}
@@ -130,7 +131,7 @@ private fun OrganizationStatsRow(
               Text(
                   text = FormatUtils.formatCompactNumber(followerCount),
                   style = MaterialTheme.typography.bodyMedium,
-                  color = Color.White)
+                  color = OnBackground)
             }
 
         // avg rating
@@ -145,11 +146,11 @@ private fun OrganizationStatsRow(
                     imageVector = Icons.Default.Star,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.primary)
+                    tint = Primary)
                 Text(
                     text = String.format("%.1f", averageRating),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White)
+                    color = OnBackground)
               }
         }
 

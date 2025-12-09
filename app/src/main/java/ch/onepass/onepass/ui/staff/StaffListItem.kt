@@ -18,13 +18,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
 import ch.onepass.onepass.model.staff.StaffSearchResult
+import ch.onepass.onepass.ui.theme.Background
+import ch.onepass.onepass.ui.theme.CardBackground
+import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.Surface
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import java.util.Locale
@@ -77,7 +79,7 @@ fun StaffListItem(
       modifier =
           modifier
               .fillMaxWidth()
-              .background(colorResource(id = R.color.staff_list_item_background))
+              .background(Surface)
               .then(
                   if (enabled && onClick != null) {
                     Modifier.clickable(role = Role.Button) { onClick() }
@@ -103,7 +105,7 @@ fun StaffListItem(
         Text(
             text = user.email,
             style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = CardBackground,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.testTag(StaffTestTags.Item.SUPPORTING))
@@ -125,16 +127,13 @@ private fun Avatar(displayName: String, avatarUrl: String?, modifier: Modifier =
 
   Box(
       modifier =
-          modifier
-              .clip(CircleShape)
-              .background(MaterialTheme.colorScheme.primaryContainer)
-              .testTag(StaffTestTags.Avatar.ROOT),
+          modifier.clip(CircleShape).background(Background).testTag(StaffTestTags.Avatar.ROOT),
       contentAlignment = Alignment.Center) {
         if (avatarUrl.isNullOrBlank()) {
           Text(
               text = initials,
               style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
-              color = MaterialTheme.colorScheme.onPrimaryContainer,
+              color = OnBackground,
               modifier = Modifier.testTag(StaffTestTags.Avatar.Initials.TEXT))
         } else {
           SubcomposeAsyncImage(
@@ -155,7 +154,7 @@ private fun Avatar(displayName: String, avatarUrl: String?, modifier: Modifier =
                           style =
                               MaterialTheme.typography.labelLarge.copy(
                                   fontWeight = FontWeight.SemiBold),
-                          color = MaterialTheme.colorScheme.onPrimaryContainer,
+                          color = OnBackground,
                           modifier = Modifier.testTag(StaffTestTags.Avatar.Loading.TEXT))
                     }
               },
@@ -171,7 +170,7 @@ private fun Avatar(displayName: String, avatarUrl: String?, modifier: Modifier =
                           style =
                               MaterialTheme.typography.labelLarge.copy(
                                   fontWeight = FontWeight.SemiBold),
-                          color = MaterialTheme.colorScheme.onPrimaryContainer,
+                          color = OnBackground,
                           modifier = Modifier.testTag(StaffTestTags.Avatar.Error.TEXT))
                     }
               })

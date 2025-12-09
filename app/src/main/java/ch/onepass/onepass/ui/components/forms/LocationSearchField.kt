@@ -9,12 +9,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
 import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.ui.theme.EventBorderGray
+import ch.onepass.onepass.ui.theme.Gray
+import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.Surface
+import ch.onepass.onepass.ui.theme.White
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,7 +48,7 @@ fun LocationSearchField(
             text = "Location*",
             style =
                 MaterialTheme.typography.bodyMedium.copy(
-                    color = colorResource(id = R.color.white), textAlign = TextAlign.Center),
+                    color = White, textAlign = TextAlign.Center),
             modifier = Modifier.fillMaxWidth())
 
         ExposedDropdownMenuBox(
@@ -60,19 +63,14 @@ fun LocationSearchField(
                   onValueChange = onQueryChange,
                   modifier =
                       Modifier.fillMaxWidth()
-                          .border(
-                              1.dp,
-                              colorResource(id = R.color.location_field_border),
-                              RoundedCornerShape(10.dp))
+                          .border(1.dp, EventBorderGray, RoundedCornerShape(10.dp))
                           .heightIn(min = 50.dp)
                           .menuAnchor()
                           .testTag(testTag),
                   placeholder = {
                     Text(
                         "Type to search location",
-                        style =
-                            MaterialTheme.typography.bodySmall.copy(
-                                color = colorResource(id = R.color.gray)))
+                        style = MaterialTheme.typography.bodySmall.copy(color = Gray))
                   },
                   trailingIcon = {
                     if (isLoading) {
@@ -81,14 +79,12 @@ fun LocationSearchField(
                   },
                   colors =
                       TextFieldDefaults.colors(
-                          focusedContainerColor =
-                              colorResource(id = R.color.location_field_container),
-                          unfocusedContainerColor =
-                              colorResource(id = R.color.location_field_container),
+                          focusedContainerColor = Surface,
+                          unfocusedContainerColor = Surface,
                           focusedIndicatorColor = Color.Transparent,
                           unfocusedIndicatorColor = Color.Transparent,
-                          focusedTextColor = colorResource(id = R.color.white),
-                          unfocusedTextColor = colorResource(id = R.color.white),
+                          focusedTextColor = OnBackground,
+                          unfocusedTextColor = OnBackground,
                       ),
                   shape = RoundedCornerShape(10.dp),
                   textStyle = MaterialTheme.typography.bodySmall,

@@ -23,11 +23,15 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import ch.onepass.onepass.R
+import ch.onepass.onepass.ui.theme.Background
+import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.MarcFontFamily
+import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.OnSurface
+import ch.onepass.onepass.ui.theme.Surface
+import ch.onepass.onepass.ui.theme.TextSecondary
 
 /** Test tags for MyEvents screen components */
 object MyEventsTestTags {
@@ -86,26 +90,26 @@ fun MyEventsContent(userQrData: String, viewModel: MyEventsViewModel = viewModel
   // Define tabs with their titles
   val tabs = listOf(TicketTab.CURRENT to "Current", TicketTab.EXPIRED to "Expired")
 
-  Surface(modifier = Modifier.fillMaxSize(), color = colorResource(id = R.color.background)) {
-    Column(modifier = Modifier.fillMaxSize().background(colorResource(id = R.color.background))) {
+  Surface(modifier = Modifier.fillMaxSize(), color = Background) {
+    Column(modifier = Modifier.fillMaxSize().background(Background)) {
       // Screen title
       Text(
           text = "YOUR TICKETS",
           modifier = Modifier.padding(16.dp),
           style = MaterialTheme.typography.titleLarge.copy(fontFamily = MarcFontFamily),
-          color = colorResource(id = R.color.on_background))
+          color = OnBackground)
 
       // Tabs for switching between Current and Expired tickets
       TabRow(
           modifier = Modifier.testTag(MyEventsTestTags.TABS_ROW),
           selectedTabIndex = uiState.selectedTab.ordinal,
-          containerColor = colorResource(id = R.color.surface),
-          contentColor = colorResource(id = R.color.on_surface),
+          containerColor = Surface,
+          contentColor = OnSurface,
           indicator = { tabPositions ->
-            TabRowDefaults.Indicator(
+            TabRowDefaults.SecondaryIndicator(
                 modifier = Modifier.tabIndicatorOffset(tabPositions[uiState.selectedTab.ordinal]),
                 height = 4.dp,
-                color = colorResource(id = R.color.tab_indicator))
+                color = EventDateColor)
           }) {
             tabs.forEach { (tab, title) ->
               val tabTestTag =
@@ -120,8 +124,8 @@ fun MyEventsContent(userQrData: String, viewModel: MyEventsViewModel = viewModel
                         title,
                         style = MaterialTheme.typography.bodyLarge,
                         color =
-                            if (uiState.selectedTab == tab) colorResource(id = R.color.tab_selected)
-                            else colorResource(id = R.color.tab_unselected).copy(alpha = 0.6f))
+                            if (uiState.selectedTab == tab) EventDateColor
+                            else TextSecondary.copy(alpha = 0.6f))
                   },
                   selected = uiState.selectedTab == tab,
                   onClick = { viewModel.selectTab(tab) },

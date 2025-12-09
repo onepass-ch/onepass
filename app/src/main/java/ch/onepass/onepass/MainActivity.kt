@@ -7,7 +7,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -35,6 +34,7 @@ import ch.onepass.onepass.ui.navigation.navigateToTopLevel
 import ch.onepass.onepass.ui.payment.LocalPaymentSheet
 import ch.onepass.onepass.ui.payment.createPaymentSheet
 import ch.onepass.onepass.ui.profile.ProfileViewModel
+import ch.onepass.onepass.ui.theme.Background
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.google.firebase.auth.FirebaseAuth
 import com.mapbox.common.MapboxOptions
@@ -123,7 +123,7 @@ class MainActivity : ComponentActivity() {
 internal fun MainActivityContent() {
   Surface(
       modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
-      color = MaterialTheme.colorScheme.background) {
+      color = Background) {
         OnePassApp() // Let each map screen create its own ViewModel
   }
 }

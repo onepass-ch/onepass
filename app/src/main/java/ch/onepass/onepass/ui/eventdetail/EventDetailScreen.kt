@@ -19,11 +19,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,7 +38,14 @@ import ch.onepass.onepass.ui.components.buttons.LikeButton
 import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.organization.OrganizationCard
 import ch.onepass.onepass.ui.payment.LocalPaymentSheet
-import ch.onepass.onepass.ui.theme.DefaultBackground
+import ch.onepass.onepass.ui.theme.Background
+import ch.onepass.onepass.ui.theme.CardBackground
+import ch.onepass.onepass.ui.theme.EventBorderGray
+import ch.onepass.onepass.ui.theme.EventBuyButtonBG
+import ch.onepass.onepass.ui.theme.EventIconGray
+import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.Primary
+import ch.onepass.onepass.ui.theme.TextSecondary
 import coil.compose.AsyncImage
 
 object EventDetailTestTags {
@@ -177,14 +182,12 @@ internal fun EventDetailScreenContent(
 
   Box(
       modifier =
-          Modifier.fillMaxSize()
-              .background(DefaultBackground)
-              .testTag(EventDetailTestTags.SCREEN)) {
+          Modifier.fillMaxSize().background(Background).testTag(EventDetailTestTags.SCREEN)) {
         when {
           uiState.isLoading -> {
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center).testTag(EventDetailTestTags.LOADING),
-                color = MaterialTheme.colorScheme.primary)
+                color = Primary)
           }
           uiState.errorMessage != null -> {
             Column(
@@ -194,7 +197,7 @@ internal fun EventDetailScreenContent(
                         .testTag(EventDetailTestTags.ERROR),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                  Text(text = uiState.errorMessage, color = Color.White)
+                  Text(text = uiState.errorMessage, color = OnBackground)
                   Button(onClick = onBack) { Text("Go Back") }
                 }
           }
@@ -212,14 +215,8 @@ internal fun EventDetailScreenContent(
             BuyButton(
                 onBuyTicket = onBuyTicket,
                 priceText = formatPrice(uiState.event),
-                isLoading = isPaymentInProgress,
                 modifier = Modifier.align(Alignment.BottomCenter).fillMaxWidth())
           }
-        }
-
-        // Show loading overlay when payment is in progress
-        if (isPaymentInProgress) {
-          LoadingOverlay(uiState)
         }
       }
 }
@@ -232,7 +229,7 @@ private fun BuyButton(
     isLoading: Boolean = false
 ) {
   // Buy ticket button - fixed at bottom with padding
-  Surface(modifier = modifier, shadowElevation = 8.dp, color = DefaultBackground) {
+  Surface(modifier = modifier, shadowElevation = 8.dp) {
     Box(modifier = Modifier.padding(horizontal = 10.dp, vertical = 16.dp)) {
       Button(
           onClick = onBuyTicket,
@@ -241,19 +238,18 @@ private fun BuyButton(
           shape = RoundedCornerShape(5.dp),
           colors =
               ButtonDefaults.buttonColors(
-                  containerColor = colorResource(id = R.color.event_buy_button_bg),
-                  disabledContainerColor =
-                      colorResource(id = R.color.event_buy_button_bg).copy(alpha = 0.6f))) {
+                  containerColor = EventBuyButtonBG,
+                  disabledContainerColor = EventBuyButtonBG.copy(alpha = 0.6f))) {
             if (isLoading) {
               CircularProgressIndicator(
-                  modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                  modifier = Modifier.size(20.dp), color = OnBackground, strokeWidth = 2.dp)
             } else {
               Text(
                   text = priceText,
                   style =
                       MaterialTheme.typography.titleLarge.copy(
                           fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold),
-                  color = Color.White,
+                  color = OnBackground,
                   modifier = Modifier.padding(horizontal = 63.dp, vertical = 14.dp))
             }
           }
@@ -266,7 +262,7 @@ private fun BackSection(onBack: () -> Unit) {
   Row(
       modifier =
           Modifier.fillMaxWidth()
-              .background(colorResource(id = R.color.event_back_section_bg))
+              .background(CardBackground)
               .height(79.dp)
               .testTag(EventDetailTestTags.TITLE),
       verticalAlignment = Alignment.CenterVertically,
@@ -275,7 +271,7 @@ private fun BackSection(onBack: () -> Unit) {
           Icon(
               imageVector = Icons.AutoMirrored.Filled.ArrowBack,
               contentDescription = "Back",
-              tint = Color.White)
+              tint = OnBackground)
         }
       }
 }
@@ -336,7 +332,7 @@ private fun EventDetailContent(
           Text(
               text = event.title.ifEmpty { "Event Title" },
               style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-              color = Color.White,
+              color = OnBackground,
               textAlign = TextAlign.Center,
               modifier =
                   Modifier.fillMaxWidth()
@@ -386,7 +382,7 @@ private fun OrganizerSection(
         Text(
             text = "ORGANIZER",
             style = MaterialTheme.typography.titleMedium,
-            color = Color.White,
+            color = OnBackground,
             modifier = Modifier.padding(vertical = 10.dp))
 
         if (organization != null) {
@@ -397,7 +393,7 @@ private fun OrganizerSection(
           Text(
               text = organizerName,
               style = MaterialTheme.typography.titleMedium,
-              color = Color.White,
+              color = OnBackground,
               modifier = Modifier.padding(vertical = 8.dp))
         }
       }
@@ -410,13 +406,13 @@ private fun AboutEventSection(description: String, modifier: Modifier = Modifier
     Text(
         text = "ABOUT EVENT",
         style = MaterialTheme.typography.titleMedium,
-        color = Color.White,
+        color = OnBackground,
         modifier = Modifier.padding(vertical = 10.dp))
 
     Text(
         text = description.ifEmpty { "No description available." },
         style = MaterialTheme.typography.bodyMedium,
-        color = Color(R.color.icon_color_detailScreen),
+        color = TextSecondary,
         modifier = Modifier.testTag(EventDetailTestTags.ABOUT_EVENT))
   }
 }
@@ -441,11 +437,11 @@ private fun EventDetailsSection(
                 imageVector = Icons.Default.CalendarToday,
                 contentDescription = null,
                 modifier = Modifier.size(26.dp),
-                tint = colorResource(id = R.color.event_icon_gray))
+                tint = EventIconGray)
             Text(
                 text = event.displayDateTime,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                color = Color.White,
+                color = OnBackground,
                 modifier = Modifier.testTag(EventDetailTestTags.EVENT_DATE))
           }
 
@@ -458,11 +454,11 @@ private fun EventDetailsSection(
                 imageVector = Icons.Default.LocationCity,
                 contentDescription = null,
                 modifier = Modifier.size(26.dp),
-                tint = colorResource(id = R.color.event_icon_gray))
+                tint = EventIconGray)
             Text(
                 text = event.displayLocation,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                color = Color.White,
+                color = OnBackground,
                 modifier = Modifier.testTag(EventDetailTestTags.EVENT_LOCATION))
           }
     }
@@ -471,8 +467,7 @@ private fun EventDetailsSection(
     Row(
         modifier =
             Modifier.fillMaxWidth()
-                .border(
-                    1.dp, colorResource(id = R.color.event_border_gray), RoundedCornerShape(0.dp))
+                .border(1.dp, EventBorderGray, RoundedCornerShape(0.dp))
                 .clickable(onClick = onNavigateToMap)
                 .padding(vertical = 14.dp, horizontal = 16.dp)
                 .testTag(EventDetailTestTags.MAP_BUTTON),
@@ -481,14 +476,14 @@ private fun EventDetailsSection(
           Text(
               text = "See event on map",
               style = MaterialTheme.typography.titleMedium,
-              color = Color.White,
+              color = OnBackground,
               modifier = Modifier.padding(end = 30.dp))
 
           Icon(
               imageVector = Icons.AutoMirrored.Filled.ArrowBack,
               contentDescription = null,
               modifier = Modifier.rotate(180f),
-              tint = Color.White)
+              tint = OnBackground)
         }
   }
 }
@@ -507,19 +502,19 @@ private fun LoadingOverlay(uiState: EventDetailUiState) {
   Box(
       modifier =
           Modifier.fillMaxSize()
-              .background(Color.Black.copy(alpha = 0.5f))
+              .background(Background.copy(alpha = 0.5f))
               .testTag(EventDetailTestTags.PAYMENT_LOADING),
       contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-              CircularProgressIndicator(color = Color.White)
+              CircularProgressIndicator(color = OnBackground)
               Text(
                   text =
                       if (uiState.paymentState is PaymentState.CreatingPaymentIntent)
                           "Preparing payment..."
                       else "Processing payment...",
-                  color = Color.White,
+                  color = OnBackground,
                   style = MaterialTheme.typography.bodyLarge)
             }
       }

@@ -6,12 +6,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.EventDateColor
+import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.White
 
 /** Generic loading state indicator. */
 @Composable
@@ -39,13 +39,11 @@ fun ErrorState(
         text = "Oops!",
         style = MaterialTheme.typography.headlineMedium,
         fontWeight = FontWeight.Bold,
-        color = colorResource(R.color.white),
-    )
+        color = OnBackground)
     Spacer(modifier = Modifier.height(8.dp))
     Text(
         text = error,
         style = MaterialTheme.typography.bodyMedium,
-        color = colorResource(R.color.state_display_text),
         textAlign = TextAlign.Center,
     )
     Spacer(modifier = Modifier.height(24.dp))
@@ -55,7 +53,7 @@ fun ErrorState(
         colors =
             ButtonDefaults.buttonColors(
                 containerColor = EventDateColor,
-                contentColor = colorResource(R.color.white),
+                contentColor = White,
             ),
     ) {
       Text(text = "Try Again", fontWeight = FontWeight.Medium)
@@ -80,13 +78,12 @@ fun EmptyState(
         text = title,
         style = MaterialTheme.typography.headlineMedium,
         fontWeight = FontWeight.Bold,
-        color = colorResource(R.color.white),
+        color = White,
     )
     Spacer(modifier = Modifier.height(8.dp))
     Text(
         text = message,
         style = MaterialTheme.typography.bodyMedium,
-        color = colorResource(R.color.state_display_text),
         textAlign = TextAlign.Center,
     )
   }

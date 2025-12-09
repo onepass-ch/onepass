@@ -28,14 +28,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
 import ch.onepass.onepass.model.user.UserSearchType
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
+import ch.onepass.onepass.ui.theme.DarkGray
+import ch.onepass.onepass.ui.theme.Error
+import ch.onepass.onepass.ui.theme.Gray
+import ch.onepass.onepass.ui.theme.OnSurface
+import ch.onepass.onepass.ui.theme.Primary
+import ch.onepass.onepass.ui.theme.Surface
+import ch.onepass.onepass.ui.theme.White
 
 object StaffInvitationTestTags {
   const val SCREEN = "staffInvitation_screen"
@@ -82,13 +87,13 @@ fun StaffInvitationScreen(
               TabRow(
                   modifier = Modifier.fillMaxWidth().testTag(StaffInvitationTestTags.TAB_ROW),
                   selectedTabIndex = selectedTabIndex,
-                  containerColor = colorResource(id = R.color.screen_surface),
-                  contentColor = colorResource(id = R.color.on_surface),
+                  containerColor = Surface,
+                  contentColor = OnSurface,
                   indicator = { tabPositions ->
-                    TabRowDefaults.Indicator(
+                    TabRowDefaults.SecondaryIndicator(
                         modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
                         height = 4.dp,
-                        color = colorResource(id = R.color.tab_indicator))
+                        color = Primary)
                   }) {
                     Tab(
                         text = {
@@ -96,10 +101,8 @@ fun StaffInvitationScreen(
                               text = "Search by username",
                               style = MaterialTheme.typography.titleMedium,
                               color =
-                                  if (uiState.selectedTab == UserSearchType.DISPLAY_NAME)
-                                      colorResource(id = R.color.tab_selected)
-                                  else
-                                      colorResource(id = R.color.tab_unselected).copy(alpha = 0.6f))
+                                  if (uiState.selectedTab == UserSearchType.DISPLAY_NAME) Primary
+                                  else Gray.copy(alpha = 0.6f))
                         },
                         selected = uiState.selectedTab == UserSearchType.DISPLAY_NAME,
                         onClick = { viewModel.selectTab(UserSearchType.DISPLAY_NAME) },
@@ -110,10 +113,8 @@ fun StaffInvitationScreen(
                               text = "Search by e-mail",
                               style = MaterialTheme.typography.titleMedium,
                               color =
-                                  if (uiState.selectedTab == UserSearchType.EMAIL)
-                                      colorResource(id = R.color.tab_selected)
-                                  else
-                                      colorResource(id = R.color.tab_unselected).copy(alpha = 0.6f))
+                                  if (uiState.selectedTab == UserSearchType.EMAIL) Primary
+                                  else Gray.copy(alpha = 0.6f))
                         },
                         selected = uiState.selectedTab == UserSearchType.EMAIL,
                         onClick = { viewModel.selectTab(UserSearchType.EMAIL) },
@@ -133,7 +134,7 @@ fun StaffInvitationScreen(
               uiState.errorMessage?.let { error ->
                 Text(
                     text = error,
-                    color = colorResource(id = R.color.error_red),
+                    color = Error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier =
                         Modifier.fillMaxWidth()
@@ -203,25 +204,22 @@ private fun SearchInputField(
       value = value,
       onValueChange = onValueChange,
       placeholder = {
-        Text(
-            text = placeholder,
-            style = MaterialTheme.typography.bodyMedium.copy(color = colorResource(R.color.gray)))
+        Text(text = placeholder, style = MaterialTheme.typography.bodyMedium.copy(color = Gray))
       },
       modifier =
           modifier
               .fillMaxWidth()
-              .border(
-                  1.dp, colorResource(id = R.color.staff_search_border), RoundedCornerShape(10.dp))
+              .border(1.dp, Gray, RoundedCornerShape(10.dp))
               .heightIn(min = 50.dp)
               .testTag(StaffInvitationTestTags.SEARCH_FIELD),
       colors =
           TextFieldDefaults.colors(
-              focusedContainerColor = colorResource(R.color.staff_search_container),
-              unfocusedContainerColor = colorResource(R.color.staff_search_container),
+              focusedContainerColor = DarkGray,
+              unfocusedContainerColor = DarkGray,
               focusedIndicatorColor = Color.Transparent,
               unfocusedIndicatorColor = Color.Transparent,
-              focusedTextColor = colorResource(R.color.white),
-              unfocusedTextColor = colorResource(R.color.white),
+              focusedTextColor = White,
+              unfocusedTextColor = White,
           ),
       shape = RoundedCornerShape(10.dp),
       textStyle = MaterialTheme.typography.bodySmall,

@@ -13,14 +13,14 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.components.buttons.UploadImageButton
 import ch.onepass.onepass.ui.components.forms.FormTextField
 import ch.onepass.onepass.ui.components.forms.PrefixPhoneRow
 import ch.onepass.onepass.ui.components.forms.SubmitButton
+import ch.onepass.onepass.ui.theme.Background
+import ch.onepass.onepass.ui.theme.White
 
 /** Test tags for default Organization form components */
 object OrganizationTestTags {
@@ -78,7 +78,7 @@ fun OrganizerForm(
           modifier
               .fillMaxSize()
               .verticalScroll(scrollState)
-              .background(color = colorResource(id = R.color.background))
+              .background(color = Background)
               .padding(16.dp)) {
 
         // Organization Name Field
@@ -170,7 +170,7 @@ fun OrganizerForm(
           Text(
               text = "✓ Profile image selected",
               style = MaterialTheme.typography.bodySmall,
-              color = colorResource(id = R.color.white),
+              color = White,
               modifier = Modifier.padding(start = 8.dp))
         }
 
@@ -187,7 +187,7 @@ fun OrganizerForm(
           Text(
               text = "✓ Banner image selected",
               style = MaterialTheme.typography.bodySmall,
-              color = colorResource(id = R.color.white),
+              color = White,
               modifier = Modifier.padding(start = 8.dp))
         }
 

@@ -11,16 +11,17 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
+import ch.onepass.onepass.ui.theme.Background
+import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.Primary
 
 object OrganizationFeedTestTags {
   const val ORGANIZATION_FEED_SCREEN = "organizationFeedScreen"
@@ -94,7 +95,7 @@ fun OrganizationFeedScaffold(
           titleTestTag = OrganizationFeedTestTags.ORGANIZATION_FEED_TITLE),
       onBack = onNavigateBack,
       modifier = modifier.fillMaxSize(),
-      containerColor = colorResource(id = R.color.screen_background),
+      containerColor = Background,
       content = { paddingValues ->
         Box(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
@@ -161,8 +162,8 @@ private fun AddOrganizationButton(modifier: Modifier = Modifier, onClick: () -> 
   FloatingActionButton(
       modifier = modifier,
       onClick = onClick,
-      containerColor = colorResource(R.color.accent_purple),
-      contentColor = colorResource(R.color.white)) {
+      containerColor = Primary,
+      contentColor = OnBackground) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
             contentDescription = "Create a new organization")

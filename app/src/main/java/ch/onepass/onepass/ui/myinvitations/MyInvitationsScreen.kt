@@ -9,17 +9,23 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.*
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
+import ch.onepass.onepass.ui.theme.Background
+import ch.onepass.onepass.ui.theme.DarkGray
+import ch.onepass.onepass.ui.theme.Error
+import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.Primary
+import ch.onepass.onepass.ui.theme.Secondary
+import ch.onepass.onepass.ui.theme.Surface
+import ch.onepass.onepass.ui.theme.White
 import kotlinx.coroutines.flow.first
 
 /**
@@ -140,7 +146,7 @@ internal fun MyInvitationsContent(
       TopBarConfig(title = "My Invitations"),
       onBack = onNavigateBack,
       modifier = modifier.testTag(MyInvitationsScreenTestTags.SCREEN),
-      containerColor = colorResource(id = R.color.screen_background),
+      containerColor = Background,
       content = { paddingValues ->
         Box(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
@@ -241,7 +247,7 @@ private fun InvitationCard(
           Modifier.fillMaxWidth()
               .testTag(MyInvitationsScreenTestTags.getInvitationCardTag(invitation.id)),
       shape = RoundedCornerShape(16.dp),
-      color = colorResource(id = R.color.myinvitations_card_background),
+      color = Surface,
       tonalElevation = 0.dp) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
           // Organization name
@@ -249,7 +255,7 @@ private fun InvitationCard(
               text = organization?.name ?: invitation.orgId,
               style = MaterialTheme.typography.titleMedium,
               fontWeight = FontWeight.Bold,
-              color = colorResource(id = R.color.white),
+              color = White,
               modifier = Modifier.testTag(MyInvitationsScreenTestTags.INVITATION_ORG_NAME))
 
           Spacer(modifier = Modifier.height(8.dp))
@@ -258,7 +264,7 @@ private fun InvitationCard(
           Text(
               text = "Role: ${invitation.role.name}",
               style = MaterialTheme.typography.bodyMedium,
-              color = colorResource(id = R.color.gray),
+              color = Secondary,
               modifier = Modifier.testTag(MyInvitationsScreenTestTags.INVITATION_ROLE))
 
           Spacer(modifier = Modifier.height(16.dp))
@@ -275,8 +281,7 @@ private fun InvitationCard(
                             .testTag(MyInvitationsScreenTestTags.getRejectButtonTag(invitation.id)),
                     colors =
                         ButtonDefaults.buttonColors(
-                            containerColor = colorResource(id = R.color.myinvitations_reject_bg),
-                            contentColor = colorResource(id = R.color.myinvitations_reject_red)),
+                            containerColor = DarkGray, contentColor = Error),
                     shape = RoundedCornerShape(10.dp)) {
                       Text(text = "Reject", fontWeight = FontWeight.Medium)
                     }
@@ -289,9 +294,7 @@ private fun InvitationCard(
                             .testTag(MyInvitationsScreenTestTags.getAcceptButtonTag(invitation.id)),
                     colors =
                         ButtonDefaults.buttonColors(
-                            containerColor =
-                                colorResource(id = R.color.myinvitations_accent_purple),
-                            contentColor = colorResource(id = R.color.white)),
+                            containerColor = Primary, contentColor = OnBackground),
                     shape = RoundedCornerShape(10.dp)) {
                       Text(text = "Accept", fontWeight = FontWeight.Medium)
                     }

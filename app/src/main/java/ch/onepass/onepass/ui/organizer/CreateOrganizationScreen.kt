@@ -23,9 +23,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.colorResource
 import androidx.lifecycle.viewmodel.compose.viewModel
-import ch.onepass.onepass.R
+import ch.onepass.onepass.ui.theme.Background
+import ch.onepass.onepass.ui.theme.OnBackground
 
 /**
  * Composable screen for users to fill out a form to create a new organization.
@@ -73,46 +73,38 @@ fun CreateOrganizationScreen(
   Scaffold(
       topBar = {
         TopAppBar(
-            title = {
-              Text("Create Organization", color = colorResource(id = R.color.on_background))
-            },
+            title = { Text("Create Organization", color = OnBackground) },
             navigationIcon = {
               IconButton(onClick = onNavigateBack) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                     contentDescription = "Back",
-                    tint = colorResource(id = R.color.on_background))
+                    tint = OnBackground)
               }
             },
-            colors =
-                TopAppBarDefaults.topAppBarColors(
-                    containerColor = colorResource(id = R.color.background)))
+            colors = TopAppBarDefaults.topAppBarColors(containerColor = Background))
       },
-      containerColor = colorResource(id = R.color.background),
+      containerColor = Background,
       snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
-        Box(
-            modifier =
-                Modifier.fillMaxSize()
-                    .background(colorResource(id = R.color.background))
-                    .padding(padding)) {
-              OrganizerForm(
-                  title = "Create an Organization",
-                  formState = formState,
-                  countryList = countryList,
-                  prefixDisplayText = selectedCountryCode,
-                  prefixError = formState.contactPhone.error,
-                  dropdownExpanded = prefixDropdownExpanded,
-                  onCountrySelected = {
-                    // Update country code in ViewModel when a country is selected
-                    viewModel.updateCountryIndex(it)
-                    prefixDropdownExpanded = false
-                  },
-                  onPrefixClick = { prefixDropdownExpanded = true },
-                  onDropdownDismiss = { prefixDropdownExpanded = false },
-                  onSubmit = { viewModel.createOrganization(ownerId) },
-                  submitText = "Submit",
-                  viewModel = viewModel,
-                  modifier = Modifier.padding(padding))
-            }
+        Box(modifier = Modifier.fillMaxSize().background(Background).padding(padding)) {
+          OrganizerForm(
+              title = "Create an Organization",
+              formState = formState,
+              countryList = countryList,
+              prefixDisplayText = selectedCountryCode,
+              prefixError = formState.contactPhone.error,
+              dropdownExpanded = prefixDropdownExpanded,
+              onCountrySelected = {
+                // Update country code in ViewModel when a country is selected
+                viewModel.updateCountryIndex(it)
+                prefixDropdownExpanded = false
+              },
+              onPrefixClick = { prefixDropdownExpanded = true },
+              onDropdownDismiss = { prefixDropdownExpanded = false },
+              onSubmit = { viewModel.createOrganization(ownerId) },
+              submitText = "Submit",
+              viewModel = viewModel,
+              modifier = Modifier.padding(padding))
+        }
       }
 }

@@ -12,7 +12,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -28,6 +27,8 @@ import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
 import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
 import ch.onepass.onepass.ui.eventfilters.FilterDialog
+import ch.onepass.onepass.ui.theme.Secondary
+import ch.onepass.onepass.ui.theme.White
 
 /**
  * Feed screen showing all published events. Displays a list of events with loading, error, and
@@ -102,7 +103,6 @@ fun FeedScreen(
           }
         }
       },
-      containerColor = colorResource(id = R.color.screen_background),
   ) { paddingValues ->
     val pullState = rememberPullToRefreshState()
     PullToRefreshBox(
@@ -176,7 +176,6 @@ private fun FeedTopBar(
 ) {
   Surface(
       modifier = modifier.fillMaxWidth().testTag(FeedScreenTestTags.FEED_TOP_BAR),
-      color = colorResource(id = R.color.screen_background),
       tonalElevation = 0.dp,
   ) {
     Column(modifier = Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp)) {
@@ -190,14 +189,14 @@ private fun FeedTopBar(
               text = currentDateRange,
               style = MaterialTheme.typography.headlineLarge,
               fontWeight = FontWeight.Bold,
-              color = colorResource(id = R.color.white),
+              color = White,
               letterSpacing = 2.sp,
               modifier = Modifier.testTag(FeedScreenTestTags.FEED_TITLE),
           )
           Text(
               text = currentLocation.uppercase(),
               style = MaterialTheme.typography.bodyMedium,
-              color = colorResource(id = R.color.gray),
+              color = Secondary,
               modifier = Modifier.padding(top = 4.dp).testTag(FeedScreenTestTags.FEED_LOCATION),
           )
         }
@@ -212,7 +211,7 @@ private fun FeedTopBar(
                 Icon(
                     imageVector = Icons.Default.Notifications,
                     contentDescription = "Notifications",
-                    tint = colorResource(id = R.color.white),
+                    tint = White,
                     modifier = Modifier.size(24.dp),
                 )
               }
@@ -224,7 +223,7 @@ private fun FeedTopBar(
             Icon(
                 painter = painterResource(id = R.drawable.filter_icon),
                 contentDescription = "Filter events",
-                tint = colorResource(id = R.color.white),
+                tint = White,
                 modifier = Modifier.size(24.dp),
             )
           }
