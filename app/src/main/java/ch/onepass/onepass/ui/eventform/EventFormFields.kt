@@ -32,24 +32,11 @@ fun TitleInputField(value: String, onValueChange: (String) -> Unit, modifier: Mo
       verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
       horizontalAlignment = Alignment.Start,
       modifier = modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically) {
-              Text(
-                  text = "Title*",
-                  style =
-                      MaterialTheme.typography.bodyMedium.copy(
-                          color = colorResource(id = R.color.white)))
-              Text(
-                  text = "${value.length}/${EventFormViewModel.MAX_TITLE_LENGTH} characters",
-                  style =
-                      MaterialTheme.typography.bodySmall.copy(
-                          color =
-                              if (value.length >= EventFormViewModel.MAX_TITLE_LENGTH)
-                                  colorResource(id = R.color.error_red)
-                              else colorResource(id = R.color.gray)))
-            }
+        FieldLabelWithCounter(
+            label = "Title*",
+            currentLength = value.length,
+            maxLength = EventFormViewModel.MAX_TITLE_LENGTH,
+            isError = value.length >= EventFormViewModel.MAX_TITLE_LENGTH)
         TextField(
             value = value,
             onValueChange = onValueChange,
@@ -95,24 +82,11 @@ fun DescriptionInputField(
       verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
       horizontalAlignment = Alignment.Start,
   ) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically) {
-          Text(
-              text = "Description*",
-              style =
-                  MaterialTheme.typography.bodyMedium.copy(
-                      color = colorResource(id = R.color.white)))
-          Text(
-              text = "${value.length}/${EventFormViewModel.MAX_DESCRIPTION_LENGTH} characters",
-              style =
-                  MaterialTheme.typography.bodySmall.copy(
-                      color =
-                          if (value.length >= EventFormViewModel.MAX_DESCRIPTION_LENGTH)
-                              colorResource(id = R.color.error_red)
-                          else colorResource(id = R.color.gray)))
-        }
+    FieldLabelWithCounter(
+        label = "Description*",
+        currentLength = value.length,
+        maxLength = EventFormViewModel.MAX_DESCRIPTION_LENGTH,
+        isError = value.length >= EventFormViewModel.MAX_DESCRIPTION_LENGTH)
 
     Box(
         modifier =
@@ -440,6 +414,42 @@ fun TagsSelectionSection(
       Spacer(modifier = Modifier.height(16.dp))
     }
   }
+}
+
+/**
+ * Displays a form field label with a character counter.
+ *
+ * @param label The label text to display (e.g., "Title*", "Description*")
+ * @param currentLength The current number of characters in the associated field
+ * @param maxLength The maximum allowed number of characters
+ * @param modifier The modifier to be applied to the root Row composable
+ * @param isError Whether the field is in an error state, overriding length-based error display
+ */
+@Composable
+fun FieldLabelWithCounter(
+    label: String,
+    currentLength: Int,
+    maxLength: Int,
+    modifier: Modifier = Modifier,
+    isError: Boolean = false
+) {
+  Row(
+      modifier = modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = label,
+            style =
+                MaterialTheme.typography.bodyMedium.copy(color = colorResource(id = R.color.white)))
+        Text(
+            text = "$currentLength/$maxLength characters",
+            style =
+                MaterialTheme.typography.bodySmall.copy(
+                    color =
+                        if (isError || currentLength >= maxLength)
+                            colorResource(id = R.color.error_red)
+                        else colorResource(id = R.color.gray)))
+      }
 }
 
 @Composable
