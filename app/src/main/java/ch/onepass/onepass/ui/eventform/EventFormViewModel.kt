@@ -1,6 +1,7 @@
 package ch.onepass.onepass.ui.eventform
 
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.event.EventRepository
@@ -59,9 +60,12 @@ abstract class EventFormViewModel(
     CAPACITY_EMPTY("capacity", "Capacity cannot be empty"),
     CAPACITY_INVALID("capacity", "Invalid capacity format"),
     CAPACITY_NEGATIVE("capacity", "Capacity must be positive"),
-    TITLE_DANGEROUS("title", "Title contains invalid characters or dangerous patterns"),
+    TITLE_DANGEROUS(
+        "title",
+        "Title contains invalid characters. Use only letters, numbers, spaces, and basic punctuation (.,!?-)"),
     DESCRIPTION_DANGEROUS(
-        "description", "Description contains invalid characters or dangerous patterns");
+        "description",
+        "Description contains invalid characters. Use only letters, numbers, spaces, and basic punctuation (.,!?-:;)");
 
     fun toError(): Pair<String, String> = key to message
   }
@@ -132,7 +136,11 @@ abstract class EventFormViewModel(
       val sanitized = InputSanitizer.sanitizeTitle(title).take(MAX_TITLE_LENGTH)
       _formState.value = _formState.value.copy(title = sanitized)
       clearFieldError(ValidationError.TITLE.key, ValidationError.TITLE_DANGEROUS.key)
-    } catch (_: IllegalArgumentException) {
+    } catch (e: IllegalArgumentException) {
+      Log.w(
+          "EventFormViewModel",
+          "Title sanitization failed for input: '$title'. Error: ${e.message}",
+          e)
       _fieldErrors.value = mapOf(ValidationError.TITLE_DANGEROUS.toError())
     }
   }
@@ -143,7 +151,11 @@ abstract class EventFormViewModel(
       val sanitized = InputSanitizer.sanitizeDescription(description).take(MAX_DESCRIPTION_LENGTH)
       _formState.value = _formState.value.copy(description = sanitized)
       clearFieldError(ValidationError.DESCRIPTION.key, ValidationError.DESCRIPTION_DANGEROUS.key)
-    } catch (_: IllegalArgumentException) {
+    } catch (e: IllegalArgumentException) {
+      Log.w(
+          "EventFormViewModel",
+          "Description sanitization failed for input: '$description'. Error: ${e.message}",
+          e)
       _fieldErrors.value = mapOf(ValidationError.DESCRIPTION_DANGEROUS.toError())
     }
   }

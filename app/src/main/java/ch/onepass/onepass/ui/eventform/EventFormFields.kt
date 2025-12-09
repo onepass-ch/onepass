@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.EventTag
 import ch.onepass.onepass.ui.components.buttons.UploadImageButton
@@ -247,11 +248,11 @@ fun TicketsInputField(
         verticalAlignment = Alignment.Top) {
           // Price Input
           Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "Price",
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        color = colorResource(id = R.color.white)))
+            CompactFieldLabel(
+                label = "Price",
+                currentLength = priceValue.length,
+                maxLength = EventFormViewModel.MAX_PRICE_LENGTH,
+                isError = priceError != null)
             Spacer(modifier = Modifier.height(4.dp))
             Box(
                 modifier =
@@ -301,11 +302,11 @@ fun TicketsInputField(
 
           // Capacity Input
           Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-            Text(
-                text = "Capacity",
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        color = colorResource(id = R.color.white)))
+            CompactFieldLabel(
+                label = "Capacity",
+                currentLength = capacityValue.length,
+                maxLength = EventFormViewModel.MAX_CAPACITY_LENGTH,
+                isError = capacityError != null)
             Spacer(modifier = Modifier.height(4.dp))
             Box(
                 modifier =
@@ -449,6 +450,44 @@ fun FieldLabelWithCounter(
                         if (isError || currentLength >= maxLength)
                             colorResource(id = R.color.error_red)
                         else colorResource(id = R.color.gray)))
+      }
+}
+
+/**
+ * Compact character counter for fields with limited width. Displays counter above the field in a
+ * stacked layout.
+ *
+ * @param label The field label (e.g., "Price", "Capacity")
+ * @param currentLength Current character count
+ * @param maxLength Maximum allowed characters
+ * @param modifier Modifier to apply
+ * @param isError Whether the field is in error state
+ */
+@Composable
+fun CompactFieldLabel(
+    label: String,
+    currentLength: Int,
+    maxLength: Int,
+    modifier: Modifier = Modifier,
+    isError: Boolean = false
+) {
+  Column(
+      modifier = modifier,
+      verticalArrangement = Arrangement.spacedBy(2.dp),
+      horizontalAlignment = Alignment.Start) {
+        Text(
+            text = label,
+            style =
+                MaterialTheme.typography.bodySmall.copy(color = colorResource(id = R.color.white)))
+        Text(
+            text = "$currentLength/$maxLength characters",
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    color =
+                        if (isError || currentLength >= maxLength)
+                            colorResource(id = R.color.error_red)
+                        else colorResource(id = R.color.gray),
+                    fontSize = 10.sp))
       }
 }
 
