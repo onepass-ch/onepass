@@ -172,7 +172,7 @@ fun AppNavHost(
                           userId = uid)
                     }
                   })
-      MyEventsScreen(viewModel = myEventsVm) // ← SUPPRIME userQrData
+      MyEventsScreen(viewModel = myEventsVm)
     }
 
     // ------------------ Map ------------------
