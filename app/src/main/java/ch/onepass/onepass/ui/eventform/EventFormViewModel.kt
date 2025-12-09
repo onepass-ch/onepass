@@ -50,7 +50,7 @@ abstract class EventFormViewModel(
     START_TIME("startTime", "Start time cannot be empty"),
     END_TIME("endTime", "End time cannot be empty"),
     TIME("time", "End time must be after start time"),
-    DATE_IN_PAST("date", "Event cannot be created in the past"),
+    DATE_IN_PAST("date", "Event date cannot be in the past"),
     LOCATION("location", "Location cannot be empty"),
     LOCATION_SELECT("location", "Please select a location from the suggestions"),
     PRICE_EMPTY("price", "Price cannot be empty"),
