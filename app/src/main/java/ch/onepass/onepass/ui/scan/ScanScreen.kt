@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -63,6 +64,7 @@ object ScanTestTags {
   const val SCAN_FRAME = "scan_frame"
   const val STATUS_ICON = "scan_status_icon"
   const val STATS_CARD = "scan_stats_card"
+  const val BACK_BUTTON = "scan_back_button"
 }
 
 /** Dark palette aligned with the Profile screen aesthetics. */
@@ -84,6 +86,7 @@ private object ScanColors {
 fun ScanScreen(
     viewModel: ScannerViewModel,
     modifier: Modifier = Modifier,
+    onNavigateBack: () -> Unit = {},
     onEffect: ((ScannerEffect) -> Unit)? = null
 ) {
   LaunchedEffect(viewModel, onEffect) {
@@ -92,13 +95,13 @@ fun ScanScreen(
 
   CameraPermissionGate(
       modifier = modifier.fillMaxSize(),
-      grantedContent = { ScanContent(viewModel) },
+      grantedContent = { ScanContent(viewModel, onNavigateBack) },
       deniedContent = { PermissionDeniedScreen() })
 }
 
 /** Main content: edge-to-edge camera preview with scanning frame and bottom HUD. */
 @Composable
-fun ScanContent(viewModel: ScannerViewModel) {
+fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
   val context = LocalContext.current
   val lifecycle = LocalLifecycleOwner.current
   val uiState by viewModel.state.collectAsState()
@@ -231,6 +234,22 @@ fun ScanContent(viewModel: ScannerViewModel) {
                   .background(
                       Brush.verticalGradient(
                           listOf(Color.Transparent, Color(0x33000000), ScanColors.Scrim))))
+
+      // Back button (top-left)
+      IconButton(
+          onClick = onNavigateBack,
+          modifier =
+              Modifier.align(Alignment.TopStart)
+                  .padding(16.dp)
+                  .size(48.dp)
+                  .background(ScanColors.Card.copy(alpha = 0.7f), CircleShape)
+                  .testTag(ScanTestTags.BACK_BUTTON)) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Back",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp))
+          }
 
       // Animated scanning frame
       ScanningFrame(uiState = uiState)
