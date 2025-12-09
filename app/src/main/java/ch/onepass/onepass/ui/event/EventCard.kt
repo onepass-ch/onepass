@@ -34,6 +34,7 @@ import ch.onepass.onepass.ui.theme.CardShadow
 import ch.onepass.onepass.ui.theme.EventCardDimens
 import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.TextSecondary
+import ch.onepass.onepass.utils.FormatUtils.formatPriceCompact
 import coil.compose.AsyncImage
 
 /**
@@ -65,7 +66,7 @@ fun EventCard(
   val title = event.title
   val date = event.displayDateTime
   val location = event.displayLocation
-  val price = event.lowestPrice
+  val price = formatPriceCompact(event.lowestPrice.toDouble())
   val organizer = event.organizerName
 
   // Responsive aspect ratio: maintain proportions while adapting to screen size
@@ -215,7 +216,7 @@ fun EventCard(
         Spacer(modifier = Modifier.width(EventCardDimens.locationPriceSpacing))
 
         Text(
-            text = if (price == 0u) "FREE" else "CHF$price",
+            text = price,
             style = MaterialTheme.typography.headlineSmall,
             color = Color.White,
             modifier = Modifier.testTag(C.Tag.event_card_price),

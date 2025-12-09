@@ -50,4 +50,41 @@ object FormatUtils {
       "$currency $formattedPrice"
     }
   }
+
+  /**
+   * Formats a price value with compact notation (K/M suffix) for values greater than 1000.
+   * Rounds to 2 decimal places for large numbers.
+   * Returns "FREE" if price is 0 or negative.
+   *
+   * Examples: 0 -> "FREE" 500 -> "CHF 500" 1500 -> "CHF 1.50K" 1234.56 -> "CHF 1.23K"
+   * 2500000 -> "CHF 2.50M"
+   */
+  fun formatPriceCompact(price: Number, currency: String = "CHF"): String {
+    val priceDouble = price.toDouble()
+    return if (priceDouble <= 0.0) {
+      "FREE"
+    } else {
+      val formattedPrice = when {
+        priceDouble < 1000 -> {
+          // For values less than 1000, format normally with up to 2 decimals
+          if (priceDouble % 1 == 0.0) {
+            priceDouble.toInt().toString()
+          } else {
+            String.format(Locale.US, "%.2f", priceDouble)
+          }
+        }
+        priceDouble < 1_000_000 -> {
+          // For values >= 1000 and < 1,000,000, format with K suffix and 2 decimal places
+          val thousands = priceDouble / 1000.0
+          String.format(Locale.US, "%.2fK", thousands)
+        }
+        else -> {
+          // For values >= 1,000,000, format with M suffix and 2 decimal places
+          val millions = priceDouble / 1_000_000.0
+          String.format(Locale.US, "%.2fM", millions)
+        }
+      }
+      "$currency $formattedPrice"
+    }
+  }
 }
