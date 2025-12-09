@@ -21,6 +21,7 @@ import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import ch.onepass.onepass.ui.auth.AuthViewModel
 import ch.onepass.onepass.ui.feed.FeedScreenTestTags
 import ch.onepass.onepass.ui.map.MapViewModel
+import ch.onepass.onepass.ui.myevents.MyEventsTestTags
 import ch.onepass.onepass.ui.profile.*
 import com.mapbox.common.MapboxOptions
 import io.mockk.*
@@ -61,8 +62,6 @@ class FullNavigationTest {
     mockUserRepo = mockk(relaxed = true)
 
     every { mockAuthRepo.isUserSignedIn() } returns signedIn
-    // Note: isOrganizer() method has been removed from UserRepository
-    // Organization membership is now checked via MembershipRepository
 
     val authVmFactory = viewModelFactory { initializer { AuthViewModel(mockAuthRepo) } }
 
@@ -404,7 +403,6 @@ class FullNavigationTest {
     val orgId = "org_flow_edit_test"
     val eventId = "event_to_edit_id"
 
-    // 1. Navigate to Dashboard
     composeRule.runOnUiThread {
       navController.navigate(NavigationDestinations.Screen.OrganizationDashboard.route(orgId))
     }
@@ -413,7 +411,6 @@ class FullNavigationTest {
         NavigationDestinations.Screen.OrganizationDashboard.route,
         navController.currentDestination?.route)
 
-    // 2. Navigate to Edit Event (Simulating the user action)
     composeRule.runOnUiThread {
       navController.navigate(NavigationDestinations.Screen.EditEvent.route(eventId))
     }
@@ -421,7 +418,6 @@ class FullNavigationTest {
     assertEquals(
         NavigationDestinations.Screen.EditEvent.route, navController.currentDestination?.route)
 
-    // 3. Navigate Back
     composeRule.runOnUiThread { navController.popBackStack() }
     composeRule.waitForIdle()
     assertEquals(
@@ -473,7 +469,6 @@ class FullNavigationTest {
 
     injectedProfileVMFactory = viewModelFactory { initializer { fakeVM } }
 
-    // Start app as signed in
     setApp(signedIn = true)
     composeRule.waitForIdle()
     composeRule.runOnUiThread {
@@ -503,11 +498,9 @@ class FullNavigationTest {
     setApp(signedIn = true)
     composeRule.waitForIdle()
 
-    // On the Feed Screen by default
     assertEquals(
         NavigationDestinations.Screen.Events.route, navController.currentDestination?.route)
 
-    // Click the Notification button on the top bar
     composeRule
         .onNodeWithTag(FeedScreenTestTags.NOTIFICATION_BUTTON)
         .assertIsDisplayed()
@@ -515,16 +508,137 @@ class FullNavigationTest {
 
     composeRule.waitForIdle()
 
-    // Check we navigated to Notification screen
     assertEquals(
         NavigationDestinations.Screen.Notification.route, navController.currentDestination?.route)
 
-    // Click the Back button on the notification screen
     composeRule.onNodeWithTag("notification_back_button").assertIsDisplayed().performClick()
 
     composeRule.waitForIdle()
 
-    // Check we navigated back to the Feed screen
+    assertEquals(
+        NavigationDestinations.Screen.Events.route, navController.currentDestination?.route)
+  }
+
+  // ------------------ Additional Coverage Tests ------------------
+
+  @Test
+  fun tickets_screen_displays_qr_component() {
+    setApp(signedIn = true)
+    composeRule.waitForIdle()
+
+    composeRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.Tickets.route)
+    }
+    composeRule.waitForIdle()
+
+    composeRule.onNodeWithTag(MyEventsTestTags.QR_CODE_CARD).assertIsDisplayed()
+  }
+
+  // ------------------ Notification Navigation Tests ------------------
+
+  @Test
+  fun notification_screen_navigation() {
+    setApp(signedIn = true)
+    composeRule.waitForIdle()
+
+    composeRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.Notification.route)
+    }
+    composeRule.waitForIdle()
+
+    assertEquals(
+        NavigationDestinations.Screen.Notification.route, navController.currentDestination?.route)
+  }
+
+  // ------------------ Scan Flow Tests ------------------
+
+  @Test
+  fun scan_screen_navigation_with_event_id() {
+    setApp(signedIn = true)
+    composeRule.waitForIdle()
+
+    val eventId = "scan_event_123"
+    composeRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.Scan.route(eventId))
+    }
+    composeRule.waitForIdle()
+
+    assertEquals(NavigationDestinations.Screen.Scan.route, navController.currentDestination?.route)
+  }
+
+  @Test
+  fun organization_dashboard_to_scan_flow() {
+    setApp(signedIn = true)
+    composeRule.waitForIdle()
+
+    val orgId = "org_scan_test"
+    val eventId = "event_scan_123"
+
+    composeRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.OrganizationDashboard.route(orgId))
+    }
+    composeRule.waitForIdle()
+
+    composeRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.Scan.route(eventId))
+    }
+    composeRule.waitForIdle()
+
+    assertEquals(NavigationDestinations.Screen.Scan.route, navController.currentDestination?.route)
+
+    composeRule.runOnUiThread { navController.popBackStack() }
+    composeRule.waitForIdle()
+
+    assertEquals(
+        NavigationDestinations.Screen.OrganizationDashboard.route,
+        navController.currentDestination?.route)
+  }
+
+  // ------------------ Event Creation Tests ------------------
+
+  @Test
+  fun create_event_flow_complete() {
+    setApp(signedIn = true)
+    composeRule.waitForIdle()
+
+    val orgId = "org_create_test"
+
+    composeRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.CreateEvent.route(orgId))
+    }
+    composeRule.waitForIdle()
+
+    assertEquals(
+        NavigationDestinations.Screen.CreateEvent.route, navController.currentDestination?.route)
+
+    composeRule.runOnUiThread { navController.popBackStack() }
+    composeRule.waitForIdle()
+
+    assertEquals(
+        NavigationDestinations.Screen.Events.route, navController.currentDestination?.route)
+  }
+
+  // ------------------ Staff Management Tests ------------------
+
+  @Test
+  fun staff_invitation_flow() {
+    setApp(signedIn = true)
+    composeRule.waitForIdle()
+
+    val orgId = "org_staff_test"
+
+    composeRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.StaffInvitation.route(orgId))
+    }
+    composeRule.waitForIdle()
+
+    assertEquals(
+        NavigationDestinations.Screen.StaffInvitation.route,
+        navController.currentDestination?.route)
+
+    composeRule.runOnUiThread { navController.popBackStack() }
+    composeRule.waitForIdle()
+
     assertEquals(
         NavigationDestinations.Screen.Events.route, navController.currentDestination?.route)
   }
