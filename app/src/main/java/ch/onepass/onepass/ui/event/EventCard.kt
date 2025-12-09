@@ -23,26 +23,18 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
-import ch.onepass.onepass.model.event.EventStatus
-import ch.onepass.onepass.model.event.PricingTier
-import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.resources.C
 import ch.onepass.onepass.ui.components.buttons.LikeButton
 import ch.onepass.onepass.ui.theme.CardBackground
 import ch.onepass.onepass.ui.theme.CardShadow
 import ch.onepass.onepass.ui.theme.EventCardDimens
 import ch.onepass.onepass.ui.theme.EventDateColor
-import ch.onepass.onepass.ui.theme.OnePassTheme
 import ch.onepass.onepass.ui.theme.TextSecondary
 import coil.compose.AsyncImage
-import com.google.firebase.Timestamp
-import com.google.firebase.firestore.GeoPoint
-import java.util.Calendar
 
 /**
  * A card component that displays information about an event.
@@ -231,98 +223,4 @@ fun EventCard(
       }
     }
   }
-}
-
-/** Preview function for EventCard component. */
-@Preview(showBackground = false, name = "Event Card")
-@Composable
-private fun EventCardPreview() {
-  OnePassTheme {
-    Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-      // Sample event with image
-      EventCard(
-          event =
-              createSampleEvent(
-                  eventId = "1",
-                  title = "Summer Music Festival",
-                  organizerName = "Music Events Inc.",
-                  location =
-                      Location(coordinates = GeoPoint(46.5197, 6.6323), name = "Lausanne, Flon"),
-                  price = 50.0,
-                  imageUrl = "https://picsum.photos/400/300"),
-          isLiked = false,
-          onLikeToggle = {},
-          onCardClick = {})
-
-      // Sample event without image (fallback)
-      EventCard(
-          event =
-              createSampleEvent(
-                  eventId = "2",
-                  title = "Tech Conference 2024",
-                  organizerName = "Tech Hub",
-                  location = Location(coordinates = GeoPoint(47.3769, 8.5417), name = "Zurich, HB"),
-                  price = 0.0,
-                  imageUrl = ""),
-          isLiked = true,
-          onLikeToggle = {},
-          onCardClick = {})
-
-      // Free event
-      EventCard(
-          event =
-              createSampleEvent(
-                  eventId = "3",
-                  title = "Community Meetup",
-                  organizerName = "Local Community",
-                  location = Location(coordinates = GeoPoint(46.2044, 6.1432), name = "Geneva"),
-                  price = 0.0,
-                  imageUrl = "https://picsum.photos/400/300?random=3"),
-          isLiked = false,
-          onLikeToggle = {},
-          onCardClick = {})
-    }
-  }
-}
-
-/** Helper function to create sample Event data for previews. */
-private fun createSampleEvent(
-    eventId: String,
-    title: String,
-    organizerName: String,
-    location: Location,
-    price: Double,
-    imageUrl: String
-): Event {
-  val calendar = Calendar.getInstance()
-  calendar.add(Calendar.DAY_OF_MONTH, 30)
-  val startTime = Timestamp(calendar.time)
-  calendar.add(Calendar.HOUR_OF_DAY, 3)
-  val endTime = Timestamp(calendar.time)
-
-  return Event(
-      eventId = eventId,
-      title = title,
-      description = "Sample event description",
-      organizerId = "org-1",
-      organizerName = organizerName,
-      status = EventStatus.PUBLISHED,
-      location = location,
-      startTime = startTime,
-      endTime = endTime,
-      capacity = 100,
-      ticketsRemaining = 75,
-      ticketsIssued = 25,
-      ticketsRedeemed = 0,
-      currency = "CHF",
-      pricingTiers =
-          if (price > 0) {
-            listOf(PricingTier("General", price, 100, 75))
-          } else {
-            emptyList()
-          },
-      images = if (imageUrl.isNotEmpty()) listOf(imageUrl) else emptyList(),
-      tags = listOf("sample", "preview"),
-      createdAt = Timestamp.now(),
-      updatedAt = Timestamp.now())
 }
