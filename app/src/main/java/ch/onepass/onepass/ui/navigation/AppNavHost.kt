@@ -172,7 +172,7 @@ fun AppNavHost(
                           userId = uid)
                     }
                   })
-      MyEventsScreen(viewModel = myEventsVm, userQrData = "USER-QR-DEMO")
+      MyEventsScreen(viewModel = myEventsVm)
     }
 
     // ------------------ Map ------------------

@@ -1,6 +1,7 @@
 package ch.onepass.onepass.model.pass
 
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
@@ -29,7 +30,7 @@ class PassRepositoryFirebase(
 ) : PassRepository {
 
   /** Centralized collection reference to avoid typos. */
-  private val users = db.collection("user")
+  private val users = db.collection("users")
 
   // --------------------- READ (live) ---------------------
 
@@ -47,15 +48,31 @@ class PassRepositoryFirebase(
   override suspend fun getOrCreateSignedPass(uid: String): Result<Pass> = runCatching {
     require(uid.isNotBlank()) { "uid required" }
 
-    // 1) If present in Firestore, return it
-    users.document(uid).get().await().toPass()?.let {
-      return@runCatching it
+    // 1) Verify that the user is authenticated
+    val currentUser =
+        FirebaseAuth.getInstance().currentUser
+            ?: throw IllegalStateException("User not authenticated")
+
+    // 2) Force token refresh to ensure it's valid
+    currentUser.getIdToken(true).await()
+
+    // 3) Check if pass already exists in Firestore
+    val existingPass = users.document(uid).get().await().toPass()
+    if (existingPass != null) {
+      return@runCatching existingPass
     }
 
-    // 2) Else call the CF which creates AND returns the pass
-    val data = functions.getHttpsCallable("generateUserPass").call().await().data
-    val pass = dataToPassStrict(data)
+    // 4) Otherwise, call the Cloud Function to create the pass
+    val requestData = hashMapOf("uid" to uid)
+
+    val result = functions.getHttpsCallable("generateUserPass").call(requestData).await()
+
+    // 5) Parse the response
+    val pass = dataToPassStrict(result.data)
+
+    // 6) Verify that the pass is complete
     require(!pass.isIncomplete) { "Function returned incomplete pass" }
+
     pass
   }
 

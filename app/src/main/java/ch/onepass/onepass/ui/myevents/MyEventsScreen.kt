@@ -17,6 +17,7 @@ import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -50,11 +51,16 @@ object MyEventsTestTags {
  * Composable screen displaying user's events with tabs for current and expired tickets.
  *
  * @param viewModel ViewModel providing ticket data
- * @param userQrData String data to be encoded in the user's QR code
  */
 @Composable
-fun MyEventsScreen(viewModel: MyEventsViewModel, userQrData: String) {
-  MyEventsContent(userQrData = userQrData, viewModel = viewModel)
+fun MyEventsScreen(viewModel: MyEventsViewModel) {
+  // Collect QR data from ViewModel
+  val qrData by viewModel.userQrData.collectAsState()
+
+  // Load user pass on first composition
+  LaunchedEffect(Unit) { viewModel.loadUserPass() }
+
+  MyEventsContent(userQrData = qrData ?: "LOADING", viewModel = viewModel)
 }
 
 /**
