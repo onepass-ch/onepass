@@ -67,14 +67,14 @@ class FormatUtilsTest {
     assertEquals("CHF 500", FormatUtils.formatPriceCompact(500))
     assertEquals("CHF 999.99", FormatUtils.formatPriceCompact(999.99))
     assertEquals("CHF 25.50", FormatUtils.formatPriceCompact(25.5))
-    
+
     // Values >= 1000 and < 1,000,000 with K suffix and 2 decimals
     assertEquals("CHF 1.50K", FormatUtils.formatPriceCompact(1500))
     assertEquals("CHF 1.23K", FormatUtils.formatPriceCompact(1234.56))
     assertEquals("CHF 10.00K", FormatUtils.formatPriceCompact(10000))
     assertEquals("CHF 12.35K", FormatUtils.formatPriceCompact(12345.67))
     assertEquals("CHF 999.99K", FormatUtils.formatPriceCompact(999990))
-    
+
     // Values >= 1,000,000 with M suffix and 2 decimals
     assertEquals("CHF 1.00M", FormatUtils.formatPriceCompact(1_000_000))
     assertEquals("CHF 2.50M", FormatUtils.formatPriceCompact(2_500_000))
