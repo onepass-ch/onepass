@@ -6,11 +6,11 @@ object InputSanitizer {
   // Dangerous patterns to detect and reject
   private val HTML_SCRIPT_PATTERN =
       Regex(
-          "<script|<img|<iframe|javascript:|onerror=|onclick=|onload=|on\\w+=",
+          "<script|<img|<iframe|javascript:|onerror\\s*=|onclick\\s*=|onload\\s*=|on\\w+\\s*=",
           RegexOption.IGNORE_CASE)
   private val SQL_INJECTION_PATTERN =
       Regex(
-          "(;\\s*(DROP|DELETE|INSERT|UPDATE|CREATE|ALTER|UNION|SELECT)|--\\s*$|/\\*|\\*/)",
+          "(;\\s*\\b(DROP|DELETE|INSERT|UPDATE|CREATE|ALTER|UNION|SELECT)\\b|--\\s*$|/\\*|\\*/)",
           RegexOption.IGNORE_CASE)
   private val XSS_PATTERN = Regex("javascript:|data:|vbscript:|file:", RegexOption.IGNORE_CASE)
 
@@ -74,7 +74,7 @@ object InputSanitizer {
     sanitized = removeControlCharacters(sanitized)
     sanitized = sanitized.replace(Regex(" {2,}"), " ") // Multiple spaces -> single
     sanitized = sanitized.replace(Regex("\t+"), " ") // Tabs -> space
-    sanitized = sanitized.replace(Regex("\n\n\n+"), "\n\n") // Max 2 newlines
+    sanitized = sanitized.replace(Regex("\n{3,}"), "\n\n") // Max 2 newlines
 
     // Validate against attacks
     validateAgainstAttacks(sanitized)
@@ -104,7 +104,10 @@ object InputSanitizer {
     // Validate decimal places (max 2)
     if (sanitized.contains(".")) {
       val decimalParts = sanitized.split(".")
-      if (decimalParts[1].length > 2) {
+      if (decimalParts[1].isEmpty()) {
+        // Handle trailing decimal point: "12." → "12"
+        sanitized = decimalParts[0]
+      } else if (decimalParts[1].length > 2) {
         sanitized = "${decimalParts[0]}.${decimalParts[1].take(2)}"
       }
     }
