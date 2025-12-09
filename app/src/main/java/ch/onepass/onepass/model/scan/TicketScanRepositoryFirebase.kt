@@ -1,5 +1,6 @@
 package ch.onepass.onepass.model.scan
 
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.functions.ktx.functions
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.tasks.await
@@ -17,7 +18,19 @@ class TicketScanRepositoryFirebase : TicketScanRepository {
   override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> =
       runCatching {
 
-        // Basic client-side guardrails — prevents useless requests
+        // Verify user authentication before calling Cloud Function
+        val currentUser =
+            FirebaseAuth.getInstance().currentUser
+                ?: throw IllegalStateException("Please login to scan tickets")
+
+        // Force refresh token to ensure it's valid
+        try {
+          currentUser.getIdToken(true).await()
+        } catch (e: Exception) {
+          throw IllegalStateException("Session expired - please login again")
+        }
+
+        // Basic client-side guardrails - prevents useless requests
         require(qrText.isNotBlank()) { "QR empty" }
         require(eventId.isNotBlank()) { "Event ID empty" }
 
