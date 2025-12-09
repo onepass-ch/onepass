@@ -248,6 +248,18 @@ abstract class EventFormViewModel(
   }
 
   /**
+   * Checks if the event date and time are in the past.
+   *
+   * @param dateString Date in format "dd/MM/yyyy" (e.g., "14/10/2025")
+   * @param timeString Time in format "HH:mm" (e.g., "14:30")
+   * @return true if the event is in the past, false otherwise
+   */
+  private fun isEventInPast(dateString: String, timeString: String): Boolean {
+    val timestamp = parseDateAndTime(dateString, timeString) ?: return false
+    return timestamp.toDate().before(java.util.Date())
+  }
+
+  /**
    * Validates the form data
    *
    * @return Map of validation errors, empty if valid
@@ -256,30 +268,35 @@ abstract class EventFormViewModel(
     val errors = mutableMapOf<String, String>()
     val state = _formState.value
 
+    // Validate required text fields
     if (state.title.isBlank()) errors += ValidationError.TITLE.toError()
     if (state.description.isBlank()) errors += ValidationError.DESCRIPTION.toError()
     if (state.date.isBlank()) errors += ValidationError.DATE.toError()
     if (state.startTime.isBlank()) errors += ValidationError.START_TIME.toError()
     if (state.endTime.isBlank()) errors += ValidationError.END_TIME.toError()
 
+    // Validate time order
     if (state.startTime.isNotBlank() &&
         state.endTime.isNotBlank() &&
-        state.endTime <= state.startTime)
-        errors += ValidationError.TIME.toError()
+        state.endTime <= state.startTime) {
+      errors += ValidationError.TIME.toError()
+    }
 
+    // Validate event is not in the past
     if (state.date.isNotBlank() && state.startTime.isNotBlank()) {
-      val startTimestamp = parseDateAndTime(state.date, state.startTime)
-      if ((startTimestamp != null) && startTimestamp.toDate().before(java.util.Date())) {
+      if (isEventInPast(state.date, state.startTime)) {
         errors += ValidationError.DATE_IN_PAST.toError()
       }
     }
 
+    // Validate location
     if (state.location.isBlank()) {
       errors += ValidationError.LOCATION.toError()
     } else if (state.selectedLocation == null) {
       errors += ValidationError.LOCATION_SELECT.toError()
     }
 
+    // Validate price
     if (state.price.isBlank()) {
       errors += ValidationError.PRICE_EMPTY.toError()
     } else {
@@ -290,6 +307,7 @@ abstract class EventFormViewModel(
       }
     }
 
+    // Validate capacity
     if (state.capacity.isBlank()) {
       errors += ValidationError.CAPACITY_EMPTY.toError()
     } else {
