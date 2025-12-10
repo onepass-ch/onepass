@@ -32,16 +32,16 @@
      const snapshot = await q.limit(50).get();
      const results = snapshot.docs.map((d: any) => ({ id: d.id, ...d.data() }));
 
-     // If organizationId is not null, exclude all users in the organization
-     let exclude = new Set<string>();
-     if (organizationId) {
-       const membersSnap = await db
-         .collection("organizations")
-         .doc(organizationId)
-         .collection("members")
-         .get();
-       exclude = new Set(membersSnap.docs.map((d) => d.id));
-     }
+      // If organizationId is not null, exclude all users in the organization
+      let exclude = new Set<string>();
+      if (organizationId) {
+        const membersSnap = await db
+          .collection("memberships")
+          .where("orgId", "==", organizationId)
+          .get();
+        // The membership document contains the userId field
+        exclude = new Set(membersSnap.docs.map((d) => d.data().userId));
+      }
 
      const users = results
        .filter((u: any) => !exclude.has(u.id))
