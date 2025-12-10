@@ -295,10 +295,10 @@ abstract class EventFormViewModel(
     }
 
     // Validate event is not in the past
-    if (state.date.isNotBlank() && state.startTime.isNotBlank()) {
-      if (isEventInPast(state.date, state.startTime)) {
-        errors += ValidationError.DATE_IN_PAST.toError()
-      }
+    if (state.date.isNotBlank() &&
+        state.startTime.isNotBlank() &&
+        isEventInPast(state.date, state.startTime)) {
+      errors += ValidationError.DATE_IN_PAST.toError()
     }
 
     // Validate location

@@ -39,7 +39,7 @@ import org.robolectric.RobolectricTestRunner
 @ExperimentalCoroutinesApi
 class EditEventFormViewModelTest {
   private lateinit var mockLocationRepository: LocationRepository
-  private lateinit var mockStorageRepository: ch.onepass.onepass.model.storage.StorageRepository
+  private lateinit var mockStorageRepository: StorageRepository
 
   // Set the main coroutines dispatcher for unit testing.
   private val testDispatcher = StandardTestDispatcher()
