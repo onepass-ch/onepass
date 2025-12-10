@@ -1,6 +1,7 @@
 package ch.onepass.onepass.ui.eventform
 
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.event.EventRepository
@@ -12,6 +13,7 @@ import ch.onepass.onepass.model.map.NominatimLocationRepository
 import ch.onepass.onepass.model.storage.StorageRepository
 import ch.onepass.onepass.model.storage.StorageRepositoryFirebase
 import ch.onepass.onepass.utils.DateTimeUtils
+import ch.onepass.onepass.utils.InputSanitizer
 import ch.onepass.onepass.utils.ValidationUtils
 import com.google.firebase.Timestamp
 import kotlinx.coroutines.Job
@@ -36,6 +38,10 @@ abstract class EventFormViewModel(
 ) : ViewModel() {
   companion object {
     const val MAX_TAG_COUNT = 5
+    const val MAX_TITLE_LENGTH = 50
+    const val MAX_DESCRIPTION_LENGTH = 200
+    const val MAX_PRICE_LENGTH = 10
+    const val MAX_CAPACITY_LENGTH = 6
   }
 
   enum class ValidationError(val key: String, val message: String) {
@@ -45,6 +51,7 @@ abstract class EventFormViewModel(
     START_TIME("startTime", "Start time cannot be empty"),
     END_TIME("endTime", "End time cannot be empty"),
     TIME("time", "End time must be after start time"),
+    DATE_IN_PAST("date", "Event date cannot be in the past"),
     LOCATION("location", "Location cannot be empty"),
     LOCATION_SELECT("location", "Please select a location from the suggestions"),
     PRICE_EMPTY("price", "Price cannot be empty"),
@@ -52,7 +59,13 @@ abstract class EventFormViewModel(
     PRICE_NEGATIVE("price", "Price must be positive"),
     CAPACITY_EMPTY("capacity", "Capacity cannot be empty"),
     CAPACITY_INVALID("capacity", "Invalid capacity format"),
-    CAPACITY_NEGATIVE("capacity", "Capacity must be positive");
+    CAPACITY_NEGATIVE("capacity", "Capacity must be positive"),
+    TITLE_DANGEROUS(
+        "title",
+        "Title contains invalid characters. Use only letters, numbers, spaces, and basic punctuation (.,!?-)"),
+    DESCRIPTION_DANGEROUS(
+        "description",
+        "Description contains invalid characters. Use only letters, numbers, spaces, and basic punctuation (.,!?-:;)");
 
     fun toError(): Pair<String, String> = key to message
   }
@@ -117,22 +130,41 @@ abstract class EventFormViewModel(
   private var locationSearchJob: Job? = null
   private val searchDebounceMs = 300L
 
-  /** Updates the event title */
+  /** Updates the event title with sanitization and length limit */
   fun updateTitle(title: String) {
-    _formState.value = _formState.value.copy(title = title)
-    clearFieldError(ValidationError.TITLE.key)
+    try {
+      val sanitized = InputSanitizer.sanitizeTitle(title).take(MAX_TITLE_LENGTH)
+      _formState.value = _formState.value.copy(title = sanitized)
+      clearFieldError(ValidationError.TITLE.key, ValidationError.TITLE_DANGEROUS.key)
+    } catch (e: IllegalArgumentException) {
+      Log.w(
+          "EventFormViewModel",
+          "Title sanitization failed for input: '$title'. Error: ${e.message}",
+          e)
+      _fieldErrors.value = mapOf(ValidationError.TITLE_DANGEROUS.toError())
+    }
   }
 
-  /** Updates the event description */
+  /** Updates the event description with sanitization and length limit */
   fun updateDescription(description: String) {
-    _formState.value = _formState.value.copy(description = description)
-    clearFieldError(ValidationError.DESCRIPTION.key)
+    try {
+      val sanitized = InputSanitizer.sanitizeDescription(description).take(MAX_DESCRIPTION_LENGTH)
+      _formState.value = _formState.value.copy(description = sanitized)
+      clearFieldError(ValidationError.DESCRIPTION.key, ValidationError.DESCRIPTION_DANGEROUS.key)
+    } catch (e: IllegalArgumentException) {
+      Log.w(
+          "EventFormViewModel",
+          "Description sanitization failed for input: '$description'. Error: ${e.message}",
+          e)
+      _fieldErrors.value = mapOf(ValidationError.DESCRIPTION_DANGEROUS.toError())
+    }
   }
 
   /** Updates the event start time */
   fun updateStartTime(startTime: String) {
     _formState.value = _formState.value.copy(startTime = startTime)
-    clearFieldError(ValidationError.START_TIME.key, ValidationError.TIME.key)
+    clearFieldError(
+        ValidationError.START_TIME.key, ValidationError.TIME.key, ValidationError.DATE_IN_PAST.key)
   }
 
   /** Updates the event end time */
@@ -144,7 +176,7 @@ abstract class EventFormViewModel(
   /** Updates the event date */
   fun updateDate(date: String) {
     _formState.value = _formState.value.copy(date = date)
-    clearFieldError(ValidationError.DATE.key)
+    clearFieldError(ValidationError.DATE.key, ValidationError.DATE_IN_PAST.key)
   }
 
   /**
@@ -207,22 +239,36 @@ abstract class EventFormViewModel(
     clearFieldError(ValidationError.LOCATION.key, ValidationError.LOCATION_SELECT.key)
   }
 
-  /** Updates the ticket price */
+  /** Updates the ticket price with sanitization and length limit */
   fun updatePrice(price: String) {
-    _formState.value = _formState.value.copy(price = price)
+    val sanitized = InputSanitizer.sanitizePrice(price).take(MAX_PRICE_LENGTH)
+    _formState.value = _formState.value.copy(price = sanitized)
     clearFieldError(
         ValidationError.PRICE_EMPTY.key,
         ValidationError.PRICE_INVALID.key,
         ValidationError.PRICE_NEGATIVE.key)
   }
 
-  /** Updates the event capacity */
+  /** Updates the event capacity with sanitization and length limit */
   fun updateCapacity(capacity: String) {
-    _formState.value = _formState.value.copy(capacity = capacity)
+    val sanitized = InputSanitizer.sanitizeCapacity(capacity).take(MAX_CAPACITY_LENGTH)
+    _formState.value = _formState.value.copy(capacity = sanitized)
     clearFieldError(
         ValidationError.CAPACITY_EMPTY.key,
         ValidationError.CAPACITY_INVALID.key,
         ValidationError.CAPACITY_NEGATIVE.key)
+  }
+
+  /**
+   * Checks if the event date and time are in the past.
+   *
+   * @param dateString Date in format "dd/MM/yyyy" (e.g., "14/10/2025")
+   * @param timeString Time in format "HH:mm" (e.g., "14:30")
+   * @return true if the event is in the past, false otherwise
+   */
+  private fun isEventInPast(dateString: String, timeString: String): Boolean {
+    val timestamp = parseDateAndTime(dateString, timeString) ?: return false
+    return timestamp.toDate().before(java.util.Date())
   }
 
   /**
@@ -234,23 +280,35 @@ abstract class EventFormViewModel(
     val errors = mutableMapOf<String, String>()
     val state = _formState.value
 
+    // Validate required text fields
     if (state.title.isBlank()) errors += ValidationError.TITLE.toError()
     if (state.description.isBlank()) errors += ValidationError.DESCRIPTION.toError()
     if (state.date.isBlank()) errors += ValidationError.DATE.toError()
     if (state.startTime.isBlank()) errors += ValidationError.START_TIME.toError()
     if (state.endTime.isBlank()) errors += ValidationError.END_TIME.toError()
 
+    // Validate time order
     if (state.startTime.isNotBlank() &&
         state.endTime.isNotBlank() &&
-        state.endTime <= state.startTime)
-        errors += ValidationError.TIME.toError()
+        state.endTime <= state.startTime) {
+      errors += ValidationError.TIME.toError()
+    }
 
+    // Validate event is not in the past
+    if (state.date.isNotBlank() &&
+        state.startTime.isNotBlank() &&
+        isEventInPast(state.date, state.startTime)) {
+      errors += ValidationError.DATE_IN_PAST.toError()
+    }
+
+    // Validate location
     if (state.location.isBlank()) {
       errors += ValidationError.LOCATION.toError()
     } else if (state.selectedLocation == null) {
       errors += ValidationError.LOCATION_SELECT.toError()
     }
 
+    // Validate price
     if (state.price.isBlank()) {
       errors += ValidationError.PRICE_EMPTY.toError()
     } else {
@@ -261,6 +319,7 @@ abstract class EventFormViewModel(
       }
     }
 
+    // Validate capacity
     if (state.capacity.isBlank()) {
       errors += ValidationError.CAPACITY_EMPTY.toError()
     } else {

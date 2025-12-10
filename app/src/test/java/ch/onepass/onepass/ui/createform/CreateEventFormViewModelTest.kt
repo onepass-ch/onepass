@@ -268,47 +268,6 @@ class CreateEventFormViewModelTest {
       }
 
   @Test
-  fun `createEvent fails validation when price is invalid`() =
-      runTest(testDispatcher) {
-        viewModel.updateTitle("Test Event")
-        viewModel.updateDescription("Description")
-        viewModel.updateDate("25/12/2025")
-        viewModel.updateStartTime("14:30")
-        viewModel.updateEndTime("16:30")
-        viewModel.updateLocation("EPFL")
-        viewModel.updatePrice("invalid")
-        viewModel.updateCapacity("100")
-
-        viewModel.createEvent()
-
-        val fieldErrors = viewModel.fieldErrors.value
-        assertTrue(fieldErrors.containsKey(ValidationError.PRICE_INVALID.key))
-        assertEquals(
-            ValidationError.PRICE_INVALID.message, fieldErrors[ValidationError.PRICE_INVALID.key])
-      }
-
-  @Test
-  fun `createEvent fails validation when capacity is invalid`() =
-      runTest(testDispatcher) {
-        viewModel.updateTitle("Test Event")
-        viewModel.updateDescription("Description")
-        viewModel.updateDate("25/12/2025")
-        viewModel.updateStartTime("14:30")
-        viewModel.updateEndTime("16:30")
-        viewModel.updateLocation("EPFL")
-        viewModel.updatePrice("25")
-        viewModel.updateCapacity("invalid")
-
-        viewModel.createEvent()
-
-        val fieldErrors = viewModel.fieldErrors.value
-        assertTrue(fieldErrors.containsKey(ValidationError.CAPACITY_INVALID.key))
-        assertEquals(
-            ValidationError.CAPACITY_INVALID.message,
-            fieldErrors[ValidationError.CAPACITY_INVALID.key])
-      }
-
-  @Test
   fun `createEvent succeeds with valid data`() =
       runTest(testDispatcher) {
         // Mock successful event creation
