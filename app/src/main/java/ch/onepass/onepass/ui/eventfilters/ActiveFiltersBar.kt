@@ -70,6 +70,33 @@ fun ActiveFiltersBar(
               },
           )
         }
+        filters.selectedTags.take(3).forEach { tag ->
+          FilterChip(
+              selected = true,
+              onClick = { /* Could add individual removal later */},
+              label = {
+                Text(
+                    tag,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Medium,
+                )
+              },
+          )
+        }
+        // Show count chip if more than 3 tags
+        if (filters.selectedTags.size > 3) {
+          FilterChip(
+              selected = true,
+              onClick = { /* Could add individual removal later */},
+              label = {
+                Text(
+                    "+${filters.selectedTags.size - 3} more",
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Medium,
+                )
+              },
+          )
+        }
         if (filters.hideSoldOut) {
           FilterChip(
               selected = true,
