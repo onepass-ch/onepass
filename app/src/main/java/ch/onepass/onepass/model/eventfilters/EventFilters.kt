@@ -1,5 +1,6 @@
 package ch.onepass.onepass.model.eventfilters
 
+import ch.onepass.onepass.model.event.EventTag
 import java.util.Calendar
 
 /**
@@ -8,14 +9,38 @@ import java.util.Calendar
  * @property region Selected Swiss region/canton, null means all regions
  * @property dateRange Selected date range as timestamps, null means all dates
  * @property hideSoldOut Whether to hide sold out events
+ * @property selectedTags Set of tags to filter events by, empty set means no tag filter
+ * @property hasActiveFilters Indicates whether any filter criteria is currently active
  */
 data class EventFilters(
     val region: String? = null,
     val dateRange: ClosedRange<Long>? = null,
     val hideSoldOut: Boolean = false,
+    val selectedTags: Set<String> = emptySet()
 ) {
+  /**
+   * Indicates whether any filter criteria is currently active.
+   *
+   * Returns true if any of the following conditions are met:
+   * - [region] is not null
+   * - [dateRange] is not null
+   * - [hideSoldOut] is true
+   * - [selectedTags] is not empty
+   */
   val hasActiveFilters: Boolean
-    get() = region != null || dateRange != null || hideSoldOut
+    get() = region != null || dateRange != null || hideSoldOut || selectedTags.isNotEmpty()
+}
+
+object TagCategories {
+  const val THEMES = "Theme"
+  const val FORMATS = "Format"
+  const val SETTINGS = "Setting & Cost"
+
+  val ALL_CATEGORIES = listOf(THEMES, FORMATS, SETTINGS)
+
+  fun getTagsByCategory(category: String): List<String> {
+    return EventTag.categories[category]?.map { it.displayValue } ?: emptyList()
+  }
 }
 
 // Swiss regions constants
