@@ -18,47 +18,40 @@ class MembershipRepositoryFirebase : MembershipRepository {
       orgId: String,
       role: OrganizationRole
   ): Result<String> = runCatching {
-    // Check if membership already exists
-    val existingMembership =
-        membershipsCollection
-            .whereEqualTo("userId", userId)
-            .whereEqualTo("orgId", orgId)
-            .limit(1)
-            .get()
-            .await()
+    val membershipId = "${orgId}_${userId}"
+    val docRef = membershipsCollection.document(membershipId)
 
-    if (!existingMembership.isEmpty) {
+    // Check if membership already exists
+    val snapshot = docRef.get().await()
+    if (snapshot.exists()) {
       throw IllegalStateException(
           "Membership already exists for user $userId in organization $orgId")
     }
 
-    val docRef = membershipsCollection.document()
     val membership =
         Membership(
-            membershipId = docRef.id,
+            membershipId = membershipId,
             userId = userId,
             orgId = orgId,
             role = role,
             createdAt = null,
             updatedAt = null)
     docRef.set(membership).await()
-    docRef.id
+    membershipId
   }
 
   override suspend fun removeMembership(userId: String, orgId: String): Result<Unit> = runCatching {
-    val querySnapshot =
-        membershipsCollection
-            .whereEqualTo("userId", userId)
-            .whereEqualTo("orgId", orgId)
-            .limit(1)
-            .get()
-            .await()
+    val membershipId = "${orgId}_${userId}"
+    val docRef = membershipsCollection.document(membershipId)
 
-    if (querySnapshot.isEmpty) {
+    // We can verify existence first if we want to throw specific error,
+    // or just delete. Previous logic threw error, so we keep that behavior.
+    val snapshot = docRef.get().await()
+    if (!snapshot.exists()) {
       throw NoSuchElementException("Membership not found for user $userId in organization $orgId")
     }
 
-    querySnapshot.documents.first().reference.delete().await()
+    docRef.delete().await()
   }
 
   override suspend fun updateMembership(
@@ -66,21 +59,15 @@ class MembershipRepositoryFirebase : MembershipRepository {
       orgId: String,
       newRole: OrganizationRole
   ): Result<Unit> = runCatching {
-    val querySnapshot =
-        membershipsCollection
-            .whereEqualTo("userId", userId)
-            .whereEqualTo("orgId", orgId)
-            .limit(1)
-            .get()
-            .await()
+    val membershipId = "${orgId}_${userId}"
+    val docRef = membershipsCollection.document(membershipId)
 
-    if (querySnapshot.isEmpty) {
+    val snapshot = docRef.get().await()
+    if (!snapshot.exists()) {
       throw NoSuchElementException("Membership not found for user $userId in organization $orgId")
     }
 
-    querySnapshot.documents
-        .first()
-        .reference
+    docRef
         .update(mapOf("role" to newRole.name, "updatedAt" to FieldValue.serverTimestamp()))
         .await()
   }
@@ -113,18 +100,20 @@ class MembershipRepositoryFirebase : MembershipRepository {
       roles: List<OrganizationRole>
   ): Boolean =
       runCatching {
-            val roleNames = roles.map { it.name }
+            val membershipId = "${orgId}_${userId}"
+            val snapshot = membershipsCollection.document(membershipId).get().await()
 
-            val snapshot =
-                membershipsCollection
-                    .whereEqualTo("userId", userId)
-                    .whereEqualTo("orgId", orgId)
-                    .whereIn("role", roleNames)
-                    .limit(1)
-                    .get()
-                    .await()
+            if (!snapshot.exists()) return@runCatching false
 
-            !snapshot.isEmpty
+            val roleStr = snapshot.getString("role") ?: return@runCatching false
+            val role =
+                try {
+                  OrganizationRole.valueOf(roleStr)
+                } catch (e: IllegalArgumentException) {
+                  return@runCatching false
+                }
+
+            roles.contains(role)
           }
           .getOrDefault(false)
 
