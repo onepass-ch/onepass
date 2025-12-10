@@ -50,6 +50,7 @@ class OrganizationTest {
     val roles = OrganizationRole.values()
     assertEquals(3, roles.size)
     assertTrue(roles.contains(OrganizationRole.OWNER))
+    assertTrue(roles.contains(OrganizationRole.ADMIN))
     assertTrue(roles.contains(OrganizationRole.MEMBER))
     assertTrue(roles.contains(OrganizationRole.STAFF))
   }
