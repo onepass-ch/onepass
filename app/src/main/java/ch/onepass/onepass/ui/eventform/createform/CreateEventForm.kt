@@ -23,7 +23,6 @@ import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
 import ch.onepass.onepass.ui.theme.DefaultBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
-import com.mapbox.maps.extension.style.expressions.dsl.generated.color
 
 @Composable
 fun EventFormScaffold(
