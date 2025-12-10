@@ -120,7 +120,6 @@ fun EditOrganizationScreen(
           } else if (uiState.organization != null) {
             // Show the organization edit form
             OrganizerForm(
-                title = "Edit Organization",
                 formState = formState,
                 countryList = countryList,
                 prefixDisplayText = formState.contactPhonePrefix.value,
@@ -135,7 +134,7 @@ fun EditOrganizationScreen(
                 onDropdownDismiss = { prefixDropdownExpanded = false },
                 onSubmit = {
                   val data = OrganizationEditorData.fromForm(organizationId, formState)
-                  viewModel.updateOrganization(data)
+                  viewModel.updateOrganization(data, formViewModel)
                 },
                 submitText = "Update",
                 viewModel = formViewModel,
