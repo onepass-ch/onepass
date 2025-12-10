@@ -48,7 +48,7 @@ class OrganizationTest {
   @Test
   fun organizationRoleEnumHasAllExpectedValues() {
     val roles = OrganizationRole.values()
-    assertEquals(3, roles.size)
+    assertEquals(4, roles.size)
     assertTrue(roles.contains(OrganizationRole.OWNER))
     assertTrue(roles.contains(OrganizationRole.ADMIN))
     assertTrue(roles.contains(OrganizationRole.MEMBER))
