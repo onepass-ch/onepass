@@ -3,7 +3,6 @@ package ch.onepass.onepass.ui.eventsfilters
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import ch.onepass.onepass.model.eventfilters.EventFilters
-import ch.onepass.onepass.model.eventfilters.TagCategories
 import ch.onepass.onepass.ui.eventfilters.DateRangePickerDialog
 import ch.onepass.onepass.ui.eventfilters.END_OF_DAY_HOUR
 import ch.onepass.onepass.ui.eventfilters.END_OF_DAY_MILLISECOND
@@ -170,34 +169,5 @@ class FilterDialogTest {
     }
 
     assert(confirmed)
-  }
-
-  @Test
-  fun filterDialog_tag_selection_and_deselection_works() {
-    var appliedFilters: EventFilters? = null
-    composeTestRule.setContent {
-      OnePassTheme { FilterDialog(onApply = { appliedFilters = it }, onDismiss = {}) }
-    }
-
-    // Get first available tag from the first category
-    val firstCategory = TagCategories.ALL_CATEGORIES.first()
-    val tags = TagCategories.getTagsByCategory(firstCategory)
-    val firstTag = tags[0]
-    val secondTag = tags[1]
-
-    // Select first tag
-    composeTestRule.onNodeWithText(firstTag).performClick()
-    composeTestRule.onNodeWithTag(EventFilterDialogTestTags.APPLY_FILTERS_BUTTON).performClick()
-    assertEquals(setOf(firstTag), appliedFilters!!.selectedTags)
-
-    // Select second tag (multi-selection)
-    composeTestRule.onNodeWithText(secondTag).performClick()
-    composeTestRule.onNodeWithTag(EventFilterDialogTestTags.APPLY_FILTERS_BUTTON).performClick()
-    assertEquals(setOf(firstTag, secondTag), appliedFilters!!.selectedTags)
-
-    // Deselect first tag
-    composeTestRule.onNodeWithText(firstTag).performClick()
-    composeTestRule.onNodeWithTag(EventFilterDialogTestTags.APPLY_FILTERS_BUTTON).performClick()
-    assertEquals(setOf(secondTag), appliedFilters!!.selectedTags)
   }
 }

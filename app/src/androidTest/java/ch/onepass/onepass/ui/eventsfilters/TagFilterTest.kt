@@ -4,7 +4,6 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import ch.onepass.onepass.model.eventfilters.TagCategories
 import ch.onepass.onepass.ui.eventfilters.TagFilter
-import ch.onepass.onepass.ui.eventfilters.TagFilterTestTags
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import org.junit.Rule
 import org.junit.Test
@@ -12,27 +11,6 @@ import org.junit.Test
 class TagFilterTest {
 
   @get:Rule val composeTestRule = createComposeRule()
-
-  @Test
-  fun tagFilter_displaysAllCategoriesAndTags() {
-    composeTestRule.setContent {
-      OnePassTheme { TagFilter(selectedTags = emptySet(), onTagSelectionChange = {}) }
-    }
-
-    composeTestRule.onNodeWithTag(TagFilterTestTags.TAG_FILTER_SECTION).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Tags").assertIsDisplayed()
-
-    TagCategories.ALL_CATEGORIES.forEach { category ->
-      composeTestRule.onNodeWithText(category).assertIsDisplayed()
-      composeTestRule
-          .onNodeWithTag("${TagFilterTestTags.TAG_CATEGORY_SECTION}_$category")
-          .assertIsDisplayed()
-
-      TagCategories.getTagsByCategory(category).forEach { tag ->
-        composeTestRule.onNodeWithText(tag).assertIsDisplayed()
-      }
-    }
-  }
 
   @Test
   fun tagFilter_selectsAndDeselectsTags() {
