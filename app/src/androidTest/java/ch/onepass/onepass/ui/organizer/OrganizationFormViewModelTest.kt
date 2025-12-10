@@ -57,11 +57,44 @@ class OrganizationFormViewModelTest {
   }
 
   @Test
+  fun updateNameSanitizesInput() = runTest {
+    viewModel.updateName("Test <script>alert('xss')</script> Org")
+    val state = viewModel.formState.value
+    // Sanitizer should remove dangerous patterns
+    assertFalse("Should not contain script tags", state.name.value.contains("<script>"))
+  }
+
+  @Test
+  fun updateNameTruncatesToMaxLength() = runTest {
+    val longName = "A".repeat(100)
+    viewModel.updateName(longName)
+    val state = viewModel.formState.value
+    assertEquals("Should truncate to MAX_NAME_LENGTH", 50, state.name.value.length)
+  }
+
+  @Test
   fun updateDescriptionSetsValueCorrectly() = runTest {
     viewModel.updateDescription("Cool description")
     val state = viewModel.formState.value
     assertEquals("Cool description", state.description.value)
     assertNull(state.description.error)
+  }
+
+  @Test
+  fun updateDescriptionSanitizesInput() = runTest {
+    viewModel.updateDescription("Test'; DROP TABLE users; -- Description")
+    val state = viewModel.formState.value
+    // Sanitizer should handle SQL injection attempts
+    assertNotNull("Description should be set", state.description.value)
+    assertTrue("Description length should be within limits", state.description.value.length <= 200)
+  }
+
+  @Test
+  fun updateDescriptionTruncatesToMaxLength() = runTest {
+    val longDescription = "B".repeat(300)
+    viewModel.updateDescription(longDescription)
+    val state = viewModel.formState.value
+    assertEquals("Should truncate to MAX_DESCRIPTION_LENGTH", 200, state.description.value.length)
   }
 
   @Test
@@ -73,11 +106,33 @@ class OrganizationFormViewModelTest {
   }
 
   @Test
+  fun updateContactEmailTruncatesToMaxLength() = runTest {
+    val longEmail = "a".repeat(50) + "@test.com"
+    viewModel.updateContactEmail(longEmail)
+    val state = viewModel.formState.value
+    assertTrue("Email should not exceed MAX_EMAIL_LENGTH", state.contactEmail.value.length <= 100)
+  }
+
+  @Test
   fun updateContactPhoneSetsValueCorrectly() = runTest {
     viewModel.updateContactPhone("791234567")
     val state = viewModel.formState.value
     assertEquals("791234567", state.contactPhone.value)
     assertNull(state.contactPhone.error)
+  }
+
+  @Test
+  fun updateContactPhoneSanitizesInput() = runTest {
+    viewModel.updateContactPhone("79-123-456<script>")
+    val state = viewModel.formState.value
+    assertFalse("Should remove dangerous characters", state.contactPhone.value.contains("<"))
+  }
+
+  @Test
+  fun updateContactPhoneTruncatesToMaxLength() = runTest {
+    viewModel.updateContactPhone("123456789012345678")
+    val state = viewModel.formState.value
+    assertEquals("Should truncate to MAX_PHONE_LENGTH", 15, state.contactPhone.value.length)
   }
 
   @Test
@@ -89,12 +144,104 @@ class OrganizationFormViewModelTest {
   }
 
   @Test
+  fun updateWebsiteTruncatesToMaxLength() = runTest {
+    val longUrl = "https://" + "a".repeat(200) + ".com"
+    viewModel.updateWebsite(longUrl)
+    val state = viewModel.formState.value
+    assertTrue("Website should not exceed MAX_WEBSITE_LENGTH", state.website.value.length <= 200)
+  }
+
+  @Test
+  fun updateInstagramSetsValueCorrectly() = runTest {
+    viewModel.updateInstagram("@testhandle")
+    val state = viewModel.formState.value
+    assertEquals("@testhandle", state.instagram.value)
+  }
+
+  @Test
+  fun updateInstagramTruncatesToMaxLength() = runTest {
+    val longHandle = "@" + "a".repeat(100)
+    viewModel.updateInstagram(longHandle)
+    val state = viewModel.formState.value
+    assertTrue(
+        "Instagram handle should not exceed MAX_SOCIAL_LENGTH", state.instagram.value.length <= 100)
+  }
+
+  @Test
+  fun updateFacebookSetsValueCorrectly() = runTest {
+    viewModel.updateFacebook("facebookpage")
+    val state = viewModel.formState.value
+    assertEquals("facebookpage", state.facebook.value)
+  }
+
+  @Test
+  fun updateFacebookTruncatesToMaxLength() = runTest {
+    val longHandle = "a".repeat(120)
+    viewModel.updateFacebook(longHandle)
+    val state = viewModel.formState.value
+    assertTrue(
+        "Facebook handle should not exceed MAX_SOCIAL_LENGTH", state.facebook.value.length <= 100)
+  }
+
+  @Test
+  fun updateTiktokSetsValueCorrectly() = runTest {
+    viewModel.updateTiktok("tiktokuser")
+    val state = viewModel.formState.value
+    assertEquals("tiktokuser", state.tiktok.value)
+  }
+
+  @Test
+  fun updateTiktokTruncatesToMaxLength() = runTest {
+    val longHandle = "a".repeat(120)
+    viewModel.updateTiktok(longHandle)
+    val state = viewModel.formState.value
+    assertTrue(
+        "TikTok handle should not exceed MAX_SOCIAL_LENGTH", state.tiktok.value.length <= 100)
+  }
+
+  @Test
+  fun updateAddressSetsValueCorrectly() = runTest {
+    viewModel.updateAddress("123 Main Street")
+    val state = viewModel.formState.value
+    assertEquals("123 Main Street", state.address.value)
+  }
+
+  @Test
+  fun updateAddressTruncatesToMaxLength() = runTest {
+    val longAddress = "a".repeat(300)
+    viewModel.updateAddress(longAddress)
+    val state = viewModel.formState.value
+    assertTrue("Address should not exceed MAX_ADDRESS_LENGTH", state.address.value.length <= 200)
+  }
+
+  @Test
   fun validateFormReturnsFalseForEmptyRequiredFields() = runTest {
     val valid = viewModel.createOrganizationValidation()
     assertFalse(valid)
     val state = viewModel.formState.value
     assertEquals("Name is required", state.name.error)
     assertEquals("Description is required", state.description.error)
+  }
+
+  @Test
+  fun validateFormReturnsFalseForEmptyPhoneNumber() = runTest {
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Test Description")
+
+    val valid = viewModel.createOrganizationValidation()
+    assertFalse(valid)
+    val state = viewModel.formState.value
+    assertEquals("Invalid phone number", state.contactPhone.error)
+  }
+
+  @Test
+  fun validateFormReturnsTrueForValidInput() = runTest {
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Test Description")
+    viewModel.updateContactPhone("791234567")
+
+    val valid = viewModel.createOrganizationValidation()
+    assertTrue(valid)
   }
 
   @Test

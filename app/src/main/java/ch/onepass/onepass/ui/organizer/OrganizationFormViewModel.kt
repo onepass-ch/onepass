@@ -180,28 +180,29 @@ class OrganizationFormViewModel(
    * @return An error message if invalid, null otherwise
    */
   private fun validateEmail(value: String): String? {
-    if (value.isBlank()) return null
+    if (value.isBlank()) return "Email is required"
     return if (!ValidationUtils.isValidEmail(value)) {
       "Invalid email"
     } else null
   }
 
-  /**
-   * Validates the phone field
-   *
-   * @param value The phone number to validate
-   * @return An error message if invalid, null otherwise
-   */
-  private fun validatePhone(value: String): String? {
-    val countryCode = _selectedCountryIndex.value?.let { _countryList.value.getOrNull(it)?.second }
-    val fullNumber = if (countryCode != null) "+$countryCode$value" else value
+    /**
+     * Validates the phone field
+     *
+     * @param value The phone number to validate
+     * @return An error message if invalid, null otherwise
+     */
+    private fun validatePhone(value: String): String? {
+        val countryCode = _selectedCountryIndex.value?.let { _countryList.value.getOrNull(it)?.second }
+        val fullNumber = if (countryCode != null) "+$countryCode$value" else value
 
-    return if (countryCode == null ||
-        value.isBlank() ||
-        !ValidationUtils.isValidPhone(fullNumber)) {
-      "Invalid phone number"
-    } else null
-  }
+        return when {
+            countryCode == null -> "Phone country code is required"
+            value.isBlank() -> "Phone number is required"
+            !ValidationUtils.isValidPhone(fullNumber) -> "Invalid phone number"
+            else -> null
+        }
+    }
 
   /**
    * Validates the website field

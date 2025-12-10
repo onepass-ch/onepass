@@ -87,7 +87,6 @@ fun CreateOrganizationScreen(
       snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
         Box(modifier = Modifier.fillMaxSize().background(colorScheme.background).padding(padding)) {
           OrganizerForm(
-              title = "Create an Organization",
               formState = formState,
               countryList = countryList,
               prefixDisplayText = selectedCountryCode,
