@@ -55,6 +55,10 @@ class MembershipTest {
     val staffMembership =
         Membership(userId = "user3", orgId = "org3", role = OrganizationRole.STAFF)
     assertEquals(OrganizationRole.STAFF, staffMembership.role)
+
+    val adminMembership =
+        Membership(userId = "user4", orgId = "org4", role = OrganizationRole.ADMIN)
+    assertEquals(OrganizationRole.ADMIN, adminMembership.role)
   }
 
   @Test
