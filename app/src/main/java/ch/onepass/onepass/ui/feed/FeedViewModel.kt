@@ -8,6 +8,7 @@ import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.ui.event.EventCardViewModel
+import ch.onepass.onepass.utils.EventFilteringUtils.applyFiltersLocally
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.async
@@ -151,28 +152,13 @@ open class FeedViewModel(
     _uiState.update { it.copy(events = filteredEvents) }
   }
 
-  /** Apply filters locally to the given events */
-  private fun applyFiltersLocally(
-      events: List<Event>,
-      filters: EventFilters,
-  ): List<Event> {
-    return events.filter { event ->
-      val regionMatch =
-          filters.region?.let { region ->
-            event.location?.region.equals(region, ignoreCase = true) ||
-                event.location?.name?.contains(region, ignoreCase = true) == true
-          } ?: true
-      val dateMatch =
-          filters.dateRange?.let { range ->
-            event.startTime?.toDate()?.time?.let { eventTime -> eventTime in range } ?: false
-          } ?: true
-      val availabilityMatch = !filters.hideSoldOut || !event.isSoldOut
-      regionMatch && dateMatch && availabilityMatch
-    }
-  }
-
-  /** Refreshes the events list manually. */
-  open fun refreshEvents() {
+  /**
+   * Refreshes the events list manually.
+   *
+   * @param currentFilters Optional filter criteria to apply after refreshing. If null, empty
+   *   filters are applied (showing all events).
+   */
+  open fun refreshEvents(currentFilters: EventFilters? = null) {
     _uiState.update { it.copy(isRefreshing = true, error = null) }
 
     viewModelScope.launch {
@@ -190,7 +176,11 @@ open class FeedViewModel(
             val recommended = recommendEvents(events, likedIds)
 
             _allEvents.value = recommended
-            val limited = recommended.take(LOADED_EVENTS_LIMIT)
+
+            // Apply filters if provided, otherwise use empty filters
+            val filtersToApply = currentFilters ?: EventFilters()
+            val filteredEvents = applyFiltersLocally(recommended, filtersToApply)
+            val limited = filteredEvents.take(LOADED_EVENTS_LIMIT)
 
             _uiState.update { it.copy(events = limited, isRefreshing = false, error = null) }
           }
