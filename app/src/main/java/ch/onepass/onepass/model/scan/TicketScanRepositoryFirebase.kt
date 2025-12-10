@@ -60,7 +60,6 @@ class TicketScanRepositoryFirebase : TicketScanRepository {
         val reason =
             runCatching { ScanDecision.Reason.valueOf(reasonStr) }
                 .getOrDefault(ScanDecision.Reason.UNKNOWN)
-
         ScanDecision.Rejected(
             reason = reason, scannedAtSeconds = (data[KEY_SCANNED_AT] as? Number)?.toLong())
       }

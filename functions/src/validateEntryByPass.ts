@@ -10,14 +10,13 @@ const db = admin.firestore();
  *
  * Security Flow:
  * 1. Authenticates the scanner (must be logged in)
- * 2. Authorizes the scanner (must have STAFF, SECURITY, ADMIN, or ORGANIZER role)
- * 3. Parses and validates the QR code format
- * 4. Verifies the Ed25519 cryptographic signature
- * 5. Checks the pass status (active, not revoked)
- * 6. Finds the corresponding ticket for the event
- * 7. Validates the ticket hasn't been redeemed
- * 8. Prevents replay attacks (30-second window)
- * 9. Atomically updates ticket, pass, event counters, and validation logs
+ * 2. Parses and validates the QR code format
+ * 3. Verifies the Ed25519 cryptographic signature
+ * 4. Checks the pass status (active, not revoked)
+ * 5. Finds the corresponding ticket for the event
+ * 6. Validates the ticket hasn't been redeemed
+ * 7. Prevents replay attacks (30-second window)
+ * 8. Atomically updates ticket, pass, event counters, and validation logs
  *
  * @param data.qrText - Raw QR code string in format: "onepass:user:v1.<payload>.<signature>"
  * @param data.eventId - The event ID to validate entry for
@@ -28,7 +27,6 @@ const db = admin.firestore();
  * @throws HttpsError
  * - "unauthenticated": Scanner not logged in
  * - "invalid-argument": Missing qrText or eventId
- * - "permission-denied": Scanner doesn't have required role
  *
  * @example
  * // Accepted response
@@ -68,26 +66,10 @@ export const validateEntryByPass = functions.https.onCall(
       );
     }
 
-    // ============================================================================
-    // 2. AUTHORIZATION CHECK
-    // ============================================================================
-    const scannerDoc = await db.collection("users").doc(scannerUid).get();
-    const scannerData = scannerDoc.data();
-    const scannerRole = scannerData?.role;
-
-    const allowedRoles = ["STAFF", "SECURITY", "ADMIN", "ORGANIZER"];
-    if (!allowedRoles.includes(scannerRole)) {
-      logger.warn(
-        `Unauthorized scan attempt by ${scannerUid} (role: ${scannerRole})`
-      );
-      throw new functions.https.HttpsError(
-        "permission-denied",
-        "Not authorized to scan tickets"
-      );
-    }
+    const scannerRole = "SCANNER";
 
     logger.info(
-      `Scanner ${scannerUid} (${scannerRole}) validating entry for event ${eventId}`
+      `Scanner ${scannerUid} validating entry for event ${eventId}`
     );
 
     /**
@@ -121,7 +103,7 @@ export const validateEntryByPass = functions.https.onCall(
     };
 
     // ============================================================================
-    // 3. PARSE QR CODE
+    // 2. PARSE QR CODE
     // ============================================================================
     const prefix = "onepass:user:v1.";
     if (!qrText.startsWith(prefix)) {
@@ -140,7 +122,7 @@ export const validateEntryByPass = functions.https.onCall(
     const [payloadB64Url, signatureB64Url] = parts;
 
     // ============================================================================
-    // 4. DECODE PAYLOAD (Base64URL with proper padding)
+    // 3. DECODE PAYLOAD (Base64URL with proper padding)
     // ============================================================================
     let payloadJson: string;
     let payload: any;
@@ -171,7 +153,7 @@ export const validateEntryByPass = functions.https.onCall(
     }
 
     // ============================================================================
-    // 5. VERIFY CRYPTOGRAPHIC SIGNATURE (Ed25519)
+    // 4. VERIFY CRYPTOGRAPHIC SIGNATURE (Ed25519)
     // ============================================================================
     const isValid = await verifySignature(payloadJson, signatureB64Url, kid);
     if (!isValid) {
@@ -181,7 +163,7 @@ export const validateEntryByPass = functions.https.onCall(
     }
 
     // ============================================================================
-    // 6. CHECK PASS STATUS
+    // 5. CHECK PASS STATUS
     // ============================================================================
     const userDoc = await db.collection("users").doc(uid).get();
     const pass = userDoc.data()?.pass;
@@ -193,7 +175,7 @@ export const validateEntryByPass = functions.https.onCall(
     }
 
     // ============================================================================
-    // 7. FIND TICKET FOR EVENT
+    // 6. FIND TICKET FOR EVENT
     // ============================================================================
     const ticketsSnap = await db
       .collection("tickets")
@@ -214,7 +196,7 @@ export const validateEntryByPass = functions.https.onCall(
     const ticket = ticketDoc.data();
 
     // ============================================================================
-    // 8. CHECK IF ALREADY REDEEMED
+    // 7. CHECK IF ALREADY REDEEMED
     // ============================================================================
     if (ticket.state === "REDEEMED") {
       const redeemedAt = ticket.redeemedAt?.seconds;
@@ -231,7 +213,7 @@ export const validateEntryByPass = functions.https.onCall(
     }
 
     // ============================================================================
-    // 9. ANTI-REPLAY PROTECTION (30-second window)
+    // 8. ANTI-REPLAY PROTECTION (30-second window)
     // ============================================================================
     const now = Date.now();
     const recentValidations = await db
@@ -249,7 +231,7 @@ export const validateEntryByPass = functions.https.onCall(
     }
 
     // ============================================================================
-    // 10. ATOMIC TRANSACTION (Update ticket, pass, event, validations)
+    // 9. ATOMIC TRANSACTION (Update ticket, pass, event, validations)
     // ============================================================================
     const scannedAtSeconds = Math.floor(now / 1000);
 
