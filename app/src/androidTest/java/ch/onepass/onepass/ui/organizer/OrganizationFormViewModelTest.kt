@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
@@ -104,9 +105,8 @@ class OrganizationFormViewModelTest {
     val finalState = viewModel.uiState.filter { it.errorMessage != null }.first()
 
     assertNull(finalState.successOrganizationId)
-    assertEquals("Please fix errors", finalState.errorMessage)
+    assertEquals("Please fix validation errors", finalState.errorMessage)
   }
-
   // ===== NEW TESTS FOR IMAGE FUNCTIONALITY =====
 
   @Test
@@ -276,6 +276,83 @@ class OrganizationFormViewModelTest {
     assertNull(finalState.errorMessage)
   }
 
+  @Test
+  fun clearSuccess_clearsSuccessState() = runTest {
+    storageRepository.shouldSucceed = true
+    viewModel.updateName("Test")
+    viewModel.updateDescription("Desc")
+    viewModel.updateContactPhone("123")
+
+    viewModel.createOrganization("user1")
+
+    // Wait for success
+    val successState = viewModel.uiState.filter { it.successOrganizationId != null }.first()
+    assertNotNull(successState.successOrganizationId)
+
+    // Clear success
+    viewModel.clearSuccess()
+
+    val clearedState = viewModel.uiState.value
+    assertNull(clearedState.successOrganizationId)
+  }
+
+  @Test
+  fun clearError_clearsErrorMessage() = runTest {
+    viewModel.updateName("") // Invalid form
+    viewModel.createOrganization("user1")
+
+    val errorState = viewModel.uiState.filter { it.errorMessage != null }.first()
+    assertNotNull(errorState.errorMessage)
+
+    viewModel.clearError()
+
+    val clearedState = viewModel.uiState.value
+    assertNull(clearedState.errorMessage)
+  }
+
+  @Test
+  fun resetForm_resetsStateAndUi() = runTest {
+    viewModel.updateName("Dirty Name")
+    viewModel.createOrganization("user1")
+
+    viewModel.resetForm()
+
+    val formState = viewModel.formState.value
+    val uiState = viewModel.uiState.value
+
+    assertEquals("", formState.name.value)
+    assertNull(uiState.successOrganizationId)
+    assertNull(uiState.errorMessage)
+    assertFalse(uiState.isLoading)
+  }
+
+  @Test
+  fun createOrganization_doesNotRun_ifAlreadyLoading() = runTest {
+    // Simulate a slow repository to test double submission
+    repository.shouldDelay = true
+    repository.delayMs = 500
+
+    viewModel.updateName("Slow Org")
+    viewModel.updateDescription("Desc")
+    viewModel.updateContactPhone("123")
+
+    // Launch first creation
+    val job = launch { viewModel.createOrganization("user1") }
+
+    // Wait for loading state to be true
+    val loadingState = viewModel.uiState.filter { it.isLoading }.first()
+    assertTrue(loadingState.isLoading)
+
+    // Attempt second creation immediately
+    viewModel.createOrganization("user1")
+
+    job.join()
+    repository.shouldDelay = false
+
+    // Repository should only be called once
+    assertEquals(1, repository.createCallCount)
+  }
+
   private fun OrganizationFormViewModel.createOrganizationValidation(): Boolean {
     val method = OrganizationFormViewModel::class.java.getDeclaredMethod("validateForm")
     method.isAccessible = true
@@ -287,8 +364,13 @@ class FakeOrganizationRepository : OrganizationRepository {
 
   var createdOrganization: Organization? = null
   var shouldFail = false
+  var shouldDelay = false
+  var delayMs = 0L
+  var createCallCount = 0
 
   override suspend fun createOrganization(organization: Organization): Result<String> {
+    createCallCount++
+    if (shouldDelay) kotlinx.coroutines.delay(delayMs)
     return if (shouldFail) Result.failure(Exception("Failed"))
     else {
       this.createdOrganization = organization
