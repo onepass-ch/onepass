@@ -674,6 +674,7 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
             color =
                 when (role) {
                   OrganizationRole.OWNER -> EventDateColor
+                  OrganizationRole.ADMIN -> MaterialTheme.colorScheme.tertiary
                   OrganizationRole.MEMBER -> MaterialTheme.colorScheme.primary
                   OrganizationRole.STAFF -> MaterialTheme.colorScheme.secondary
                 }) {
