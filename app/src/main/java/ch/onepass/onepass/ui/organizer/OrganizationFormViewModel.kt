@@ -73,10 +73,12 @@ data class OrganizationFormState(
 /**
  * Data class representing the UI state of the Organizer form.
  *
+ * @param isLoading Whether an organization creation operation is in progress.
  * @param successOrganizationId The ID of the created organization on success.
  * @param errorMessage An optional error message if an error occurred.
  */
-class OrganizationFormUiState(
+data class OrganizationFormUiState(
+    val isLoading: Boolean = false,
     val successOrganizationId: String? = null,
     val errorMessage: String? = null
 )
@@ -100,7 +102,8 @@ class OrganizationFormViewModel(
   private val _formState = MutableStateFlow(OrganizationFormState())
   /** Public form state */
   val formState: StateFlow<OrganizationFormState> = _formState.asStateFlow()
-  /** Public UI state */
+
+  /** Private UI state */
   private val _uiState = MutableStateFlow(OrganizationFormUiState())
   /** Public UI state */
   val uiState: StateFlow<OrganizationFormUiState> = _uiState.asStateFlow()
@@ -537,20 +540,26 @@ class OrganizationFormViewModel(
    * @param ownerId The user ID of the organization owner
    */
   fun createOrganization(ownerId: String) {
+    // Prevent multiple submissions
+    if (_uiState.value.isLoading) return
+
     viewModelScope.launch {
       // Validate form before submission
       if (!validateForm()) {
-        _uiState.value = OrganizationFormUiState(errorMessage = "Please fix errors")
+        _uiState.value = _uiState.value.copy(errorMessage = "Please fix validation errors")
         return@launch
       }
 
-      _uiState.value = OrganizationFormUiState()
+      // Set loading state
+      _uiState.value = _uiState.value.copy(isLoading = true, errorMessage = null)
+
       try {
         val createdOrgId = createOrganizationEntity(ownerId) ?: return@launch
         handleImageUploads(createdOrgId) ?: return@launch
         addOwnerMembership(createdOrgId, ownerId)
       } catch (e: Exception) {
-        _uiState.value = OrganizationFormUiState(errorMessage = e.message ?: "Unknown error")
+        _uiState.value =
+            _uiState.value.copy(isLoading = false, errorMessage = e.message ?: "Unknown error")
       }
     }
   }
@@ -577,13 +586,14 @@ class OrganizationFormViewModel(
             facebook = s.facebook.value,
             tiktok = s.tiktok.value,
             address = s.address.value,
-            profileImageUrl = null, // No images yet (this fixes the orga id issue)
+            profileImageUrl = null, // No images yet
             coverImageUrl = null) // No images yet
 
     val createResult = repository.createOrganization(org)
     return createResult.getOrElse {
       _uiState.value =
-          OrganizationFormUiState(errorMessage = it.message ?: "The organization creation failed")
+          _uiState.value.copy(
+              isLoading = false, errorMessage = it.message ?: "Organization creation failed")
       null
     }
   }
@@ -620,14 +630,16 @@ class OrganizationFormViewModel(
     val profileImageUrl =
         uploadProfileImage(organizationId).getOrElse {
           _uiState.value =
-              OrganizationFormUiState(errorMessage = it.message ?: "Failed to upload profile image")
+              _uiState.value.copy(
+                  isLoading = false, errorMessage = it.message ?: "Failed to upload profile image")
           return false
         }
 
     if (profileImageUrl != null) {
       repository.updateProfileImage(organizationId, profileImageUrl).getOrElse {
         _uiState.value =
-            OrganizationFormUiState(errorMessage = it.message ?: "Failed to update profile image")
+            _uiState.value.copy(
+                isLoading = false, errorMessage = it.message ?: "Failed to update profile image")
         return false
       }
     }
@@ -645,14 +657,16 @@ class OrganizationFormViewModel(
     val coverImageUrl =
         uploadCoverImage(organizationId).getOrElse {
           _uiState.value =
-              OrganizationFormUiState(errorMessage = it.message ?: "Failed to upload cover image")
+              _uiState.value.copy(
+                  isLoading = false, errorMessage = it.message ?: "Failed to upload cover image")
           return false
         }
 
     if (coverImageUrl != null) {
       repository.updateCoverImage(organizationId, coverImageUrl).getOrElse {
         _uiState.value =
-            OrganizationFormUiState(errorMessage = it.message ?: "Failed to update cover image")
+            _uiState.value.copy(
+                isLoading = false, errorMessage = it.message ?: "Failed to update cover image")
         return false
       }
     }
@@ -673,44 +687,33 @@ class OrganizationFormViewModel(
 
     membershipResult.fold(
         onSuccess = {
-          // Membership created successfully, now update the user profile.
-          updateUserOrganizationList(organizationId, ownerId)
+          // Membership created successfully
+          _uiState.value =
+              _uiState.value.copy(isLoading = true, successOrganizationId = organizationId)
         },
         onFailure = { error ->
           _uiState.value =
-              OrganizationFormUiState(
+              _uiState.value.copy(
+                  isLoading = false,
                   successOrganizationId = organizationId,
                   errorMessage =
                       "Organization created, but failed to add member: ${error.message ?: "Unknown error"}")
         })
   }
 
-  /**
-   * Updates the user's organization list after successful member addition
-   *
-   * @param organizationId The ID of the organization
-   * @param ownerId The ID of the owner user
-   */
-  private suspend fun updateUserOrganizationList(organizationId: String, ownerId: String) {
-    // With the refactored data model, memberships are persisted via `MembershipRepository` and
-    // organization membership queries no longer rely on a denormalized list on the user document.
-    // We simply expose the success state here once all membership-related operations have
-    // completed successfully.
-    _uiState.value = OrganizationFormUiState(successOrganizationId = organizationId)
-  }
-
   /** Resets the form to its initial empty state */
   fun resetForm() {
-    _formState.value = OrganizationFormState() // Reset to initial empty state
+    _formState.value = OrganizationFormState()
+    _uiState.value = OrganizationFormUiState()
   }
 
-  /** Clears any success state */
+  /** Clears success state */
   fun clearSuccess() {
-    _uiState.value = OrganizationFormUiState()
+    _uiState.value = _uiState.value.copy(successOrganizationId = null)
   }
 
-  /** Clears any error state */
+  /** Clears error state */
   fun clearError() {
-    _uiState.value = OrganizationFormUiState()
+    _uiState.value = _uiState.value.copy(errorMessage = null)
   }
 }

@@ -59,6 +59,8 @@ class EditEventFormViewModel(
 
   /** Updates the event with current form data */
   fun updateEvent() {
+    if (_uiState.value is EditEventUiState.Updating) return
+
     viewModelScope.launch {
       // Original event check first
       val original = originalEvent

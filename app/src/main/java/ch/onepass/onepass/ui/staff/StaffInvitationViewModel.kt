@@ -200,6 +200,8 @@ class StaffInvitationViewModel(
       return
     }
 
+    if (_uiState.value.isInviting || _uiState.value.invitedUserIds.contains(user.id)) return
+
     viewModelScope.launch {
       _uiState.value = _uiState.value.copy(isInviting = true, errorMessage = null)
 

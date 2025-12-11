@@ -7,10 +7,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -181,13 +183,29 @@ fun PrefixPhoneRow(
  * @param onClick Callback when the button is clicked
  * @param text Text to display on the button
  * @param modifier Optional modifier for styling
+ * @param isLoading When true, a loading indicator is shown and the button is disabled
+ * @param enabled Controls the enabled state of the button (takes precedence over isLoading)
  */
 @Composable
-fun SubmitButton(onClick: () -> Unit, text: String, modifier: Modifier = Modifier) {
+fun SubmitButton(
+    onClick: () -> Unit,
+    text: String,
+    modifier: Modifier = Modifier,
+    isLoading: Boolean = false,
+    enabled: Boolean = true
+) {
   Button(
       onClick = onClick,
       modifier = modifier.fillMaxWidth().height(48.dp),
+      enabled = enabled && !isLoading,
       colors = ButtonDefaults.buttonColors(containerColor = colorResource(id = R.color.primary))) {
-        Text(text, color = colorResource(id = R.color.on_background))
+        if (isLoading) {
+          CircularProgressIndicator(
+              modifier = Modifier.size(24.dp).testTag("submit_loading_indicator"),
+              color = colorResource(id = R.color.on_background),
+              strokeWidth = 2.dp)
+        } else {
+          Text(text, color = colorResource(id = R.color.on_background))
+        }
       }
 }
