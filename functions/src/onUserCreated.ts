@@ -15,13 +15,17 @@ export const onUserCreated = functions.auth.user().onCreate(async (user: any) =>
     const issuedAt = Math.floor(Date.now() / 1000);
     const version = 1;
 
-    const payloadObj = {
-      uid,
+    // ============================================================================
+    // CRITICAL: Use deterministic JSON serialization to ensure signature validity
+    // The order of fields MUST match the order used during verification
+    // ============================================================================
+    const payloadJson = JSON.stringify({
+      uid: uid,
       kid: key.kid,
       iat: issuedAt,
-      ver: version,
-    };
-    const payloadJson = JSON.stringify(payloadObj);
+      ver: version
+    });
+
     const signature = signPayload(payloadJson, key.privateKey);
 
     const pass = {
