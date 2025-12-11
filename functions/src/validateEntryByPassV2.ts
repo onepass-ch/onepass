@@ -80,7 +80,7 @@ export const validateEntryByPassV2 = functions.https.onCall(
    const scannerRole = scannerData?.role;
 
 
-   const allowedRoles = ["STAFF", "ADMIN", "OWNER"];
+   const allowedRoles = ["STAFF","ADMIN","OWNER"];
    if (!allowedRoles.includes(scannerRole)) {
      logger.warn(
        `Unauthorized scan attempt by ${scannerUid} (role: ${scannerRole})`

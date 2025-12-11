@@ -29,6 +29,7 @@ import kotlinx.coroutines.sync.Mutex
  * @property lastTicketId Last validated ticket ID
  * @property lastScannedAt Last scan timestamp from server
  * @property remaining Remaining event capacity
+ * @property validated Number of tickets validated in this session
  * @property status Current visual status
  */
 data class ScannerUiState(
@@ -37,23 +38,24 @@ data class ScannerUiState(
     val lastTicketId: String? = null,
     val lastScannedAt: Long? = null,
     val remaining: Int? = null,
+    val validated: Int = 0,
     val status: Status = Status.IDLE,
 ) {
-  enum class Status {
-    IDLE,
-    ACCEPTED,
-    REJECTED,
-    ERROR
-  }
+    enum class Status {
+        IDLE,
+        ACCEPTED,
+        REJECTED,
+        ERROR
+    }
 }
 
 /** One-shot UI effects for user feedback. */
 sealed interface ScannerEffect {
-  data class Accepted(val message: String) : ScannerEffect
+    data class Accepted(val message: String) : ScannerEffect
 
-  data class Rejected(val message: String) : ScannerEffect
+    data class Rejected(val message: String) : ScannerEffect
 
-  data class Error(val message: String) : ScannerEffect
+    data class Error(val message: String) : ScannerEffect
 }
 
 /**
@@ -87,216 +89,224 @@ class ScannerViewModel(
     coroutineScope: CoroutineScope? = null
 ) : ViewModel() {
 
-  init {
-    require(eventId.isNotBlank()) { "eventId required" }
-  }
-
-  private val _state = MutableStateFlow(ScannerUiState())
-  val state: StateFlow<ScannerUiState> = _state.asStateFlow()
-
-  private val _effects = MutableSharedFlow<ScannerEffect>(replay = 1, extraBufferCapacity = 1)
-  val effects = _effects.asSharedFlow()
-
-  private val recentScans = ConcurrentHashMap<String, Long>()
-  private val dedupeWindowMs = 2.seconds.inWholeMilliseconds
-
-  private val scanMutex = Mutex()
-
-  private val scope: CoroutineScope = coroutineScope ?: viewModelScope
-  private var cleanupJob: Job? = null
-  private var resetJob: Job? = null
-
-  init {
-    if (enableAutoCleanup) {
-      cleanupJob =
-          scope.launch {
-            while (isActive) {
-              delay(cleanupPeriodMs)
-              cleanupRecentScans()
-            }
-          }
+    init {
+        require(eventId.isNotBlank()) { "eventId required" }
     }
-  }
 
-  /** Removes expired entries from the deduplication cache. */
-  @VisibleForTesting
-  internal fun cleanupRecentScans() {
-    val now = clock()
-    recentScans.entries.removeIf { (_, timestamp) -> (now - timestamp) > dedupeWindowMs }
-  }
+    private val _state = MutableStateFlow(ScannerUiState())
+    val state: StateFlow<ScannerUiState> = _state.asStateFlow()
 
-  /**
-   * Main entry point called when a QR code is scanned.
-   *
-   * @param qrText Raw QR code string
-   */
-  fun onQrScanned(qrText: String) {
-    scope.launch {
-      if (!scanMutex.tryLock()) {
-        Log.d(TAG, "Scan already in progress, ignoring")
-        return@launch
-      }
+    private val _effects = MutableSharedFlow<ScannerEffect>(replay = 1, extraBufferCapacity = 1)
+    val effects = _effects.asSharedFlow()
 
-      try {
-        val qr = qrText.trim()
+    private val recentScans = ConcurrentHashMap<String, Long>()
+    private val dedupeWindowMs = 2.seconds.inWholeMilliseconds
 
-        val pass =
-            Pass.parseFromQr(qr).getOrElse { error ->
-              Log.w(TAG, "Invalid QR format: ${error.message}")
-              showRejection("Invalid QR format")
-              return@launch
+    private val scanMutex = Mutex()
+
+    private val scope: CoroutineScope = coroutineScope ?: viewModelScope
+    private var cleanupJob: Job? = null
+    private var resetJob: Job? = null
+
+    init {
+        if (enableAutoCleanup) {
+            cleanupJob =
+                scope.launch {
+                    while (isActive) {
+                        delay(cleanupPeriodMs)
+                        cleanupRecentScans()
+                    }
+                }
+        }
+    }
+
+    /** Removes expired entries from the deduplication cache. */
+    @VisibleForTesting
+    internal fun cleanupRecentScans() {
+        val now = clock()
+        recentScans.entries.removeIf { (_, timestamp) -> (now - timestamp) > dedupeWindowMs }
+    }
+
+    /**
+     * Main entry point called when a QR code is scanned.
+     *
+     * @param qrText Raw QR code string
+     */
+    fun onQrScanned(qrText: String) {
+        scope.launch {
+            if (!scanMutex.tryLock()) {
+                Log.d(TAG, "Scan already in progress, ignoring")
+                return@launch
             }
 
-        val uid = pass.uid
+            try {
+                val qr = qrText.trim()
 
-        if (isDuplicate(uid)) return@launch
+                val pass =
+                    Pass.parseFromQr(qr).getOrElse { error ->
+                        Log.w(TAG, "Invalid QR format: ${error.message}")
+                        showRejection("Invalid QR format")
+                        return@launch
+                    }
 
-        processValidation(qr, uid)
-      } finally {
-        scanMutex.unlock()
-      }
-    }
-  }
+                val uid = pass.uid
 
-  /**
-   * Checks if this uid was scanned recently within the deduplication window.
-   *
-   * @param uid User identifier
-   * @return true if this scan should be ignored
-   */
-  private fun isDuplicate(uid: String): Boolean {
-    val now = clock()
-    val last = recentScans[uid]
-    return if (last != null && (now - last) < dedupeWindowMs) {
-      Log.d(TAG, "Duplicate scan ignored for uid=$uid")
-      true
-    } else {
-      recentScans[uid] = now
-      cleanupRecentScans()
-      false
-    }
-  }
+                if (isDuplicate(uid)) return@launch
 
-  /**
-   * Sends the QR to the backend for validation.
-   *
-   * @param qr Raw QR string
-   * @param uid User identifier
-   */
-  private suspend fun processValidation(qr: String, uid: String) {
-    if (!scope.isActive) {
-      Log.d(TAG, "Scope cancelled, aborting validation")
-      return
-    }
-
-    _state.value = _state.value.copy(isProcessing = true, message = "Validating…")
-
-    repo
-        .validateByPass(qr, eventId)
-        .onSuccess { decision ->
-          if (scope.isActive) {
-            handleDecision(decision, uid)
-            scheduleStateReset()
-          }
+                processValidation(qr, uid)
+            } finally {
+                scanMutex.unlock()
+            }
         }
-        .onFailure { error ->
-          if (scope.isActive) {
-            handleError(error, uid)
-            scheduleStateReset()
-          }
+    }
+
+    /**
+     * Checks if this uid was scanned recently within the deduplication window.
+     *
+     * @param uid User identifier
+     * @return true if this scan should be ignored
+     */
+    private fun isDuplicate(uid: String): Boolean {
+        val now = clock()
+        val last = recentScans[uid]
+        return if (last != null && (now - last) < dedupeWindowMs) {
+            Log.d(TAG, "Duplicate scan ignored for uid=$uid")
+            true
+        } else {
+            recentScans[uid] = now
+            cleanupRecentScans()
+            false
         }
-  }
+    }
 
-  /**
-   * Handles the backend decision.
-   *
-   * @param decision The validation decision from backend
-   * @param uid User identifier
-   */
-  private suspend fun handleDecision(decision: ScanDecision, uid: String) {
-    if (!scope.isActive) return
+    /**
+     * Sends the QR to the backend for validation.
+     *
+     * @param qr Raw QR string
+     * @param uid User identifier
+     */
+    private suspend fun processValidation(qr: String, uid: String) {
+        if (!scope.isActive) {
+            Log.d(TAG, "Scope cancelled, aborting validation")
+            return
+        }
 
-    when (decision) {
-      is ScanDecision.Accepted -> {
-        Log.d(TAG, "Accepted: uid=$uid, ticket=${decision.ticketId}")
+        _state.value = _state.value.copy(isProcessing = true, message = "Validating…")
+
+        repo
+            .validateByPass(qr, eventId)
+            .onSuccess { decision ->
+                if (scope.isActive) {
+                    handleDecision(decision, uid)
+                    scheduleStateReset()
+                }
+            }
+            .onFailure { error ->
+                if (scope.isActive) {
+                    handleError(error, uid)
+                    scheduleStateReset()
+                }
+            }
+    }
+
+    /**
+     * Handles the backend decision.
+     *
+     * @param decision The validation decision from backend
+     * @param uid User identifier
+     */
+    private suspend fun handleDecision(decision: ScanDecision, uid: String) {
+        if (!scope.isActive) return
+
+        when (decision) {
+            is ScanDecision.Accepted -> {
+                Log.d(TAG, "Accepted: uid=$uid, ticket=${decision.ticketId}")
+                val currentValidated = _state.value.validated
+                _state.value =
+                    _state.value.copy(
+                        isProcessing = false,
+                        status = ScannerUiState.Status.ACCEPTED,
+                        message = "Access Granted",
+                        lastTicketId = decision.ticketId,
+                        lastScannedAt = decision.scannedAtSeconds,
+                        remaining = decision.remaining,
+                        validated = currentValidated + 1)
+                _effects.emit(ScannerEffect.Accepted("Access Granted"))
+            }
+            is ScanDecision.Rejected -> {
+                val msg =
+                    when (decision.reason) {
+                        ScanDecision.Reason.UNREGISTERED -> "User not registered"
+                        ScanDecision.Reason.ALREADY_SCANNED -> "Already scanned"
+                        ScanDecision.Reason.BAD_SIGNATURE -> "Invalid signature"
+                        ScanDecision.Reason.REVOKED -> "Pass revoked"
+                        else -> "Access denied"
+                    }
+                Log.w(TAG, "Rejected: uid=$uid, reason=${decision.reason}")
+                showRejection(msg)
+            }
+        }
+    }
+
+    /**
+     * Handles network or server errors.
+     *
+     * @param error The exception that occurred
+     * @param uid User identifier
+     */
+    private suspend fun handleError(error: Throwable, uid: String) {
+        if (!scope.isActive) return
+
+        val msg = error.message?.let { "Error: $it" } ?: "Network or server error"
+
+        Log.e(TAG, "Validation failed for uid=$uid", error)
+
+        _state.value =
+            _state.value.copy(isProcessing = false, status = ScannerUiState.Status.ERROR, message = msg)
+        _effects.emit(ScannerEffect.Error(msg))
+    }
+
+    /**
+     * Updates state to rejected and emits corresponding effect.
+     *
+     * @param msg Rejection message
+     */
+    private suspend fun showRejection(msg: String) {
+        if (!scope.isActive) return
+
         _state.value =
             _state.value.copy(
-                isProcessing = false,
-                status = ScannerUiState.Status.ACCEPTED,
-                message = "Access Granted",
-                lastTicketId = decision.ticketId,
-                lastScannedAt = decision.scannedAtSeconds,
-                remaining = decision.remaining)
-        _effects.emit(ScannerEffect.Accepted("Access Granted"))
-      }
-      is ScanDecision.Rejected -> {
-        val msg =
-            when (decision.reason) {
-              ScanDecision.Reason.UNREGISTERED -> "User not registered"
-              ScanDecision.Reason.ALREADY_SCANNED -> "Already scanned"
-              ScanDecision.Reason.BAD_SIGNATURE -> "Invalid signature"
-              ScanDecision.Reason.REVOKED -> "Pass revoked"
-              else -> "Access denied"
-            }
-        Log.w(TAG, "Rejected: uid=$uid, reason=${decision.reason}")
-        showRejection(msg)
-      }
+                isProcessing = false, status = ScannerUiState.Status.REJECTED, message = msg)
+        _effects.emit(ScannerEffect.Rejected(msg))
     }
-  }
 
-  /**
-   * Handles network or server errors.
-   *
-   * @param error The exception that occurred
-   * @param uid User identifier
-   */
-  private suspend fun handleError(error: Throwable, uid: String) {
-    if (!scope.isActive) return
+    /** Schedules automatic state reset to IDLE after configured delay. */
+    private fun scheduleStateReset() {
+        resetJob?.cancel()
+        resetJob =
+            scope.launch {
+                delay(stateResetDelayMs)
+                if (isActive) {
+                    _state.value = ScannerUiState()
+                }
+            }
+    }
 
-    val msg = error.message?.let { "Error: $it" } ?: "Network or server error"
+    /** Manually reset state to IDLE (useful when dismissing error dialogs). */
+    fun resetToIdle() {
+        resetJob?.cancel()
+        _state.value = ScannerUiState()
+    }
 
-    Log.e(TAG, "Validation failed for uid=$uid", error)
+    @VisibleForTesting
+    public override fun onCleared() {
+        cleanupJob?.cancel()
+        resetJob?.cancel()
+        recentScans.clear()
+        super.onCleared()
+    }
 
-    _state.value =
-        _state.value.copy(isProcessing = false, status = ScannerUiState.Status.ERROR, message = msg)
-    _effects.emit(ScannerEffect.Error(msg))
-  }
-
-  /**
-   * Updates state to rejected and emits corresponding effect.
-   *
-   * @param msg Rejection message
-   */
-  private suspend fun showRejection(msg: String) {
-    if (!scope.isActive) return
-
-    _state.value =
-        _state.value.copy(
-            isProcessing = false, status = ScannerUiState.Status.REJECTED, message = msg)
-    _effects.emit(ScannerEffect.Rejected(msg))
-  }
-
-  /** Schedules automatic state reset to IDLE after configured delay. */
-  private fun scheduleStateReset() {
-    resetJob?.cancel()
-    resetJob =
-        scope.launch {
-          delay(stateResetDelayMs)
-          if (isActive) {
-            _state.value = ScannerUiState()
-          }
-        }
-  }
-
-  @VisibleForTesting
-  public override fun onCleared() {
-    cleanupJob?.cancel()
-    resetJob?.cancel()
-    recentScans.clear()
-    super.onCleared()
-  }
-
-  companion object {
-    private const val TAG = "ScannerViewModel"
-  }
+    companion object {
+        private const val TAG = "ScannerViewModel"
+    }
 }
