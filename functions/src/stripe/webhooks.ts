@@ -139,110 +139,19 @@ app.post("*", async (req: express.Request, res: express.Response) => {
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
-        // Create tickets for the user (one per quantity) and update event atomically
+        // Get payment record to determine type
         const paymentDoc = await db.collection("payments").doc(paymentIntent.id).get();
         const paymentData = paymentDoc.data();
 
         if (paymentData) {
-          const userId = paymentData.userId as string;
-          const eventId = paymentData.eventId as string;
-          const ticketTypeId = (paymentData.ticketTypeId as string) || "";
-          const quantity = (paymentData.quantity as number) || 1;
-          const amount = (paymentData.amount as number) || 0;
-          
-          // Calculate price per ticket (in the original currency units, not cents)
-          const pricePerTicket = quantity > 0 ? amount / 100 / quantity : 0;
-
-          // Use a transaction to atomically create tickets and update event
-          await db.runTransaction(async (transaction) => {
-            // Get event document within transaction
-            const eventDocRef = db.collection("events").doc(eventId);
-            const eventDoc = await transaction.get(eventDocRef);
-            
-            if (!eventDoc.exists) {
-              throw new Error(`Event ${eventId} not found`);
-            }
-
-            const eventData = eventDoc.data();
-            if (!eventData) {
-              throw new Error(`Event ${eventId} has no data`);
-            }
-
-            // Verify tickets are still available (double-check after payment)
-            const ticketsRemaining = eventData.ticketsRemaining ?? 0;
-            if (ticketsRemaining < quantity) {
-              throw new Error(
-                `Insufficient tickets remaining: ${ticketsRemaining} available, ${quantity} requested`
-              );
-            }
-
-            // If a specific tier is selected, verify and update its remaining count
-            let updatedPricingTiers = eventData.pricingTiers || [];
-            if (ticketTypeId) {
-              const tierIndex = updatedPricingTiers.findIndex(
-                (tier: any) => tier.name === ticketTypeId
-              );
-              
-              if (tierIndex === -1) {
-                throw new Error(`Pricing tier "${ticketTypeId}" not found`);
-              }
-
-              const tier = updatedPricingTiers[tierIndex];
-              const tierRemaining = tier.remaining ?? 0;
-              
-              if (tierRemaining < quantity) {
-                throw new Error(
-                  `Insufficient tickets in tier "${ticketTypeId}": ${tierRemaining} available, ${quantity} requested`
-                );
-              }
-
-              // Update the tier's remaining count
-              updatedPricingTiers[tierIndex] = {
-                ...tier,
-                remaining: tierRemaining - quantity,
-              };
-            }
-
-            // Use endTime from event if available (Firestore Timestamp)
-            const expiresAt = eventData.endTime || null;
-
-            // Create one ticket per quantity
-            const ticketRefs = [];
-            for (let i = 0; i < quantity; i++) {
-              const ticketRef = db.collection("tickets").doc();
-              ticketRefs.push(ticketRef);
-              
-              const ticketData = {
-                ticketId: ticketRef.id,
-                eventId: eventId,
-                ownerId: userId, // Using ownerId to match Ticket model
-                state: "ISSUED", // Using TicketState enum value
-                tierId: ticketTypeId || "", // Using tierId to match Ticket model
-                purchasePrice: pricePerTicket,
-                issuedAt: admin.firestore.FieldValue.serverTimestamp(),
-                expiresAt: expiresAt,
-                transferLock: false,
-                version: 1,
-              };
-
-              transaction.set(ticketRef, ticketData);
-            }
-
-            // Atomically update event: increment ticketsIssued, decrement ticketsRemaining, update pricingTiers
-            transaction.update(eventDocRef, {
-              ticketsIssued: admin.firestore.FieldValue.increment(quantity),
-              ticketsRemaining: admin.firestore.FieldValue.increment(-quantity),
-              pricingTiers: updatedPricingTiers,
-              updatedAt: admin.firestore.FieldValue.serverTimestamp(),
-            });
-
-            console.log(
-              `Transaction prepared: ${quantity} ticket(s), event ${eventId} updated ` +
-              `(ticketsIssued +${quantity}, ticketsRemaining -${quantity})`
-            );
-          });
-
-          console.log(`✅ Created ${quantity} ticket(s) and updated event ${eventId} atomically for payment ${paymentIntent.id}`);
+          // Check if this is a marketplace purchase
+          if (paymentData.type === "marketplace") {
+            // Handle marketplace ticket transfer
+            await handleMarketplacePurchaseSuccess(db, paymentIntent, paymentData);
+          } else {
+            // Handle regular event ticket purchase
+            await handleEventTicketPurchaseSuccess(db, paymentIntent, paymentData);
+          }
         }
 
         break;
@@ -258,6 +167,13 @@ app.post("*", async (req: express.Request, res: express.Response) => {
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
+        // Release marketplace reservation if applicable
+        const failedPaymentDoc = await db.collection("payments").doc(paymentIntent.id).get();
+        const failedPaymentData = failedPaymentDoc.data();
+        if (failedPaymentData?.type === "marketplace" && failedPaymentData.ticketId) {
+          await releaseMarketplaceReservation(db, failedPaymentData.ticketId, failedPaymentData.buyerId);
+        }
+
         break;
       }
 
@@ -269,6 +185,13 @@ app.post("*", async (req: express.Request, res: express.Response) => {
           status: "canceled",
           updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
+
+        // Release marketplace reservation if applicable
+        const canceledPaymentDoc = await db.collection("payments").doc(paymentIntent.id).get();
+        const canceledPaymentData = canceledPaymentDoc.data();
+        if (canceledPaymentData?.type === "marketplace" && canceledPaymentData.ticketId) {
+          await releaseMarketplaceReservation(db, canceledPaymentData.ticketId, canceledPaymentData.buyerId);
+        }
 
         break;
       }
@@ -360,6 +283,234 @@ app.post("*", async (req: express.Request, res: express.Response) => {
     res.status(500).send(`Webhook handler failed: ${error.message}`);
   }
 });
+
+/**
+ * Releases a marketplace ticket reservation.
+ * Called when payment fails or is canceled.
+ */
+async function releaseMarketplaceReservation(
+  db: admin.firestore.Firestore,
+  ticketId: string,
+  buyerId: string
+): Promise<void> {
+  try {
+    const ticketRef = db.collection("tickets").doc(ticketId);
+    
+    await db.runTransaction(async (transaction) => {
+      const ticketDoc = await transaction.get(ticketRef);
+      
+      if (!ticketDoc.exists) {
+        console.log(`⚠️ Ticket ${ticketId} not found for reservation release`);
+        return;
+      }
+
+      const ticketData = ticketDoc.data();
+      
+      // Only release if reserved by this buyer
+      if (ticketData?.reservedBy === buyerId) {
+        transaction.update(ticketRef, {
+          reservedBy: admin.firestore.FieldValue.delete(),
+          reservedUntil: admin.firestore.FieldValue.delete(),
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+        console.log(`✓ Released reservation for ticket ${ticketId}`);
+      } else {
+        console.log(`⚠️ Ticket ${ticketId} reservation not held by buyer ${buyerId}`);
+      }
+    });
+  } catch (error: any) {
+    console.error(`❌ Failed to release reservation for ticket ${ticketId}:`, error.message);
+  }
+}
+
+/**
+ * Handles successful marketplace ticket purchase.
+ * Transfers ticket ownership from seller to buyer atomically.
+ */
+async function handleMarketplacePurchaseSuccess(
+  db: admin.firestore.Firestore,
+  paymentIntent: Stripe.PaymentIntent,
+  paymentData: admin.firestore.DocumentData
+): Promise<void> {
+  const ticketId = paymentData.ticketId as string;
+  const buyerId = paymentData.buyerId as string;
+  const sellerId = paymentData.sellerId as string;
+  const amount = paymentData.amount as number;
+
+  console.log(`🛒 Processing marketplace purchase: ticket ${ticketId}, seller ${sellerId} -> buyer ${buyerId}`);
+
+  await db.runTransaction(async (transaction) => {
+    const ticketRef = db.collection("tickets").doc(ticketId);
+    const ticketDoc = await transaction.get(ticketRef);
+
+    if (!ticketDoc.exists) {
+      throw new Error(`Ticket ${ticketId} not found`);
+    }
+
+    const ticketData = ticketDoc.data();
+    if (!ticketData) {
+      throw new Error(`Ticket ${ticketId} has no data`);
+    }
+
+    // Verify ticket is still in LISTED state and reserved by the buyer
+    if (ticketData.state !== "LISTED") {
+      throw new Error(`Ticket ${ticketId} is no longer listed (state: ${ticketData.state})`);
+    }
+
+    // Verify the ticket was reserved by this buyer
+    if (ticketData.reservedBy && ticketData.reservedBy !== buyerId) {
+      throw new Error(`Ticket ${ticketId} is reserved by a different user`);
+    }
+
+    // Verify the seller still owns the ticket
+    if (ticketData.ownerId !== sellerId) {
+      throw new Error(`Ticket ${ticketId} owner mismatch`);
+    }
+
+    // Transfer ownership: update ticket with new owner
+    transaction.update(ticketRef, {
+      ownerId: buyerId,
+      state: "TRANSFERRED",
+      previousOwnerId: sellerId,
+      transferredAt: admin.firestore.FieldValue.serverTimestamp(),
+      transferPrice: amount / 100, // Convert cents back to currency
+      listingPrice: admin.firestore.FieldValue.delete(),
+      listedAt: admin.firestore.FieldValue.delete(),
+      reservedBy: admin.firestore.FieldValue.delete(),
+      reservedUntil: admin.firestore.FieldValue.delete(),
+      version: (ticketData.version || 1) + 1,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    // Create a transfer record for audit trail
+    const transferRef = db.collection("ticketTransfers").doc();
+    transaction.set(transferRef, {
+      transferId: transferRef.id,
+      ticketId: ticketId,
+      eventId: ticketData.eventId,
+      fromUserId: sellerId,
+      toUserId: buyerId,
+      amount: amount / 100,
+      currency: paymentData.currency || "chf",
+      paymentIntentId: paymentIntent.id,
+      transferredAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    console.log(`✅ Ticket ${ticketId} transferred from ${sellerId} to ${buyerId}`);
+  });
+
+  console.log(`✅ Marketplace purchase completed: ${paymentIntent.id}`);
+}
+
+/**
+ * Handles successful event ticket purchase (original ticket creation flow).
+ * Creates new tickets and updates event availability.
+ */
+async function handleEventTicketPurchaseSuccess(
+  db: admin.firestore.Firestore,
+  paymentIntent: Stripe.PaymentIntent,
+  paymentData: admin.firestore.DocumentData
+): Promise<void> {
+  const userId = paymentData.userId as string;
+  const eventId = paymentData.eventId as string;
+  const ticketTypeId = (paymentData.ticketTypeId as string) || "";
+  const quantity = (paymentData.quantity as number) || 1;
+  const amount = (paymentData.amount as number) || 0;
+  
+  // Calculate price per ticket (in the original currency units, not cents)
+  const pricePerTicket = quantity > 0 ? amount / 100 / quantity : 0;
+
+  // Use a transaction to atomically create tickets and update event
+  await db.runTransaction(async (transaction) => {
+    // Get event document within transaction
+    const eventDocRef = db.collection("events").doc(eventId);
+    const eventDoc = await transaction.get(eventDocRef);
+    
+    if (!eventDoc.exists) {
+      throw new Error(`Event ${eventId} not found`);
+    }
+
+    const eventData = eventDoc.data();
+    if (!eventData) {
+      throw new Error(`Event ${eventId} has no data`);
+    }
+
+    // Verify tickets are still available (double-check after payment)
+    const ticketsRemaining = eventData.ticketsRemaining ?? 0;
+    if (ticketsRemaining < quantity) {
+      throw new Error(
+        `Insufficient tickets remaining: ${ticketsRemaining} available, ${quantity} requested`
+      );
+    }
+
+    // If a specific tier is selected, verify and update its remaining count
+    let updatedPricingTiers = eventData.pricingTiers || [];
+    if (ticketTypeId) {
+      const tierIndex = updatedPricingTiers.findIndex(
+        (tier: any) => tier.name === ticketTypeId
+      );
+      
+      if (tierIndex === -1) {
+        throw new Error(`Pricing tier "${ticketTypeId}" not found`);
+      }
+
+      const tier = updatedPricingTiers[tierIndex];
+      const tierRemaining = tier.remaining ?? 0;
+      
+      if (tierRemaining < quantity) {
+        throw new Error(
+          `Insufficient tickets in tier "${ticketTypeId}": ${tierRemaining} available, ${quantity} requested`
+        );
+      }
+
+      // Update the tier's remaining count
+      updatedPricingTiers[tierIndex] = {
+        ...tier,
+        remaining: tierRemaining - quantity,
+      };
+    }
+
+    // Use endTime from event if available (Firestore Timestamp)
+    const expiresAt = eventData.endTime || null;
+
+    // Create one ticket per quantity
+    const ticketRefs = [];
+    for (let i = 0; i < quantity; i++) {
+      const ticketRef = db.collection("tickets").doc();
+      ticketRefs.push(ticketRef);
+      
+      const ticketData = {
+        ticketId: ticketRef.id,
+        eventId: eventId,
+        ownerId: userId, // Using ownerId to match Ticket model
+        state: "ISSUED", // Using TicketState enum value
+        tierId: ticketTypeId || "", // Using tierId to match Ticket model
+        purchasePrice: pricePerTicket,
+        issuedAt: admin.firestore.FieldValue.serverTimestamp(),
+        expiresAt: expiresAt,
+        transferLock: false,
+        version: 1,
+      };
+
+      transaction.set(ticketRef, ticketData);
+    }
+
+    // Atomically update event: increment ticketsIssued, decrement ticketsRemaining, update pricingTiers
+    transaction.update(eventDocRef, {
+      ticketsIssued: admin.firestore.FieldValue.increment(quantity),
+      ticketsRemaining: admin.firestore.FieldValue.increment(-quantity),
+      pricingTiers: updatedPricingTiers,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    console.log(
+      `Transaction prepared: ${quantity} ticket(s), event ${eventId} updated ` +
+      `(ticketsIssued +${quantity}, ticketsRemaining -${quantity})`
+    );
+  });
+
+  console.log(`✅ Created ${quantity} ticket(s) and updated event ${eventId} atomically for payment ${paymentIntent.id}`);
+}
 
 export const stripeWebhook = functions.runWith({
   // Ensure we have enough memory and timeout for webhook processing

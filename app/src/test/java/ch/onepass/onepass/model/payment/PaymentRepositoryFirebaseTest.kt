@@ -371,4 +371,452 @@ class PaymentRepositoryFirebaseTest {
     assertTrue(result.isFailure)
     assertEquals("Invalid response from server", result.exceptionOrNull()?.message)
   }
+
+  // ============================================================================
+  // Tests for createMarketplacePaymentIntent
+  // ============================================================================
+
+  @Test
+  fun createMarketplacePaymentIntent_success_returnsMarketplacePaymentIntentResponse() = runTest {
+    // Mock authenticated user
+    every { mockAuth.currentUser } returns mockUser
+    every { mockUser.uid } returns "buyer-123"
+
+    // Mock token retrieval
+    val mockTokenResult = mockk<GetTokenResult>()
+    every { mockTokenResult.token } returns "valid-token"
+    val tokenTask = Tasks.forResult(mockTokenResult)
+    every { mockUser.getIdToken(true) } returns tokenTask
+
+    // Mock function call
+    every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
+        mockCallableReference
+
+    val responseData =
+        mapOf(
+            "clientSecret" to "pi_marketplace_secret",
+            "paymentIntentId" to "pi_marketplace_123",
+            "ticketId" to "ticket-456",
+            "eventName" to "Rock Concert 2024",
+            "amount" to 75.0,
+            "currency" to "chf")
+    val mockResult = mockk<HttpsCallableResult>()
+    every { mockResult.data } returns responseData
+
+    val callTask = Tasks.forResult(mockResult)
+    every { mockCallableReference.call(any()) } returns callTask
+
+    // Execute
+    val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-456")
+
+    // Verify
+    assertTrue(result.isSuccess)
+    val response = requireNotNull(result.getOrNull())
+    assertEquals("pi_marketplace_secret", response.clientSecret)
+    assertEquals("pi_marketplace_123", response.paymentIntentId)
+    assertEquals("ticket-456", response.ticketId)
+    assertEquals("Rock Concert 2024", response.eventName)
+    assertEquals(75.0, response.amount, 0.01)
+    assertEquals("chf", response.currency)
+
+    verify { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") }
+  }
+
+  @Test
+  fun createMarketplacePaymentIntent_withDescription_success() = runTest {
+    // Mock authenticated user
+    every { mockAuth.currentUser } returns mockUser
+    every { mockUser.uid } returns "buyer-123"
+
+    // Mock token retrieval
+    val mockTokenResult = mockk<GetTokenResult>()
+    every { mockTokenResult.token } returns "valid-token"
+    val tokenTask = Tasks.forResult(mockTokenResult)
+    every { mockUser.getIdToken(true) } returns tokenTask
+
+    // Mock function call
+    every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
+        mockCallableReference
+
+    val responseData =
+        mapOf(
+            "clientSecret" to "pi_secret",
+            "paymentIntentId" to "pi_123",
+            "ticketId" to "ticket-789",
+            "eventName" to "Jazz Festival",
+            "amount" to 50.0,
+            "currency" to "chf")
+    val mockResult = mockk<HttpsCallableResult>()
+    every { mockResult.data } returns responseData
+
+    val callTask = Tasks.forResult(mockResult)
+    every { mockCallableReference.call(any()) } returns callTask
+
+    // Execute with description
+    val result =
+        repository.createMarketplacePaymentIntent(
+            ticketId = "ticket-789", description = "Urgent purchase for weekend event")
+
+    // Verify
+    assertTrue(result.isSuccess)
+    assertEquals("pi_secret", result.getOrNull()?.clientSecret)
+    assertEquals("pi_123", result.getOrNull()?.paymentIntentId)
+  }
+
+  @Test
+  fun createMarketplacePaymentIntent_userNotAuthenticated_returnsError() = runTest {
+    // Mock no authenticated user
+    every { mockAuth.currentUser } returns null
+
+    // Execute
+    val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-123")
+
+    // Verify
+    assertTrue(result.isFailure)
+    assertEquals("Please sign in to purchase ticket", result.exceptionOrNull()?.message)
+  }
+
+  @Test
+  fun createMarketplacePaymentIntent_tokenRetrievalFails_returnsError() = runTest {
+    // Mock authenticated user
+    every { mockAuth.currentUser } returns mockUser
+    every { mockUser.uid } returns "buyer-123"
+
+    // Mock token retrieval failure
+    val tokenTask = Tasks.forException<GetTokenResult>(Exception("Token expired"))
+    every { mockUser.getIdToken(true) } returns tokenTask
+
+    // Execute
+    val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-123")
+
+    // Verify
+    assertTrue(result.isFailure)
+    assertEquals("Please sign in to purchase ticket", result.exceptionOrNull()?.message)
+  }
+
+  @Test
+  fun createMarketplacePaymentIntent_tokenIsNull_returnsError() = runTest {
+    // Mock authenticated user
+    every { mockAuth.currentUser } returns mockUser
+    every { mockUser.uid } returns "buyer-123"
+
+    // Mock token retrieval with null token
+    val mockTokenResult = mockk<GetTokenResult>()
+    every { mockTokenResult.token } returns null
+    val tokenTask = Tasks.forResult(mockTokenResult)
+    every { mockUser.getIdToken(true) } returns tokenTask
+
+    // Execute
+    val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-123")
+
+    // Verify
+    assertTrue(result.isFailure)
+    assertEquals("Please sign in to purchase ticket", result.exceptionOrNull()?.message)
+  }
+
+  @Test
+  fun createMarketplacePaymentIntent_invalidResponseMissingClientSecret_returnsError() = runTest {
+    // Mock authenticated user
+    every { mockAuth.currentUser } returns mockUser
+    every { mockUser.uid } returns "buyer-123"
+
+    // Mock token retrieval
+    val mockTokenResult = mockk<GetTokenResult>()
+    every { mockTokenResult.token } returns "valid-token"
+    val tokenTask = Tasks.forResult(mockTokenResult)
+    every { mockUser.getIdToken(true) } returns tokenTask
+
+    // Mock function call with invalid response (missing clientSecret)
+    every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
+        mockCallableReference
+
+    val responseData =
+        mapOf(
+            "paymentIntentId" to "pi_123", "ticketId" to "ticket-456"
+            // Missing clientSecret
+            )
+    val mockResult = mockk<HttpsCallableResult>()
+    every { mockResult.data } returns responseData
+
+    val callTask = Tasks.forResult(mockResult)
+    every { mockCallableReference.call(any()) } returns callTask
+
+    // Execute
+    val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-456")
+
+    // Verify
+    assertTrue(result.isFailure)
+    assertEquals("Invalid response from server", result.exceptionOrNull()?.message)
+  }
+
+  @Test
+  fun createMarketplacePaymentIntent_invalidResponseMissingPaymentIntentId_returnsError() =
+      runTest {
+        // Mock authenticated user
+        every { mockAuth.currentUser } returns mockUser
+        every { mockUser.uid } returns "buyer-123"
+
+        // Mock token retrieval
+        val mockTokenResult = mockk<GetTokenResult>()
+        every { mockTokenResult.token } returns "valid-token"
+        val tokenTask = Tasks.forResult(mockTokenResult)
+        every { mockUser.getIdToken(true) } returns tokenTask
+
+        // Mock function call with invalid response (missing paymentIntentId)
+        every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
+            mockCallableReference
+
+        val responseData =
+            mapOf(
+                "clientSecret" to "pi_secret_123", "ticketId" to "ticket-456"
+                // Missing paymentIntentId
+                )
+        val mockResult = mockk<HttpsCallableResult>()
+        every { mockResult.data } returns responseData
+
+        val callTask = Tasks.forResult(mockResult)
+        every { mockCallableReference.call(any()) } returns callTask
+
+        // Execute
+        val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-456")
+
+        // Verify
+        assertTrue(result.isFailure)
+        assertEquals("Invalid response from server", result.exceptionOrNull()?.message)
+      }
+
+  @Test
+  fun createMarketplacePaymentIntent_ticketNotAvailable_returnsSpecificError() = runTest {
+    // Mock authenticated user
+    every { mockAuth.currentUser } returns mockUser
+    every { mockUser.uid } returns "buyer-123"
+
+    // Mock token retrieval
+    val mockTokenResult = mockk<GetTokenResult>()
+    every { mockTokenResult.token } returns "valid-token"
+    val tokenTask = Tasks.forResult(mockTokenResult)
+    every { mockUser.getIdToken(true) } returns tokenTask
+
+    // Mock function call failure with "not available" error
+    every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
+        mockCallableReference
+    val callTask =
+        Tasks.forException<HttpsCallableResult>(Exception("Ticket is not available for purchase"))
+    every { mockCallableReference.call(any()) } returns callTask
+
+    // Execute
+    val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-123")
+
+    // Verify
+    assertTrue(result.isFailure)
+    assertEquals("This ticket is no longer available", result.exceptionOrNull()?.message)
+  }
+
+  @Test
+  fun createMarketplacePaymentIntent_ticketNoLongerListed_returnsSpecificError() = runTest {
+    // Mock authenticated user
+    every { mockAuth.currentUser } returns mockUser
+    every { mockUser.uid } returns "buyer-123"
+
+    // Mock token retrieval
+    val mockTokenResult = mockk<GetTokenResult>()
+    every { mockTokenResult.token } returns "valid-token"
+    val tokenTask = Tasks.forResult(mockTokenResult)
+    every { mockUser.getIdToken(true) } returns tokenTask
+
+    // Mock function call failure with "no longer listed" error
+    every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
+        mockCallableReference
+    val callTask =
+        Tasks.forException<HttpsCallableResult>(Exception("Ticket is no longer listed for sale"))
+    every { mockCallableReference.call(any()) } returns callTask
+
+    // Execute
+    val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-123")
+
+    // Verify
+    assertTrue(result.isFailure)
+    assertEquals("This ticket is no longer available", result.exceptionOrNull()?.message)
+  }
+
+  @Test
+  fun createMarketplacePaymentIntent_ticketReservedByAnother_returnsSpecificError() = runTest {
+    // Mock authenticated user
+    every { mockAuth.currentUser } returns mockUser
+    every { mockUser.uid } returns "buyer-123"
+
+    // Mock token retrieval
+    val mockTokenResult = mockk<GetTokenResult>()
+    every { mockTokenResult.token } returns "valid-token"
+    val tokenTask = Tasks.forResult(mockTokenResult)
+    every { mockUser.getIdToken(true) } returns tokenTask
+
+    // Mock function call failure with "reserved by another" error
+    every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
+        mockCallableReference
+    val callTask =
+        Tasks.forException<HttpsCallableResult>(
+            Exception("Ticket is currently reserved by another buyer"))
+    every { mockCallableReference.call(any()) } returns callTask
+
+    // Execute
+    val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-123")
+
+    // Verify
+    assertTrue(result.isFailure)
+    assertEquals(
+        "This ticket is currently being purchased by another buyer",
+        result.exceptionOrNull()?.message)
+  }
+
+  @Test
+  fun createMarketplacePaymentIntent_cannotPurchaseOwnTicket_returnsSpecificError() = runTest {
+    // Mock authenticated user
+    every { mockAuth.currentUser } returns mockUser
+    every { mockUser.uid } returns "buyer-123"
+
+    // Mock token retrieval
+    val mockTokenResult = mockk<GetTokenResult>()
+    every { mockTokenResult.token } returns "valid-token"
+    val tokenTask = Tasks.forResult(mockTokenResult)
+    every { mockUser.getIdToken(true) } returns tokenTask
+
+    // Mock function call failure with "cannot purchase your own" error
+    every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
+        mockCallableReference
+    val callTask =
+        Tasks.forException<HttpsCallableResult>(Exception("You cannot purchase your own ticket"))
+    every { mockCallableReference.call(any()) } returns callTask
+
+    // Execute
+    val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-123")
+
+    // Verify
+    assertTrue(result.isFailure)
+    assertEquals("You cannot purchase your own ticket", result.exceptionOrNull()?.message)
+  }
+
+  @Test
+  fun createMarketplacePaymentIntent_unauthenticatedError_returnsAuthError() = runTest {
+    // Mock authenticated user
+    every { mockAuth.currentUser } returns mockUser
+    every { mockUser.uid } returns "buyer-123"
+
+    // Mock token retrieval
+    val mockTokenResult = mockk<GetTokenResult>()
+    every { mockTokenResult.token } returns "valid-token"
+    val tokenTask = Tasks.forResult(mockTokenResult)
+    every { mockUser.getIdToken(true) } returns tokenTask
+
+    // Mock function call with authentication error
+    every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
+        mockCallableReference
+    val callTask = Tasks.forException<HttpsCallableResult>(Exception("User must be authenticated"))
+    every { mockCallableReference.call(any()) } returns callTask
+
+    // Execute
+    val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-123")
+
+    // Verify
+    assertTrue(result.isFailure)
+    assertEquals("Please sign in to purchase ticket", result.exceptionOrNull()?.message)
+  }
+
+  @Test
+  fun createMarketplacePaymentIntent_genericError_returnsDetailedError() = runTest {
+    // Mock authenticated user
+    every { mockAuth.currentUser } returns mockUser
+    every { mockUser.uid } returns "buyer-123"
+
+    // Mock token retrieval
+    val mockTokenResult = mockk<GetTokenResult>()
+    every { mockTokenResult.token } returns "valid-token"
+    val tokenTask = Tasks.forResult(mockTokenResult)
+    every { mockUser.getIdToken(true) } returns tokenTask
+
+    // Mock function call with generic error
+    every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
+        mockCallableReference
+    val callTask = Tasks.forException<HttpsCallableResult>(Exception("Network timeout"))
+    every { mockCallableReference.call(any()) } returns callTask
+
+    // Execute
+    val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-123")
+
+    // Verify
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Purchase failed") == true)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network timeout") == true)
+  }
+
+  @Test
+  fun createMarketplacePaymentIntent_responseWithDefaultValues_success() = runTest {
+    // Mock authenticated user
+    every { mockAuth.currentUser } returns mockUser
+    every { mockUser.uid } returns "buyer-123"
+
+    // Mock token retrieval
+    val mockTokenResult = mockk<GetTokenResult>()
+    every { mockTokenResult.token } returns "valid-token"
+    val tokenTask = Tasks.forResult(mockTokenResult)
+    every { mockUser.getIdToken(true) } returns tokenTask
+
+    // Mock function call with minimal response (missing optional fields)
+    every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
+        mockCallableReference
+
+    val responseData =
+        mapOf(
+            "clientSecret" to "pi_minimal_secret", "paymentIntentId" to "pi_minimal_123"
+            // Missing ticketId, eventName, amount, currency
+            )
+    val mockResult = mockk<HttpsCallableResult>()
+    every { mockResult.data } returns responseData
+
+    val callTask = Tasks.forResult(mockResult)
+    every { mockCallableReference.call(any()) } returns callTask
+
+    // Execute
+    val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-original")
+
+    // Verify - should use default values
+    assertTrue(result.isSuccess)
+    val response = requireNotNull(result.getOrNull())
+    assertEquals("pi_minimal_secret", response.clientSecret)
+    assertEquals("pi_minimal_123", response.paymentIntentId)
+    assertEquals("ticket-original", response.ticketId) // Falls back to original ticketId
+    assertEquals("Event Ticket", response.eventName) // Default value
+    assertEquals(0.0, response.amount, 0.01) // Default value
+    assertEquals("chf", response.currency) // Default value
+  }
+
+  @Test
+  fun createMarketplacePaymentIntent_responseDataNotMap_returnsError() = runTest {
+    // Mock authenticated user
+    every { mockAuth.currentUser } returns mockUser
+    every { mockUser.uid } returns "buyer-123"
+
+    // Mock token retrieval
+    val mockTokenResult = mockk<GetTokenResult>()
+    every { mockTokenResult.token } returns "valid-token"
+    val tokenTask = Tasks.forResult(mockTokenResult)
+    every { mockUser.getIdToken(true) } returns tokenTask
+
+    // Mock function call with non-map response
+    every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
+        mockCallableReference
+
+    val mockResult = mockk<HttpsCallableResult>()
+    every { mockResult.data } returns "invalid response"
+
+    val callTask = Tasks.forResult(mockResult)
+    every { mockCallableReference.call(any()) } returns callTask
+
+    // Execute
+    val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-123")
+
+    // Verify
+    assertTrue(result.isFailure)
+    assertEquals("Invalid response from server", result.exceptionOrNull()?.message)
+  }
 }
