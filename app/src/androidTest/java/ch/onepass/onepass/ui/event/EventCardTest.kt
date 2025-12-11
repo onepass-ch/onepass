@@ -53,7 +53,7 @@ class EventCardTest {
     composeTestRule.onNodeWithText("Test Event").assertExists()
     composeTestRule.onNodeWithText("Test Organizer").assertExists()
     composeTestRule.onNodeWithText("Test Location").assertExists()
-    composeTestRule.onNodeWithText("CHF25").assertExists()
+    composeTestRule.onNodeWithText("CHF 25").assertExists()
     composeTestRule.onNodeWithTag("event_card_image", useUnmergedTree = true).assertExists()
     composeTestRule.onNodeWithContentDescription("Like").assertExists()
   }
@@ -138,7 +138,7 @@ class EventCardTest {
 
   @Test
   fun eventCard_handlesVariousPriceFormats() {
-    val prices = mapOf(0u to "FREE", 1u to "CHF1", 100u to "CHF100", 9999u to "CHF9999")
+    val prices = mapOf(0u to "FREE", 1u to "CHF 1", 100u to "CHF 100", 9999u to "CHF 10.00K")
     lateinit var currentEvent: MutableState<Event>
 
     composeTestRule.setContent {

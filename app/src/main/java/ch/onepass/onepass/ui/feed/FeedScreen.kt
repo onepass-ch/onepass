@@ -2,7 +2,9 @@ package ch.onepass.onepass.ui.feed
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
@@ -28,6 +30,7 @@ import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
 import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
 import ch.onepass.onepass.ui.eventfilters.FilterDialog
+import kotlinx.coroutines.launch
 
 /**
  * Feed screen showing all published events. Displays a list of events with loading, error, and
@@ -43,7 +46,6 @@ object FeedScreenTestTags {
   const val EVENT_LIST = "eventList"
   const val LOADING_INDICATOR = "loadingIndicator"
   const val ERROR_MESSAGE = "errorMessage"
-  const val RETRY_BUTTON = "retryButton"
   const val EMPTY_STATE = "emptyState"
   const val ACTIVE_FILTERS_BAR = "activeFiltersBar"
 
@@ -72,13 +74,30 @@ fun FeedScreen(
   val uiState by viewModel.uiState.collectAsState()
   val currentFilters by filterViewModel.currentFilters.collectAsState()
 
+  // LazyList state for controlling scroll position
+  val listState = rememberLazyListState()
+  val coroutineScope = rememberCoroutineScope()
+
+  // Track previous refresh state to detect when refresh completes
+  var wasRefreshing by remember { mutableStateOf(false) }
+
   // Load events when screen is first displayed
   LaunchedEffect(Unit) { viewModel.loadEvents() }
+
   // Apply filters when they change OR when events are loaded
   LaunchedEffect(currentFilters, uiState.isLoading) {
     if (!uiState.isLoading) { // Only apply filters after events are loaded
       viewModel.applyFiltersToCurrentEvents(currentFilters)
     }
+  }
+
+  // Scroll to top when refresh completes
+  LaunchedEffect(uiState.isRefreshing) {
+    if (wasRefreshing && !uiState.isRefreshing) {
+      // Refresh just completed, scroll to top smoothly
+      coroutineScope.launch { listState.animateScrollToItem(0) }
+    }
+    wasRefreshing = uiState.isRefreshing
   }
 
   Scaffold(
@@ -107,7 +126,7 @@ fun FeedScreen(
     val pullState = rememberPullToRefreshState()
     PullToRefreshBox(
         isRefreshing = uiState.isRefreshing,
-        onRefresh = viewModel::refreshEvents,
+        onRefresh = { viewModel.refreshEvents(currentFilters) },
         state = pullState,
         modifier = Modifier.fillMaxSize().padding(paddingValues),
     ) {
@@ -136,7 +155,8 @@ fun FeedScreen(
               events = uiState.events,
               isLoadingMore = uiState.isLoading && !uiState.isRefreshing,
               onEventClick = onNavigateToEvent,
-              eventCardViewModel = eventCardViewModel)
+              eventCardViewModel = eventCardViewModel,
+              listState = listState)
         }
       }
       // Filter Dialog
@@ -240,20 +260,23 @@ private fun FeedTopBar(
  * @param events List of [Event]s to display in the list.
  * @param isLoadingMore Boolean indicating if more events are currently being loaded.
  * @param onEventClick Callback invoked when an event card is clicked, receives eventId.
+ * @param listState LazyListState for controlling scroll position.
  */
 @Composable
 private fun EventListContent(
     events: List<Event>,
     isLoadingMore: Boolean,
     onEventClick: (String) -> Unit,
-    eventCardViewModel: EventCardViewModel
+    eventCardViewModel: EventCardViewModel,
+    listState: LazyListState
 ) {
   val likedEvents by eventCardViewModel.likedEvents.collectAsState()
 
   LazyColumn(
+      state = listState,
       modifier = Modifier.fillMaxSize().testTag(FeedScreenTestTags.EVENT_LIST),
-      contentPadding = PaddingValues(16.dp),
-      verticalArrangement = Arrangement.spacedBy(24.dp)) {
+      contentPadding = PaddingValues(10.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp)) {
         items(items = events, key = { it.eventId }) { event ->
           EventCard(
               event = event,

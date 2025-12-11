@@ -15,6 +15,10 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+object ActiveFiltersConfig {
+  const val MAX_VISIBLE_TAGS = 3
+}
+
 /**
  * Displays the currently active event filters as chips with an option to clear all.
  *
@@ -64,6 +68,33 @@ fun ActiveFiltersBar(
               label = {
                 Text(
                     text = getDateRangeDisplayText(filters.dateRange),
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Medium,
+                )
+              },
+          )
+        }
+        filters.selectedTags.take(ActiveFiltersConfig.MAX_VISIBLE_TAGS).forEach { tag ->
+          FilterChip(
+              selected = true,
+              onClick = { /* Could add individual removal later */},
+              label = {
+                Text(
+                    tag,
+                    style = MaterialTheme.typography.labelMedium,
+                    fontWeight = FontWeight.Medium,
+                )
+              },
+          )
+        }
+        // Show count chip if more than ActiveFiltersConfig.MAX_VISIBLE_TAGS tags
+        if (filters.selectedTags.size > ActiveFiltersConfig.MAX_VISIBLE_TAGS) {
+          FilterChip(
+              selected = true,
+              onClick = { /* Could add individual removal later */},
+              label = {
+                Text(
+                    "+${filters.selectedTags.size - ActiveFiltersConfig.MAX_VISIBLE_TAGS} more",
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium,
                 )

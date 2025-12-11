@@ -1,4 +1,4 @@
-package ch.onepass.onepass.ui.eventfilters
+package ch.onepass.onepass.utils
 
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.eventfilters.EventFilters
@@ -9,7 +9,7 @@ object EventFilteringUtils {
   /**
    * Apply filters locally to the given events.
    *
-   * Filters events based on region, date range, and availability (hide sold out).
+   * Filters events based on region, date range, tags and availability (hide sold out).
    *
    * @param events The list of [Event]s to be filtered.
    * @param filters The [EventFilters] to apply.
@@ -26,8 +26,16 @@ object EventFilteringUtils {
           filters.dateRange?.let { range ->
             event.startTime?.toDate()?.time?.let { eventTime -> eventTime in range } ?: false
           } ?: true
+      val tagMatch =
+          if (filters.selectedTags.isNotEmpty()) {
+            event.tags.any { eventTag -> TagNormalizer.matchesTag(eventTag, filters.selectedTags) }
+          } else {
+            true
+          }
+
       val availabilityMatch = !filters.hideSoldOut || !event.isSoldOut
-      regionMatch && dateMatch && availabilityMatch
+
+      regionMatch && dateMatch && tagMatch && availabilityMatch
     }
   }
 }

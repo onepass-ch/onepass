@@ -2,8 +2,7 @@ package ch.onepass.onepass.ui.eventfilters
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
@@ -58,7 +57,10 @@ fun FilterDialog(
       properties = DialogProperties(usePlatformDefaultWidth = false),
   ) {
     Surface(
-        modifier = Modifier.fillMaxWidth(0.9f).testTag(EventFilterDialogTestTags.FILTER_DIALOG),
+        modifier =
+            Modifier.fillMaxWidth(0.9f)
+                .fillMaxHeight(0.8f)
+                .testTag(EventFilterDialogTestTags.FILTER_DIALOG),
         shape = MaterialTheme.shapes.extraLarge,
         tonalElevation = 6.dp,
     ) {
@@ -68,17 +70,33 @@ fun FilterDialog(
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(bottom = 16.dp),
         )
-        Column(Modifier.verticalScroll(rememberScrollState()).weight(1f, false)) {
-          RegionFilter(uiState, viewModel::updateLocalFilters, viewModel::toggleRegionDropdown)
-          Spacer(Modifier.height(24.dp))
-          DateRangeFilter(
-              uiState = uiState,
-              onFiltersChanged = viewModel::updateLocalFilters,
-              onShowDatePickerChange = viewModel::toggleDatePicker,
-          )
-          Spacer(Modifier.height(24.dp))
-          AvailabilityFilter(uiState.localFilters, viewModel::updateLocalFilters)
-        }
+
+        LazyColumn(
+            modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(24.dp)) {
+              item {
+                RegionFilter(
+                    uiState, viewModel::updateLocalFilters, viewModel::toggleRegionDropdown)
+              }
+
+              item {
+                DateRangeFilter(
+                    uiState = uiState,
+                    onFiltersChanged = viewModel::updateLocalFilters,
+                    onShowDatePickerChange = viewModel::toggleDatePicker,
+                )
+              }
+
+              item {
+                TagFilter(
+                    selectedTags = uiState.localFilters.selectedTags,
+                    onTagSelectionChange = { tags ->
+                      viewModel.updateLocalFilters(uiState.localFilters.copy(selectedTags = tags))
+                    })
+              }
+
+              item { AvailabilityFilter(uiState.localFilters, viewModel::updateLocalFilters) }
+            }
+
         Spacer(Modifier.height(24.dp))
         Row(Modifier.fillMaxWidth(), Arrangement.SpaceBetween) {
           TextButton(
@@ -251,7 +269,7 @@ private fun AvailabilityFilter(filters: EventFilters, onFiltersChanged: (EventFi
  * @param content The composable content displayed within the section.
  */
 @Composable
-private fun FilterSection(title: String, content: @Composable () -> Unit) {
+fun FilterSection(title: String, content: @Composable () -> Unit) {
   Column(Modifier.fillMaxWidth()) {
     Text(
         text = title,
