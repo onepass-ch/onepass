@@ -9,8 +9,8 @@ import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
-import com.google.firebase.auth.FirebaseAuth
 import ch.onepass.onepass.utils.EventFilteringUtils.applyFiltersLocally
+import com.google.firebase.auth.FirebaseAuth
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.async
@@ -203,7 +203,7 @@ open class FeedViewModel(
     _uiState.update { it.copy(isRefreshing = true, error = null) }
 
     if (currentFilters != null) {
-        _currentFilters = currentFilters
+      _currentFilters = currentFilters
     }
 
     viewModelScope.launch {
