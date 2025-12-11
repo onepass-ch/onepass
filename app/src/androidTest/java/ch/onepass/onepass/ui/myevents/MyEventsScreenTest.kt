@@ -130,6 +130,25 @@ class FakeTicketRepository : TicketRepository {
       Result.success(Unit)
 
   override suspend fun deleteTicket(ticketId: String) = Result.success(Unit)
+
+  override suspend fun cancelTicketListing(ticketId: String) = Result.success(Unit)
+
+  override fun getListedTickets(): Flow<List<ch.onepass.onepass.model.ticket.Ticket>> =
+      flowOf(emptyList())
+
+  override fun getListedTicketsByEvent(
+      eventId: String
+  ): Flow<List<ch.onepass.onepass.model.ticket.Ticket>> = flowOf(emptyList())
+
+  override fun getListedTicketsByUser(
+      userId: String
+  ): Flow<List<ch.onepass.onepass.model.ticket.Ticket>> = flowOf(emptyList())
+
+  override suspend fun listTicketForSale(ticketId: String, askingPrice: Double) =
+      Result.success(Unit)
+
+  override suspend fun purchaseListedTicket(ticketId: String, buyerId: String) =
+      Result.success(Unit)
 }
 
 class FakeEventRepository : EventRepository {
