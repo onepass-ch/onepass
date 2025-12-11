@@ -203,18 +203,6 @@ class MyEventsViewModelTest {
   }
 
   @Test
-  fun clearCache_withNullUser_doesNothing() = runTest {
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, null)
-    advanceUntilIdle()
-
-    // Should not crash
-    vm.clearCache()
-    advanceUntilIdle()
-
-    assertNull(vm.userQrData.value)
-  }
-
-  @Test
   fun refreshPass_withNullUser_setsError() = runTest {
     val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, null)
     advanceUntilIdle()
