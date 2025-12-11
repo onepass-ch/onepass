@@ -416,7 +416,7 @@ class PaymentRepositoryFirebaseTest {
     assertEquals("pi_marketplace_123", response?.paymentIntentId)
     assertEquals("ticket-456", response?.ticketId)
     assertEquals("Rock Concert 2024", response?.eventName)
-    assertEquals(75.0, response?.amount, 0.01)
+    assertEquals(75.0, response?.amount ?: 0.0, 0.01)
     assertEquals("chf", response?.currency)
 
     verify { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") }
@@ -714,7 +714,7 @@ class PaymentRepositoryFirebaseTest {
     every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
         mockCallableReference
     val callTask =
-        Tasks.forException<HttpsCallableResult>(Exception("User must be authenticated"))
+        Tasks.forException<HttpsCallableResult>(Exception("unauthenticated request"))
     every { mockCallableReference.call(any()) } returns callTask
 
     // Execute
@@ -790,7 +790,7 @@ class PaymentRepositoryFirebaseTest {
     assertEquals("pi_minimal_123", response?.paymentIntentId)
     assertEquals("ticket-original", response?.ticketId) // Falls back to original ticketId
     assertEquals("Event Ticket", response?.eventName) // Default value
-    assertEquals(0.0, response?.amount, 0.01) // Default value
+    assertEquals(0.0, response?.amount ?: 0.0, 0.01) // Default value
     assertEquals("chf", response?.currency) // Default value
   }
 
