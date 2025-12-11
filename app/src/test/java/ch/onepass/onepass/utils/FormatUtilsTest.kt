@@ -33,29 +33,6 @@ class FormatUtilsTest {
   }
 
   @Test
-  fun formatPrice_zeroOrNegative_returnsFree() {
-    assertEquals("FREE", FormatUtils.formatPrice(0))
-    assertEquals("FREE", FormatUtils.formatPrice(-5.0))
-  }
-
-  @Test
-  fun formatPrice_integerValue() {
-    assertEquals("CHF 25", FormatUtils.formatPrice(25))
-    assertEquals("CHF 100", FormatUtils.formatPrice(100.0))
-  }
-
-  @Test
-  fun formatPrice_decimalValue() {
-    assertEquals("CHF 25.50", FormatUtils.formatPrice(25.5))
-    assertEquals("CHF 10.99", FormatUtils.formatPrice(10.99))
-  }
-
-  @Test
-  fun formatPrice_customCurrency() {
-    assertEquals("USD 50", FormatUtils.formatPrice(50, "USD"))
-  }
-
-  @Test
   fun formatPriceCompact_zeroOrNegative_returnsFree() {
     assertEquals("FREE", FormatUtils.formatPriceCompact(0))
     assertEquals("FREE", FormatUtils.formatPriceCompact(-5.0))

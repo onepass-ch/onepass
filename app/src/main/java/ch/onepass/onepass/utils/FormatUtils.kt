@@ -34,23 +34,6 @@ object FormatUtils {
     }
   }
 
-  /** Formats a price value with currency. Returns "FREE" if price is 0. */
-  fun formatPrice(price: Number, currency: String = "CHF"): String {
-    val priceDouble = price.toDouble()
-    return if (priceDouble <= 0.0) {
-      "FREE"
-    } else {
-      // Automatically formats decimal places (e.g., 25.0 -> 25, 25.5 -> 25.5)
-      val formattedPrice =
-          if (priceDouble % 1 == 0.0) {
-            priceDouble.toInt().toString()
-          } else {
-            String.format(Locale.US, "%.2f", priceDouble)
-          }
-      "$currency $formattedPrice"
-    }
-  }
-
   /**
    * Formats a price value with compact notation (K/M suffix) for values greater than 1000. Rounds
    * to 2 decimal places for large numbers. Returns "FREE" if price is 0 or negative.
