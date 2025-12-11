@@ -411,13 +411,13 @@ class PaymentRepositoryFirebaseTest {
 
     // Verify
     assertTrue(result.isSuccess)
-    val response = result.getOrNull()
-    assertEquals("pi_marketplace_secret", response?.clientSecret)
-    assertEquals("pi_marketplace_123", response?.paymentIntentId)
-    assertEquals("ticket-456", response?.ticketId)
-    assertEquals("Rock Concert 2024", response?.eventName)
-    assertEquals(75.0, response?.amount, 0.01)
-    assertEquals("chf", response?.currency)
+    val response = requireNotNull(result.getOrNull())
+    assertEquals("pi_marketplace_secret", response.clientSecret)
+    assertEquals("pi_marketplace_123", response.paymentIntentId)
+    assertEquals("ticket-456", response.ticketId)
+    assertEquals("Rock Concert 2024", response.eventName)
+    assertEquals(75.0, response.amount, 0.01)
+    assertEquals("chf", response.currency)
 
     verify { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") }
   }
@@ -781,13 +781,13 @@ class PaymentRepositoryFirebaseTest {
 
     // Verify - should use default values
     assertTrue(result.isSuccess)
-    val response = result.getOrNull()
-    assertEquals("pi_minimal_secret", response?.clientSecret)
-    assertEquals("pi_minimal_123", response?.paymentIntentId)
-    assertEquals("ticket-original", response?.ticketId) // Falls back to original ticketId
-    assertEquals("Event Ticket", response?.eventName) // Default value
-    assertEquals(0.0, response?.amount, 0.01) // Default value
-    assertEquals("chf", response?.currency) // Default value
+    val response = requireNotNull(result.getOrNull())
+    assertEquals("pi_minimal_secret", response.clientSecret)
+    assertEquals("pi_minimal_123", response.paymentIntentId)
+    assertEquals("ticket-original", response.ticketId) // Falls back to original ticketId
+    assertEquals("Event Ticket", response.eventName) // Default value
+    assertEquals(0.0, response.amount, 0.01) // Default value
+    assertEquals("chf", response.currency) // Default value
   }
 
   @Test

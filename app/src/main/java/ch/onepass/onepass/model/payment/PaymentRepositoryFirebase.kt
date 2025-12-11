@@ -103,6 +103,7 @@ class PaymentRepositoryFirebase(
       val errorMessage = e.message ?: ""
       if (errorMessage.contains("unauthenticated", ignoreCase = true) == true ||
           errorMessage.contains("authentication", ignoreCase = true) == true ||
+          errorMessage.contains("authenticated", ignoreCase = true) == true ||
           errorMessage.contains("must be authenticated", ignoreCase = true) == true ||
           e.cause?.message?.contains("unauthenticated", ignoreCase = true) == true) {
         android.util.Log.e("PaymentRepository", "🔐 Authentication error detected")
@@ -206,7 +207,8 @@ class PaymentRepositoryFirebase(
           Result.failure(Exception("You cannot purchase your own ticket"))
         }
         errorMessage.contains("unauthenticated", ignoreCase = true) ||
-            errorMessage.contains("authentication", ignoreCase = true) -> {
+            errorMessage.contains("authentication", ignoreCase = true) ||
+            errorMessage.contains("authenticated", ignoreCase = true) -> {
           Result.failure(Exception(signInErrorMessage))
         }
         else -> {
