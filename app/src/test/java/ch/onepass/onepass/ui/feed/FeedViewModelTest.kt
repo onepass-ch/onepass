@@ -741,7 +741,11 @@ class FeedViewModelTest {
 
   @Test
   fun feedViewModel_loadEvents_filtersPastEvents() = runTest {
-    val now = System.currentTimeMillis()
+    // Create a fixed time point
+    val fixedTime = Timestamp(System.currentTimeMillis() / 1000, 0)
+    val mockTimeProvider = MockTimeProvider(fixedTime)
+
+    val now = fixedTime.seconds * 1000
     val pastEvent =
         testEvent1.copy(
             eventId = "past", endTime = Timestamp(Date(now - 86400000)) // Ended yesterday
@@ -753,7 +757,7 @@ class FeedViewModelTest {
 
     val events = listOf(pastEvent, futureEvent)
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth, mockTimeProvider)
 
     viewModel.loadEvents()
     testDispatcher.scheduler.advanceUntilIdle()
