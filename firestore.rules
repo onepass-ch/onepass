@@ -2,15 +2,8 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // ======= SIGNING KEYS - NO ACCESS =======
-    match /keys/{keyId} {
-      allow read, write: if false;
-    }
-
-    // ======= REST: OPEN FOR DEVELOPMENT =======
     match /{document=**} {
-      allow read, write;
+      allow read, write: if true;
     }
   }
 }

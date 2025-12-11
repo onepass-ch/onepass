@@ -379,6 +379,7 @@ class OrganizationRepositoryAdvancedTest : FirestoreTestBase() {
     assertEquals("Should have all 3 role types", 3, roles.size)
     assertTrue("Should include MEMBER role", roles.contains(OrganizationRole.MEMBER))
     assertTrue("Should include STAFF role", roles.contains(OrganizationRole.STAFF))
+    assertTrue("Should include ADMIN role", roles.contains(OrganizationRole.ADMIN))
     assertTrue("Should include OWNER role", roles.contains(OrganizationRole.OWNER))
   }
 

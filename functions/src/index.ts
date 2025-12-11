@@ -15,6 +15,7 @@ admin.initializeApp();
 export { validateEntryByPass } from "./validateEntryByPass";
 export { generateUserPass } from "./generateUserPass";
 export { onUserCreated } from "./onUserCreated";
+export { searchUsers } from "./searchUsers";
 
 // Stripe payment functions
 export {

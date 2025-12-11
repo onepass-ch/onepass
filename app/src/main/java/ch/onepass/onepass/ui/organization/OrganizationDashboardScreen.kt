@@ -399,7 +399,9 @@ private fun EventCard(
     onEditEvent: () -> Unit
 ) {
   val canEdit =
-      currentUserRole == OrganizationRole.MEMBER || currentUserRole == OrganizationRole.OWNER
+      currentUserRole == OrganizationRole.MEMBER ||
+          currentUserRole == OrganizationRole.OWNER ||
+          currentUserRole == OrganizationRole.ADMIN
   val canScan = currentUserRole != null // All roles can scan
 
   Column(
@@ -509,7 +511,8 @@ private fun ManageStaffSection(
     onRemoveStaff: (String) -> Unit
 ) {
   var staffExpanded by remember { mutableStateOf(false) }
-  val canManageStaff = currentUserRole == OrganizationRole.OWNER
+  val canManageStaff =
+      currentUserRole == OrganizationRole.OWNER || currentUserRole == OrganizationRole.ADMIN
 
   Column(
       modifier =
@@ -674,6 +677,7 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
             color =
                 when (role) {
                   OrganizationRole.OWNER -> EventDateColor
+                  OrganizationRole.ADMIN -> MaterialTheme.colorScheme.tertiary
                   OrganizationRole.MEMBER -> MaterialTheme.colorScheme.primary
                   OrganizationRole.STAFF -> MaterialTheme.colorScheme.secondary
                 }) {
