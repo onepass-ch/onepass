@@ -116,4 +116,38 @@ class GlobalSearchViewModelTest {
     assertEquals(0, state.users.size)
     assertEquals(false, state.isLoading)
   }
+
+  @Test
+  fun fuzzy_and_prefix_matching_updates_events_correctly() = runTest {
+    val event1 = Event(eventId = "1", title = "Kotlin Coroutines", status = EventStatus.PUBLISHED)
+    val event2 = Event(eventId = "2", title = "Compose Tutorial", status = EventStatus.PUBLISHED)
+    val event3 = Event(eventId = "3", title = "Kotlin Flow Basics", status = EventStatus.PUBLISHED)
+
+    coEvery { mockEventRepo.getEventsByStatus(EventStatus.PUBLISHED) } returns
+        flowOf(listOf(event1, event2, event3))
+    coEvery { mockOrgRepo.searchOrganizations(any()) } returns flowOf(emptyList())
+    coEvery { mockUserRepo.searchUsers(any(), any(), any()) } returns Result.success(emptyList())
+
+    // Exact match on first word
+    viewModel.onQueryChanged("Kotlin")
+    var state = viewModel.uiState.first { !it.isLoading }
+    assertEquals(2, state.events.size) // event1 + event3
+
+    // Prefix match on middle word
+    viewModel.onQueryChanged("Tut") // should match "Compose Tutorial"
+    state = viewModel.uiState.first { !it.isLoading }
+    assertEquals(1, state.events.size)
+    assertEquals("Compose Tutorial", state.events.first().title)
+
+    // Fuzzy match (small typo)
+    viewModel.onQueryChanged("Corutines") // typo for "Coroutines"
+    state = viewModel.uiState.first { !it.isLoading }
+    assertEquals(1, state.events.size)
+    assertEquals("Kotlin Coroutines", state.events.first().title)
+
+    // Non-matching query
+    viewModel.onQueryChanged("Swift")
+    state = viewModel.uiState.first { !it.isLoading }
+    assertEquals(0, state.events.size)
+  }
 }

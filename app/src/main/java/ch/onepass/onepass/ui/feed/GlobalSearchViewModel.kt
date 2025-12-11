@@ -1,7 +1,6 @@
 package ch.onepass.onepass.ui.feed
 
 import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
@@ -212,25 +211,5 @@ class GlobalSearchViewModel(
   private fun wordDistance(s: String, t: String): Int {
     val d = LevenshteinDistance()
     return d.apply(s.lowercase().trim(), t.lowercase().trim())
-  }
-
-  /**
-   * Factory for creating instances of [GlobalSearchViewModel].
-   *
-   * @param userRepo Repository for user data operations.
-   * @param eventRepo Repository for event data operations.
-   * @param orgRepo Repository for organization data operations.
-   */
-  class Factory(
-      private val userRepo: UserRepository,
-      private val eventRepo: EventRepository,
-      private val orgRepo: OrganizationRepository,
-  ) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-      if (modelClass.isAssignableFrom(GlobalSearchViewModel::class.java)) {
-        @Suppress("UNCHECKED_CAST") return GlobalSearchViewModel(userRepo, eventRepo, orgRepo) as T
-      }
-      throw IllegalArgumentException("Unknown ViewModel class")
-    }
   }
 }
