@@ -54,6 +54,7 @@ object OrganizationTestTags {
  * @param testTags Object containing test tag strings for UI testing
  * @param modifier Optional modifier for the form container
  * @param viewModel ViewModel managing the form state and logic
+ * @param isLoading When true, the submit button shows a loading indicator and is disabled
  */
 @Composable
 fun OrganizerForm(
@@ -69,7 +70,8 @@ fun OrganizerForm(
     onSubmit: () -> Unit,
     submitText: String,
     modifier: Modifier = Modifier,
-    viewModel: OrganizationFormViewModel
+    viewModel: OrganizationFormViewModel,
+    isLoading: Boolean = false
 ) {
   val scrollState = rememberScrollState()
 
@@ -197,6 +199,7 @@ fun OrganizerForm(
         SubmitButton(
             onClick = onSubmit,
             text = submitText,
+            isLoading = isLoading,
             modifier = Modifier.testTag(OrganizationTestTags.SUBMIT_BUTTON))
       }
 }
