@@ -151,19 +151,16 @@ class PaymentRepositoryFirebase(
         return Result.failure(Exception(signInErrorMessage))
       }
 
-      val data =
-          hashMapOf(
-              "ticketId" to ticketId,
-              "description" to description)
+      val data = hashMapOf("ticketId" to ticketId, "description" to description)
 
       android.util.Log.d(
-          "PaymentRepository",
-          "🛒 Calling createMarketplacePaymentIntent with ticketId=$ticketId")
+          "PaymentRepository", "🛒 Calling createMarketplacePaymentIntent with ticketId=$ticketId")
 
       val result: HttpsCallableResult =
           functions.getHttpsCallable("createMarketplacePaymentIntent").call(data).await()
 
-      android.util.Log.d("PaymentRepository", "✓ Marketplace payment function returned successfully")
+      android.util.Log.d(
+          "PaymentRepository", "✓ Marketplace payment function returned successfully")
 
       val responseData = result.data as? Map<*, *>
       android.util.Log.d("PaymentRepository", "Response data keys: ${responseData?.keys}")
@@ -176,7 +173,8 @@ class PaymentRepositoryFirebase(
       val currency = responseData?.get("currency") as? String ?: "chf"
 
       if (clientSecret != null && paymentIntentId != null) {
-        android.util.Log.d("PaymentRepository", "✅ Marketplace payment intent created: $paymentIntentId")
+        android.util.Log.d(
+            "PaymentRepository", "✅ Marketplace payment intent created: $paymentIntentId")
         Result.success(
             MarketplacePaymentIntentResponse(
                 clientSecret = clientSecret,

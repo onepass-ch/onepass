@@ -532,8 +532,7 @@ class PaymentRepositoryFirebaseTest {
 
     val responseData =
         mapOf(
-            "paymentIntentId" to "pi_123",
-            "ticketId" to "ticket-456"
+            "paymentIntentId" to "pi_123", "ticketId" to "ticket-456"
             // Missing clientSecret
             )
     val mockResult = mockk<HttpsCallableResult>()
@@ -551,40 +550,40 @@ class PaymentRepositoryFirebaseTest {
   }
 
   @Test
-  fun createMarketplacePaymentIntent_invalidResponseMissingPaymentIntentId_returnsError() = runTest {
-    // Mock authenticated user
-    every { mockAuth.currentUser } returns mockUser
-    every { mockUser.uid } returns "buyer-123"
+  fun createMarketplacePaymentIntent_invalidResponseMissingPaymentIntentId_returnsError() =
+      runTest {
+        // Mock authenticated user
+        every { mockAuth.currentUser } returns mockUser
+        every { mockUser.uid } returns "buyer-123"
 
-    // Mock token retrieval
-    val mockTokenResult = mockk<GetTokenResult>()
-    every { mockTokenResult.token } returns "valid-token"
-    val tokenTask = Tasks.forResult(mockTokenResult)
-    every { mockUser.getIdToken(true) } returns tokenTask
+        // Mock token retrieval
+        val mockTokenResult = mockk<GetTokenResult>()
+        every { mockTokenResult.token } returns "valid-token"
+        val tokenTask = Tasks.forResult(mockTokenResult)
+        every { mockUser.getIdToken(true) } returns tokenTask
 
-    // Mock function call with invalid response (missing paymentIntentId)
-    every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
-        mockCallableReference
+        // Mock function call with invalid response (missing paymentIntentId)
+        every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
+            mockCallableReference
 
-    val responseData =
-        mapOf(
-            "clientSecret" to "pi_secret_123",
-            "ticketId" to "ticket-456"
-            // Missing paymentIntentId
-            )
-    val mockResult = mockk<HttpsCallableResult>()
-    every { mockResult.data } returns responseData
+        val responseData =
+            mapOf(
+                "clientSecret" to "pi_secret_123", "ticketId" to "ticket-456"
+                // Missing paymentIntentId
+                )
+        val mockResult = mockk<HttpsCallableResult>()
+        every { mockResult.data } returns responseData
 
-    val callTask = Tasks.forResult(mockResult)
-    every { mockCallableReference.call(any()) } returns callTask
+        val callTask = Tasks.forResult(mockResult)
+        every { mockCallableReference.call(any()) } returns callTask
 
-    // Execute
-    val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-456")
+        // Execute
+        val result = repository.createMarketplacePaymentIntent(ticketId = "ticket-456")
 
-    // Verify
-    assertTrue(result.isFailure)
-    assertEquals("Invalid response from server", result.exceptionOrNull()?.message)
-  }
+        // Verify
+        assertTrue(result.isFailure)
+        assertEquals("Invalid response from server", result.exceptionOrNull()?.message)
+      }
 
   @Test
   fun createMarketplacePaymentIntent_ticketNotAvailable_returnsSpecificError() = runTest {
@@ -602,8 +601,7 @@ class PaymentRepositoryFirebaseTest {
     every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
         mockCallableReference
     val callTask =
-        Tasks.forException<HttpsCallableResult>(
-            Exception("Ticket is not available for purchase"))
+        Tasks.forException<HttpsCallableResult>(Exception("Ticket is not available for purchase"))
     every { mockCallableReference.call(any()) } returns callTask
 
     // Execute
@@ -713,8 +711,7 @@ class PaymentRepositoryFirebaseTest {
     // Mock function call with authentication error
     every { mockFunctions.getHttpsCallable("createMarketplacePaymentIntent") } returns
         mockCallableReference
-    val callTask =
-        Tasks.forException<HttpsCallableResult>(Exception("User must be authenticated"))
+    val callTask = Tasks.forException<HttpsCallableResult>(Exception("User must be authenticated"))
     every { mockCallableReference.call(any()) } returns callTask
 
     // Execute
@@ -770,8 +767,7 @@ class PaymentRepositoryFirebaseTest {
 
     val responseData =
         mapOf(
-            "clientSecret" to "pi_minimal_secret",
-            "paymentIntentId" to "pi_minimal_123"
+            "clientSecret" to "pi_minimal_secret", "paymentIntentId" to "pi_minimal_123"
             // Missing ticketId, eventName, amount, currency
             )
     val mockResult = mockk<HttpsCallableResult>()
