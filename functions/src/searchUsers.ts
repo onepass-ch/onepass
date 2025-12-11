@@ -36,7 +36,7 @@
      if (organizationId) {
        const membershipsSnap = await db
          .collection("memberships")
-         .where("organizationId", "==", organizationId)
+         .where("orgId", "==", organizationId)
          .get();
        exclude = new Set(membershipsSnap.docs.map((d) => d.data().userId));
      }
