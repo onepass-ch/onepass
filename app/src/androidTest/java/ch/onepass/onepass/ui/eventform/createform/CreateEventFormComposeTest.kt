@@ -5,8 +5,11 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.event.EventRepository
+import ch.onepass.onepass.ui.eventform.EventFormViewModel
 import ch.onepass.onepass.ui.eventform.EventFormViewModel.ValidationError
+import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Rule
@@ -234,5 +237,29 @@ class CreateEventFormComposeTest {
 
     // Perform a click
     composeTestRule.onNodeWithText("Technology").performClick()
+  }
+
+  @Test
+  fun createButton_disabled_when_loading_or_success() {
+    val mockStateFlow = MutableStateFlow<CreateEventUiState>(CreateEventUiState.Loading)
+    val mockVm = mockk<CreateEventFormViewModel>(relaxed = true)
+
+    every { mockVm.uiState } returns mockStateFlow
+    every { mockVm.formState } returns MutableStateFlow(EventFormViewModel.EventFormState())
+    every { mockVm.fieldErrors } returns MutableStateFlow(emptyMap())
+    every { mockVm.imageUploadState } returns
+        MutableStateFlow(EventFormViewModel.ImageUploadState.Idle)
+    every { mockVm.locationSearchResults } returns MutableStateFlow(emptyList())
+    every { mockVm.isSearchingLocation } returns MutableStateFlow(false)
+
+    composeTestRule.setContent { CreateEventForm(viewModel = mockVm) }
+
+    // Check button is disabled
+    composeTestRule.onNodeWithText("Create event").performScrollTo().assertIsNotEnabled()
+
+    // Switch to Success
+    mockStateFlow.value = CreateEventUiState.Success("id")
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithText("Create event").performScrollTo().assertIsNotEnabled()
   }
 }
