@@ -3,6 +3,7 @@ package ch.onepass.onepass.ui.feed
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,9 +25,8 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
-import ch.onepass.onepass.model.staff.StaffSearchResult
-import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.eventfilters.EventFilters
+import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
@@ -34,12 +34,12 @@ import ch.onepass.onepass.ui.event.EventCard
 import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
 import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
+import ch.onepass.onepass.ui.eventfilters.FilterDialog
 import ch.onepass.onepass.ui.feed.FeedScreenTestTags.getTestTagForEventItem
 import ch.onepass.onepass.ui.feed.FeedScreenTestTags.getTestTagForSearchEvent
 import ch.onepass.onepass.ui.feed.FeedScreenTestTags.getTestTagForSearchOrg
 import ch.onepass.onepass.ui.feed.FeedScreenTestTags.getTestTagForSearchUser
 import ch.onepass.onepass.ui.organization.OrganizationCard
-import ch.onepass.onepass.ui.eventfilters.FilterDialog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -74,6 +74,12 @@ object FeedScreenTestTags {
   fun getTestTagForEventItem(eventId: String) = "eventItem_$eventId"
 }
 
+/**
+ * Represents a click action on a global search result item.
+ *
+ * This sealed class defines the different types of clickable items that may appear in a global
+ * search list, allowing callers to handle each item type explicitly using `when` expressions.
+ */
 sealed class GlobalSearchItemClick {
   data class UserClick(val userId: String) : GlobalSearchItemClick()
 
@@ -82,7 +88,18 @@ sealed class GlobalSearchItemClick {
   data class OrganizationClick(val organizationId: String) : GlobalSearchItemClick()
 }
 
+/**
+ * Listener for click events on global search result items.
+ *
+ * Implementations of this functional interface receive a [GlobalSearchItemClick] instance
+ * describing which item was clicked.
+ */
 fun interface GlobalSearchItemClickListener {
+  /**
+   * Called when a global search item is clicked.
+   *
+   * @param click The click event describing the clicked item.
+   */
   fun onItemClick(click: GlobalSearchItemClick)
 }
 
@@ -134,6 +151,12 @@ fun FeedScreen(
         FeedScreenTopBar(
             uiState = uiState,
             currentFilters = currentFilters,
+            searchQuery = searchQuery,
+            onSearchChanged = { newQuery ->
+              searchQuery = newQuery
+              globalSearchViewModel?.onQueryChanged(newQuery)
+            },
+            globalSearchViewModel = globalSearchViewModel,
             onFilterClick = { viewModel.setShowFilterDialog(true) },
             onNotificationClick = onNavigateToNotifications,
             onFavoritesClick = { viewModel.toggleFavoritesMode() },
@@ -152,7 +175,12 @@ fun FeedScreen(
           onNavigateToEvent = onNavigateToEvent,
           onRetry = { viewModel.refreshEvents() },
           eventCardViewModel = eventCardViewModel,
-          listState = listState)
+          listState = listState,
+          searchQuery = searchQuery,
+          searchState = searchState,
+          globalSearchViewModel = globalSearchViewModel,
+          globalSearchItemClickListener = globalSearchItemClickListener,
+          likedEvents = likedEvents)
     }
 
     // 4. Dialog Display
@@ -210,21 +238,27 @@ private fun RememberFeedScreenSideEffects(
 private fun FeedScreenTopBar(
     uiState: FeedUIState,
     currentFilters: EventFilters,
+    searchQuery: String,
+    onSearchChanged: (String) -> Unit,
+    globalSearchViewModel: GlobalSearchViewModel?,
     onFilterClick: () -> Unit,
     onNotificationClick: () -> Unit,
     onFavoritesClick: () -> Unit,
-    onClearFilters: () -> Unit,
+    onClearFilters: () -> Unit
 ) {
-  val displayTitle = if (uiState.isShowingFavorites) "FAVORITES" else "WELCOME"
-
   Column {
     FeedTopBar(
-        currentLocation = uiState.location,
-        currentDateRange = displayTitle,
+        searchQuery = searchQuery,
+        onSearchChanged = { newQuery ->
+          onSearchChanged(newQuery)
+          globalSearchViewModel?.onQueryChanged(newQuery)
+        },
         isShowingFavorites = uiState.isShowingFavorites,
         onFilterClick = onFilterClick,
         onNotificationClick = onNotificationClick,
-        onFavoritesClick = onFavoritesClick)
+        onFavoritesClick = onFavoritesClick,
+    )
+
     if (currentFilters.hasActiveFilters) {
       ActiveFiltersBar(
           filters = currentFilters,
@@ -232,8 +266,7 @@ private fun FeedScreenTopBar(
           modifier =
               Modifier.fillMaxWidth()
                   .padding(horizontal = 16.dp, vertical = 8.dp)
-                  .testTag(FeedScreenTestTags.ACTIVE_FILTERS_BAR),
-      )
+                  .testTag(FeedScreenTestTags.ACTIVE_FILTERS_BAR))
     }
   }
 }
@@ -245,121 +278,122 @@ private fun FeedContentStateSwitcher(
     onNavigateToEvent: (String) -> Unit,
     onRetry: () -> Unit,
     eventCardViewModel: EventCardViewModel,
-    listState: LazyListState
+    listState: LazyListState,
+    searchQuery: String,
+    searchState: GlobalSearchUiState?,
+    globalSearchViewModel: GlobalSearchViewModel?,
+    globalSearchItemClickListener: GlobalSearchItemClickListener?,
+    likedEvents: Set<String>
 ) {
-    LazyColumn(
-        modifier = Modifier.fillMaxSize().testTag(FeedScreenTestTags.EVENT_LIST),
-        verticalArrangement = Arrangement.spacedBy(16.dp)) {
+  LazyColumn(
+      modifier = Modifier.fillMaxSize().testTag(FeedScreenTestTags.EVENT_LIST),
+      verticalArrangement = Arrangement.spacedBy(16.dp)) {
         if (globalSearchViewModel != null && searchQuery.isNotBlank()) {
-            when {
-                searchState?.isLoading == true -> {
-                    // Loading indicator when search bar is loading content
-                    item {
-                        LoadingState(modifier = Modifier.testTag(FeedScreenTestTags.LOADING_INDICATOR))
-                    }
-                }
-                // Error message when there is one
-                searchState?.error != null -> {
-                    item {
-                        Text(
-                            text = "Error: ${searchState.error}",
-                            color = MaterialTheme.colorScheme.error,
-                            modifier =
-                                Modifier.padding(16.dp).testTag(FeedScreenTestTags.ERROR_MESSAGE))
-                    }
-                }
-                else -> {
-                    // User search results
-                    searchState?.users?.let { users ->
-                        if (users.isNotEmpty()) {
-                            items(users) { user ->
-                                UserSearchItem(
-                                    user,
-                                    globalSearchItemClickListener,
-                                    modifier = Modifier.testTag(getTestTagForSearchUser(user.id)))
-                            }
-                        }
-                    }
-
-                    // Event search results
-                    searchState?.events?.let { events ->
-                        if (events.isNotEmpty()) {
-                            items(events) { event ->
-                                EventCard(
-                                    event = event,
-                                    isLiked = likedEvents.contains(event.eventId),
-                                    onLikeToggle = { eventCardViewModel.toggleLike(event.eventId) },
-                                    onCardClick = { onNavigateToEvent(event.eventId) },
-                                    modifier = Modifier.testTag(getTestTagForSearchEvent(event.eventId)))
-                            }
-                        }
-                    }
-
-                    // Organisation search results
-                    searchState?.organizations?.let { orgs ->
-                        if (orgs.isNotEmpty()) {
-                            items(orgs) { org ->
-                                OrganizationCard(
-                                    organization = org,
-                                    onClick = {
-                                        globalSearchItemClickListener?.onItemClick(
-                                            GlobalSearchItemClick.OrganizationClick(org.id))
-                                    },
-                                    modifier = Modifier.testTag(getTestTagForSearchOrg(org.id)))
-                            }
-                        }
-                    }
-
-                    // Text when no result is found
-                    if ((searchState?.users.isNullOrEmpty() &&
-                                searchState?.events.isNullOrEmpty() &&
-                                searchState?.organizations.isNullOrEmpty())) {
-                        item { Text("No results found", modifier = Modifier.padding(16.dp)) }
-                    }
-                }
+          when {
+            searchState?.isLoading == true -> {
+              // Loading indicator when search bar is loading content
+              item {
+                LoadingState(modifier = Modifier.testTag(FeedScreenTestTags.LOADING_INDICATOR))
+              }
             }
-        } else {
-            // Feed content
-            if (uiState.isLoading && uiState.events.isEmpty() && !uiState.isRefreshing) {
-                item {
-                    LoadingState(modifier = Modifier.testTag(FeedScreenTestTags.LOADING_INDICATOR))
+            // Error message when there is one
+            searchState?.error != null -> {
+              item {
+                Text(
+                    text = "Error: ${searchState.error}",
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.padding(16.dp).testTag(FeedScreenTestTags.ERROR_MESSAGE))
+              }
+            }
+            else -> {
+              // User search results
+              searchState?.users?.let { users ->
+                if (users.isNotEmpty()) {
+                  items(users) { user ->
+                    UserSearchItem(
+                        user,
+                        globalSearchItemClickListener,
+                        modifier = Modifier.testTag(getTestTagForSearchUser(user.id)))
+                  }
                 }
-            } else if (uiState.events.isNotEmpty()) {
-                items(uiState.events) { event ->
+              }
+
+              // Event search results
+              searchState?.events?.let { events ->
+                if (events.isNotEmpty()) {
+                  items(events) { event ->
                     EventCard(
                         event = event,
                         isLiked = likedEvents.contains(event.eventId),
                         onLikeToggle = { eventCardViewModel.toggleLike(event.eventId) },
                         onCardClick = { onNavigateToEvent(event.eventId) },
-                        modifier = Modifier.testTag(getTestTagForEventItem(event.eventId)))
+                        modifier = Modifier.testTag(getTestTagForSearchEvent(event.eventId)))
+                  }
                 }
-                if (uiState.isLoading && uiState.events.isNotEmpty()) {
-                    item {
-                        Box(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            contentAlignment = Alignment.Center) {
-                            LoadingState()
-                        }
-                    }
+              }
+
+              // Organisation search results
+              searchState?.organizations?.let { orgs ->
+                if (orgs.isNotEmpty()) {
+                  items(orgs) { org ->
+                    OrganizationCard(
+                        organization = org,
+                        onClick = {
+                          globalSearchItemClickListener?.onItemClick(
+                              GlobalSearchItemClick.OrganizationClick(org.id))
+                        },
+                        modifier = Modifier.testTag(getTestTagForSearchOrg(org.id)))
+                  }
                 }
-            } else if (uiState.error != null) {
-                item {
-                    ErrorState(
-                        error = uiState.error ?: "Unknown error",
-                        onRetry = { viewModel.refreshEvents() },
-                        testTag = FeedScreenTestTags.ERROR_MESSAGE)
-                }
-            } else {
-                item {
-                    EmptyState(
-                        title = "No Events Found",
-                        message = "Check back later for new events in your area!",
-                        testTag = FeedScreenTestTags.EMPTY_STATE)
-                }
+              }
+
+              // Text when no result is found
+              if ((searchState?.users.isNullOrEmpty() &&
+                  searchState?.events.isNullOrEmpty() &&
+                  searchState?.organizations.isNullOrEmpty())) {
+                item { Text("No results found", modifier = Modifier.padding(16.dp)) }
+              }
             }
+          }
+        } else {
+          // Feed content
+          if (uiState.isLoading && uiState.events.isEmpty() && !uiState.isRefreshing) {
+            item { LoadingState(modifier = Modifier.testTag(FeedScreenTestTags.LOADING_INDICATOR)) }
+          } else if (uiState.events.isNotEmpty()) {
+            items(uiState.events) { event ->
+              EventCard(
+                  event = event,
+                  isLiked = likedEvents.contains(event.eventId),
+                  onLikeToggle = { eventCardViewModel.toggleLike(event.eventId) },
+                  onCardClick = { onNavigateToEvent(event.eventId) },
+                  modifier = Modifier.testTag(getTestTagForEventItem(event.eventId)))
+            }
+            if (uiState.isLoading && uiState.events.isNotEmpty()) {
+              item {
+                Box(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    contentAlignment = Alignment.Center) {
+                      LoadingState()
+                    }
+              }
+            }
+          } else if (uiState.error != null) {
+            item {
+              ErrorState(
+                  error = uiState.error,
+                  onRetry = onRetry,
+                  testTag = FeedScreenTestTags.ERROR_MESSAGE)
+            }
+          } else {
+            item {
+              EmptyState(
+                  title = "No Events Found",
+                  message = "Check back later for new events in your area!",
+                  testTag = FeedScreenTestTags.EMPTY_STATE)
+            }
+          }
         }
-    }
-  }
+      }
 }
 
 /** Logic and display for the filter dialog. */
@@ -423,7 +457,7 @@ private fun FeedTopBar(
     onFilterClick: () -> Unit,
     onNotificationClick: () -> Unit,
     onFavoritesClick: () -> Unit,
-    modifier: Modifier = Modifier,
+    modifier: Modifier = Modifier
 ) {
   Surface(
       modifier = modifier.fillMaxWidth().testTag(FeedScreenTestTags.FEED_TOP_BAR),
@@ -434,8 +468,6 @@ private fun FeedTopBar(
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically) {
-
-          // Search top field
           OutlinedTextField(
               value = searchQuery,
               onValueChange = onSearchChanged,
@@ -448,45 +480,40 @@ private fun FeedTopBar(
 
           Row(
               horizontalArrangement = Arrangement.spacedBy(4.dp),
-              verticalAlignment = Alignment.CenterVertically,
-          ) {
-              // Favorites Button
-                  IconButton(
-                      onClick = onFavoritesClick,
-                      modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.FAVORITES_BUTTON)) {
+              verticalAlignment = Alignment.CenterVertically) {
+                IconButton(
+                    onClick = onFavoritesClick,
+                    modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.FAVORITES_BUTTON)) {
                       Icon(
                           imageVector =
                               if (isShowingFavorites) Icons.Filled.Favorite
                               else Icons.Outlined.FavoriteBorder,
                           contentDescription = "Favorites",
                           tint = colorResource(id = R.color.white),
-                          modifier = Modifier.size(24.dp),
-                      )
-                  }
+                          modifier = Modifier.size(24.dp))
+                    }
 
-            // Notification button
-            IconButton(
-                onClick = onNotificationClick,
-                modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.NOTIFICATION_BUTTON)) {
-                  Icon(
-                      imageVector = Icons.Default.Notifications,
-                      contentDescription = "Notifications",
-                      tint = colorResource(id = R.color.white),
-                      modifier = Modifier.size(24.dp))
-                }
+                IconButton(
+                    onClick = onNotificationClick,
+                    modifier =
+                        Modifier.size(48.dp).testTag(FeedScreenTestTags.NOTIFICATION_BUTTON)) {
+                      Icon(
+                          imageVector = Icons.Default.Notifications,
+                          contentDescription = "Notifications",
+                          tint = colorResource(id = R.color.white),
+                          modifier = Modifier.size(24.dp))
+                    }
 
-            // Filter button
-            IconButton(
-                onClick = onFilterClick,
-                modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.FILTER_BUTTON)) {
-                  Icon(
-                      painter = painterResource(id = R.drawable.filter_icon),
-                      contentDescription = "Filter events",
-                      tint = colorResource(id = R.color.white),
-                      modifier = Modifier.size(24.dp),
-                  )
-                }
-          }
+                IconButton(
+                    onClick = onFilterClick,
+                    modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.FILTER_BUTTON)) {
+                      Icon(
+                          painter = painterResource(id = R.drawable.filter_icon),
+                          contentDescription = "Filter events",
+                          tint = colorResource(id = R.color.white),
+                          modifier = Modifier.size(24.dp))
+                    }
+              }
         }
   }
 }

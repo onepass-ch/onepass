@@ -57,19 +57,16 @@ class FeedScreenTest {
           ticketsIssued = 100,
           pricingTiers = emptyList())
 
-  // Mocks needed for FeedViewModel instantiation in tests
-  private val mockUserRepository = mockk<UserRepository>(relaxed = true)
-  private val mockAuth = mockk<FirebaseAuth>(relaxed = true)
-  private val mockUser = mockk<FirebaseUser>(relaxed = true)
+  private lateinit var mockUserRepository: UserRepository
+  private lateinit var mockAuth: FirebaseAuth
+  private lateinit var mockUser: FirebaseUser
 
   @Before
   fun setup() {
-    // Initialize mocks using lateinit vars
     mockUserRepository = mockk(relaxed = true)
     mockAuth = mockk(relaxed = true)
     mockUser = mockk(relaxed = true)
 
-    // Setup mock behavior
     every { mockAuth.currentUser } returns mockUser
     every { mockUser.uid } returns "test-user-id"
     every { mockUserRepository.getFavoriteEvents(any()) } returns flowOf(emptySet())
@@ -129,9 +126,6 @@ class FeedScreenTest {
 
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_SCREEN).assertIsDisplayed()
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TOP_BAR).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_LOCATION).assertIsDisplayed()
-    // Check for new favorites button
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FAVORITES_BUTTON).assertIsDisplayed()
   }
 
@@ -232,8 +226,6 @@ class FeedScreenTest {
         .assertIsDisplayed()
   }
 
-  // ============ NEW TESTS TO COVER MISSING LINES ============
-
   @Test
   fun feedScreen_displayErrorState_whenLoadingFails() {
     val mockRepository = MockEventRepository(shouldThrowError = true)
@@ -243,7 +235,6 @@ class FeedScreenTest {
 
     composeTestRule.waitForIdle()
 
-    // Verify error state is displayed
     composeTestRule.onNodeWithTag(FeedScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
     composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
     composeTestRule.onNodeWithText("Test error").assertIsDisplayed()
@@ -282,8 +273,6 @@ class FeedScreenTest {
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
-    // The loading indicator should appear briefly during initial load
-    // We need to check this before waitForIdle completes
     Thread.sleep(50) // Small delay to catch the loading state
 
     // After loading completes, empty state should show
@@ -396,21 +385,13 @@ class FeedScreenTest {
 
     composeTestRule.waitForIdle()
 
-    // Initial state: Welcome
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("WELCOME")
-
     // Click favorites
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FAVORITES_BUTTON).performClick()
     composeTestRule.waitForIdle()
 
-    // Title should change
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("FAVORITES")
-
     // Click again to toggle back
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FAVORITES_BUTTON).performClick()
     composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("WELCOME")
   }
 
   @Test
