@@ -6,8 +6,8 @@ import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
-import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -116,8 +116,7 @@ class TicketRepositoryTest {
             listingPrice = 150.0,
             listedAt = Timestamp(2000, 0))
 
-    every { mockRepository.getListedTicketsByUser(testUserId) } returns
-        flowOf(listOf(newer, older))
+    every { mockRepository.getListedTicketsByUser(testUserId) } returns flowOf(listOf(newer, older))
 
     val result = mockRepository.getListedTicketsByUser(testUserId).first()
 
@@ -168,9 +167,9 @@ class TicketRepositoryTest {
   @Test
   fun getListedTicketsByEvent_sortedByPrice() = runTest {
     val expensive =
-        createTestTicket(
-            ticketId = "expensive", state = TicketState.LISTED, listingPrice = 200.0)
-    val cheap = createTestTicket(ticketId = "cheap", state = TicketState.LISTED, listingPrice = 50.0)
+        createTestTicket(ticketId = "expensive", state = TicketState.LISTED, listingPrice = 200.0)
+    val cheap =
+        createTestTicket(ticketId = "cheap", state = TicketState.LISTED, listingPrice = 50.0)
     val medium =
         createTestTicket(ticketId = "medium", state = TicketState.LISTED, listingPrice = 100.0)
 
@@ -197,7 +196,8 @@ class TicketRepositoryTest {
             state = TicketState.LISTED,
             listingPrice = 100.0)
 
-    every { mockRepository.getListedTicketsByEvent(testEventId) } returns flowOf(listOf(correctEvent))
+    every { mockRepository.getListedTicketsByEvent(testEventId) } returns
+        flowOf(listOf(correctEvent))
 
     val result = mockRepository.getListedTicketsByEvent(testEventId).first()
 

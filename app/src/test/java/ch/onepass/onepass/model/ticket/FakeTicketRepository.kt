@@ -86,9 +86,7 @@ class FakeTicketRepository(initialTickets: List<Ticket> = emptyList()) : TicketR
 
   override fun getTicketsByUser(userId: String): Flow<List<Ticket>> =
       ticketsFlow.map { tickets ->
-        tickets
-            .filter { it.ownerId == userId }
-            .sortedByDescending { it.issuedAt?.seconds ?: 0 }
+        tickets.filter { it.ownerId == userId }.sortedByDescending { it.issuedAt?.seconds ?: 0 }
       }
 
   override fun getActiveTickets(userId: String): Flow<List<Ticket>> =
@@ -131,8 +129,7 @@ class FakeTicketRepository(initialTickets: List<Ticket> = emptyList()) : TicketR
     if (throwOnCreate) return Result.failure(RuntimeException("Failed to create ticket"))
 
     val id = ticket.ticketId.ifEmpty { UUID.randomUUID().toString() }
-    val toStore =
-        ticket.copy(ticketId = id, issuedAt = ticket.issuedAt ?: Timestamp.now())
+    val toStore = ticket.copy(ticketId = id, issuedAt = ticket.issuedAt ?: Timestamp.now())
     ticketsFlow.value = ticketsFlow.value + toStore
     return Result.success(id)
   }
