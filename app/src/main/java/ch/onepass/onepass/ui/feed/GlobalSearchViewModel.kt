@@ -10,6 +10,8 @@ import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserSearchType
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
@@ -109,51 +111,59 @@ class GlobalSearchViewModel(
     // Launch a coroutine to perform the search
     viewModelScope.launch {
       try {
-        val eventsResults: List<Event> =
-            try {
-              // Fetch published events and apply fuzzy matching
-              val e =
-                  eventRepo
-                      .getEventsByStatus(EventStatus.PUBLISHED)
-                      .first()
-                      .filter { isFuzzyMatch(it.title, query) }
-                      .sortedBy { wordDistance(it.title, query) }
-                      .take(MAX_EVENT_RESULTS)
-              e
-            } catch (e: Exception) {
-              _uiState.value = _uiState.value.copy(error = e.message)
-              emptyList()
-            }
+        val eventsDeferred: Deferred<List<Event>> = async {
+          try {
+            // Fetch published events and apply fuzzy matching
+            val e =
+                eventRepo
+                    .getEventsByStatus(EventStatus.PUBLISHED)
+                    .first()
+                    .filter { isFuzzyMatch(it.title, query) }
+                    .sortedBy { wordDistance(it.title, query) }
+                    .take(MAX_EVENT_RESULTS)
+            e
+          } catch (e: Exception) {
+            _uiState.value = _uiState.value.copy(error = e.message)
+            emptyList()
+          }
+        }
 
-        val usersResults: List<StaffSearchResult> =
-            try {
-              // Fetch users and apply fuzzy matching
-              val userSearch = userRepo.searchUsers(query, UserSearchType.DISPLAY_NAME, null)
-              val users = userSearch.getOrElse { emptyList() }
+        val usersDeferred: Deferred<List<StaffSearchResult>> = async {
+          try {
+            // Fetch users and apply fuzzy matching
+            val userSearch = userRepo.searchUsers(query, UserSearchType.DISPLAY_NAME, null)
+            val users = userSearch.getOrElse { emptyList() }
 
-              // Apply fuzzy matching and sorting
-              users
-                  .filter { isFuzzyMatch(it.displayName, query) }
-                  .sortedBy { wordDistance(it.displayName, query) }
-                  .take(MAX_USER_RESULTS)
-            } catch (e: Exception) {
-              _uiState.value = _uiState.value.copy(error = e.message)
-              emptyList()
-            }
+            // Apply fuzzy matching and sorting
+            users
+                .filter { isFuzzyMatch(it.displayName, query) }
+                .sortedBy { wordDistance(it.displayName, query) }
+                .take(MAX_USER_RESULTS)
+          } catch (e: Exception) {
+            _uiState.value = _uiState.value.copy(error = e.message)
+            emptyList()
+          }
+        }
 
-        val orgResults: List<Organization> =
-            try {
-              // Fetch organizations and apply fuzzy matching
-              orgRepo
-                  .searchOrganizations(query)
-                  .first()
-                  .filter { isFuzzyMatch(it.name, query) }
-                  .sortedBy { wordDistance(it.name, query) }
-                  .take(MAX_ORG_RESULTS)
-            } catch (e: Exception) {
-              _uiState.value = _uiState.value.copy(error = e.message)
-              emptyList()
-            }
+        val orgsDeferred: Deferred<List<Organization>> = async {
+          try {
+            // Fetch organizations and apply fuzzy matching
+            orgRepo
+                .searchOrganizations(query)
+                .first()
+                .filter { isFuzzyMatch(it.name, query) }
+                .sortedBy { wordDistance(it.name, query) }
+                .take(MAX_ORG_RESULTS)
+          } catch (e: Exception) {
+            _uiState.value = _uiState.value.copy(error = e.message)
+            emptyList()
+          }
+        }
+
+        // Await all results concurrently
+        val eventsResults = eventsDeferred.await()
+        val usersResults = usersDeferred.await()
+        val orgResults = orgsDeferred.await()
 
         // Update UI state with fetched results
         _uiState.value =
