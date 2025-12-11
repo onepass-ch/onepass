@@ -5,10 +5,15 @@ import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.ui.feed.FeedViewModel.Companion.LOADED_EVENTS_LIMIT
 import ch.onepass.onepass.utils.EventTestData
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.firestore.GeoPoint
+import io.mockk.every
+import io.mockk.mockk
 import java.util.Calendar
 import java.util.Date
 import kotlin.test.assertEquals
@@ -17,6 +22,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -38,14 +44,14 @@ class FeedViewModelTest {
           organizerId = "org1",
           organizerName = "Organizer 1",
           status = EventStatus.PUBLISHED,
-          location = Location(GeoPoint(46.5197, 6.6323), "Lausanne"),
+          location = Location(GeoPoint(46.5197, 6.6323), "Lausanne", "Vaud"),
           startTime = Timestamp(Date()),
           capacity = 100,
           ticketsRemaining = 50,
           ticketsIssued = 50,
           pricingTiers = emptyList(),
           tags = emptyList(),
-          createdAt = Timestamp.now())
+          createdAt = Timestamp(1000, 0))
 
   private val testEvent2 =
       Event(
@@ -62,7 +68,12 @@ class FeedViewModelTest {
           ticketsIssued = 100,
           pricingTiers = emptyList(),
           tags = emptyList(),
-          createdAt = Timestamp.now())
+          createdAt = Timestamp(2000, 0))
+
+  // Mocks for new dependencies
+  private lateinit var mockUserRepository: UserRepository
+  private lateinit var mockAuth: FirebaseAuth
+  private lateinit var mockUser: FirebaseUser
 
   private class MockEventRepository(
       private val events: List<Event> = emptyList(),
@@ -111,6 +122,14 @@ class FeedViewModelTest {
   @Before
   fun setup() {
     Dispatchers.setMain(testDispatcher)
+    mockUserRepository = mockk(relaxed = true)
+    mockAuth = mockk(relaxed = true)
+    mockUser = mockk(relaxed = true)
+
+    // Default mock behavior
+    every { mockAuth.currentUser } returns mockUser
+    every { mockUser.uid } returns "test-uid"
+    every { mockUserRepository.getFavoriteEvents("test-uid") } returns flowOf(emptySet())
   }
 
   @After
@@ -121,7 +140,7 @@ class FeedViewModelTest {
   @Test
   fun feedViewModel_initialState_isEmpty() = runTest {
     val mockRepository = MockEventRepository()
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     val state = viewModel.uiState.value
 
@@ -135,7 +154,7 @@ class FeedViewModelTest {
   fun feedViewModel_loadEvents_updatesStateWithEvents() = runTest {
     val events = listOf(testEvent1, testEvent2)
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.loadEvents()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -150,7 +169,7 @@ class FeedViewModelTest {
   @Test
   fun feedViewModel_loadEvents_setsLoadingState() = runTest {
     val mockRepository = MockEventRepository()
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.loadEvents()
 
@@ -166,7 +185,7 @@ class FeedViewModelTest {
   @Test
   fun feedViewModel_loadEvents_handlesError() = runTest {
     val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.loadEvents()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -182,7 +201,7 @@ class FeedViewModelTest {
   fun feedViewModel_refreshEvents_reloadsEvents() = runTest {
     val events = listOf(testEvent1)
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.refreshEvents()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -197,7 +216,7 @@ class FeedViewModelTest {
   @Test
   fun feedViewModel_clearError_removesErrorMessage() = runTest {
     val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.loadEvents()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -213,7 +232,7 @@ class FeedViewModelTest {
   @Test
   fun feedViewModel_setLocation_updatesLocation() = runTest {
     val mockRepository = MockEventRepository()
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     val newLocation = "GENEVA"
     viewModel.setLocation(newLocation)
@@ -226,7 +245,7 @@ class FeedViewModelTest {
     val publishedEvent = testEvent1.copy(status = EventStatus.PUBLISHED)
     val draftEvent = testEvent2.copy(status = EventStatus.DRAFT)
     val mockRepository = MockEventRepository(listOf(publishedEvent, draftEvent))
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.loadEvents()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -242,7 +261,7 @@ class FeedViewModelTest {
   fun feedViewModel_loadEventsMultipleTimes_updatesStateCorrectly() = runTest {
     val events = listOf(testEvent1, testEvent2)
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.loadEvents()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -260,7 +279,7 @@ class FeedViewModelTest {
   @Test
   fun feedViewModel_emptyEventsList_handledCorrectly() = runTest {
     val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.loadEvents()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -280,7 +299,7 @@ class FeedViewModelTest {
             testEvent2.copy(location = Location(GeoPoint(46.2044, 6.1432), "Geneva", "Geneva")),
         )
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.loadEvents()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -311,7 +330,7 @@ class FeedViewModelTest {
             testEvent2.copy(startTime = Timestamp(Date(nextWeek))),
         )
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.loadEvents()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -333,7 +352,7 @@ class FeedViewModelTest {
             testEvent2.copy(ticketsRemaining = 50), // Available
         )
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.loadEvents()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -361,7 +380,7 @@ class FeedViewModelTest {
             ),
         )
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.loadEvents()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -379,7 +398,7 @@ class FeedViewModelTest {
   fun feedViewModel_applyFiltersToCurrentEvents_clearsFilters() = runTest {
     val events = listOf(testEvent1, testEvent2)
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.loadEvents()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -399,7 +418,7 @@ class FeedViewModelTest {
   fun feedViewModel_refreshEvents_setsRefreshingState() = runTest {
     val events = listOf(testEvent1, testEvent2)
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.refreshEvents()
 
@@ -419,7 +438,7 @@ class FeedViewModelTest {
   @Test
   fun feedViewModel_refreshEvents_handlesError() = runTest {
     val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.refreshEvents()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -434,7 +453,7 @@ class FeedViewModelTest {
   @Test
   fun feedViewModel_refreshEvents_clearsRefreshingStateOnError() = runTest {
     val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.refreshEvents()
 
@@ -450,7 +469,7 @@ class FeedViewModelTest {
   @Test
   fun feedViewModel_refreshEvents_resetsErrorState() = runTest {
     val mockRepository = MockEventRepository(shouldThrowError = true)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     // First load with error
     viewModel.loadEvents()
@@ -474,7 +493,7 @@ class FeedViewModelTest {
     // in normal operation (events load faster than timeout)
     val events = listOf(testEvent1)
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.refreshEvents()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -492,7 +511,7 @@ class FeedViewModelTest {
     val manyEvents =
         List(LOADED_EVENTS_LIMIT + 5) { index -> testEvent1.copy(eventId = "event$index") }
     val mockRepository = MockEventRepository(manyEvents)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     viewModel.refreshEvents()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -509,7 +528,7 @@ class FeedViewModelTest {
   fun feedViewModel_concurrentLoadAndRefresh_handledCorrectly() = runTest {
     val events = listOf(testEvent1, testEvent2)
     val mockRepository = MockEventRepository(events)
-    val viewModel = FeedViewModel(mockRepository, null)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     // Start both operations
     viewModel.loadEvents()
@@ -527,8 +546,98 @@ class FeedViewModelTest {
   }
 
   @Test
+  fun feedViewModel_recommendEvents_noLikes_sortsByRecency() = runTest {
+    val mockRepository = MockEventRepository()
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
+
+    val events = listOf(testEvent1, testEvent2)
+    val recommended = viewModel.recommendEvents(events, emptySet())
+
+    // testEvent2 is newer (timestamp 2000) than testEvent1 (timestamp 1000)
+    Assert.assertEquals(testEvent2.eventId, recommended[0].eventId)
+    Assert.assertEquals(testEvent1.eventId, recommended[1].eventId)
+  }
+
+  @Test
+  fun feedViewModel_applyFiltersToCurrentEvents_updatesState() = runTest {
+    val events = listOf(testEvent1, testEvent2)
+    val mockRepository = MockEventRepository(events)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
+
+    // Initial load
+    viewModel.loadEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+    Assert.assertEquals(2, viewModel.uiState.value.events.size)
+
+    // Apply filter that matches only testEvent1
+    val filters = EventFilters(region = "Vaud") // testEvent1 is Lausanne/Vaud
+    viewModel.applyFiltersToCurrentEvents(filters)
+
+    val filteredState = viewModel.uiState.value
+    Assert.assertEquals(1, filteredState.events.size)
+    Assert.assertEquals(testEvent1.eventId, filteredState.events.first().eventId)
+  }
+
+  @Test
+  fun feedViewModel_init_observesUserLikes() = runTest {
+    // Setup mock to return a specific favorite event
+    every { mockUserRepository.getFavoriteEvents("test-uid") } returns flowOf(setOf("test1"))
+
+    val events = listOf(testEvent1, testEvent2)
+    val mockRepository = MockEventRepository(events)
+    // Initialize viewModel triggers init block
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
+
+    viewModel.loadEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // recommendations should prioritize liked event "test1" even though "test2" is newer
+    // Tag match weight: 0 (no common tags), Recency: test2 wins, User Affinity: test1 wins (10.0
+    // points)
+    // With current weights, Affinity (10.0) > Recency (5.0)
+    val state = viewModel.uiState.value
+    Assert.assertEquals("test1", state.events[0].eventId)
+  }
+
+  @Test
+  fun feedViewModel_refreshEvents_triggersRecalculateWithFilters() = runTest {
+    val events = listOf(testEvent1, testEvent2)
+    val mockRepository = MockEventRepository(events)
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
+
+    viewModel.loadEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Set a filter
+    viewModel.applyFiltersToCurrentEvents(EventFilters(region = "Vaud"))
+    Assert.assertEquals(1, viewModel.uiState.value.events.size)
+
+    // Refresh events
+    viewModel.refreshEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Filter should persist after refresh
+    Assert.assertEquals(1, viewModel.uiState.value.events.size)
+    Assert.assertEquals("test1", viewModel.uiState.value.events[0].eventId)
+  }
+
+  @Test
+  fun feedViewModel_recalculateRecommendations_emptyEvents_updatesState() = runTest {
+    val mockRepository = MockEventRepository(emptyList())
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
+
+    viewModel.loadEvents()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.uiState.value
+    Assert.assertTrue(state.events.isEmpty())
+    Assert.assertFalse(state.isLoading)
+  }
+
+  @Test
   fun recommendEvents_sorts_by_tag_affinity_recency_and_like_status() {
-    val viewModel = FeedViewModel(MockEventRepository(), null)
+    val mockRepository = MockEventRepository()
+    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
 
     val currentTimestamp = Timestamp.now().seconds
 
