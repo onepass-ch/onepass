@@ -1,9 +1,7 @@
 package ch.onepass.onepass.model.payment
 
 interface PaymentRepository {
-  /**
-   * Creates a payment intent for purchasing event tickets directly from an event.
-   */
+  /** Creates a payment intent for purchasing event tickets directly from an event. */
   suspend fun createPaymentIntent(
       amount: Long,
       eventId: String,
@@ -13,8 +11,8 @@ interface PaymentRepository {
   ): Result<PaymentIntentResponse>
 
   /**
-   * Creates a payment intent for purchasing a listed ticket from the marketplace.
-   * This reserves the ticket to prevent race conditions.
+   * Creates a payment intent for purchasing a listed ticket from the marketplace. This reserves the
+   * ticket to prevent race conditions.
    *
    * @param ticketId The ID of the listed ticket to purchase.
    * @param description Optional description for the payment.
@@ -26,17 +24,14 @@ interface PaymentRepository {
   ): Result<MarketplacePaymentIntentResponse>
 
   /**
-   * Cancels a marketplace ticket reservation.
-   * Called when the user abandons the payment flow.
+   * Cancels a marketplace ticket reservation. Called when the user abandons the payment flow.
    *
    * @param ticketId The ID of the ticket to cancel reservation for.
    */
   suspend fun cancelMarketplaceReservation(ticketId: String): Result<Unit>
 }
 
-/**
- * Response from the marketplace payment intent creation.
- */
+/** Response from the marketplace payment intent creation. */
 data class MarketplacePaymentIntentResponse(
     val clientSecret: String,
     val paymentIntentId: String,

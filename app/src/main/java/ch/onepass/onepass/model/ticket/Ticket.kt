@@ -93,7 +93,10 @@ fun Ticket.toUiTicket(event: Event?): ch.onepass.onepass.ui.myevents.Ticket {
  * @param currentTime The current time to compare against (default is now).
  * @return The computed [TicketStatus] for UI display.
  */
-fun Ticket.computeUiStatus(event: Event? = null, currentTime: Timestamp = Timestamp.now()): TicketStatus {
+fun Ticket.computeUiStatus(
+    event: Event? = null,
+    currentTime: Timestamp = Timestamp.now()
+): TicketStatus {
   return when (state) {
     TicketState.REDEEMED,
     TicketState.REVOKED -> TicketStatus.EXPIRED
@@ -106,10 +109,13 @@ fun Ticket.computeUiStatus(event: Event? = null, currentTime: Timestamp = Timest
       else if (event?.endTime != null && currentTime.seconds > event.endTime.seconds) {
         TicketStatus.EXPIRED
       }
-      // Check if event has started (use event start time if available, otherwise fall back to issuedAt)
+      // Check if event has started (use event start time if available, otherwise fall back to
+      // issuedAt)
       else if (event?.startTime != null && currentTime.seconds >= event.startTime.seconds) {
         TicketStatus.CURRENTLY
-      } else if (event?.startTime == null && issuedAt != null && currentTime.seconds >= issuedAt.seconds) {
+      } else if (event?.startTime == null &&
+          issuedAt != null &&
+          currentTime.seconds >= issuedAt.seconds) {
         // Fallback: if no event start time, use ticket issuedAt
         TicketStatus.CURRENTLY
       } else {

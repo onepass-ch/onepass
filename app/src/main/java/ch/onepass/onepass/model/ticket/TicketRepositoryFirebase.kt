@@ -22,8 +22,8 @@ class TicketRepositoryFirebase : TicketRepository {
           .map { tickets -> tickets.sortedByDescending { it.issuedAt?.seconds ?: 0 } }
 
   /**
-   * Get only active (not expired/redeemed/revoked/listed) tickets that can be used.
-   * Excludes LISTED tickets since they are displayed in their own section.
+   * Get only active (not expired/redeemed/revoked/listed) tickets that can be used. Excludes LISTED
+   * tickets since they are displayed in their own section.
    */
   override fun getActiveTickets(userId: String): Flow<List<Ticket>> =
       snapshotFlow { ticketsCollection.whereEqualTo("ownerId", userId) }

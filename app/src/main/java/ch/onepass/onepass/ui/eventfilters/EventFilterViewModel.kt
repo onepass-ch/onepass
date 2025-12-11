@@ -46,7 +46,7 @@ class EventFilterViewModel : ViewModel() {
 
   /** Confirms selected date range and updates the local filters. */
   fun confirmDateRange(start: Long, end: Long) {
-    if (start != null && end != null && end >= start) {
+    if (end >= start) {
       updateLocalFilters(_uiState.value.localFilters.copy(dateRange = start..end))
       toggleDatePicker(false)
     }

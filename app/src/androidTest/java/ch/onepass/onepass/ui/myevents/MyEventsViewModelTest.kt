@@ -8,10 +8,8 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
-import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.pass.Pass
 import ch.onepass.onepass.model.pass.PassRepository
-import ch.onepass.onepass.model.payment.PaymentRepository
 import ch.onepass.onepass.model.ticket.Ticket
 import ch.onepass.onepass.model.ticket.TicketRepository
 import io.mockk.coEvery
@@ -57,8 +55,6 @@ class MyEventsViewModelTest {
   private lateinit var passRepo: PassRepository
   private lateinit var ticketRepo: TicketRepository
   private lateinit var eventRepo: EventRepository
-  private lateinit var orgRepo: OrganizationRepository
-  private lateinit var paymentRepo: PaymentRepository
 
   /** Generates unique UID per test to avoid cache conflicts */
   private fun uniqueUid(prefix: String = "test") = "$prefix-${UUID.randomUUID()}"
@@ -73,8 +69,6 @@ class MyEventsViewModelTest {
     passRepo = mockk()
     ticketRepo = mockk()
     eventRepo = mockk()
-    orgRepo = mockk()
-    paymentRepo = mockk()
 
     // Default mock behaviors
     coEvery { ticketRepo.getActiveTickets(any()) } returns emptyFlow()
@@ -95,7 +89,7 @@ class MyEventsViewModelTest {
     val pass = Pass(uid = uid, kid = "k", issuedAt = 1, version = 1, signature = "cached")
 
     // First VM: load and cache
-    val writer = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val writer = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
     coEvery { passRepo.getOrCreateSignedPass(uid) } returns Result.success(pass)
     writer.loadUserPass()
@@ -103,7 +97,7 @@ class MyEventsViewModelTest {
     val cachedQr = writer.userQrData.value
 
     // Second VM: fail to load but retrieve from cache
-    val reader = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val reader = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
     coEvery { passRepo.getOrCreateSignedPass(uid) } returns
         Result.failure(Exception("Network down"))
@@ -116,7 +110,7 @@ class MyEventsViewModelTest {
 
   @Test
   fun loadUserPass_blankUserId_setsError() = runTest {
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, "   ")
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, "   ")
     advanceUntilIdle()
 
     vm.loadUserPass()
@@ -130,7 +124,7 @@ class MyEventsViewModelTest {
   fun failure_after_success_keepsPreviousQr() = runTest {
     val uid = uniqueUid("mix")
     val pass = Pass(uid = uid, kid = "k", issuedAt = 5, version = 1, signature = "mix")
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     // First success
@@ -152,7 +146,7 @@ class MyEventsViewModelTest {
   fun repoThrowsException_setsError_andKeepsQr() = runTest {
     val uid = uniqueUid("ex")
     val pass = Pass(uid = uid, kid = "k", issuedAt = 11, version = 1, signature = "ex")
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     // First success
@@ -178,14 +172,14 @@ class MyEventsViewModelTest {
     val pass = Pass(uid = uid, kid = "k", issuedAt = 1, version = 1, signature = "startup")
 
     // First VM: cache the QR
-    val writer = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val writer = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
     coEvery { passRepo.getOrCreateSignedPass(uid) } returns Result.success(pass)
     writer.loadUserPass()
     advanceUntilIdle()
 
     // Second VM: should load from cache on init
-    val reader = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val reader = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     assertEquals(writer.userQrData.value, reader.userQrData.value)
@@ -194,7 +188,7 @@ class MyEventsViewModelTest {
   @Test
   fun init_loadsNothing_whenNoCacheForUser() = runTest {
     val uid = uniqueUid("fresh")
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     assertNull(vm.userQrData.value)
@@ -202,19 +196,7 @@ class MyEventsViewModelTest {
 
   @Test
   fun init_withNullUser_doesNotLoadAnyCachedQr() = runTest {
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, null)
-    advanceUntilIdle()
-
-    assertNull(vm.userQrData.value)
-  }
-
-  @Test
-  fun clearCache_withNullUser_doesNothing() = runTest {
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, null)
-    advanceUntilIdle()
-
-    // Should not crash
-    vm.clearCache()
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, null)
     advanceUntilIdle()
 
     assertNull(vm.userQrData.value)
@@ -222,7 +204,7 @@ class MyEventsViewModelTest {
 
   @Test
   fun refreshPass_withNullUser_setsError() = runTest {
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, null)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, null)
     advanceUntilIdle()
 
     vm.refreshPass()
@@ -237,7 +219,7 @@ class MyEventsViewModelTest {
   @Test
   fun tickets_areEmpty_whenReposReturnEmpty() = runTest {
     val uid = uniqueUid("tickets")
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     assertTrue(vm.currentTickets.first().isEmpty())
@@ -246,7 +228,7 @@ class MyEventsViewModelTest {
 
   @Test
   fun tickets_notQueried_whenUserIdNull() = runTest {
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, null)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, null)
     advanceUntilIdle()
 
     assertTrue(vm.currentTickets.first().isEmpty())
@@ -259,7 +241,7 @@ class MyEventsViewModelTest {
     coEvery { ticketRepo.getActiveTickets(uid) } returns flowOf(emptyList())
     coEvery { ticketRepo.getExpiredTickets(uid) } returns flowOf(emptyList())
 
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     assertEquals(emptyList<ch.onepass.onepass.ui.myevents.Ticket>(), vm.currentTickets.first())
@@ -272,7 +254,7 @@ class MyEventsViewModelTest {
     coEvery { ticketRepo.getActiveTickets(uid) } returns flowOf(emptyList())
     coEvery { ticketRepo.getExpiredTickets(uid) } returns flowOf(emptyList())
 
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     assertTrue(vm.currentTickets.first().isEmpty())
@@ -290,7 +272,7 @@ class MyEventsViewModelTest {
     coEvery { ticketRepo.getExpiredTickets(uid) } returns flowOf(emptyList())
     coEvery { eventRepo.getEventById("event123") } returns flowOf(mockEvent)
 
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     // Just verify that eventRepo was called (enrichment happened)
@@ -303,7 +285,7 @@ class MyEventsViewModelTest {
     coEvery { ticketRepo.getActiveTickets(uid) } returns flowOf(emptyList())
     coEvery { ticketRepo.getExpiredTickets(uid) } returns flowOf(emptyList())
 
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     assertNotSame(vm.currentTickets, vm.expiredTickets)
@@ -316,7 +298,7 @@ class MyEventsViewModelTest {
   @Test
   fun uiState_initialState_isCorrect() = runTest {
     val uid = uniqueUid("ui_init")
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     val state = vm.uiState.first()
@@ -329,7 +311,7 @@ class MyEventsViewModelTest {
   @Test
   fun selectTab_updatesUiState() = runTest {
     val uid = uniqueUid("select_tab")
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     vm.selectTab(TicketTab.EXPIRED)
@@ -341,7 +323,7 @@ class MyEventsViewModelTest {
   @Test
   fun toggleQrExpansion_togglesState() = runTest {
     val uid = uniqueUid("toggle")
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     assertFalse(vm.uiState.first().isQrExpanded)
@@ -366,7 +348,7 @@ class MyEventsViewModelTest {
     coEvery { ticketRepo.getExpiredTickets(uid) } returns flowOf(emptyList())
     coEvery { eventRepo.getEventById("event456") } returns flowOf(mockEvent)
 
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     val uiState = vm.uiState.first()
@@ -385,7 +367,7 @@ class MyEventsViewModelTest {
     coEvery { ticketRepo.getExpiredTickets(uid) } returns flowOf(listOf(mockTicket))
     coEvery { eventRepo.getEventById("event789") } returns flowOf(mockEvent)
 
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     val uiState = vm.uiState.first()
@@ -398,7 +380,7 @@ class MyEventsViewModelTest {
   @Test
   fun userQrData_isNullInitially_beforeAnyLoad() = runTest {
     val uid = uniqueUid("init")
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     assertNull(vm.userQrData.value)
@@ -409,7 +391,7 @@ class MyEventsViewModelTest {
   @Test
   fun initial_states_areSane_beforeAnyAction() = runTest {
     val uid = uniqueUid("sanity")
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, orgRepo, paymentRepo, uid)
+    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, uid)
     advanceUntilIdle()
 
     assertNull(vm.userQrData.value)

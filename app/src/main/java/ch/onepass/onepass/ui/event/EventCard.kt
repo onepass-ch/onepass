@@ -7,15 +7,24 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.resources.C
@@ -25,6 +34,7 @@ import ch.onepass.onepass.ui.theme.CardShadow
 import ch.onepass.onepass.ui.theme.EventCardDimens
 import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.TextSecondary
+import ch.onepass.onepass.utils.FormatUtils.formatPriceCompact
 import coil.compose.AsyncImage
 
 /**
@@ -56,8 +66,23 @@ fun EventCard(
   val title = event.title
   val date = event.displayDateTime
   val location = event.displayLocation
-  val price = event.lowestPrice
+  val price = formatPriceCompact(event.lowestPrice.toDouble())
   val organizer = event.organizerName
+
+  // Responsive aspect ratio: maintain proportions while adapting to screen size
+  val aspectRatio = 392f / 417.93866f // Original Figma ratio
+  val density = LocalDensity.current
+  var cardWidth by remember { mutableStateOf(0.dp) }
+
+  // Calculate responsive height based on measured width
+  val calculatedHeight =
+      remember(cardWidth) {
+        if (cardWidth > 0.dp) {
+          cardWidth / aspectRatio
+        } else {
+          null
+        }
+      }
 
   Column(
       modifier =
@@ -75,19 +100,12 @@ fun EventCard(
                   ambientColor = CardShadow,
               )
               .fillMaxWidth()
-              .padding(
-                  start = EventCardDimens.eventCardPadding,
-                  end = EventCardDimens.eventCardPadding,
-              )
               .widthIn(max = EventCardDimens.maxWidth)
-              .aspectRatio(392f / 417.93866f) // based on figma design
+              .onSizeChanged { size -> cardWidth = with(density) { size.width.toDp() } }
+              .then(calculatedHeight?.let { height -> Modifier.heightIn(min = height) } ?: Modifier)
               .background(
                   color = CardBackground,
                   shape = RoundedCornerShape(size = EventCardDimens.cornerRadius),
-              )
-              .padding(
-                  start = EventCardDimens.horizontalPadding,
-                  end = EventCardDimens.horizontalPadding,
               ),
       verticalArrangement = Arrangement.spacedBy(EventCardDimens.verticalSpacing, Alignment.Top),
       horizontalAlignment = Alignment.CenterHorizontally,
@@ -145,7 +163,7 @@ fun EventCard(
       ) {
         Text(
             text = title,
-            style = MaterialTheme.typography.headlineMedium,
+            style = MaterialTheme.typography.headlineMedium.copy(fontSize = 24.sp),
             color = Color.White,
             modifier =
                 Modifier.padding(top = EventCardDimens.titleTopPadding)
@@ -155,7 +173,9 @@ fun EventCard(
         )
         Text(
             text = organizer,
-            style = MaterialTheme.typography.headlineSmall,
+            style =
+                MaterialTheme.typography.headlineMedium.copy(
+                    fontSize = 18.sp, fontWeight = FontWeight.Normal),
             color = TextSecondary,
             modifier = Modifier.testTag(C.Tag.event_card_organizer),
             maxLines = 1,
@@ -169,7 +189,7 @@ fun EventCard(
       // Date (Grid row 3/4)
       Text(
           text = date,
-          style = MaterialTheme.typography.bodyMedium,
+          style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp),
           color = EventDateColor,
           modifier = Modifier.testTag(C.Tag.event_card_date),
           maxLines = 1,
@@ -186,9 +206,9 @@ fun EventCard(
       ) {
         Text(
             text = location,
-            style = MaterialTheme.typography.bodyMedium,
+            style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp),
             color = Color.White,
-            maxLines = 1,
+            maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f, fill = false).testTag(C.Tag.event_card_location),
         )
@@ -196,7 +216,7 @@ fun EventCard(
         Spacer(modifier = Modifier.width(EventCardDimens.locationPriceSpacing))
 
         Text(
-            text = if (price == 0u) "FREE" else "CHF$price",
+            text = price,
             style = MaterialTheme.typography.headlineSmall,
             color = Color.White,
             modifier = Modifier.testTag(C.Tag.event_card_price),
