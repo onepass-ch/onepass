@@ -444,11 +444,14 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
 
       // Top stats card (when not idle)
       AnimatedVisibility(
-          visible = uiState.validated > 0 || uiState.status != ScannerUiState.Status.IDLE,
+          visible =
+              uiState.validated > 0 ||
+                  uiState.status != ScannerUiState.Status.IDLE ||
+                  uiState.eventTitle != null,
           enter = fadeIn() + slideInVertically(),
           exit = fadeOut() + slideOutVertically(),
           modifier = Modifier.align(Alignment.TopCenter)) {
-            TopStatsCard(validated = uiState.validated)
+            TopStatsCard(validated = uiState.validated, eventTitle = uiState.eventTitle)
           }
 
       // Bottom HUD (hide when dialogs are shown to avoid redundancy)
@@ -617,29 +620,39 @@ private fun BoxScope.FrameCorners(color: Color) {
   }
 }
 
-/** Top stats card showing validated tickets count - Internal for testing */
+/** Top stats card showing event title and validated tickets count - Internal for testing */
 @Composable
-internal fun TopStatsCard(validated: Int) {
+internal fun TopStatsCard(validated: Int, eventTitle: String?) {
   Surface(
       color = ScanColors.Card.copy(alpha = 0.95f),
       shape = RoundedCornerShape(16.dp),
       tonalElevation = 4.dp,
       modifier = Modifier.padding(top = 24.dp).testTag(ScanTestTags.STATS_CARD)) {
-        Row(
+        Column(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center) {
-              Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            horizontalAlignment = Alignment.CenterHorizontally) {
+              // Event title
+              if (eventTitle != null) {
                 Text(
-                    text = validated.toString(),
-                    color = ScanColors.Accent,
+                    text = eventTitle,
+                    color = ScanColors.TextPrimary,
                     style =
-                        MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
-                Text(
-                    text = "Validated",
-                    color = ScanColors.TextSecondary,
-                    style = MaterialTheme.typography.bodySmall)
+                        MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    maxLines = 1,
+                    textAlign = TextAlign.Center)
+                Spacer(Modifier.height(8.dp))
               }
+
+              // Validated count
+              Text(
+                  text = validated.toString(),
+                  color = ScanColors.Accent,
+                  style =
+                      MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
+              Text(
+                  text = "Validated",
+                  color = ScanColors.TextSecondary,
+                  style = MaterialTheme.typography.bodySmall)
             }
       }
 }
@@ -683,6 +696,17 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
                                 MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold),
                             modifier = Modifier.testTag(ScanTestTags.MESSAGE))
+
+                        if (uiState.lastScannedUserName != null &&
+                            uiState.status == ScannerUiState.Status.ACCEPTED) {
+                          Spacer(Modifier.height(4.dp))
+                          Text(
+                              text = uiState.lastScannedUserName,
+                              color = ScanColors.TextPrimary,
+                              style =
+                                  MaterialTheme.typography.bodyLarge.copy(
+                                      fontWeight = FontWeight.Medium))
+                        }
 
                         if (uiState.lastTicketId != null) {
                           Spacer(Modifier.height(6.dp))
@@ -801,7 +825,9 @@ internal fun PreviewScanHudAccepted() {
               isProcessing = false,
               message = "Access Granted",
               lastTicketId = "T-4821",
+              lastScannedUserName = "John Doe",
               validated = 41,
+              eventTitle = "Summer Music Festival",
               status = ScannerUiState.Status.ACCEPTED))
 }
 
@@ -847,8 +873,8 @@ internal fun PreviewHudContainer(state: ScannerUiState) {
                         },
                     shape = RoundedCornerShape(24.dp)))
 
-    if (state.validated > 0) {
-      TopStatsCard(validated = state.validated)
+    if (state.validated > 0 || state.eventTitle != null) {
+      TopStatsCard(validated = state.validated, eventTitle = state.eventTitle)
     }
 
     ScanHud(uiState = state)
