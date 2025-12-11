@@ -1,21 +1,24 @@
 package ch.onepass.onepass.ui.organizer
 
+import ch.onepass.onepass.model.membership.Membership
+import ch.onepass.onepass.model.membership.MembershipRepository
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationInvitation
 import ch.onepass.onepass.model.organization.OrganizationRepository
+import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.organization.OrganizationStatus
 import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.model.storage.FakeStorageRepository
 import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserSearchType
-import ch.onepass.onepass.utils.TestMockMembershipRepository
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
@@ -25,11 +28,10 @@ import org.junit.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class OrganizationFormViewModelTest {
-
   private lateinit var repository: FakeOrganizationRepository
   private lateinit var userRepository: FakeUserRepository
   private lateinit var storageRepository: FakeStorageRepository
-  private lateinit var membershipRepository: TestMockMembershipRepository
+  private lateinit var membershipRepository: FakeMembershipRepository
   private lateinit var viewModel: OrganizationFormViewModel
 
   @Before
@@ -37,7 +39,7 @@ class OrganizationFormViewModelTest {
     repository = FakeOrganizationRepository()
     userRepository = FakeUserRepository()
     storageRepository = FakeStorageRepository()
-    membershipRepository = TestMockMembershipRepository()
+    membershipRepository = FakeMembershipRepository()
     viewModel =
         OrganizationFormViewModel(
             repository = repository,
@@ -353,11 +355,116 @@ class OrganizationFormViewModelTest {
     assertEquals(1, repository.createCallCount)
   }
 
+  @Test
+  fun createOrganizationHandlesRepositoryCreationFailure() = runTest {
+    // Tests createOrganizationEntity failure path
+    repository.shouldFail = true
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Desc")
+    viewModel.updateContactPhone("791234567")
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.errorMessage != null }.first()
+    assertNull(finalState.successOrganizationId)
+    assertEquals("Failed", finalState.errorMessage)
+  }
+
+  @Test
+  fun createOrganizationHandlesProfileImageUpdateFailure() = runTest {
+    // Tests uploadAndUpdateProfileImage failure path (Upload succeeds, DB update fails)
+    repository.shouldFailUpdateProfile = true
+    storageRepository.shouldSucceed = true
+    val profileUri = android.net.Uri.parse("content://media/image/profile123")
+
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Desc")
+    viewModel.updateContactPhone("791234567")
+    viewModel.selectProfileImage(profileUri)
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.errorMessage != null }.first()
+    assertNull(finalState.successOrganizationId)
+    assertEquals("Failed to update profile image", finalState.errorMessage)
+  }
+
+  @Test
+  fun createOrganizationHandlesCoverImageUpdateFailure() = runTest {
+    // Tests uploadAndUpdateCoverImage failure path (Upload succeeds, DB update fails)
+    repository.shouldFailUpdateCover = true
+    storageRepository.shouldSucceed = true
+    val coverUri = android.net.Uri.parse("content://media/image/cover456")
+
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Desc")
+    viewModel.updateContactPhone("791234567")
+    viewModel.selectCoverImage(coverUri)
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.errorMessage != null }.first()
+    assertNull(finalState.successOrganizationId)
+    assertEquals("Failed to update cover image", finalState.errorMessage)
+  }
+
+  @Test
+  fun createOrganizationHandlesMembershipCreationFailure() = runTest {
+    // Tests addOwnerMembership failure path
+    membershipRepository.shouldFail = true
+    viewModel.updateName("Test Org")
+    viewModel.updateDescription("Desc")
+    viewModel.updateContactPhone("791234567")
+
+    viewModel.createOrganization("user123")
+
+    val finalState = viewModel.uiState.filter { it.errorMessage != null }.first()
+    // Org is created but membership fails
+    assertEquals("org123", finalState.successOrganizationId)
+    assertTrue(finalState.errorMessage?.contains("Failed to add membership") == true)
+  }
+
   private fun OrganizationFormViewModel.createOrganizationValidation(): Boolean {
     val method = OrganizationFormViewModel::class.java.getDeclaredMethod("validateForm")
     method.isAccessible = true
     return method.invoke(this) as Boolean
   }
+}
+
+class FakeMembershipRepository : MembershipRepository {
+  var shouldFail = false
+
+  override suspend fun addMembership(
+      userId: String,
+      orgId: String,
+      role: OrganizationRole
+  ): Result<String> {
+    return if (shouldFail) Result.failure(Exception("Failed to add membership"))
+    else Result.success("membership123")
+  }
+
+  override suspend fun removeMembership(userId: String, orgId: String) = Result.success(Unit)
+
+  override suspend fun updateMembership(userId: String, orgId: String, newRole: OrganizationRole) =
+      Result.success(Unit)
+
+  override suspend fun getUsersByOrganization(orgId: String): Result<List<Membership>> =
+      Result.success(emptyList())
+
+  override fun getUsersByOrganizationFlow(orgId: String): Flow<List<Membership>> =
+      flowOf(emptyList())
+
+  override suspend fun getOrganizationsByUser(userId: String): Result<List<Membership>> =
+      Result.success(emptyList())
+
+  override fun getOrganizationsByUserFlow(userId: String): Flow<List<Membership>> =
+      flowOf(emptyList())
+
+  override suspend fun hasMembership(
+      userId: String,
+      orgId: String,
+      roles: List<OrganizationRole>
+  ): Boolean = false
 }
 
 class FakeOrganizationRepository : OrganizationRepository {
@@ -367,6 +474,9 @@ class FakeOrganizationRepository : OrganizationRepository {
   var shouldDelay = false
   var delayMs = 0L
   var createCallCount = 0
+  var shouldThrow = false
+  var shouldFailUpdateProfile = false
+  var shouldFailUpdateCover = false
 
   override suspend fun createOrganization(organization: Organization): Result<String> {
     createCallCount++
@@ -404,10 +514,12 @@ class FakeOrganizationRepository : OrganizationRepository {
   override suspend fun deleteInvitation(invitationId: String) = TODO()
 
   override suspend fun updateProfileImage(organizationId: String, imageUrl: String?) =
-      Result.success(Unit)
+      if (shouldFailUpdateProfile) Result.failure(Exception("Failed to update profile image"))
+      else Result.success(Unit)
 
   override suspend fun updateCoverImage(organizationId: String, imageUrl: String?) =
-      Result.success(Unit)
+      if (shouldFailUpdateCover) Result.failure(Exception("Failed to update cover image"))
+      else Result.success(Unit)
 }
 
 class FakeUserRepository : UserRepository {
