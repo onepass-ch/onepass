@@ -237,6 +237,13 @@ class StaffInvitationViewModel(
       return
     }
 
+    // Check if user is already invited in this session
+    if (_uiState.value.invitedUserIds.contains(user.id)) {
+      _uiState.value =
+          _uiState.value.copy(snackbarMessage = "${user.displayName} has already been invited.")
+      return
+    }
+
     // Check if user has permission to invite
     val currentRole = _uiState.value.currentUserRole
     if (currentRole != OrganizationRole.OWNER && currentRole != OrganizationRole.ADMIN) {
@@ -245,37 +252,43 @@ class StaffInvitationViewModel(
     }
 
     viewModelScope.launch {
-      // Check if user is already invited or a member
-      val existingInvitations = organizationRepository.getInvitationsByEmail(user.email).first()
+      try {
+        // Check if user is already invited or a member
+        val existingInvitations = organizationRepository.getInvitationsByEmail(user.email).first()
 
-      val hasPendingInvitation =
-          existingInvitations.any {
-            it.orgId == organizationId && it.status == InvitationStatus.PENDING
-          }
+        val hasPendingInvitation =
+            existingInvitations.any {
+              it.orgId == organizationId && it.status == InvitationStatus.PENDING
+            }
 
-      if (hasPendingInvitation) {
+        if (hasPendingInvitation) {
+          _uiState.value =
+              _uiState.value.copy(snackbarMessage = "${user.displayName} has already been invited.")
+          return@launch
+        }
+
+        val hasAcceptedInvitation =
+            existingInvitations.any {
+              it.orgId == organizationId && it.status == InvitationStatus.ACCEPTED
+            }
+
+        if (hasAcceptedInvitation) {
+          _uiState.value =
+              _uiState.value.copy(snackbarMessage = "${user.displayName} is already a member.")
+          return@launch
+        }
+
+        // Instead of inviting immediately, we set the user for confirmation
         _uiState.value =
-            _uiState.value.copy(snackbarMessage = "${user.displayName} has already been invited.")
-        return@launch
-      }
-
-      val hasAcceptedInvitation =
-          existingInvitations.any {
-            it.orgId == organizationId && it.status == InvitationStatus.ACCEPTED
-          }
-
-      if (hasAcceptedInvitation) {
+            _uiState.value.copy(
+                selectedUserForInvite = user,
+                selectedRole = OrganizationRole.STAFF, // Default role
+                errorMessage = null)
+      } catch (e: Exception) {
         _uiState.value =
-            _uiState.value.copy(snackbarMessage = "${user.displayName} is already a member.")
-        return@launch
+            _uiState.value.copy(
+                errorMessage = "Failed to check invitation status: ${e.message ?: "Unknown error"}")
       }
-
-      // Instead of inviting immediately, we set the user for confirmation
-      _uiState.value =
-          _uiState.value.copy(
-              selectedUserForInvite = user,
-              selectedRole = OrganizationRole.STAFF, // Default role
-              errorMessage = null)
     }
   }
 

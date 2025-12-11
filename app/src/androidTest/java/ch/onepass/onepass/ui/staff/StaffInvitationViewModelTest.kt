@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.staff
 
+import ch.onepass.onepass.model.membership.Membership
 import ch.onepass.onepass.model.organization.FakeOrganizationRepository
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.OrganizationInvitation
@@ -8,6 +9,7 @@ import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.model.user.FakeUserRepository
 import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.model.user.UserSearchType
+import ch.onepass.onepass.utils.TestMockMembershipRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,11 +23,12 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class StaffInvitationViewModelTest {
 
-  private val testDispatcher = StandardTestDispatcher()
+  private val testDispatcher = UnconfinedTestDispatcher()
   private val testScope = TestScope(testDispatcher)
 
   private lateinit var userRepository: FakeUserRepository
   private lateinit var organizationRepository: FakeOrganizationRepository
+  private lateinit var membershipRepository: TestMockMembershipRepository
   private val testOrganizationId = "org_123"
   private val testUserId = "user_123"
 
@@ -48,6 +51,16 @@ class StaffInvitationViewModelTest {
     Dispatchers.setMain(testDispatcher)
     userRepository = FakeUserRepository(currentUser = testUser)
     organizationRepository = FakeOrganizationRepository()
+    membershipRepository =
+        TestMockMembershipRepository(
+            usersByOrganization =
+                mapOf(
+                    testOrganizationId to
+                        listOf(
+                            Membership(
+                                userId = testUserId,
+                                orgId = testOrganizationId,
+                                role = OrganizationRole.OWNER))))
   }
 
   @After
@@ -97,7 +110,8 @@ class StaffInvitationViewModelTest {
             StaffInvitationViewModel(
                 organizationId = testOrganizationId,
                 userRepository = repoWithoutUser,
-                organizationRepository = organizationRepository)
+                organizationRepository = organizationRepository,
+                membershipRepository = membershipRepository)
 
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -116,7 +130,8 @@ class StaffInvitationViewModelTest {
             StaffInvitationViewModel(
                 organizationId = testOrganizationId,
                 userRepository = repoWithError,
-                organizationRepository = organizationRepository)
+                organizationRepository = organizationRepository,
+                membershipRepository = membershipRepository)
 
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -513,7 +528,8 @@ class StaffInvitationViewModelTest {
             StaffInvitationViewModel(
                 organizationId = testOrganizationId,
                 userRepository = repoWithoutUser,
-                organizationRepository = organizationRepository)
+                organizationRepository = organizationRepository,
+                membershipRepository = membershipRepository)
 
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -549,10 +565,11 @@ class StaffInvitationViewModelTest {
 
         val state = viewModel.uiState.value
         assertFalse(state.isInviting)
-        assertTrue(testSearchResult1.id in state.alreadyInvitedUserIds)
-        assertNotNull(state.errorMessage)
-        assertTrue(state.errorMessage?.contains("already been invited", ignoreCase = true) == true)
-        assertNull(state.selectedUserForInvite) // Dialog should close
+        // onUserSelected detects it and shows snackbar, so confirmInvitation is not called
+        assertNotNull(state.snackbarMessage)
+        assertTrue(
+            state.snackbarMessage?.contains("already been invited", ignoreCase = true) == true)
+        assertNull(state.selectedUserForInvite) // Dialog should not open
       }
 
   @Test
@@ -578,10 +595,10 @@ class StaffInvitationViewModelTest {
 
         val state = viewModel.uiState.value
         assertFalse(state.isInviting)
-        assertTrue(testSearchResult1.id in state.alreadyInvitedUserIds)
-        assertNotNull(state.errorMessage)
-        assertTrue(state.errorMessage?.contains("already a member", ignoreCase = true) == true)
-        assertNull(state.selectedUserForInvite) // Dialog should close
+        // onUserSelected detects it and shows snackbar
+        assertNotNull(state.snackbarMessage)
+        assertTrue(state.snackbarMessage?.contains("already a member", ignoreCase = true) == true)
+        assertNull(state.selectedUserForInvite) // Dialog should not open
       }
 
   @Test
@@ -644,7 +661,8 @@ class StaffInvitationViewModelTest {
             StaffInvitationViewModel(
                 organizationId = testOrganizationId,
                 userRepository = userRepository,
-                organizationRepository = failingOrgRepo)
+                organizationRepository = failingOrgRepo,
+                membershipRepository = membershipRepository)
 
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -654,11 +672,13 @@ class StaffInvitationViewModelTest {
 
         val state = viewModel.uiState.value
         assertFalse(state.isInviting)
-        assertNotNull(state.errorMessage)
+        assertNotNull(state.invitationResultMessage)
         assertTrue(
-            state.errorMessage?.contains("Failed to create invitation", ignoreCase = true) == true)
-        // Dialog should remain open on error
-        assertNotNull(state.selectedUserForInvite)
+            state.invitationResultMessage?.contains(
+                "Failed to create invitation", ignoreCase = true) == true)
+        assertEquals(InvitationResultType.ERROR, state.invitationResultType)
+        // Dialog closes on error
+        assertNull(state.selectedUserForInvite)
       }
 
   @Test
@@ -670,7 +690,8 @@ class StaffInvitationViewModelTest {
             StaffInvitationViewModel(
                 organizationId = testOrganizationId,
                 userRepository = userRepository,
-                organizationRepository = failingOrgRepo)
+                organizationRepository = failingOrgRepo,
+                membershipRepository = membershipRepository)
 
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -682,7 +703,8 @@ class StaffInvitationViewModelTest {
         assertFalse(state.isInviting)
         assertNotNull(state.errorMessage)
         assertTrue(
-            state.errorMessage?.contains("Failed to send invitation", ignoreCase = true) == true)
+            state.errorMessage?.contains("Failed to check invitation status", ignoreCase = true) ==
+                true)
       }
 
   @Test
@@ -695,6 +717,10 @@ class StaffInvitationViewModelTest {
         viewModel.selectRole(OrganizationRole.OWNER)
         viewModel.confirmInvitation()
         testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(
+            "Error message should be null: ${viewModel.uiState.value.errorMessage}",
+            viewModel.uiState.value.errorMessage)
 
         // Verify invitation was created
         val invitations =
@@ -759,9 +785,12 @@ class StaffInvitationViewModelTest {
         viewModel.confirmInvitation()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // User should still be in invitedUserIds but NOT in alreadyInvitedUserIds
+        // User should still be in invitedUserIds
         assertTrue(testSearchResult1.id in viewModel.uiState.value.invitedUserIds)
-        assertFalse(testSearchResult1.id in viewModel.uiState.value.alreadyInvitedUserIds)
+        // Should show snackbar because we added the check for already invited users in session
+        assertNotNull(viewModel.uiState.value.snackbarMessage)
+        assertTrue(
+            viewModel.uiState.value.snackbarMessage?.contains("already been invited") == true)
       }
 
   @Test
@@ -790,7 +819,8 @@ class StaffInvitationViewModelTest {
     return StaffInvitationViewModel(
         organizationId = testOrganizationId,
         userRepository = userRepository,
-        organizationRepository = organizationRepository)
+        organizationRepository = organizationRepository,
+        membershipRepository = membershipRepository)
   }
 
   @Test
