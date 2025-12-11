@@ -4,14 +4,15 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.onepass.onepass.model.event.EventTag
 import ch.onepass.onepass.model.eventfilters.DateRangePresets
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
 import ch.onepass.onepass.ui.eventfilters.formatDateRange
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import java.time.Instant
-import junit.framework.Assert.assertNull
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -70,10 +71,12 @@ class ActiveFiltersBarTest {
 
   @Test
   fun activeFiltersBar_displaysAllFiltersTogether() {
+    val tags = EventTag.entries.take(2).map { it.displayValue }.toSet()
     val filters =
         EventFilters(
             region = "Bern",
             dateRange = DateRangePresets.getNext7DaysRange(),
+            selectedTags = tags,
             hideSoldOut = true,
         )
     composeTestRule.setContent {
@@ -81,7 +84,90 @@ class ActiveFiltersBarTest {
     }
     composeTestRule.onNodeWithText("Bern").assertIsDisplayed()
     composeTestRule.onNodeWithText("Next 7 Days").assertIsDisplayed() // Updated from "Date Range"
+    tags.forEach { tag -> composeTestRule.onNodeWithText(tag).assertIsDisplayed() }
     composeTestRule.onNodeWithText("Available Only").assertIsDisplayed()
+  }
+
+  @Test
+  fun activeFiltersBar_displaysMultipleTagsWithCountChip() {
+    val allTags = EventTag.entries.map { it.displayValue }
+    val selectedTags = allTags.take(5).toSet() // 5 tags should show count chip
+
+    val filters = EventFilters(selectedTags = selectedTags)
+
+    composeTestRule.setContent {
+      OnePassTheme { ActiveFiltersBar(filters = filters, onClearFilters = {}) }
+    }
+
+    // Should show first 3 tags
+    selectedTags.take(3).forEach { tag -> composeTestRule.onNodeWithText(tag).assertIsDisplayed() }
+
+    // Should show count chip for remaining tags
+    val remainingCount = selectedTags.size - 3
+    composeTestRule.onNodeWithText("+$remainingCount more").assertIsDisplayed()
+
+    // Should NOT show tags beyond the first 3 as individual chips
+    selectedTags.drop(3).forEach { tag -> composeTestRule.onNodeWithText(tag).assertDoesNotExist() }
+  }
+
+  @Test
+  fun activeFiltersBar_doesNotShowCountChipForThreeOrLessTags() {
+    // Test with 3 tags (exact boundary)
+    val threeTags = EventTag.entries.take(3).map { it.displayValue }.toSet()
+    val filters = EventFilters(selectedTags = threeTags)
+
+    composeTestRule.setContent {
+      OnePassTheme { ActiveFiltersBar(filters = filters, onClearFilters = {}) }
+    }
+
+    // All 3 tags should be displayed
+    threeTags.forEach { tag -> composeTestRule.onNodeWithText(tag).assertIsDisplayed() }
+
+    // No count chip should be shown
+    composeTestRule.onNodeWithText("+").assertDoesNotExist()
+  }
+
+  @Test
+  fun activeFiltersBar_integrationWithOtherFilters() {
+    // Test mixed filters including tags
+    val tags = setOf(EventTag.TECH.displayValue, EventTag.FREE.displayValue)
+    val filters =
+        EventFilters(
+            region = "Zurich",
+            dateRange = DateRangePresets.getTodayRange(),
+            selectedTags = tags,
+            hideSoldOut = false // Test with false too
+            )
+
+    composeTestRule.setContent {
+      OnePassTheme { ActiveFiltersBar(filters = filters, onClearFilters = {}) }
+    }
+
+    // Verify all filter types appear together
+    composeTestRule.onNodeWithText("Zurich").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Today").assertIsDisplayed()
+    tags.forEach { tag -> composeTestRule.onNodeWithText(tag).assertIsDisplayed() }
+    composeTestRule.onNodeWithText("Clear All").assertIsDisplayed()
+
+    // Verify hideSoldOut doesn't appear when false
+    composeTestRule.onNodeWithText("Available Only").assertDoesNotExist()
+  }
+
+  @Test
+  fun activeFiltersBar_emptyStateShowsNoTags() {
+    val filters = EventFilters() // No filters active
+
+    composeTestRule.setContent {
+      OnePassTheme { ActiveFiltersBar(filters = filters, onClearFilters = {}) }
+    }
+
+    // Should show Clear All button but no filter chips
+    composeTestRule.onNodeWithText("Clear All").assertIsDisplayed()
+
+    // Should NOT show any tags (using actual EventTag values)
+    EventTag.entries.forEach { tag ->
+      composeTestRule.onNodeWithText(tag.displayValue).assertDoesNotExist()
+    }
   }
 
   @Test

@@ -7,7 +7,10 @@ import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
-import ch.onepass.onepass.ui.event.EventCardViewModel
+import ch.onepass.onepass.model.user.UserRepository
+import ch.onepass.onepass.model.user.UserRepositoryFirebase
+import ch.onepass.onepass.utils.EventFilteringUtils.applyFiltersLocally
+import com.google.firebase.auth.FirebaseAuth
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.async
@@ -38,10 +41,13 @@ data class FeedUIState(
  * ViewModel for the feed screen. Implements a content-based recommender system.
  *
  * @property repository The event repository for data operations.
+ * @property userRepository The user repository for accessing liked events.
+ * @property auth Firebase auth for getting current user.
  */
 open class FeedViewModel(
     private val repository: EventRepository = EventRepositoryFirebase(),
-    private val eventCardViewModel: EventCardViewModel? = null
+    private val userRepository: UserRepository = UserRepositoryFirebase(),
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) : ViewModel() {
 
   companion object {
@@ -57,8 +63,28 @@ open class FeedViewModel(
   private val _uiState = MutableStateFlow(FeedUIState())
   val uiState: StateFlow<FeedUIState> = _uiState.asStateFlow()
 
-  // Holds the raw list of recommended events before local filters (region/date) are applied
+  // Holds the raw list of all events from the repository
   private val _allEvents = MutableStateFlow<List<Event>>(emptyList())
+
+  // Store the current filters being applied
+  private var _currentFilters: EventFilters = EventFilters()
+
+  // Store current liked events for recommendations
+  private val _currentLikedEvents = MutableStateFlow<Set<String>>(emptySet())
+
+  init {
+    // Observe liked events changes from UserRepository (but don't trigger reordering)
+    val uid = auth.currentUser?.uid
+    if (uid != null) {
+      viewModelScope.launch {
+        userRepository.getFavoriteEvents(uid).collect { likedIds ->
+          // Just update the liked events, don't recalculate recommendations
+          // Recommendations will only update on manual refresh
+          _currentLikedEvents.value = likedIds
+        }
+      }
+    }
+  }
 
   /**
    * Loads events from the repository, combining them with user likes to generate a personalized
@@ -70,16 +96,11 @@ open class FeedViewModel(
     viewModelScope.launch {
       try {
         repository.getEventsByStatus(EventStatus.PUBLISHED).collect { events ->
-          // Fetch the current set of liked events value for recommendation
-          val likedIds = eventCardViewModel?.likedEvents?.value ?: emptySet()
-          val recommendedEvents = recommendEvents(events, likedIds)
+          // Store all events
+          _allEvents.value = events
 
-          // Keep the full recommended list in memory
-          _allEvents.value = recommendedEvents
-          // Apply the view limit for the UI
-          val limitedEvents = recommendedEvents.take(LOADED_EVENTS_LIMIT)
-
-          _uiState.update { it.copy(events = limitedEvents, isLoading = false, error = null) }
+          // Calculate recommendations and apply filters
+          recalculateRecommendations()
         }
       } catch (e: Exception) {
         _uiState.update { it.copy(isLoading = false, error = e.message ?: "Failed to load events") }
@@ -88,12 +109,33 @@ open class FeedViewModel(
   }
 
   /**
+   * Recalculates recommendations based on current events and liked events set. Used when likes
+   * change or events are updated.
+   */
+  private fun recalculateRecommendations() {
+    val currentEvents = _allEvents.value
+    if (currentEvents.isEmpty()) {
+      _uiState.update { it.copy(isLoading = false, events = emptyList()) }
+      return
+    }
+
+    val likedIds = _currentLikedEvents.value
+    val recommendedEvents = recommendEvents(currentEvents, likedIds)
+    val filteredEvents = applyFiltersLocally(recommendedEvents, _currentFilters)
+    val limitedEvents = filteredEvents.take(LOADED_EVENTS_LIMIT)
+
+    _uiState.update { it.copy(events = limitedEvents, isLoading = false, error = null) }
+  }
+
+  /**
    * Content-Based Recommender Algorithm. Sorts events based on tag relevance to the user's liked
    * history and recency.
    */
   fun recommendEvents(allEvents: List<Event>, userLikedEventIds: Set<String>): List<Event> {
-    // If user has no likes, return default sort (usually chronological from repository)
-    if (userLikedEventIds.isEmpty()) return allEvents
+    // If user has no likes, return sorted by recency
+    if (userLikedEventIds.isEmpty()) {
+      return allEvents.sortedByDescending { event -> event.createdAt?.seconds ?: 0L }
+    }
 
     // 1. Build User Profile (Tag Frequency Map)
     // Find all events the user has liked that are currently in the loaded list
@@ -147,33 +189,22 @@ open class FeedViewModel(
 
   /** Apply current filters to the loaded events */
   fun applyFiltersToCurrentEvents(filters: EventFilters) {
-    val filteredEvents = applyFiltersLocally(_allEvents.value, filters)
-    _uiState.update { it.copy(events = filteredEvents) }
+    _currentFilters = filters
+    recalculateRecommendations()
   }
 
-  /** Apply filters locally to the given events */
-  private fun applyFiltersLocally(
-      events: List<Event>,
-      filters: EventFilters,
-  ): List<Event> {
-    return events.filter { event ->
-      val regionMatch =
-          filters.region?.let { region ->
-            event.location?.region.equals(region, ignoreCase = true) ||
-                event.location?.name?.contains(region, ignoreCase = true) == true
-          } ?: true
-      val dateMatch =
-          filters.dateRange?.let { range ->
-            event.startTime?.toDate()?.time?.let { eventTime -> eventTime in range } ?: false
-          } ?: true
-      val availabilityMatch = !filters.hideSoldOut || !event.isSoldOut
-      regionMatch && dateMatch && availabilityMatch
-    }
-  }
-
-  /** Refreshes the events list manually. */
-  open fun refreshEvents() {
+  /**
+   * Refreshes the events list manually.
+   *
+   * @param currentFilters Optional filter criteria to apply after refreshing. If null, empty
+   *   filters are applied (showing all events).
+   */
+  open fun refreshEvents(currentFilters: EventFilters? = null) {
     _uiState.update { it.copy(isRefreshing = true, error = null) }
+
+    if (currentFilters != null) {
+      _currentFilters = currentFilters
+    }
 
     viewModelScope.launch {
       try {
@@ -185,14 +216,13 @@ open class FeedViewModel(
             val events = dataDeferred.await()
             delayDeferred.await()
 
-            // Re-run recommendation logic with current likes
-            val likedIds = eventCardViewModel?.likedEvents?.value ?: emptySet()
-            val recommended = recommendEvents(events, likedIds)
+            // Store all events
+            _allEvents.value = events
 
-            _allEvents.value = recommended
-            val limited = recommended.take(LOADED_EVENTS_LIMIT)
+            // Recalculate recommendations with current likes
+            recalculateRecommendations()
 
-            _uiState.update { it.copy(events = limited, isRefreshing = false, error = null) }
+            _uiState.update { it.copy(isRefreshing = false, error = null) }
           }
         }
       } catch (e: Exception) {

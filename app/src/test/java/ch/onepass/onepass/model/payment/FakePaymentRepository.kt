@@ -31,12 +31,12 @@ class FakePaymentRepository : PaymentRepository {
   private var createMarketplacePaymentIntentResult: Result<MarketplacePaymentIntentResponse> =
       Result.success(
           MarketplacePaymentIntentResponse(
-              clientSecret = "pi_marketplace_secret_123",
-              paymentIntentId = "pi_marketplace_123",
-              ticketId = "ticket_123",
+              clientSecret = "pi_test_secret_marketplace_123",
+              paymentIntentId = "pi_test_marketplace_123",
+              ticketId = "ticket_test_123",
               eventName = "Test Event",
-              amount = 100.0,
-              currency = "CHF"))
+              amount = 50.0,
+              currency = "USD"))
 
   private var cancelMarketplaceReservationResult: Result<Unit> = Result.success(Unit)
 
@@ -82,6 +82,9 @@ class FakePaymentRepository : PaymentRepository {
   /** Get the last call made to createMarketplacePaymentIntent, or null if no calls were made. */
   fun getLastMarketplaceCall(): CreateMarketplacePaymentIntentCall? =
       marketplaceCallHistory.lastOrNull()
+
+  /** Get the last ticket ID from cancelMarketplaceReservation, or null if no calls were made. */
+  fun getLastCancelReservationCall(): String? = cancelReservationHistory.lastOrNull()
 
   override suspend fun createPaymentIntent(
       amount: Long,

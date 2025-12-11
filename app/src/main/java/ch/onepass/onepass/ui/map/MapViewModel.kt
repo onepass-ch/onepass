@@ -9,7 +9,7 @@ import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.repository.RepositoryProvider
-import ch.onepass.onepass.ui.eventfilters.EventFilteringUtils.applyFiltersLocally
+import ch.onepass.onepass.utils.EventFilteringUtils.applyFiltersLocally
 import com.google.gson.JsonPrimitive
 import com.mapbox.android.gestures.MoveGestureDetector
 import com.mapbox.geojson.Point

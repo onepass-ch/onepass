@@ -17,6 +17,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.EventTag
 import ch.onepass.onepass.ui.components.buttons.UploadImageButton
@@ -32,10 +33,11 @@ fun TitleInputField(value: String, onValueChange: (String) -> Unit, modifier: Mo
       verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
       horizontalAlignment = Alignment.Start,
       modifier = modifier.fillMaxWidth()) {
-        Text(
-            text = "Title*",
-            style =
-                MaterialTheme.typography.bodyMedium.copy(color = colorResource(id = R.color.white)))
+        FieldLabelWithCounter(
+            label = "Title*",
+            currentLength = value.length,
+            maxLength = EventFormViewModel.MAX_TITLE_LENGTH,
+            isError = value.length >= EventFormViewModel.MAX_TITLE_LENGTH)
         TextField(
             value = value,
             onValueChange = onValueChange,
@@ -81,9 +83,11 @@ fun DescriptionInputField(
       verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
       horizontalAlignment = Alignment.Start,
   ) {
-    Text(
-        text = "Description*",
-        style = MaterialTheme.typography.bodyMedium.copy(color = colorResource(id = R.color.white)))
+    FieldLabelWithCounter(
+        label = "Description*",
+        currentLength = value.length,
+        maxLength = EventFormViewModel.MAX_DESCRIPTION_LENGTH,
+        isError = value.length >= EventFormViewModel.MAX_DESCRIPTION_LENGTH)
 
     Box(
         modifier =
@@ -244,11 +248,11 @@ fun TicketsInputField(
         verticalAlignment = Alignment.Top) {
           // Price Input
           Column(modifier = Modifier.weight(1f)) {
-            Text(
-                text = "Price",
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        color = colorResource(id = R.color.white)))
+            CompactFieldLabel(
+                label = "Price",
+                currentLength = priceValue.length,
+                maxLength = EventFormViewModel.MAX_PRICE_LENGTH,
+                isError = priceError != null)
             Spacer(modifier = Modifier.height(4.dp))
             Box(
                 modifier =
@@ -298,11 +302,11 @@ fun TicketsInputField(
 
           // Capacity Input
           Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
-            Text(
-                text = "Capacity",
-                style =
-                    MaterialTheme.typography.bodySmall.copy(
-                        color = colorResource(id = R.color.white)))
+            CompactFieldLabel(
+                label = "Capacity",
+                currentLength = capacityValue.length,
+                maxLength = EventFormViewModel.MAX_CAPACITY_LENGTH,
+                isError = capacityError != null)
             Spacer(modifier = Modifier.height(4.dp))
             Box(
                 modifier =
@@ -411,6 +415,80 @@ fun TagsSelectionSection(
       Spacer(modifier = Modifier.height(16.dp))
     }
   }
+}
+
+/**
+ * Displays a form field label with a character counter.
+ *
+ * @param label The label text to display (e.g., "Title*", "Description*")
+ * @param currentLength The current number of characters in the associated field
+ * @param maxLength The maximum allowed number of characters
+ * @param modifier The modifier to be applied to the root Row composable
+ * @param isError Whether the field is in an error state, overriding length-based error display
+ */
+@Composable
+fun FieldLabelWithCounter(
+    label: String,
+    currentLength: Int,
+    maxLength: Int,
+    modifier: Modifier = Modifier,
+    isError: Boolean = false
+) {
+  Row(
+      modifier = modifier.fillMaxWidth(),
+      horizontalArrangement = Arrangement.SpaceBetween,
+      verticalAlignment = Alignment.CenterVertically) {
+        Text(
+            text = label,
+            style =
+                MaterialTheme.typography.bodyMedium.copy(color = colorResource(id = R.color.white)))
+        Text(
+            text = "$currentLength/$maxLength characters",
+            style =
+                MaterialTheme.typography.bodySmall.copy(
+                    color =
+                        if (isError || currentLength >= maxLength)
+                            colorResource(id = R.color.error_red)
+                        else colorResource(id = R.color.gray)))
+      }
+}
+
+/**
+ * Compact character counter for fields with limited width. Displays counter above the field in a
+ * stacked layout.
+ *
+ * @param label The field label (e.g., "Price", "Capacity")
+ * @param currentLength Current character count
+ * @param maxLength Maximum allowed characters
+ * @param modifier Modifier to apply
+ * @param isError Whether the field is in error state
+ */
+@Composable
+fun CompactFieldLabel(
+    label: String,
+    currentLength: Int,
+    maxLength: Int,
+    modifier: Modifier = Modifier,
+    isError: Boolean = false
+) {
+  Column(
+      modifier = modifier,
+      verticalArrangement = Arrangement.spacedBy(2.dp),
+      horizontalAlignment = Alignment.Start) {
+        Text(
+            text = label,
+            style =
+                MaterialTheme.typography.bodySmall.copy(color = colorResource(id = R.color.white)))
+        Text(
+            text = "$currentLength/$maxLength characters",
+            style =
+                MaterialTheme.typography.labelSmall.copy(
+                    color =
+                        if (isError || currentLength >= maxLength)
+                            colorResource(id = R.color.error_red)
+                        else colorResource(id = R.color.gray),
+                    fontSize = 10.sp))
+      }
 }
 
 @Composable

@@ -13,7 +13,7 @@ import ch.onepass.onepass.ui.eventfilters.FilterDialog
 import ch.onepass.onepass.ui.eventfilters.inclusiveEndOfDay
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import java.util.Calendar
-import org.junit.Assert.assertNotNull
+import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
 
@@ -30,9 +30,7 @@ class FilterDialogTest {
 
     composeTestRule.onNodeWithTag(EventFilterDialogTestTags.REGION_DROPDOWN).assertIsDisplayed()
     composeTestRule.onNodeWithTag(EventFilterDialogTestTags.DATE_RANGE_PRESETS).assertIsDisplayed()
-    composeTestRule
-        .onNodeWithTag(EventFilterDialogTestTags.HIDE_SOLD_OUT_CHECKBOX)
-        .assertIsDisplayed()
+
     composeTestRule
         .onNodeWithTag(EventFilterDialogTestTags.RESET_FILTERS_BUTTON)
         .assertIsDisplayed()
@@ -45,6 +43,13 @@ class FilterDialogTest {
     composeTestRule.onNodeWithText("Next 7 Days").assertIsDisplayed()
     composeTestRule.onNodeWithText("Custom range").assertIsDisplayed()
     composeTestRule.onNodeWithText("Pick dates").assertIsDisplayed()
+
+    composeTestRule
+        .onNode(hasScrollAction())
+        .performScrollToNode(hasTestTag(EventFilterDialogTestTags.HIDE_SOLD_OUT_CHECKBOX))
+    composeTestRule
+        .onNodeWithTag(EventFilterDialogTestTags.HIDE_SOLD_OUT_CHECKBOX)
+        .assertIsDisplayed()
   }
 
   @Test
@@ -80,6 +85,9 @@ class FilterDialogTest {
         .assertIsNotEnabled()
 
     // checkbox toggles Apply
+    composeTestRule
+        .onNode(hasScrollAction())
+        .performScrollToNode(hasTestTag(EventFilterDialogTestTags.HIDE_SOLD_OUT_CHECKBOX))
     composeTestRule.onNodeWithTag(EventFilterDialogTestTags.HIDE_SOLD_OUT_CHECKBOX).performClick()
     composeTestRule.onNodeWithTag(EventFilterDialogTestTags.APPLY_FILTERS_BUTTON).assertIsEnabled()
 
