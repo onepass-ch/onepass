@@ -6,6 +6,7 @@ import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
+import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.google.firebase.Timestamp
@@ -229,8 +230,6 @@ class FeedScreenTest {
         .assertIsDisplayed()
   }
 
-  // ============ NEW TESTS TO COVER MISSING LINES ============
-
   @Test
   fun feedScreen_displayErrorState_whenLoadingFails() {
     val mockRepository = MockEventRepository(shouldThrowError = true)
@@ -391,9 +390,9 @@ class FeedScreenTest {
     var refreshTriggered = false
     val testViewModel =
         object : FeedViewModel(mockRepository) {
-          override fun refreshEvents() {
+          override fun refreshEvents(currentFilters: EventFilters?) {
             refreshTriggered = true
-            super.refreshEvents()
+            super.refreshEvents(currentFilters)
           }
         }
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = testViewModel) } }
@@ -417,8 +416,8 @@ class FeedScreenTest {
     // Initially not refreshing
     val initialState = viewModel.uiState.value
     assert(!initialState.isRefreshing)
-    // Trigger refresh
-    viewModel.refreshEvents()
+    // Trigger refresh - pass null for currentFilters
+    viewModel.refreshEvents(null)
     // Verify refreshing state is set
     composeTestRule.waitForIdle()
     val refreshingState = viewModel.uiState.value
@@ -477,8 +476,8 @@ class FeedScreenTest {
     composeTestRule.waitForIdle()
     // Initial state - events displayed
     composeTestRule.onNodeWithTag(FeedScreenTestTags.EVENT_LIST).assertIsDisplayed()
-    // Trigger refresh
-    viewModel.refreshEvents()
+    // Trigger refresh - pass null for currentFilters
+    viewModel.refreshEvents(null)
     // During refresh - events should still be displayed (not loading state)
     composeTestRule.onNodeWithTag(FeedScreenTestTags.EVENT_LIST).assertIsDisplayed()
     composeTestRule

@@ -43,7 +43,6 @@ object FeedScreenTestTags {
   const val EVENT_LIST = "eventList"
   const val LOADING_INDICATOR = "loadingIndicator"
   const val ERROR_MESSAGE = "errorMessage"
-  const val RETRY_BUTTON = "retryButton"
   const val EMPTY_STATE = "emptyState"
   const val ACTIVE_FILTERS_BAR = "activeFiltersBar"
 
@@ -107,7 +106,7 @@ fun FeedScreen(
     val pullState = rememberPullToRefreshState()
     PullToRefreshBox(
         isRefreshing = uiState.isRefreshing,
-        onRefresh = viewModel::refreshEvents,
+        onRefresh = { viewModel.refreshEvents(currentFilters) },
         state = pullState,
         modifier = Modifier.fillMaxSize().padding(paddingValues),
     ) {
