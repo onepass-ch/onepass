@@ -106,7 +106,10 @@ service cloud.firestore {
 
     // ======= EVENTS =======
     match /events/{eventId} {
-      allow read: if resource.data.status == 'PUBLISHED';
+      // allow read: if resource.data.status !== 'DRAFT';
+      // Temporary full read permissions for events have been enabled.
+      // Permissions will be adjusted after the DRAFT functionality is fully implemented.
+      allow read: if true;
       
       // Read drafts: Org Staff only
       allow read: if isAuthenticated() && 
