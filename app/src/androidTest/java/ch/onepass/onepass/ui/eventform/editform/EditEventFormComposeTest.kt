@@ -7,6 +7,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
+import ch.onepass.onepass.model.event.EventTag
 import ch.onepass.onepass.model.event.PricingTier
 import ch.onepass.onepass.ui.eventform.EventFormViewModel.ValidationError
 import com.google.firebase.Timestamp
@@ -297,6 +298,23 @@ class EditEventFormComposeTest {
     composeTestRule.waitForIdle()
 
     composeTestRule.onNodeWithText("Tags").performScrollTo().assertIsDisplayed()
+    composeTestRule.onNodeWithText("Technology").performScrollTo().assertIsDisplayed()
+  }
+
+  @Test
+  fun loading_event_parses_tags_correctly() = runTest {
+    // Create event with specific tags
+    val tagsEvent = testEvent.copy(tags = listOf("Technology", "Conference"))
+    every { mockRepository.getEventById("test-event-id") } returns flowOf(tagsEvent)
+
+    composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
+    composeTestRule.waitForIdle()
+
+    // Verify ViewModel state has parsed tags
+    assert(viewModel.formState.value.selectedTags.contains(EventTag.TECH))
+    assert(viewModel.formState.value.selectedTags.contains(EventTag.CONFERENCE))
+
+    // Check UI reflects this (Chip selected)
     composeTestRule.onNodeWithText("Technology").performScrollTo().assertIsDisplayed()
   }
 }
