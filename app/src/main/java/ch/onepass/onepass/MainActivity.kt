@@ -15,6 +15,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -56,7 +59,7 @@ class MainActivity : ComponentActivity() {
   private val deviceTokenRepository by lazy { DeviceTokenRepositoryFirebase() }
   private lateinit var authStateListener: FirebaseAuth.AuthStateListener
   private lateinit var deviceTokenManager: DeviceTokenManager
-  private var newIntent: Intent? = null
+  private var newIntent by mutableStateOf<Intent?>(null)
   private var paymentSheet: PaymentSheet? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
@@ -122,14 +125,7 @@ class MainActivity : ComponentActivity() {
     Log.d("MainActivity", "onNewIntent called with: ${intent.data}")
 
     newIntent = intent
-
-    setContent {
-      OnePassTheme {
-        CompositionLocalProvider(LocalPaymentSheet provides paymentSheet) {
-          MainActivityContent(intentToCheck = intent)
-        }
-      }
-    }
+    setIntent(newIntent)
   }
 
   override fun onDestroy() {
@@ -185,12 +181,14 @@ fun OnePassApp(
   // Show bottom bar only on top-level destinations
   val topLevelRoutes = NavigationDestinations.tabs.map { it.destination.route }
   val showBottomBar = currentRoute in topLevelRoutes
+  var currentIntent by remember { mutableStateOf(initialIntent) }
 
+  LaunchedEffect(initialIntent) { currentIntent = initialIntent }
   if (enableDeepLinking) {
-    LaunchedEffect(Unit) {
-      DeepLinkHandler.setupNotificationClickListener(navController)
-      if (initialIntent != null) {
-        DeepLinkHandler.handleIntent(initialIntent, navController)
+    LaunchedEffect(currentIntent) {
+      DeepLinkHandler.setupNotificationClickListener(navController, coroutineScope = this)
+      if (currentIntent != null) {
+        DeepLinkHandler.handleIntent(currentIntent, navController)
       }
     }
   }

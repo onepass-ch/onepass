@@ -18,7 +18,7 @@ object DeepLinkHandler {
 
   private var currentListener: INotificationClickListener? = null
 
-  fun setupNotificationClickListener(navController: NavController) {
+  fun setupNotificationClickListener(navController: NavController, coroutineScope: CoroutineScope) {
     currentListener?.let { OneSignal.Notifications.removeClickListener(it) }
 
     val listener =
@@ -31,7 +31,7 @@ object DeepLinkHandler {
 
             val firestoreId = additionalData?.optString("firestoreId")
             if (!firestoreId.isNullOrEmpty()) {
-              CoroutineScope(Dispatchers.IO).launch {
+              coroutineScope.launch(Dispatchers.IO) {
                 notificationRepository
                     .markAsRead(firestoreId)
                     .onSuccess { Log.d(TAG, "Marked notification as read: $firestoreId") }
@@ -39,11 +39,9 @@ object DeepLinkHandler {
               }
             }
 
-            // Handle navigation (MAIN Thread)
             val deepLink = additionalData?.optString("deepLink")
             if (!deepLink.isNullOrEmpty()) {
-              // 2. Fix: Ensure navigation happens on Main Thread
-              CoroutineScope(Dispatchers.Main).launch { handleDeepLink(deepLink, navController) }
+              coroutineScope.launch(Dispatchers.Main) { handleDeepLink(deepLink, navController) }
             }
           }
         }
