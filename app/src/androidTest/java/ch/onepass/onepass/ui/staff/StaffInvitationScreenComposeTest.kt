@@ -184,4 +184,24 @@ class StaffInvitationScreenComposeTest {
     // Second item (Bob Smith - normal) should have click action
     allListItems[1].assertHasClickAction()
   }
+  @Test
+  fun showsConfirmationDialog_whenUserSelected() {
+    val vm = StaffInvitationViewModel(organizationId = "org_test")
+    setContent(vm)
+
+    val user = StaffSearchResult("1", "alice@onepass.ch", "Alice Keller", null)
+
+    setUiState(
+        vm,
+        StaffInvitationUiState(
+            searchQuery = "alice",
+            searchResults = listOf(user),
+            selectedUserForInvite = user))
+
+    composeRule.onNodeWithTag(StaffInvitationTestTags.CONFIRMATION_DIALOG).assertIsDisplayed()
+    composeRule.onNodeWithText("Invite Alice Keller to your organization?").assertIsDisplayed()
+    composeRule.onNodeWithTag(StaffInvitationTestTags.ROLE_DROPDOWN).assertIsDisplayed()
+    composeRule.onNodeWithTag(StaffInvitationTestTags.CONFIRM_BUTTON).assertIsDisplayed()
+    composeRule.onNodeWithTag(StaffInvitationTestTags.CANCEL_BUTTON).assertIsDisplayed()
+  }
 }
