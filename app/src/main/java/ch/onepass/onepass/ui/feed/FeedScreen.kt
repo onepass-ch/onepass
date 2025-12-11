@@ -6,7 +6,9 @@ import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
@@ -22,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
+import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
@@ -30,6 +33,7 @@ import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
 import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
 import ch.onepass.onepass.ui.eventfilters.FilterDialog
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -43,6 +47,7 @@ object FeedScreenTestTags {
   const val FEED_LOCATION = "feedLocation"
   const val FILTER_BUTTON = "filterButton"
   const val NOTIFICATION_BUTTON = "notificationButton"
+  const val FAVORITES_BUTTON = "favoritesButton"
   const val EVENT_LIST = "eventList"
   const val LOADING_INDICATOR = "loadingIndicator"
   const val ERROR_MESSAGE = "errorMessage"
@@ -71,13 +76,76 @@ fun FeedScreen(
     filterViewModel: EventFilterViewModel = viewModel(),
     eventCardViewModel: EventCardViewModel = viewModel()
 ) {
+  // 1. State Collection
   val uiState by viewModel.uiState.collectAsState()
   val currentFilters by filterViewModel.currentFilters.collectAsState()
-
-  // LazyList state for controlling scroll position
   val listState = rememberLazyListState()
   val coroutineScope = rememberCoroutineScope()
+  val pullState = rememberPullToRefreshState()
 
+  // 2. Side effects
+  RememberFeedScreenSideEffects(
+      uiState = uiState,
+      currentFilters = currentFilters,
+      viewModel = viewModel,
+      listState = listState,
+      coroutineScope = coroutineScope)
+
+  // 3. UI Structure
+  Scaffold(
+      modifier = modifier.fillMaxSize().testTag(FeedScreenTestTags.FEED_SCREEN),
+      topBar = {
+        FeedScreenTopBar(
+            uiState = uiState,
+            currentFilters = currentFilters,
+            onFilterClick = { viewModel.setShowFilterDialog(true) },
+            onNotificationClick = onNavigateToNotifications,
+            onFavoritesClick = { viewModel.toggleFavoritesMode() },
+            onClearFilters = { filterViewModel.clearFilters() })
+      },
+      containerColor = colorResource(id = R.color.screen_background),
+  ) { paddingValues ->
+    PullToRefreshBox(
+        isRefreshing = uiState.isRefreshing,
+        onRefresh = viewModel::refreshEvents,
+        state = pullState,
+        modifier = Modifier.fillMaxSize().padding(paddingValues),
+    ) {
+      FeedContentStateSwitcher(
+          uiState = uiState,
+          onNavigateToEvent = onNavigateToEvent,
+          onRetry = { viewModel.refreshEvents() },
+          eventCardViewModel = eventCardViewModel,
+          listState = listState)
+    }
+
+    // 4. Dialog Display
+    FeedFilterDialog(
+        showDialog = uiState.showFilterDialog,
+        currentFilters = currentFilters,
+        filterViewModel = filterViewModel,
+        onApply = { newFilters ->
+          filterViewModel.applyFilters(newFilters)
+          viewModel.setShowFilterDialog(false)
+        },
+        onDismiss = { viewModel.setShowFilterDialog(false) })
+  }
+}
+
+/**
+ * Encapsulates LaunchedEffect side effects for FeedScreen. Performs:
+ * - initial load
+ * - apply filters when ready
+ * - scroll-to-top when a refresh completes
+ */
+@Composable
+private fun RememberFeedScreenSideEffects(
+    uiState: FeedUIState,
+    currentFilters: EventFilters,
+    viewModel: FeedViewModel,
+    listState: LazyListState,
+    coroutineScope: CoroutineScope
+) {
   // Track previous refresh state to detect when refresh completes
   var wasRefreshing by remember { mutableStateOf(false) }
 
@@ -99,81 +167,99 @@ fun FeedScreen(
     }
     wasRefreshing = uiState.isRefreshing
   }
+}
 
-  Scaffold(
-      modifier = modifier.fillMaxSize().testTag(FeedScreenTestTags.FEED_SCREEN),
-      topBar = {
-        Column {
-          FeedTopBar(
-              currentLocation = uiState.location,
-              currentDateRange = "WELCOME",
-              onFilterClick = { viewModel.setShowFilterDialog(true) },
-              onNotificationClick = onNavigateToNotifications)
-          if (currentFilters.hasActiveFilters) {
-            ActiveFiltersBar(
-                filters = currentFilters,
-                onClearFilters = { filterViewModel.clearFilters() },
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .testTag(FeedScreenTestTags.ACTIVE_FILTERS_BAR),
-            )
-          }
-        }
-      },
-      containerColor = colorResource(id = R.color.screen_background),
-  ) { paddingValues ->
-    val pullState = rememberPullToRefreshState()
-    PullToRefreshBox(
-        isRefreshing = uiState.isRefreshing,
-        onRefresh = { viewModel.refreshEvents(currentFilters) },
-        state = pullState,
-        modifier = Modifier.fillMaxSize().padding(paddingValues),
-    ) {
-      when {
-        // Initial loading state (only show when not refreshing to avoid duplicate indicators)
-        uiState.isLoading && uiState.events.isEmpty() && !uiState.isRefreshing -> {
-          LoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR)
-        }
-        // Error state (only show when we have no events to display)
-        uiState.error != null && uiState.events.isEmpty() -> {
-          ErrorState(
-              error = uiState.error!!,
-              onRetry = { viewModel.refreshEvents() },
-              testTag = FeedScreenTestTags.ERROR_MESSAGE)
-        }
-        // Empty state (only when not loading/refreshing and truly empty)
-        !uiState.isLoading && !uiState.isRefreshing && uiState.events.isEmpty() -> {
-          EmptyState(
-              title = "No Events Found",
-              message = "Check back later for new events in your area!",
-              testTag = FeedScreenTestTags.EMPTY_STATE)
-        }
-        // Normal content display (handles both initial load and refresh scenarios)
-        else -> {
-          EventListContent(
-              events = uiState.events,
-              isLoadingMore = uiState.isLoading && !uiState.isRefreshing,
-              onEventClick = onNavigateToEvent,
-              eventCardViewModel = eventCardViewModel,
-              listState = listState)
-        }
-      }
-      // Filter Dialog
-      if (uiState.showFilterDialog) {
-        // Sync localFilters to current global filters on dialog open
-        LaunchedEffect(Unit) { filterViewModel.updateLocalFilters(currentFilters) }
+/** Top bar content including the title, location, action buttons, and active filters bar. */
+@Composable
+private fun FeedScreenTopBar(
+    uiState: FeedUIState,
+    currentFilters: EventFilters,
+    onFilterClick: () -> Unit,
+    onNotificationClick: () -> Unit,
+    onFavoritesClick: () -> Unit,
+    onClearFilters: () -> Unit,
+) {
+  val displayTitle = if (uiState.isShowingFavorites) "FAVORITES" else "WELCOME"
 
-        FilterDialog(
-            viewModel = filterViewModel,
-            onApply = { newFilters ->
-              filterViewModel.applyFilters(newFilters)
-              viewModel.setShowFilterDialog(false)
-            },
-            onDismiss = { viewModel.setShowFilterDialog(false) },
-        )
-      }
+  Column {
+    FeedTopBar(
+        currentLocation = uiState.location,
+        currentDateRange = displayTitle,
+        isShowingFavorites = uiState.isShowingFavorites,
+        onFilterClick = onFilterClick,
+        onNotificationClick = onNotificationClick,
+        onFavoritesClick = onFavoritesClick)
+    if (currentFilters.hasActiveFilters) {
+      ActiveFiltersBar(
+          filters = currentFilters,
+          onClearFilters = onClearFilters,
+          modifier =
+              Modifier.fillMaxWidth()
+                  .padding(horizontal = 16.dp, vertical = 8.dp)
+                  .testTag(FeedScreenTestTags.ACTIVE_FILTERS_BAR),
+      )
     }
+  }
+}
+
+/** Handles the conditional display of Loading, Error, Empty, and Content states. */
+@Composable
+private fun FeedContentStateSwitcher(
+    uiState: FeedUIState,
+    onNavigateToEvent: (String) -> Unit,
+    onRetry: () -> Unit,
+    eventCardViewModel: EventCardViewModel,
+    listState: LazyListState
+) {
+  when {
+    // Initial loading state (only show when not refreshing to avoid duplicate indicators)
+    uiState.isLoading && uiState.events.isEmpty() && !uiState.isRefreshing -> {
+      LoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR)
+    }
+    // Error state (only show when we have no events to display)
+    uiState.error != null && uiState.events.isEmpty() -> {
+      ErrorState(
+          error = uiState.error, onRetry = onRetry, testTag = FeedScreenTestTags.ERROR_MESSAGE)
+    }
+    // Empty state (only when not loading/refreshing and truly empty)
+    !uiState.isLoading && !uiState.isRefreshing && uiState.events.isEmpty() -> {
+      EmptyState(
+          title = if (uiState.isShowingFavorites) "No Favorites" else "No Events Found",
+          message =
+              if (uiState.isShowingFavorites) "You haven't liked any events yet."
+              else "Check back later for new events in your area!",
+          testTag = FeedScreenTestTags.EMPTY_STATE)
+    }
+    // Normal content display (handles both initial load and refresh scenarios)
+    else -> {
+      EventListContent(
+          events = uiState.events,
+          isLoadingMore = uiState.isLoading && !uiState.isRefreshing,
+          onEventClick = onNavigateToEvent,
+          eventCardViewModel = eventCardViewModel,
+          listState = listState)
+    }
+  }
+}
+
+/** Logic and display for the filter dialog. */
+@Composable
+private fun FeedFilterDialog(
+    showDialog: Boolean,
+    currentFilters: EventFilters,
+    filterViewModel: EventFilterViewModel,
+    onApply: (EventFilters) -> Unit,
+    onDismiss: () -> Unit,
+) {
+  if (showDialog) {
+    // Sync localFilters to current global filters on dialog open
+    LaunchedEffect(Unit) { filterViewModel.updateLocalFilters(currentFilters) }
+
+    FilterDialog(
+        viewModel = filterViewModel,
+        onApply = onApply,
+        onDismiss = onDismiss,
+    )
   }
 }
 
@@ -181,17 +267,21 @@ fun FeedScreen(
  * Top bar with title, location, and action buttons.
  *
  * @param currentLocation The string representing the current user location or selected region.
- * @param currentDateRange The string representing the current date range filter.
+ * @param currentDateRange The string representing the title (WELCOME or FAVORITES).
+ * @param isShowingFavorites Boolean indicating if favorites mode is active.
  * @param onFilterClick Callback invoked when the filter button is clicked.
  * @param onNotificationClick Callback invoked when the notification button is clicked.
+ * @param onFavoritesClick Callback invoked when the favorites button is clicked.
  * @param modifier Optional modifier for the top bar.
  */
 @Composable
 private fun FeedTopBar(
     currentLocation: String,
     currentDateRange: String,
+    isShowingFavorites: Boolean,
     onFilterClick: () -> Unit,
     onNotificationClick: () -> Unit,
+    onFavoritesClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
   Surface(
@@ -225,6 +315,19 @@ private fun FeedTopBar(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
+          // Favorites Button
+          IconButton(
+              onClick = onFavoritesClick,
+              modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.FAVORITES_BUTTON)) {
+                Icon(
+                    imageVector =
+                        if (isShowingFavorites) Icons.Filled.Favorite
+                        else Icons.Outlined.FavoriteBorder,
+                    contentDescription = "Favorites",
+                    tint = colorResource(id = R.color.white),
+                    modifier = Modifier.size(24.dp),
+                )
+              }
           // Notification Button
           IconButton(
               onClick = onNotificationClick,
@@ -275,8 +378,8 @@ private fun EventListContent(
   LazyColumn(
       state = listState,
       modifier = Modifier.fillMaxSize().testTag(FeedScreenTestTags.EVENT_LIST),
-      contentPadding = PaddingValues(10.dp),
-      verticalArrangement = Arrangement.spacedBy(12.dp)) {
+      contentPadding = PaddingValues(16.dp),
+      verticalArrangement = Arrangement.spacedBy(24.dp)) {
         items(items = events, key = { it.eventId }) { event ->
           EventCard(
               event = event,
