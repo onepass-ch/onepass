@@ -82,7 +82,8 @@ class FullNavigationTest {
           mapViewModel = MapViewModel(),
           testAuthButtonTag = if (!signedIn) TEST_LOGIN_BUTTON else null,
           authViewModelFactory = authVmFactory,
-          profileViewModelFactory = injectedProfileVMFactory)
+          profileViewModelFactory = injectedProfileVMFactory,
+          enableDeepLinking = false)
     }
 
     composeRule.waitForIdle()

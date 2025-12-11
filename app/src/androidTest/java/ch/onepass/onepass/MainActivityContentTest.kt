@@ -19,7 +19,7 @@ class MainActivityContentTest {
 
   @Test
   fun mainActivityContent_setsUpOnePassApp() {
-    composeTestRule.setContent { MainActivityContent() }
+    composeTestRule.setContent { MainActivityContent(enableDeepLinking = false) }
 
     composeTestRule.onNodeWithTag(C.Tag.main_screen_container).assertExists()
   }
