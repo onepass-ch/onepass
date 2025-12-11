@@ -224,13 +224,13 @@ export const validateEntryByPassV2 = functions.https.onCall(
 
 
    // ============================================================================
-   // 7. FIND TICKET FOR EVENT
+   // 7. FIND TICKET FOR EVENT (including REDEEMED to detect already scanned)
    // ============================================================================
    const ticketsSnap = await db
      .collection("tickets")
      .where("ownerId", "==", uid)
      .where("eventId", "==", eventId)
-     .where("state", "in", ["ISSUED", "TRANSFERRED"])
+     .where("state", "in", ["ISSUED", "TRANSFERRED", "REDEEMED"])
      .limit(1)
      .get();
 
