@@ -974,4 +974,39 @@ class EditEventFormViewModelTest {
         viewModel.fieldErrors.value.containsKey(
             EventFormViewModel.ValidationError.DATE_IN_PAST.key))
   }
+
+  @Test
+  fun `loadEvent populates tags from event`() = runTest {
+    // Arrange: Event with tags
+    val eventWithTags = testEvent.copy(tags = listOf("TECH", "BUSINESS"))
+    coEvery { mockRepository.getEventById("event-with-tags") } returns flowOf(eventWithTags)
+
+    // Act
+    viewModel.loadEvent("event-with-tags")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert
+    val formState = viewModel.formState.value
+    assertEquals(2, formState.selectedTags.size)
+    assertTrue(formState.selectedTags.contains(EventTag.TECH))
+    assertTrue(formState.selectedTags.contains(EventTag.BUSINESS))
+  }
+
+  @Test
+  fun `loadEvent handles invalid tags gracefully`() = runTest {
+    // Arrange: Event with invalid and valid tags
+    val eventWithMixedTags = testEvent.copy(tags = listOf("TECH", "INVALID_TAG", "BUSINESS"))
+    coEvery { mockRepository.getEventById("mixed-tags") } returns flowOf(eventWithMixedTags)
+
+    // Act
+    viewModel.loadEvent("mixed-tags")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Assert: Should only load valid tags
+    val formState = viewModel.formState.value
+    assertEquals(2, formState.selectedTags.size)
+    assertTrue(formState.selectedTags.contains(EventTag.TECH))
+    assertTrue(formState.selectedTags.contains(EventTag.BUSINESS))
+    assertFalse(formState.selectedTags.contains(EventTag.SPORTS))
+  }
 }
