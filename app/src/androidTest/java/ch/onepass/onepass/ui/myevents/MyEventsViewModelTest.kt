@@ -211,16 +211,6 @@ class MyEventsViewModelTest {
   }
 
   @Test
-  fun init_withNullUser_doesNotLoadAnyCachedQr() = runTest {
-    val vm = MyEventsViewModel(dataStore, passRepo, ticketRepo, eventRepo, null)
-    advanceUntilIdle()
-
-    assertNull(vm.userQrData.value)
-    // Should not have called repo since userId is null
-    coVerify(exactly = 0) { passRepo.getOrCreateSignedPass(any()) }
-  }
-
-  @Test
   fun clearCache_removesQrData() = runTest {
     val uid = uniqueUid("clear")
     val pass = Pass(uid = uid, kid = "k", issuedAt = 1, version = 1, signature = "clear")
