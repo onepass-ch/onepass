@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -14,6 +15,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
@@ -55,11 +58,7 @@ import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import kotlinx.coroutines.launch
-
 
 object StaffInvitationTestTags {
   const val SCREEN = "staffInvitation_screen"
@@ -167,10 +166,9 @@ fun StaffInvitationScreen(
                   value = uiState.searchQuery,
                   onValueChange = viewModel::updateSearchQuery,
                   placeholder =
-                      if (uiState.selectedTab == UserSearchType.DISPLAY_NAME) 
+                      if (uiState.selectedTab == UserSearchType.DISPLAY_NAME)
                           stringResource(R.string.staff_invitation_search_by_name)
-                      else 
-                          stringResource(R.string.staff_invitation_search_by_email),
+                      else stringResource(R.string.staff_invitation_search_by_email),
                   modifier = Modifier.fillMaxWidth().padding(top = 16.dp))
 
               // Error Message
@@ -258,20 +256,19 @@ fun StaffInvitationScreen(
         resultType = uiState.invitationResultType!!,
         onDismiss = viewModel::dismissInvitationResultDialog)
   }
-  
+
   // Snackbar Host
   Box(modifier = Modifier.fillMaxSize()) {
-      SnackbarHost(
-          hostState = snackbarHostState,
-          modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)
-      ) { data ->
-        androidx.compose.material3.Snackbar(
-            snackbarData = data,
-            containerColor = colorResource(R.color.surface_container),
-            contentColor = MaterialTheme.colorScheme.onSurface,
-            actionColor = MaterialTheme.colorScheme.primary,
-            dismissActionContentColor = MaterialTheme.colorScheme.onSurface)
-      }
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)) { data ->
+          androidx.compose.material3.Snackbar(
+              snackbarData = data,
+              containerColor = colorResource(R.color.surface_container),
+              contentColor = MaterialTheme.colorScheme.onSurface,
+              actionColor = MaterialTheme.colorScheme.primary,
+              dismissActionContentColor = MaterialTheme.colorScheme.onSurface)
+        }
   }
 }
 
@@ -295,7 +292,7 @@ fun StaffInvitationDialog(
         Column {
           Text(text = stringResource(R.string.staff_invitation_dialog_message, user.displayName))
           Spacer(modifier = Modifier.height(16.dp))
-          
+
           Text(
               text = stringResource(R.string.staff_invitation_select_role),
               style = MaterialTheme.typography.labelMedium,
@@ -310,25 +307,29 @@ fun StaffInvitationDialog(
                     value = selectedRole.name,
                     onValueChange = {},
                     readOnly = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth().testTag(StaffInvitationTestTags.ROLE_DROPDOWN),
-                    colors = ExposedDropdownMenuDefaults.textFieldColors(
-                        focusedIndicatorColor = colorResource(R.color.primary),
-                        focusedLabelColor = colorResource(R.color.primary),
-                        cursorColor = colorResource(R.color.primary)
-                    ))
+                    trailingIcon = {
+                      ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    },
+                    modifier =
+                        Modifier.menuAnchor()
+                            .fillMaxWidth()
+                            .testTag(StaffInvitationTestTags.ROLE_DROPDOWN),
+                    colors =
+                        ExposedDropdownMenuDefaults.textFieldColors(
+                            focusedIndicatorColor = colorResource(R.color.primary),
+                            focusedLabelColor = colorResource(R.color.primary),
+                            cursorColor = colorResource(R.color.primary)))
 
-                ExposedDropdownMenu(
-                    expanded = expanded, onDismissRequest = { expanded = false }) {
-                      availableRoles.forEach { role ->
-                        DropdownMenuItem(
-                            text = { Text(role.name) },
-                            onClick = {
-                              onRoleSelected(role)
-                              expanded = false
-                            })
-                      }
-                    }
+                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                  availableRoles.forEach { role ->
+                    DropdownMenuItem(
+                        text = { Text(role.name) },
+                        onClick = {
+                          onRoleSelected(role)
+                          expanded = false
+                        })
+                  }
+                }
               }
         }
       },
@@ -398,9 +399,7 @@ private fun SearchInputField(
       singleLine = true)
 }
 
-/**
- * Dialog shown when user doesn't have permission to invite members.
- */
+/** Dialog shown when user doesn't have permission to invite members. */
 @Composable
 fun PermissionDeniedDialog(onDismiss: () -> Unit) {
   AlertDialog(
@@ -408,37 +407,34 @@ fun PermissionDeniedDialog(onDismiss: () -> Unit) {
       title = { Text(text = stringResource(R.string.staff_invitation_permission_denied_title)) },
       text = { Text(text = stringResource(R.string.staff_invitation_permission_denied_message)) },
       confirmButton = {
-        Button(
-            onClick = onDismiss,
-            shape = RoundedCornerShape(10.dp)) {
-              Text(stringResource(R.string.staff_invitation_permission_denied_ok))
-            }
+        Button(onClick = onDismiss, shape = RoundedCornerShape(10.dp)) {
+          Text(stringResource(R.string.staff_invitation_permission_denied_ok))
+        }
       },
       modifier = Modifier.testTag(StaffInvitationTestTags.PERMISSION_DENIED_DIALOG),
       shape = RoundedCornerShape(10.dp))
 }
 
-/**
- * Dialog shown after invitation attempt (success or error).
- */
+/** Dialog shown after invitation attempt (success or error). */
 @Composable
 fun InvitationResultDialog(
     userName: String,
     resultType: InvitationResultType,
     onDismiss: () -> Unit
 ) {
-  val (title, message, buttonColor) = when (resultType) {
-    InvitationResultType.SUCCESS -> Triple(
-        stringResource(R.string.staff_invitation_success_title),
-        stringResource(R.string.staff_invitation_success_message, userName),
-        colorResource(R.color.primary)
-    )
-    InvitationResultType.ERROR -> Triple(
-        stringResource(R.string.staff_invitation_error_title),
-        stringResource(R.string.staff_invitation_error_message, userName),
-        colorResource(R.color.error_red)
-    )
-  }
+  val (title, message, buttonColor) =
+      when (resultType) {
+        InvitationResultType.SUCCESS ->
+            Triple(
+                stringResource(R.string.staff_invitation_success_title),
+                stringResource(R.string.staff_invitation_success_message, userName),
+                colorResource(R.color.primary))
+        InvitationResultType.ERROR ->
+            Triple(
+                stringResource(R.string.staff_invitation_error_title),
+                stringResource(R.string.staff_invitation_error_message, userName),
+                colorResource(R.color.error_red))
+      }
 
   AlertDialog(
       onDismissRequest = onDismiss,

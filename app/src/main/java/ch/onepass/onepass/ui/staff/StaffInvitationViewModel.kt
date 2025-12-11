@@ -56,9 +56,7 @@ data class StaffInvitationUiState(
     val snackbarMessage: String? = null
 )
 
-/**
- * Type of invitation result.
- */
+/** Type of invitation result. */
 enum class InvitationResultType {
   SUCCESS,
   ERROR
@@ -134,7 +132,8 @@ class StaffInvitationViewModel(
     viewModelScope.launch {
       try {
         val userId = currentUserId ?: userRepository.getCurrentUser()?.uid ?: return@launch
-        val memberships = membershipRepository.getUsersByOrganization(organizationId).getOrNull() ?: emptyList()
+        val memberships =
+            membershipRepository.getUsersByOrganization(organizationId).getOrNull() ?: emptyList()
         val membership = memberships.find { it.userId == userId }
         _uiState.value = _uiState.value.copy(currentUserRole = membership?.role)
       } catch (e: Exception) {
@@ -237,7 +236,7 @@ class StaffInvitationViewModel(
       _uiState.value = _uiState.value.copy(errorMessage = "User not authenticated. Please log in.")
       return
     }
-    
+
     // Check if user has permission to invite
     val currentRole = _uiState.value.currentUserRole
     if (currentRole != OrganizationRole.OWNER && currentRole != OrganizationRole.ADMIN) {
@@ -248,16 +247,15 @@ class StaffInvitationViewModel(
     viewModelScope.launch {
       // Check if user is already invited or a member
       val existingInvitations = organizationRepository.getInvitationsByEmail(user.email).first()
-      
+
       val hasPendingInvitation =
           existingInvitations.any {
             it.orgId == organizationId && it.status == InvitationStatus.PENDING
           }
 
       if (hasPendingInvitation) {
-        _uiState.value = _uiState.value.copy(
-            snackbarMessage = "${user.displayName} has already been invited."
-        )
+        _uiState.value =
+            _uiState.value.copy(snackbarMessage = "${user.displayName} has already been invited.")
         return@launch
       }
 
@@ -267,12 +265,11 @@ class StaffInvitationViewModel(
           }
 
       if (hasAcceptedInvitation) {
-        _uiState.value = _uiState.value.copy(
-            snackbarMessage = "${user.displayName} is already a member."
-        )
+        _uiState.value =
+            _uiState.value.copy(snackbarMessage = "${user.displayName} is already a member.")
         return@launch
       }
-    
+
       // Instead of inviting immediately, we set the user for confirmation
       _uiState.value =
           _uiState.value.copy(

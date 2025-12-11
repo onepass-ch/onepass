@@ -439,7 +439,7 @@ class StaffInvitationViewModelTest {
 
         // Select user first
         viewModel.onUserSelected(testSearchResult1)
-        
+
         // Confirm invitation
         viewModel.confirmInvitation()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -489,7 +489,7 @@ class StaffInvitationViewModelTest {
 
         viewModel.onUserSelected(testSearchResult1)
         viewModel.confirmInvitation()
-        
+
         // Run current tasks to ensure the coroutine has started and isInviting is set
         testDispatcher.scheduler.runCurrent()
 
