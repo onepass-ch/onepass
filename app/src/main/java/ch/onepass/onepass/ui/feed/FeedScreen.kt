@@ -252,8 +252,8 @@ private fun EventListContent(
 
   LazyColumn(
       modifier = Modifier.fillMaxSize().testTag(FeedScreenTestTags.EVENT_LIST),
-      contentPadding = PaddingValues(16.dp),
-      verticalArrangement = Arrangement.spacedBy(24.dp)) {
+      contentPadding = PaddingValues(10.dp),
+      verticalArrangement = Arrangement.spacedBy(12.dp)) {
         items(items = events, key = { it.eventId }) { event ->
           EventCard(
               event = event,
