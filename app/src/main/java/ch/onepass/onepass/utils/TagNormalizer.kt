@@ -9,6 +9,16 @@ import ch.onepass.onepass.model.event.EventTag
  * display values with normalization.
  */
 object TagNormalizer {
+
+  // Lazy-initialized lookup maps for O(1) tag resolution
+  private val displayValueMap: Map<String, EventTag> by lazy {
+    EventTag.entries.associateBy { it.displayValue.lowercase() }
+  }
+
+  private val nameMap: Map<String, EventTag> by lazy {
+    EventTag.entries.associateBy { it.name.lowercase() }
+  }
+
   /**
    * Checks if an event tag matches any of the target tags, considering both enum names and display
    * values.
@@ -20,18 +30,20 @@ object TagNormalizer {
   fun matchesTag(eventTag: String, targetTags: Set<String>): Boolean {
     val normalizedEventTag = eventTag.trim()
 
-    // Try to find the EventTag for this event tag
-    val matchingEventTag =
-        EventTag.entries.find {
-          it.displayValue.equals(normalizedEventTag, ignoreCase = true) ||
-              it.name.equals(normalizedEventTag, ignoreCase = true)
-        }
+    // Early return for empty tags
+    if (normalizedEventTag.isEmpty()) return false
+
+    val normalizedLowercase = normalizedEventTag.lowercase()
+
+    // O(1) lookup
+    val matchingEventTag = displayValueMap[normalizedLowercase] ?: nameMap[normalizedLowercase]
 
     return if (matchingEventTag != null) {
       // Check if any target tag matches either the enum name or display value
       targetTags.any { targetTag ->
-        targetTag.equals(matchingEventTag.displayValue, ignoreCase = true) ||
-            targetTag.equals(matchingEventTag.name, ignoreCase = true)
+        val targetLowercase = targetTag.lowercase()
+        targetLowercase == matchingEventTag.displayValue.lowercase() ||
+            targetLowercase == matchingEventTag.name.lowercase()
       }
     } else {
       // Direct comparison for non-EventTag tags
