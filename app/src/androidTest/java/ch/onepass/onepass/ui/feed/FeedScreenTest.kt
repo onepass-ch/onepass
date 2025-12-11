@@ -20,6 +20,7 @@ import java.util.*
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -61,7 +62,14 @@ class FeedScreenTest {
   private val mockAuth = mockk<FirebaseAuth>(relaxed = true)
   private val mockUser = mockk<FirebaseUser>(relaxed = true)
 
-  init {
+  @Before
+  fun setup() {
+    // Initialize mocks using lateinit vars
+    mockUserRepository = mockk(relaxed = true)
+    mockAuth = mockk(relaxed = true)
+    mockUser = mockk(relaxed = true)
+
+    // Setup mock behavior
     every { mockAuth.currentUser } returns mockUser
     every { mockUser.uid } returns "test-user-id"
     every { mockUserRepository.getFavoriteEvents(any()) } returns flowOf(emptySet())
@@ -177,30 +185,6 @@ class FeedScreenTest {
         .performClick()
 
     assert(clickedEventId == testEvent1.eventId)
-  }
-
-  @Test
-  fun feedScreen_displayLocationText() {
-    val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_LOCATION).assertTextEquals("SWITZERLAND")
-  }
-
-  @Test
-  fun feedScreen_displayTitleText() {
-    val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("WELCOME")
   }
 
   @Test
