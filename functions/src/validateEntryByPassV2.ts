@@ -25,7 +25,7 @@ const db = admin.firestore();
 * @param data.eventId - The event ID to validate entry for
 * @param context.auth - Firebase Auth context containing the scanner's UID
 *
-* @returns Object with status ("accepted" | "rejected"), reason, ticketId, scannedAt, and remaining capacity
+* @returns Object with status ("accepted" | "rejected"), reason, ticketId, scannedAt
 *
 * @throws HttpsError
 * - "unauthenticated": Scanner not logged in
@@ -38,7 +38,7 @@ const db = admin.firestore();
 *   status: "accepted",
 *   ticketId: "T-12345",
 *   scannedAt: 1701234567,
-*   remaining: 42
+*   remaining: null
 * }
 *
 * @example
@@ -302,16 +302,6 @@ export const validateEntryByPassV2 = functions.https.onCall(
        }
 
 
-       const eventData = eventSnap.data()!;
-       const remaining = eventData.ticketsRemaining ?? 0;
-
-
-       // Prevent entry if event is at full capacity
-       if (remaining <= 0) {
-         throw new Error("Event at full capacity");
-       }
-
-
        // Mark ticket as redeemed
        transaction.update(ticketDoc.ref, {
          state: "REDEEMED",
@@ -327,10 +317,9 @@ export const validateEntryByPassV2 = functions.https.onCall(
        });
 
 
-       // Increment event counters (atomic)
+       // Increment tickets redeemed counter
        transaction.update(eventRef, {
          ticketsRedeemed: admin.firestore.FieldValue.increment(1),
-         ticketsRemaining: admin.firestore.FieldValue.increment(-1),
        });
 
 
@@ -347,13 +336,13 @@ export const validateEntryByPassV2 = functions.https.onCall(
      });
 
 
-     // Fetch updated remaining count
+     // Fetch updated redeemed count
      const updatedEvent = await db.collection("events").doc(eventId).get();
-     const remaining = updatedEvent.data()?.ticketsRemaining ?? 0;
+     const redeemed = updatedEvent.data()?.ticketsRedeemed ?? 0;
 
 
      logger.info(
-       `Entry validated for uid=${uid}, ticket=${ticketId}, remaining=${remaining}, scanner=${scannerUid}`
+       `Entry validated for uid=${uid}, ticket=${ticketId}, redeemed=${redeemed}, scanner=${scannerUid}`
      );
 
 
@@ -361,7 +350,7 @@ export const validateEntryByPassV2 = functions.https.onCall(
        status: "accepted",
        ticketId,
        scannedAt: scannedAtSeconds,
-       remaining: Math.max(0, remaining),
+       remaining: null, // No longer tracking remaining
      };
    } catch (error: any) {
      logger.error(`Transaction failed for uid=${uid}:`, error);
