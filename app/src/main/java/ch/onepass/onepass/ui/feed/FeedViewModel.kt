@@ -9,6 +9,7 @@ import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
+import ch.onepass.onepass.utils.EventFilteringUtils.applyFiltersLocally
 import com.google.firebase.auth.FirebaseAuth
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -44,11 +45,14 @@ data class FeedUIState(
  * @property repository The event repository for data operations.
  * @property userRepository The user repository for accessing liked events.
  * @property auth Firebase auth for getting current user.
+ * @property timeProvider TimeProvider for getting the current time, used for time-sensitive
+ *   features.
  */
 open class FeedViewModel(
     private val repository: EventRepository = EventRepositoryFirebase(),
     private val userRepository: UserRepository = UserRepositoryFirebase(),
-    private val auth: FirebaseAuth = FirebaseAuth.getInstance()
+    private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
+    private val timeProvider: TimeProvider = FirebaseTimeProvider()
 ) : ViewModel() {
 
   companion object {
@@ -121,7 +125,7 @@ open class FeedViewModel(
    */
   private fun filterActiveEvents(events: List<Event>): List<Event> {
     // Use Firebase server timestamp for consistency across all devices
-    val nowSeconds = Timestamp.now().seconds
+    val nowSeconds = timeProvider.currentTimestamp().seconds
 
     return events.filter { event ->
       // Check if event has ended
@@ -177,6 +181,11 @@ open class FeedViewModel(
    * Content-Based Recommender Algorithm. Sorts events based on tag relevance to the user's liked
    * history, recency, and urgency.
    *
+   * @param candidateEvents Subset of events to score and rank (e.g., unliked events in main feed,
+   *   or all events when doing background recommendations). Does not necessarily equal all loaded
+   *   events.
+   * @param userLikedEventIds Set of event IDs the user has previously liked.
+   *
    * Uses Firebase server timestamp to avoid client-side time manipulation.
    *
    * Logic:
@@ -184,72 +193,92 @@ open class FeedViewModel(
    * - Penalizes events ending in < 2h (Expiration Closing)
    */
   fun recommendEvents(candidateEvents: List<Event>, userLikedEventIds: Set<String>): List<Event> {
-    // 1. Build User Profile (Tag Frequency Map) from ALL loaded events (even those filtered out)
+    val userInterestProfile = buildUserInterestProfile(userLikedEventIds)
+    val now = timeProvider.currentInstant()
+
+    val scoredEvents =
+        candidateEvents.map { event ->
+          event to calculateEventScore(event, userInterestProfile, now)
+        }
+
+    return scoredEvents.sortedByDescending { it.second }.map { it.first }
+  }
+
+  private fun buildUserInterestProfile(userLikedEventIds: Set<String>): Map<String, Int> {
     val allLoadedEvents = _allEvents.value
     val likedEvents = allLoadedEvents.filter { it.eventId in userLikedEventIds }
 
-    val userInterestProfile = mutableMapOf<String, Int>()
+    val profile = mutableMapOf<String, Int>()
     likedEvents.forEach { event ->
       event.tags.forEach { tag ->
         val normalizedTag = tag.lowercase().trim()
-        userInterestProfile[normalizedTag] = (userInterestProfile[normalizedTag] ?: 0) + 1
+        profile[normalizedTag] = (profile[normalizedTag] ?: 0) + 1
       }
     }
+    return profile
+  }
 
-    // Use Firebase server timestamp for all time calculations
-    val nowSeconds = Timestamp.now().seconds
-    val now = Instant.ofEpochSecond(nowSeconds)
+  private fun calculateEventScore(
+      event: Event,
+      userInterestProfile: Map<String, Int>,
+      now: Instant
+  ): Double {
+    var score = 0.0
 
-    // 2. Score Events
-    val scoredEvents =
-        candidateEvents.map { event ->
-          var score = 0.0
+    // Tag matching
+    score += calculateTagScore(event, userInterestProfile)
+    // Recency boost
+    score += calculateRecencyScore(event, now)
+    // Urgency boost
+    score += calculateUrgencyScore(event, now)
+    // Expiration penalty
+    score -= calculateExpirationPenalty(event, now)
 
-          // A. Tag Matching Score
-          event.tags.forEach { tag ->
-            val normalizedTag = tag.lowercase().trim()
-            val interestWeight = userInterestProfile[normalizedTag] ?: 0
-            score += interestWeight * TAG_MATCH_WEIGHT
-          }
+    return score
+  }
 
-          val createdAtSeconds = event.createdAt?.seconds ?: 0L
-          val startTimeSeconds = event.startTime?.seconds ?: 0L
-          val endTimeSeconds = event.endTime?.seconds ?: 0L
+  private fun calculateTagScore(event: Event, userInterestProfile: Map<String, Int>): Double {
+    return event.tags.sumOf { tag ->
+      val normalizedTag = tag.lowercase().trim()
+      val interestWeight = userInterestProfile[normalizedTag] ?: 0
+      interestWeight * TAG_MATCH_WEIGHT
+    }
+  }
 
-          // B. Recency Boost (Created recently)
-          if (createdAtSeconds > 0) {
-            val eventDate = Instant.ofEpochSecond(createdAtSeconds)
-            val sevenDaysAgo = now.minus(7, ChronoUnit.DAYS)
-            if (eventDate.isAfter(sevenDaysAgo)) {
-              score += RECENCY_BOOST
-            }
-          }
+  private fun calculateRecencyScore(event: Event, now: Instant): Double {
+    val createdAtSeconds = event.createdAt?.seconds ?: 0L
+    if (createdAtSeconds > 0) {
+      val eventDate = Instant.ofEpochSecond(createdAtSeconds)
+      val sevenDaysAgo = now.minus(7, ChronoUnit.DAYS)
+      if (eventDate.isAfter(sevenDaysAgo)) {
+        return RECENCY_BOOST
+      }
+    }
+    return 0.0
+  }
 
-          // C. Urgency Boost (Starts within 24h)
-          if (startTimeSeconds > 0) {
-            val startDate = Instant.ofEpochSecond(startTimeSeconds)
-            val tomorrow = now.plus(24, ChronoUnit.HOURS)
-            // If it hasn't started yet but starts soon
-            if (startDate.isAfter(now) && startDate.isBefore(tomorrow)) {
-              score += URGENCY_BOOST
-            }
-          }
+  private fun calculateUrgencyScore(event: Event, now: Instant): Double {
+    val startTimeSeconds = event.startTime?.seconds ?: 0L
+    if (startTimeSeconds > 0) {
+      val startDate = Instant.ofEpochSecond(startTimeSeconds)
+      val tomorrow = now.plus(24, ChronoUnit.HOURS)
+      if (startDate.isAfter(now) && startDate.isBefore(tomorrow)) {
+        return URGENCY_BOOST
+      }
+    }
+    return 0.0
+  }
 
-          // D. Expiration Penalty (Ends within 2h)
-          // If it ends very soon, it's likely too late to attend
-          if (endTimeSeconds > 0) {
-            val endDate = Instant.ofEpochSecond(endTimeSeconds)
-            val twoHoursFromNow = now.plus(2, ChronoUnit.HOURS)
-            if (endDate.isAfter(now) && endDate.isBefore(twoHoursFromNow)) {
-              score -= EXPIRATION_PENALTY
-            }
-          }
-
-          event to score
-        }
-
-    // 3. Sort by Score Descending
-    return scoredEvents.sortedByDescending { it.second }.map { it.first }
+  private fun calculateExpirationPenalty(event: Event, now: Instant): Double {
+    val endTimeSeconds = event.endTime?.seconds ?: 0L
+    if (endTimeSeconds > 0) {
+      val endDate = Instant.ofEpochSecond(endTimeSeconds)
+      val twoHoursFromNow = now.plus(2, ChronoUnit.HOURS)
+      if (endDate.isAfter(now) && endDate.isBefore(twoHoursFromNow)) {
+        return EXPIRATION_PENALTY
+      }
+    }
+    return 0.0
   }
 
   /** Apply current filters to the loaded events */
