@@ -10,6 +10,7 @@ import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.model.user.UserSearchType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.*
 import org.junit.After
@@ -684,12 +685,15 @@ class StaffInvitationViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(testSearchResult1.id in viewModel.uiState.value.invitedUserIds)
+        assertFalse(testSearchResult1.id in viewModel.uiState.value.alreadyInvitedUserIds)
 
-        // Try to invite same user again (should detect already invited)
+        // Try to invite same user again - should be prevented by early return
         viewModel.onUserSelected(testSearchResult1)
         testDispatcher.scheduler.advanceUntilIdle()
 
-        assertTrue(testSearchResult1.id in viewModel.uiState.value.alreadyInvitedUserIds)
+        // User should still be in invitedUserIds but NOT in alreadyInvitedUserIds
+        assertTrue(testSearchResult1.id in viewModel.uiState.value.invitedUserIds)
+        assertFalse(testSearchResult1.id in viewModel.uiState.value.alreadyInvitedUserIds)
       }
 
   @Test
@@ -718,4 +722,52 @@ class StaffInvitationViewModelTest {
         userRepository = userRepository,
         organizationRepository = organizationRepository)
   }
+
+  @Test
+  fun staffInvitationViewModel_onUserSelected_returnsEarlyWhenAlreadyInviting() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Arrange: Set inviting state
+        val uiStateField = StaffInvitationViewModel::class.java.getDeclaredField("_uiState")
+        uiStateField.isAccessible = true
+        val mutableStateFlow =
+            uiStateField.get(viewModel) as MutableStateFlow<StaffInvitationUiState>
+        val currentState = mutableStateFlow.value
+        mutableStateFlow.value = currentState.copy(isInviting = true)
+
+        // Act
+        viewModel.onUserSelected(testSearchResult1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Assert: Should not create invitation when already inviting
+        val invitations =
+            organizationRepository.getInvitationsByEmail(testSearchResult1.email).first()
+        assertEquals(0, invitations.size)
+      }
+
+  @Test
+  fun staffInvitationViewModel_onUserSelected_returnsEarlyWhenUserAlreadyInvited() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Arrange: Add user to invitedUserIds
+        val uiStateField = StaffInvitationViewModel::class.java.getDeclaredField("_uiState")
+        uiStateField.isAccessible = true
+        val mutableStateFlow =
+            uiStateField.get(viewModel) as MutableStateFlow<StaffInvitationUiState>
+        val currentState = mutableStateFlow.value
+        mutableStateFlow.value = currentState.copy(invitedUserIds = setOf(testSearchResult1.id))
+
+        // Act
+        viewModel.onUserSelected(testSearchResult1)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Assert: Should not create duplicate invitation
+        val invitations =
+            organizationRepository.getInvitationsByEmail(testSearchResult1.email).first()
+        assertEquals(0, invitations.size)
+      }
 }
