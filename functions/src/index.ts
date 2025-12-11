@@ -7,7 +7,7 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-//import * as functions from "firebase-functions/v1";
+// import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
@@ -19,5 +19,7 @@ export { onUserCreated } from "./onUserCreated";
 // Stripe payment functions
 export {
   createPaymentIntent,
+  createMarketplacePaymentIntent,
+  cancelMarketplaceReservation,
   stripeWebhook,
 } from "./stripe";
