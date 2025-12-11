@@ -9,6 +9,9 @@ import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextInput
+import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.model.user.UserSearchType
 import ch.onepass.onepass.ui.theme.OnePassTheme
@@ -202,5 +205,101 @@ class StaffInvitationScreenComposeTest {
     composeRule.onNodeWithTag(StaffInvitationTestTags.ROLE_DROPDOWN).assertIsDisplayed()
     composeRule.onNodeWithTag(StaffInvitationTestTags.CONFIRM_BUTTON).assertIsDisplayed()
     composeRule.onNodeWithTag(StaffInvitationTestTags.CANCEL_BUTTON).assertIsDisplayed()
+  }
+
+  @Test
+  fun showsPermissionDeniedDialog_whenStateIsTrue() {
+    val vm = StaffInvitationViewModel(organizationId = "org_test")
+    setContent(vm)
+
+    setUiState(vm, StaffInvitationUiState(showPermissionDeniedDialog = true))
+
+    composeRule.onNodeWithTag(StaffInvitationTestTags.PERMISSION_DENIED_DIALOG).assertIsDisplayed()
+    composeRule.onNodeWithText("Permission Denied").assertIsDisplayed()
+  }
+
+  @Test
+  fun showsInvitationResultDialog_Success() {
+    val vm = StaffInvitationViewModel(organizationId = "org_test")
+    setContent(vm)
+
+    setUiState(
+        vm,
+        StaffInvitationUiState(
+            invitationResultMessage = "Alice", invitationResultType = InvitationResultType.SUCCESS))
+
+    composeRule.onNodeWithText("Invitation Sent").assertExists()
+    composeRule.onNodeWithText("Successfully invited Alice to the organization.").assertExists()
+  }
+
+  @Test
+  fun showsInvitationResultDialog_Error() {
+    val vm = StaffInvitationViewModel(organizationId = "org_test")
+    setContent(vm)
+
+    setUiState(
+        vm,
+        StaffInvitationUiState(
+            invitationResultMessage = "Bob", invitationResultType = InvitationResultType.ERROR))
+
+    composeRule.onNodeWithText("Invitation Failed").assertExists()
+    composeRule.onNodeWithText("Failed to send invitation: Bob").assertExists()
+  }
+
+  @Test
+  fun showsSnackbar_whenMessagePresent() {
+    val vm = StaffInvitationViewModel(organizationId = "org_test")
+    setContent(vm)
+
+    setUiState(vm, StaffInvitationUiState(snackbarMessage = "Operation successful"))
+
+    composeRule.onNodeWithText("Operation successful").assertIsDisplayed()
+  }
+
+  @Test
+  fun switchingTabs_updatesState() {
+    val vm = StaffInvitationViewModel(organizationId = "org_test")
+    setContent(vm)
+
+    // Initially Display Name
+    composeRule.onNodeWithTag(StaffInvitationTestTags.TAB_DISPLAY_NAME).assertIsSelected()
+
+    // Click Email tab
+    composeRule.onNodeWithTag(StaffInvitationTestTags.TAB_EMAIL).performClick()
+    composeRule.waitForIdle()
+
+    // Verify Email tab is selected
+    composeRule.onNodeWithTag(StaffInvitationTestTags.TAB_EMAIL).assertIsSelected()
+  }
+
+  @Test
+  fun typingInSearchField_updatesQuery() {
+    val vm = StaffInvitationViewModel(organizationId = "org_test")
+    setContent(vm)
+
+    composeRule.onNodeWithTag(StaffInvitationTestTags.SEARCH_FIELD).performTextInput("Alice")
+    composeRule.waitForIdle()
+
+    // Verify the text field contains the text
+    composeRule.onNodeWithText("Alice").assertIsDisplayed()
+  }
+
+  @Test
+  fun selectingRole_updatesDropdown() {
+    val vm = StaffInvitationViewModel(organizationId = "org_test")
+    setContent(vm)
+
+    val user = StaffSearchResult("1", "alice@onepass.ch", "Alice Keller", null)
+    setUiState(
+        vm,
+        StaffInvitationUiState(
+            selectedUserForInvite = user, selectedRole = OrganizationRole.MEMBER))
+
+    composeRule.onNodeWithTag(StaffInvitationTestTags.ROLE_DROPDOWN).performClick()
+    composeRule.onNodeWithText("ADMIN").performClick()
+    composeRule.waitForIdle()
+
+    // Verify ADMIN is displayed in the dropdown text field
+    composeRule.onNodeWithText("ADMIN").assertIsDisplayed()
   }
 }
