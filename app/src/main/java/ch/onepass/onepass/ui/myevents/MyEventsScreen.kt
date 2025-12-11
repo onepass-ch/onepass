@@ -45,6 +45,10 @@ object MyEventsTestTags {
   const val TICKET_DIALOG_STATUS = "TicketDialogStatus"
   const val TICKET_DIALOG_DATE = "TicketDialogDate"
   const val TICKET_DIALOG_LOCATION = "TicketDialogLocation"
+  const val HOT_EVENTS_TITLE = "HotEventsTitle"
+  const val HOT_EVENTS_LIST = "HotEventsList"
+  const val HOT_EVENT_CARD = "HotEventCard"
+  const val HOT_EVENTS_EMPTY = "HotEventsEmpty"
 }
 
 /**
