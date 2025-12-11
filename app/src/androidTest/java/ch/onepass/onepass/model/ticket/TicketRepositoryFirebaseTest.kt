@@ -134,9 +134,12 @@ class TicketRepositoryFirebaseTest : FirestoreTestBase() {
 
     val activeTickets = ticketRepository.getActiveTickets(userId).first()
 
-    val activeStates = setOf(TicketState.ISSUED, TicketState.LISTED, TicketState.TRANSFERRED)
-    assertEquals("Should have 3 active tickets", 3, activeTickets.size)
+    val activeStates = setOf(TicketState.ISSUED, TicketState.TRANSFERRED)
+    assertEquals("Should have 2 active tickets", 2, activeTickets.size)
     assertTrue("All should be active states", activeTickets.all { it.state in activeStates })
+    assertTrue(
+        "Listed tickets should not be returned as active",
+        activeTickets.none { it.state == TicketState.LISTED })
     assertTrue(
         "Should not include redeemed tickets",
         activeTickets.none { it.state == TicketState.REDEEMED })
