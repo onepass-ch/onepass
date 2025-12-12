@@ -333,7 +333,8 @@ class MyEventsViewModel(
         .flatMapLatest { enrichTickets(it) }
         .catch { e ->
           // Handle error gracefully - show empty list and log
-          android.util.Log.e("MyEventsViewModel", "Error observing current tickets: ${e.message}", e)
+          android.util.Log.e(
+              "MyEventsViewModel", "Error observing current tickets: ${e.message}", e)
           emit(emptyList())
         }
         .onEach { tickets -> _uiState.value = _uiState.value.copy(currentTickets = tickets) }
@@ -349,7 +350,8 @@ class MyEventsViewModel(
         .flatMapLatest { enrichTickets(it) }
         .catch { e ->
           // Handle error gracefully - show empty list and log (fix the crash issue earlier)
-          android.util.Log.e("MyEventsViewModel", "Error observing expired tickets: ${e.message}", e)
+          android.util.Log.e(
+              "MyEventsViewModel", "Error observing expired tickets: ${e.message}", e)
           emit(emptyList())
         }
         .onEach { tickets -> _uiState.value = _uiState.value.copy(expiredTickets = tickets) }
@@ -384,9 +386,11 @@ class MyEventsViewModel(
     if (tickets.isEmpty()) return flowOf(emptyList())
     return combine(
         tickets.map { ticket ->
-          eventRepo.getEventById(ticket.eventId)
+          eventRepo
+              .getEventById(ticket.eventId)
               .catch { e ->
-                android.util.Log.w("MyEventsViewModel", "Failed to get event ${ticket.eventId}: ${e.message}")
+                android.util.Log.w(
+                    "MyEventsViewModel", "Failed to get event ${ticket.eventId}: ${e.message}")
                 emit(null)
               }
               .map { event ->
@@ -399,9 +403,12 @@ class MyEventsViewModel(
                     listingPrice = ticket.listingPrice ?: 0.0,
                     originalPrice = ticket.purchasePrice,
                     currency = ticket.currency,
-                    listedAt = ticket.listedAt?.toDate()?.let { 
-                      java.text.SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault()).format(it) 
-                    } ?: "Recently",
+                    listedAt =
+                        ticket.listedAt?.toDate()?.let {
+                          java.text
+                              .SimpleDateFormat("MMM d, yyyy", java.util.Locale.getDefault())
+                              .format(it)
+                        } ?: "Recently",
                     rawTicket = ticket)
               }
         }) {
@@ -445,10 +452,7 @@ class MyEventsViewModel(
         .catch { e ->
           // Handle error gracefully - log and show empty list
           android.util.Log.e("MyEventsViewModel", "Error observing market tickets: ${e.message}", e)
-          _uiState.value =
-              _uiState.value.copy(
-                  marketTickets = emptyList(),
-                  isLoadingMarket = false)
+          _uiState.value = _uiState.value.copy(marketTickets = emptyList(), isLoadingMarket = false)
           emit(emptyList())
         }
         .onEach { marketTickets ->
@@ -481,7 +485,8 @@ class MyEventsViewModel(
         .flatMapLatest { tickets -> enrichSellableTickets(tickets) }
         .catch { e ->
           // Handle error gracefully - show empty list
-          android.util.Log.e("MyEventsViewModel", "Error observing sellable tickets: ${e.message}", e)
+          android.util.Log.e(
+              "MyEventsViewModel", "Error observing sellable tickets: ${e.message}", e)
           emit(emptyList())
         }
         .onEach { tickets -> _uiState.value = _uiState.value.copy(sellableTickets = tickets) }
@@ -500,9 +505,11 @@ class MyEventsViewModel(
     if (tickets.isEmpty()) return flowOf(emptyList())
     return combine(
         tickets.map { ticket ->
-          eventRepo.getEventById(ticket.eventId)
+          eventRepo
+              .getEventById(ticket.eventId)
               .catch { e ->
-                android.util.Log.w("MyEventsViewModel", "Failed to get event ${ticket.eventId}: ${e.message}")
+                android.util.Log.w(
+                    "MyEventsViewModel", "Failed to get event ${ticket.eventId}: ${e.message}")
                 emit(null)
               }
               .map { event ->
@@ -566,7 +573,7 @@ class MyEventsViewModel(
     viewModelScope.launch {
       try {
         // Combine event and organization search results
-          // TODO here check for the query logic and why no permission sometimes
+        // TODO here check for the query logic and why no permission sometimes
         combine(eventRepo.searchEvents(query), orgRepo.searchOrganizations(query)) {
                 events,
                 organizers ->
@@ -577,12 +584,12 @@ class MyEventsViewModel(
             .first()
             .let { results ->
               _uiState.value =
-                  _uiState.value.copy(searchResults = results, isSearching = false, marketError = null)
+                  _uiState.value.copy(
+                      searchResults = results, isSearching = false, marketError = null)
             }
       } catch (e: Exception) {
         _uiState.value =
-            _uiState.value.copy(
-                isSearching = false, marketError = "Search failed: ${e.message}")
+            _uiState.value.copy(isSearching = false, marketError = "Search failed: ${e.message}")
       }
     }
   }
@@ -608,15 +615,12 @@ class MyEventsViewModel(
       is SearchResult.OrganizerResult -> {
         // Filter by organizer - get all events by this organizer, then filter market tickets
         viewModelScope.launch {
-          eventRepo
-              .getEventsByOrganization(searchResult.organizer.id)
-              .first()
-              .let { events ->
-                val eventIds = events.map { it.eventId }.toSet()
-                val currentMarket = _uiState.value.marketTickets
-                val filteredTickets = currentMarket.filter { it.eventId in eventIds }
-                _uiState.value = _uiState.value.copy(marketTickets = filteredTickets)
-              }
+          eventRepo.getEventsByOrganization(searchResult.organizer.id).first().let { events ->
+            val eventIds = events.map { it.eventId }.toSet()
+            val currentMarket = _uiState.value.marketTickets
+            val filteredTickets = currentMarket.filter { it.eventId in eventIds }
+            _uiState.value = _uiState.value.copy(marketTickets = filteredTickets)
+          }
         }
       }
     }
@@ -648,7 +652,10 @@ class MyEventsViewModel(
   fun closeSellDialog() {
     _uiState.value =
         _uiState.value.copy(
-            selectedTicketForSale = null, showSellDialog = false, sellingPrice = "", marketError = null)
+            selectedTicketForSale = null,
+            showSellDialog = false,
+            sellingPrice = "",
+            marketError = null)
   }
 
   /**
@@ -675,20 +682,23 @@ class MyEventsViewModel(
     viewModelScope.launch {
       _uiState.value = _uiState.value.copy(isLoadingMarket = true, marketError = null)
 
-      ticketRepo.listTicketForSale(ticketId, price).fold(
-          onSuccess = {
-            _uiState.value =
-                _uiState.value.copy(
-                    isLoadingMarket = false,
-                    showSellDialog = false,
-                    selectedTicketForSale = null,
-                    sellingPrice = "")
-          },
-          onFailure = { error ->
-            _uiState.value =
-                _uiState.value.copy(
-                    isLoadingMarket = false, marketError = "Failed to list ticket: ${error.message}")
-          })
+      ticketRepo
+          .listTicketForSale(ticketId, price)
+          .fold(
+              onSuccess = {
+                _uiState.value =
+                    _uiState.value.copy(
+                        isLoadingMarket = false,
+                        showSellDialog = false,
+                        selectedTicketForSale = null,
+                        sellingPrice = "")
+              },
+              onFailure = { error ->
+                _uiState.value =
+                    _uiState.value.copy(
+                        isLoadingMarket = false,
+                        marketError = "Failed to list ticket: ${error.message}")
+              })
     }
   }
 
@@ -701,22 +711,24 @@ class MyEventsViewModel(
     viewModelScope.launch {
       _uiState.value = _uiState.value.copy(isLoadingMarket = true, marketError = null)
 
-      ticketRepo.cancelTicketListing(ticketId).fold(
-          onSuccess = { _uiState.value = _uiState.value.copy(isLoadingMarket = false) },
-          onFailure = { error ->
-            _uiState.value =
-                _uiState.value.copy(
-                    isLoadingMarket = false,
-                    marketError = "Failed to cancel listing: ${error.message}")
-          })
+      ticketRepo
+          .cancelTicketListing(ticketId)
+          .fold(
+              onSuccess = { _uiState.value = _uiState.value.copy(isLoadingMarket = false) },
+              onFailure = { error ->
+                _uiState.value =
+                    _uiState.value.copy(
+                        isLoadingMarket = false,
+                        marketError = "Failed to cancel listing: ${error.message}")
+              })
     }
   }
 
   // ---------- Buy Ticket Functionality ----------
 
   /**
-   * Initiates the purchase of a listed ticket from the marketplace.
-   * Creates a PaymentIntent and prepares the payment sheet.
+   * Initiates the purchase of a listed ticket from the marketplace. Creates a PaymentIntent and
+   * prepares the payment sheet.
    *
    * @param ticketId The ticket's unique ID.
    */
@@ -728,105 +740,102 @@ class MyEventsViewModel(
     }
 
     viewModelScope.launch {
-      _uiState.value = _uiState.value.copy(
-          isPurchasing = true,
-          purchasingTicketId = ticketId,
-          marketError = null)
+      _uiState.value =
+          _uiState.value.copy(
+              isPurchasing = true, purchasingTicketId = ticketId, marketError = null)
 
       // Find the ticket details for description
       val ticketInfo = _uiState.value.marketTickets.find { it.ticketId == ticketId }
 
-      paymentRepo.createMarketplacePaymentIntent(
-          ticketId = ticketId,
-          description = ticketInfo?.let { "Marketplace: ${it.eventTitle}" }
-      ).fold(
-          onSuccess = { response ->
-            _uiState.value = _uiState.value.copy(
-                isPurchasing = false,
-                purchaseClientSecret = response.clientSecret,
-                purchasingTicketId = response.ticketId,
-                purchaseEventName = response.eventName,
-                purchaseAmount = response.amount,
-                purchaseCurrency = response.currency,
-                showPaymentSheet = true)
-          },
-          onFailure = { error ->
-            _uiState.value = _uiState.value.copy(
-                isPurchasing = false,
-                purchasingTicketId = null,
-                marketError = error.message ?: "Failed to initiate purchase")
-          })
+      paymentRepo
+          .createMarketplacePaymentIntent(
+              ticketId = ticketId,
+              description = ticketInfo?.let { "Marketplace: ${it.eventTitle}" })
+          .fold(
+              onSuccess = { response ->
+                _uiState.value =
+                    _uiState.value.copy(
+                        isPurchasing = false,
+                        purchaseClientSecret = response.clientSecret,
+                        purchasingTicketId = response.ticketId,
+                        purchaseEventName = response.eventName,
+                        purchaseAmount = response.amount,
+                        purchaseCurrency = response.currency,
+                        showPaymentSheet = true)
+              },
+              onFailure = { error ->
+                _uiState.value =
+                    _uiState.value.copy(
+                        isPurchasing = false,
+                        purchasingTicketId = null,
+                        marketError = error.message ?: "Failed to initiate purchase")
+              })
     }
   }
 
   /**
-   * Called when the payment sheet has been presented.
-   * Resets the showPaymentSheet flag to prevent re-presentation.
+   * Called when the payment sheet has been presented. Resets the showPaymentSheet flag to prevent
+   * re-presentation.
    */
   fun onPaymentSheetPresented() {
     _uiState.value = _uiState.value.copy(showPaymentSheet = false)
   }
 
   /**
-   * Called when the payment succeeds.
-   * The actual ticket transfer happens via webhook, so we just update UI.
+   * Called when the payment succeeds. The actual ticket transfer happens via webhook, so we just
+   * update UI.
    */
   fun onPaymentSuccess() {
-    _uiState.value = _uiState.value.copy(
-        purchaseClientSecret = null,
-        purchasingTicketId = null,
-        purchaseEventName = null,
-        purchaseAmount = null,
-        purchaseCurrency = null,
-        marketError = null)
+    _uiState.value =
+        _uiState.value.copy(
+            purchaseClientSecret = null,
+            purchasingTicketId = null,
+            purchaseEventName = null,
+            purchaseAmount = null,
+            purchaseCurrency = null,
+            marketError = null)
     // Show success message (optional - ticket will appear in their list after webhook)
     // The ticket transfer happens server-side via Stripe webhook
   }
 
-  /**
-   * Called when the user cancels the payment.
-   * Releases the ticket reservation.
-   */
+  /** Called when the user cancels the payment. Releases the ticket reservation. */
   fun onPaymentCancelled() {
     val ticketId = _uiState.value.purchasingTicketId
-    
-    _uiState.value = _uiState.value.copy(
-        purchaseClientSecret = null,
-        purchasingTicketId = null,
-        purchaseEventName = null,
-        purchaseAmount = null,
-        purchaseCurrency = null)
+
+    _uiState.value =
+        _uiState.value.copy(
+            purchaseClientSecret = null,
+            purchasingTicketId = null,
+            purchaseEventName = null,
+            purchaseAmount = null,
+            purchaseCurrency = null)
 
     // Release the reservation
     if (ticketId != null) {
-      viewModelScope.launch {
-        paymentRepo.cancelMarketplaceReservation(ticketId)
-      }
+      viewModelScope.launch { paymentRepo.cancelMarketplaceReservation(ticketId) }
     }
   }
 
   /**
-   * Called when the payment fails.
-   * Releases the ticket reservation and shows error.
+   * Called when the payment fails. Releases the ticket reservation and shows error.
    *
    * @param errorMessage The error message from the payment sheet.
    */
   fun onPaymentFailed(errorMessage: String) {
     val ticketId = _uiState.value.purchasingTicketId
 
-    _uiState.value = _uiState.value.copy(
-        purchaseClientSecret = null,
-        purchasingTicketId = null,
-        purchaseEventName = null,
-        purchaseAmount = null,
-        purchaseCurrency = null,
-        marketError = "Payment failed: $errorMessage")
+    _uiState.value =
+        _uiState.value.copy(
+            purchaseClientSecret = null,
+            purchasingTicketId = null,
+            purchaseEventName = null,
+            purchaseAmount = null,
+            purchaseCurrency = null,
+            marketError = "Payment failed: $errorMessage")
 
     // Release the reservation
     if (ticketId != null) {
-      viewModelScope.launch {
-        paymentRepo.cancelMarketplaceReservation(ticketId)
-      }
+      viewModelScope.launch { paymentRepo.cancelMarketplaceReservation(ticketId) }
     }
   }
 
@@ -850,9 +859,11 @@ class MyEventsViewModel(
     if (tickets.isEmpty()) return flowOf(emptyList())
     return combine(
         tickets.map { ticket ->
-          eventRepo.getEventById(ticket.eventId)
+          eventRepo
+              .getEventById(ticket.eventId)
               .catch { e ->
-                android.util.Log.w("MyEventsViewModel", "Failed to get event ${ticket.eventId}: ${e.message}")
+                android.util.Log.w(
+                    "MyEventsViewModel", "Failed to get event ${ticket.eventId}: ${e.message}")
                 emit(null)
               }
               .map { event ->
@@ -887,9 +898,11 @@ class MyEventsViewModel(
     if (tickets.isEmpty()) return flowOf(emptyList())
     return combine(
         tickets.map { ticket ->
-          eventRepo.getEventById(ticket.eventId)
+          eventRepo
+              .getEventById(ticket.eventId)
               .catch { e ->
-                android.util.Log.w("MyEventsViewModel", "Failed to get event ${ticket.eventId}: ${e.message}")
+                android.util.Log.w(
+                    "MyEventsViewModel", "Failed to get event ${ticket.eventId}: ${e.message}")
                 emit(null)
               }
               .map { event -> ticket.toUiTicket(event) }

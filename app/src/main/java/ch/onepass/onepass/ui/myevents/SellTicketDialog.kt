@@ -141,8 +141,7 @@ fun SellTicketDialog(
               // Ticket Selection Dropdown
               Text(
                   text = "Select a ticket to sell",
-                  style =
-                      MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
+                  style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                   color = colorResource(id = R.color.on_background))
 
               if (sellableTickets.isEmpty()) {
@@ -175,8 +174,7 @@ fun SellTicketDialog(
                       isExpanded = dropdownExpanded,
                       onClick = { dropdownExpanded = !dropdownExpanded },
                       modifier =
-                          Modifier.fillMaxWidth()
-                              .testTag(MyEventsTestTags.SELL_DIALOG_TICKET_LIST))
+                          Modifier.fillMaxWidth().testTag(MyEventsTestTags.SELL_DIALOG_TICKET_LIST))
 
                   DropdownMenu(
                       expanded = dropdownExpanded,
@@ -239,18 +237,21 @@ fun SellTicketDialog(
                     colors =
                         TextFieldDefaults.colors(
                             focusedContainerColor = colorResource(id = R.color.surface_card_color),
-                            unfocusedContainerColor = colorResource(id = R.color.surface_card_color),
+                            unfocusedContainerColor =
+                                colorResource(id = R.color.surface_card_color),
                             focusedIndicatorColor = colorResource(id = R.color.accent_purple),
                             unfocusedIndicatorColor = Color.Transparent,
                             focusedTextColor = colorResource(id = R.color.white),
                             unfocusedTextColor = colorResource(id = R.color.white)),
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true,
-                    textStyle = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
+                    textStyle =
+                        MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold))
 
                 // Original price hint
                 Text(
-                    text = "Original price: CHF ${formatPriceCompact(selectedTicket.originalPrice)}",
+                    text =
+                        "Original price: CHF ${formatPriceCompact(selectedTicket.originalPrice)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = colorResource(id = R.color.gray))
               }
@@ -275,7 +276,8 @@ fun SellTicketDialog(
                           contentColor = colorResource(id = R.color.white),
                           disabledContainerColor =
                               colorResource(id = R.color.accent_purple).copy(alpha = 0.4f),
-                          disabledContentColor = colorResource(id = R.color.white).copy(alpha = 0.6f)),
+                          disabledContentColor =
+                              colorResource(id = R.color.white).copy(alpha = 0.6f)),
                   shape = RoundedCornerShape(16.dp)) {
                     if (isLoading) {
                       CircularProgressIndicator(
@@ -313,9 +315,7 @@ fun SellTicketDialog(
       }
 }
 
-/**
- * Dropdown selector showing the currently selected ticket or placeholder.
- */
+/** Dropdown selector showing the currently selected ticket or placeholder. */
 @Composable
 private fun TicketDropdownSelector(
     selectedTicket: SellableTicket?,
@@ -339,7 +339,8 @@ private fun TicketDropdownSelector(
               .clickable(onClick = onClick),
       shape = RoundedCornerShape(12.dp),
       colors =
-          CardDefaults.cardColors(containerColor = colorResource(id = R.color.surface_card_color))) {
+          CardDefaults.cardColors(
+              containerColor = colorResource(id = R.color.surface_card_color))) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -354,7 +355,8 @@ private fun TicketDropdownSelector(
                               Modifier.size(40.dp)
                                   .clip(RoundedCornerShape(10.dp))
                                   .background(
-                                      colorResource(id = R.color.accent_purple).copy(alpha = 0.15f)),
+                                      colorResource(id = R.color.accent_purple)
+                                          .copy(alpha = 0.15f)),
                           contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Rounded.ConfirmationNumber,
@@ -400,9 +402,7 @@ private fun TicketDropdownSelector(
       }
 }
 
-/**
- * Individual ticket item in the dropdown.
- */
+/** Individual ticket item in the dropdown. */
 @Composable
 private fun TicketDropdownItem(ticket: SellableTicket, isSelected: Boolean) {
   Row(
@@ -414,7 +414,8 @@ private fun TicketDropdownItem(ticket: SellableTicket, isSelected: Boolean) {
                 Modifier.size(36.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(
-                        if (isSelected) colorResource(id = R.color.accent_purple).copy(alpha = 0.15f)
+                        if (isSelected)
+                            colorResource(id = R.color.accent_purple).copy(alpha = 0.15f)
                         else colorResource(id = R.color.surface_container)),
             contentAlignment = Alignment.Center) {
               Icon(
@@ -458,9 +459,7 @@ private fun TicketDropdownItem(ticket: SellableTicket, isSelected: Boolean) {
       }
 }
 
-/**
- * Preview card showing the selected ticket details.
- */
+/** Preview card showing the selected ticket details. */
 @Composable
 private fun SelectedTicketPreview(ticket: SellableTicket) {
   Card(

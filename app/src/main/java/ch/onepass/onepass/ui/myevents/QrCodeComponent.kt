@@ -84,8 +84,7 @@ fun QrCodeComponent(
               .fillMaxWidth()
               .size(animatedHeight, animatedHeight)
               .clickable(
-                  interactionSource = remember { MutableInteractionSource() },
-                  indication = null) {
+                  interactionSource = remember { MutableInteractionSource() }, indication = null) {
                     onToggleExpanded()
                   }
               .testTag(MyEventsTestTags.QR_CODE_CARD),

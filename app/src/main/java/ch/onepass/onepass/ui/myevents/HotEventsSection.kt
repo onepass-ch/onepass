@@ -109,8 +109,8 @@ fun HotEventsSection(
 }
 
 /**
- * Card displaying a hot event with Spotify-inspired album design.
- * Features a rounded image box with event title and date below.
+ * Card displaying a hot event with Spotify-inspired album design. Features a rounded image box with
+ * event title and date below.
  *
  * @param event The event to display.
  * @param onClick Callback when the card is clicked.

@@ -14,8 +14,8 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Coverage tests for HotEventsSection component.
- * These tests verify the basic display and interaction of the hot events section.
+ * Coverage tests for HotEventsSection component. These tests verify the basic display and
+ * interaction of the hot events section.
  */
 class HotEventsSectionTest {
 
@@ -133,8 +133,7 @@ class HotEventsSectionTest {
   @Test
   fun hotEventsSection_handlesLongEventTitles() {
     val event =
-        createTestEvent(
-            title = "This is a very long event title that should be truncated properly")
+        createTestEvent(title = "This is a very long event title that should be truncated properly")
 
     composeTestRule.setContent {
       OnePassTheme { HotEventsSection(events = listOf(event), onEventClick = {}) }

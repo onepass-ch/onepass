@@ -84,7 +84,7 @@ fun MarketSearchBar(
   Column(modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp)) {
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { /* Controlled by results */ },
+        onExpandedChange = { /* Controlled by results */},
         modifier = Modifier.fillMaxWidth()) {
           TextField(
               value = query,

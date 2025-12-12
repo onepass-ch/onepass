@@ -97,9 +97,7 @@ fun MarketTicketList(
         // Loading state
         Box(
             modifier =
-                Modifier.fillMaxWidth()
-                    .height(200.dp)
-                    .testTag(MyEventsTestTags.MARKET_LOADING),
+                Modifier.fillMaxWidth().height(200.dp).testTag(MyEventsTestTags.MARKET_LOADING),
             contentAlignment = Alignment.Center) {
               CircularProgressIndicator(
                   color = colorResource(id = R.color.primary), modifier = Modifier.size(40.dp))
@@ -109,7 +107,8 @@ fun MarketTicketList(
         // Empty state
         EmptyState(
             title = "No Tickets Available",
-            message = "There are no tickets listed for sale at the moment. Check back later or list your own tickets!",
+            message =
+                "There are no tickets listed for sale at the moment. Check back later or list your own tickets!",
             modifier = Modifier.padding(top = 32.dp),
             testTag = MyEventsTestTags.MARKET_EMPTY_STATE)
       }

@@ -50,7 +50,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -61,6 +60,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.payment.StripePaymentHelper
@@ -189,56 +189,55 @@ fun MyEventsContent(userQrData: String, viewModel: MyEventsViewModel) {
 
   Surface(modifier = Modifier.fillMaxSize(), color = colorResource(id = R.color.background)) {
     Box(modifier = Modifier.fillMaxSize()) {
-      Column(
-          modifier = Modifier.fillMaxSize().background(colorResource(id = R.color.background))) {
-            // Header with gradient and modern segmented control
-            Box(
-                modifier =
-                    Modifier.fillMaxWidth()
-                        .background(
-                            Brush.verticalGradient(
-                                colors =
-                                    listOf(
-                                        colorResource(id = R.color.accent_purple).copy(alpha = 0.15f),
-                                        colorResource(id = R.color.background))))
-                        .padding(top = 16.dp, bottom = 24.dp)) {
-                  Column(
-                      modifier = Modifier.fillMaxWidth(),
-                      horizontalAlignment = Alignment.CenterHorizontally) {
-                        // Modern Segmented Control
-                        ModernSegmentedControl(
-                            selectedTab = uiState.mainTab,
-                            onTabSelected = { viewModel.selectMainTab(it) },
-                            modifier =
-                                Modifier.padding(horizontal = 24.dp)
-                                    .testTag(MyEventsTestTags.MAIN_TABS_ROW))
-                      }
-                }
-
-            // Content based on selected main tab
-            when (uiState.mainTab) {
-              MyEventsMainTab.YOUR_TICKETS -> {
-                YourTicketsSectionModern(
-                    currentTickets = uiState.currentTickets,
-                    expiredTickets = uiState.expiredTickets,
-                    listedTickets = uiState.listedTickets,
-                    selectedTab = uiState.selectedTab,
-                    onTabSelected = { viewModel.selectTab(it) },
-                    onCancelListing = { viewModel.cancelTicketListing(it) },
-                    userQrData = userQrData,
-                    isQrExpanded = uiState.isQrExpanded,
-                    onToggleQrExpanded = { viewModel.toggleQrExpansion() },
-                    modifier = Modifier.weight(1f))
-              }
-              MyEventsMainTab.MARKET -> {
-                MarketSection(
-                    uiState = uiState,
-                    viewModel = viewModel,
-                    currentUserId = currentUserId,
-                    modifier = Modifier.weight(1f))
-              }
+      Column(modifier = Modifier.fillMaxSize().background(colorResource(id = R.color.background))) {
+        // Header with gradient and modern segmented control
+        Box(
+            modifier =
+                Modifier.fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(
+                            colors =
+                                listOf(
+                                    colorResource(id = R.color.accent_purple).copy(alpha = 0.15f),
+                                    colorResource(id = R.color.background))))
+                    .padding(top = 16.dp, bottom = 24.dp)) {
+              Column(
+                  modifier = Modifier.fillMaxWidth(),
+                  horizontalAlignment = Alignment.CenterHorizontally) {
+                    // Modern Segmented Control
+                    ModernSegmentedControl(
+                        selectedTab = uiState.mainTab,
+                        onTabSelected = { viewModel.selectMainTab(it) },
+                        modifier =
+                            Modifier.padding(horizontal = 24.dp)
+                                .testTag(MyEventsTestTags.MAIN_TABS_ROW))
+                  }
             }
+
+        // Content based on selected main tab
+        when (uiState.mainTab) {
+          MyEventsMainTab.YOUR_TICKETS -> {
+            YourTicketsSectionModern(
+                currentTickets = uiState.currentTickets,
+                expiredTickets = uiState.expiredTickets,
+                listedTickets = uiState.listedTickets,
+                selectedTab = uiState.selectedTab,
+                onTabSelected = { viewModel.selectTab(it) },
+                onCancelListing = { viewModel.cancelTicketListing(it) },
+                userQrData = userQrData,
+                isQrExpanded = uiState.isQrExpanded,
+                onToggleQrExpanded = { viewModel.toggleQrExpansion() },
+                modifier = Modifier.weight(1f))
           }
+          MyEventsMainTab.MARKET -> {
+            MarketSection(
+                uiState = uiState,
+                viewModel = viewModel,
+                currentUserId = currentUserId,
+                modifier = Modifier.weight(1f))
+          }
+        }
+      }
 
       // Snackbar host for error messages
       SnackbarHost(
@@ -305,7 +304,10 @@ private fun ModernSegmentedControl(
   val indicatorOffset by
       animateDpAsState(
           targetValue = if (selectedTab == MyEventsMainTab.YOUR_TICKETS) 0.dp else tabWidth,
-          animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessMedium),
+          animationSpec =
+              spring(
+                  dampingRatio = Spring.DampingRatioMediumBouncy,
+                  stiffness = Spring.StiffnessMedium),
           label = "indicatorOffset")
 
   Box(
@@ -337,9 +339,7 @@ private fun ModernSegmentedControl(
 
             val textColor by
                 animateColorAsState(
-                    targetValue =
-                        if (isSelected) Color.White
-                        else colorResource(id = R.color.gray),
+                    targetValue = if (isSelected) Color.White else colorResource(id = R.color.gray),
                     label = "textColor")
 
             Box(
@@ -367,7 +367,8 @@ private fun ModernSegmentedControl(
                             text = tabItem.title,
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
-                                    fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium),
+                                    fontWeight =
+                                        if (isSelected) FontWeight.SemiBold else FontWeight.Medium),
                             color = textColor)
                       }
                 }
@@ -384,9 +385,7 @@ private data class TabItem(
     val testTag: String
 )
 
-/**
- * Modern Your Tickets section with pill-style sub-tabs.
- */
+/** Modern Your Tickets section with pill-style sub-tabs. */
 @Composable
 private fun YourTicketsSectionModern(
     currentTickets: List<Ticket>,
@@ -409,7 +408,8 @@ private fun YourTicketsSectionModern(
         modifier = Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
 
     // QR Code component
-    if (selectedTab != TicketTab.LISTED) { // I put this so that it's visible only in the first two tabs
+    if (selectedTab !=
+        TicketTab.LISTED) { // I put this so that it's visible only in the first two tabs
       QrCodeComponent(
           qrData = userQrData,
           isExpanded = isQrExpanded,
@@ -427,9 +427,7 @@ private fun YourTicketsSectionModern(
               modifier = Modifier.padding(top = 32.dp),
               testTag = MyEventsTestTags.EMPTY_STATE)
         } else {
-          TicketsList(
-              tickets = currentTickets,
-              modifier = Modifier.fillMaxWidth().weight(1f))
+          TicketsList(tickets = currentTickets, modifier = Modifier.fillMaxWidth().weight(1f))
         }
       }
       TicketTab.EXPIRED -> {
@@ -440,16 +438,15 @@ private fun YourTicketsSectionModern(
               modifier = Modifier.padding(top = 32.dp),
               testTag = MyEventsTestTags.EMPTY_STATE)
         } else {
-          TicketsList(
-              tickets = expiredTickets,
-              modifier = Modifier.fillMaxWidth().weight(1f))
+          TicketsList(tickets = expiredTickets, modifier = Modifier.fillMaxWidth().weight(1f))
         }
       }
       TicketTab.LISTED -> {
         if (listedTickets.isEmpty()) {
           EmptyState(
               title = "No Listed Tickets",
-              message = "You haven't listed any tickets for sale. Go to the Market tab to sell your tickets!",
+              message =
+                  "You haven't listed any tickets for sale. Go to the Market tab to sell your tickets!",
               modifier = Modifier.padding(top = 32.dp),
               testTag = MyEventsTestTags.EMPTY_STATE)
         } else {
@@ -463,9 +460,7 @@ private fun YourTicketsSectionModern(
   }
 }
 
-/**
- * Tickets list using LazyColumn.
- */
+/** Tickets list using LazyColumn. */
 @Composable
 private fun TicketsList(tickets: List<Ticket>, modifier: Modifier = Modifier) {
   LazyColumn(
@@ -483,9 +478,7 @@ private fun TicketsList(tickets: List<Ticket>, modifier: Modifier = Modifier) {
       }
 }
 
-/**
- * Listed tickets list using LazyColumn with cancel listing option.
- */
+/** Listed tickets list using LazyColumn with cancel listing option. */
 @Composable
 private fun ListedTicketsList(
     listedTickets: List<ListedTicket>,
@@ -505,9 +498,7 @@ private fun ListedTicketsList(
       }
 }
 
-/**
- * Card displaying a listed ticket with cancel option.
- */
+/** Card displaying a listed ticket with cancel option. */
 @Composable
 private fun ListedTicketCard(
     ticket: ListedTicket,
@@ -519,8 +510,9 @@ private fun ListedTicketCard(
   Card(
       modifier = modifier.fillMaxWidth(),
       shape = RoundedCornerShape(16.dp),
-      colors = CardDefaults.cardColors(
-          containerColor = colorResource(id = R.color.surface_card_color))) {
+      colors =
+          CardDefaults.cardColors(
+              containerColor = colorResource(id = R.color.surface_card_color))) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
           // Header with event title
           Row(
@@ -530,19 +522,20 @@ private fun ListedTicketCard(
                 Column(modifier = Modifier.weight(1f)) {
                   Text(
                       text = ticket.eventTitle,
-                      style = MaterialTheme.typography.titleMedium.copy(
-                          fontWeight = FontWeight.SemiBold),
+                      style =
+                          MaterialTheme.typography.titleMedium.copy(
+                              fontWeight = FontWeight.SemiBold),
                       color = colorResource(id = R.color.on_background),
                       maxLines = 2,
                       overflow = TextOverflow.Ellipsis)
-                  
+
                   Spacer(modifier = Modifier.height(4.dp))
-                  
+
                   Text(
                       text = ticket.eventDate,
                       style = MaterialTheme.typography.bodySmall,
                       color = colorResource(id = R.color.gray))
-                  
+
                   Text(
                       text = ticket.eventLocation,
                       style = MaterialTheme.typography.bodySmall,
@@ -553,14 +546,16 @@ private fun ListedTicketCard(
 
                 // Listed badge
                 Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(colorResource(id = R.color.accent_purple).copy(alpha = 0.15f))
-                        .padding(horizontal = 10.dp, vertical = 4.dp)) {
+                    modifier =
+                        Modifier.clip(RoundedCornerShape(8.dp))
+                            .background(
+                                colorResource(id = R.color.accent_purple).copy(alpha = 0.15f))
+                            .padding(horizontal = 10.dp, vertical = 4.dp)) {
                       Text(
                           text = "On Sale",
-                          style = MaterialTheme.typography.labelSmall.copy(
-                              fontWeight = FontWeight.SemiBold),
+                          style =
+                              MaterialTheme.typography.labelSmall.copy(
+                                  fontWeight = FontWeight.SemiBold),
                           color = colorResource(id = R.color.accent_purple))
                     }
               }
@@ -579,8 +574,8 @@ private fun ListedTicketCard(
                       color = colorResource(id = R.color.gray))
                   Text(
                       text = "${ticket.currency} ${String.format("%.2f", ticket.listingPrice)}",
-                      style = MaterialTheme.typography.titleLarge.copy(
-                          fontWeight = FontWeight.Bold),
+                      style =
+                          MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
                       color = colorResource(id = R.color.accent_purple))
                 }
 
@@ -609,14 +604,15 @@ private fun ListedTicketCard(
           Button(
               onClick = { showCancelDialog = true },
               modifier = Modifier.fillMaxWidth().height(44.dp),
-              colors = ButtonDefaults.buttonColors(
-                  containerColor = colorResource(id = R.color.error_red).copy(alpha = 0.1f),
-                  contentColor = colorResource(id = R.color.error_red)),
+              colors =
+                  ButtonDefaults.buttonColors(
+                      containerColor = colorResource(id = R.color.error_red).copy(alpha = 0.1f),
+                      contentColor = colorResource(id = R.color.error_red)),
               shape = RoundedCornerShape(12.dp)) {
                 Text(
                     text = "Cancel Listing",
-                    style = MaterialTheme.typography.bodyMedium.copy(
-                        fontWeight = FontWeight.SemiBold))
+                    style =
+                        MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
               }
         }
       }
@@ -628,12 +624,12 @@ private fun ListedTicketCard(
         title = {
           Text(
               text = "Cancel Listing?",
-              style = MaterialTheme.typography.titleMedium.copy(
-                  fontWeight = FontWeight.Bold))
+              style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         },
         text = {
           Text(
-              text = "Are you sure you want to remove this ticket from the marketplace? You can list it again later.",
+              text =
+                  "Are you sure you want to remove this ticket from the marketplace? You can list it again later.",
               style = MaterialTheme.typography.bodyMedium)
         },
         confirmButton = {
@@ -642,23 +638,17 @@ private fun ListedTicketCard(
                 showCancelDialog = false
                 onCancelListing()
               }) {
-                Text(
-                    text = "Cancel Listing",
-                    color = colorResource(id = R.color.error_red))
+                Text(text = "Cancel Listing", color = colorResource(id = R.color.error_red))
               }
         },
         dismissButton = {
-          TextButton(onClick = { showCancelDialog = false }) {
-            Text(text = "Keep Listed")
-          }
+          TextButton(onClick = { showCancelDialog = false }) { Text(text = "Keep Listed") }
         },
         containerColor = colorResource(id = R.color.surface_container))
   }
 }
 
-/**
- * Modern sub-tabs with pill style for Current/Expired/Listed tickets.
- */
+/** Modern sub-tabs with pill style for Current/Expired/Listed tickets. */
 @Composable
 private fun ModernSubTabs(
     selectedTab: TicketTab,
@@ -666,56 +656,52 @@ private fun ModernSubTabs(
     listedCount: Int = 0,
     modifier: Modifier = Modifier
 ) {
-  val tabs = listOf(
-      TicketTab.CURRENT to "Current",
-      TicketTab.EXPIRED to "Expired",
-      TicketTab.LISTED to if (listedCount > 0) "Listed ($listedCount)" else "Listed"
-  )
+  val tabs =
+      listOf(
+          TicketTab.CURRENT to "Current",
+          TicketTab.EXPIRED to "Expired",
+          TicketTab.LISTED to if (listedCount > 0) "Listed ($listedCount)" else "Listed")
 
-  Row(
-      modifier = modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        tabs.forEach { (tab, title) ->
-          val isSelected = selectedTab == tab
+  Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+    tabs.forEach { (tab, title) ->
+      val isSelected = selectedTab == tab
 
-          val backgroundColor by
-              animateColorAsState(
-                  targetValue =
-                      if (isSelected) colorResource(id = R.color.accent_purple)
-                      else colorResource(id = R.color.surface_container),
-                  label = "backgroundColor")
+      val backgroundColor by
+          animateColorAsState(
+              targetValue =
+                  if (isSelected) colorResource(id = R.color.accent_purple)
+                  else colorResource(id = R.color.surface_container),
+              label = "backgroundColor")
 
-          val textColor by
-              animateColorAsState(
-                  targetValue =
-                      if (isSelected) Color.White
-                      else colorResource(id = R.color.gray),
-                  label = "textColor")
+      val textColor by
+          animateColorAsState(
+              targetValue = if (isSelected) Color.White else colorResource(id = R.color.gray),
+              label = "textColor")
 
-          val tabTestTag =
-              when (tab) {
-                TicketTab.CURRENT -> MyEventsTestTags.TAB_CURRENT
-                TicketTab.EXPIRED -> MyEventsTestTags.TAB_EXPIRED
-                TicketTab.LISTED -> MyEventsTestTags.TAB_LISTED
-              }
+      val tabTestTag =
+          when (tab) {
+            TicketTab.CURRENT -> MyEventsTestTags.TAB_CURRENT
+            TicketTab.EXPIRED -> MyEventsTestTags.TAB_EXPIRED
+            TicketTab.LISTED -> MyEventsTestTags.TAB_LISTED
+          }
 
-          Box(
-              modifier =
-                  Modifier.clip(RoundedCornerShape(20.dp))
-                      .background(backgroundColor)
-                      .clickable { onTabSelected(tab) }
-                      .padding(horizontal = 20.dp, vertical = 10.dp)
-                      .testTag(tabTestTag),
-              contentAlignment = Alignment.Center) {
-                Text(
-                    text = title,
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium),
-                    color = textColor)
-              }
-        }
-      }
+      Box(
+          modifier =
+              Modifier.clip(RoundedCornerShape(20.dp))
+                  .background(backgroundColor)
+                  .clickable { onTabSelected(tab) }
+                  .padding(horizontal = 20.dp, vertical = 10.dp)
+                  .testTag(tabTestTag),
+          contentAlignment = Alignment.Center) {
+            Text(
+                text = title,
+                style =
+                    MaterialTheme.typography.bodyMedium.copy(
+                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium),
+                color = textColor)
+          }
+    }
+  }
 }
 
 /**
@@ -778,8 +764,8 @@ private fun MarketSection(
 }
 
 /**
- * Inline version of MarketTicketList for use within a scroll container.
- * Displays tickets without its own lazy list to avoid nested scrolling.
+ * Inline version of MarketTicketList for use within a scroll container. Displays tickets without
+ * its own lazy list to avoid nested scrolling.
  */
 @Composable
 private fun MarketTicketListInline(
@@ -831,7 +817,8 @@ private fun MarketTicketListInline(
     when {
       isLoading -> {
         Box(
-            modifier = Modifier.fillMaxWidth().height(200.dp).testTag(MyEventsTestTags.MARKET_LOADING),
+            modifier =
+                Modifier.fillMaxWidth().height(200.dp).testTag(MyEventsTestTags.MARKET_LOADING),
             contentAlignment = Alignment.Center) {
               CircularProgressIndicator(
                   color = colorResource(id = R.color.primary), modifier = Modifier.size(40.dp))

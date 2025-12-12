@@ -12,8 +12,8 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Coverage tests for MarketTicketCard component.
- * These tests verify the display and interaction of market ticket cards.
+ * Coverage tests for MarketTicketCard component. These tests verify the display and interaction of
+ * market ticket cards.
  */
 class MarketTicketCardTest {
 
@@ -110,8 +110,7 @@ class MarketTicketCardTest {
 
     composeTestRule.setContent {
       OnePassTheme {
-        MarketTicketCard(
-            marketTicket = ticket, onBuyClick = {}, isCurrentUserSeller = true)
+        MarketTicketCard(marketTicket = ticket, onBuyClick = {}, isCurrentUserSeller = true)
       }
     }
 
@@ -124,8 +123,7 @@ class MarketTicketCardTest {
 
     composeTestRule.setContent {
       OnePassTheme {
-        MarketTicketCard(
-            marketTicket = ticket, onBuyClick = {}, isCurrentUserSeller = false)
+        MarketTicketCard(marketTicket = ticket, onBuyClick = {}, isCurrentUserSeller = false)
       }
     }
 
@@ -139,9 +137,7 @@ class MarketTicketCardTest {
     val ticket = createTestMarketTicket()
 
     composeTestRule.setContent {
-      OnePassTheme {
-        MarketTicketCard(marketTicket = ticket, onBuyClick = { buyClicked = true })
-      }
+      OnePassTheme { MarketTicketCard(marketTicket = ticket, onBuyClick = { buyClicked = true }) }
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.MARKET_TICKET_BUY_BUTTON).performClick()

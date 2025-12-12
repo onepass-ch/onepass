@@ -8,11 +8,11 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
+import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.pass.Pass
 import ch.onepass.onepass.model.pass.PassRepository
 import ch.onepass.onepass.model.payment.MarketplacePaymentIntentResponse
 import ch.onepass.onepass.model.payment.PaymentRepository
-import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.ticket.Ticket
 import ch.onepass.onepass.model.ticket.TicketRepository
 import io.mockk.coEvery
@@ -81,9 +81,8 @@ class MyEventsViewModelTest {
         userId = uid)
   }
 
-  private class FakePaymentRepository(
-      private val response: MarketplacePaymentIntentResponse
-  ) : PaymentRepository {
+  private class FakePaymentRepository(private val response: MarketplacePaymentIntentResponse) :
+      PaymentRepository {
     val cancelledIds = mutableListOf<String>()
 
     override suspend fun createPaymentIntent(

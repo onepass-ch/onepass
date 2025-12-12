@@ -17,8 +17,8 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Coverage tests for MarketSearchBar component.
- * These tests verify the search bar display and basic interactions.
+ * Coverage tests for MarketSearchBar component. These tests verify the search bar display and basic
+ * interactions.
  */
 class MarketSearchBarTest {
 

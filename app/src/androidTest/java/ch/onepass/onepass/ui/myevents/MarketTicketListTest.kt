@@ -10,8 +10,8 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Coverage tests for MarketTicketList component.
- * These tests verify the display and interaction of the marketplace ticket list.
+ * Coverage tests for MarketTicketList component. These tests verify the display and interaction of
+ * the marketplace ticket list.
  */
 class MarketTicketListTest {
 
@@ -144,10 +144,7 @@ class MarketTicketListTest {
     composeTestRule.setContent {
       OnePassTheme {
         MarketTicketList(
-            marketTickets = tickets,
-            onBuyTicket = {},
-            onSellTicket = {},
-            currentUserId = "user1")
+            marketTickets = tickets, onBuyTicket = {}, onSellTicket = {}, currentUserId = "user1")
       }
     }
 
@@ -165,10 +162,7 @@ class MarketTicketListTest {
     composeTestRule.setContent {
       OnePassTheme {
         MarketTicketList(
-            marketTickets = tickets,
-            onBuyTicket = {},
-            onSellTicket = {},
-            currentUserId = "user1")
+            marketTickets = tickets, onBuyTicket = {}, onSellTicket = {}, currentUserId = "user1")
       }
     }
 

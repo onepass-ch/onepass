@@ -78,11 +78,14 @@ fun YourTicketsSection(
 
     // List of tickets or empty state
     if (tickets.isEmpty()) {
-      val (title, message) = when (selectedTab) {
-        TicketTab.CURRENT -> "No Current Tickets" to "You don't have any active tickets. Browse events to get started!"
-        TicketTab.EXPIRED -> "No Expired Tickets" to "You don't have any expired tickets yet."
-        TicketTab.LISTED -> "No Listed Tickets" to "You haven't listed any tickets for sale."
-      }
+      val (title, message) =
+          when (selectedTab) {
+            TicketTab.CURRENT ->
+                "No Current Tickets" to
+                    "You don't have any active tickets. Browse events to get started!"
+            TicketTab.EXPIRED -> "No Expired Tickets" to "You don't have any expired tickets yet."
+            TicketTab.LISTED -> "No Listed Tickets" to "You haven't listed any tickets for sale."
+          }
       EmptyState(
           title = title,
           message = message,
@@ -119,11 +122,11 @@ private fun ModernPillTabs(
     onTabSelected: (TicketTab) -> Unit,
     modifier: Modifier = Modifier
 ) {
-  val tabs = listOf(
-      TicketTab.CURRENT to "Current",
-      TicketTab.EXPIRED to "Expired",
-      TicketTab.LISTED to "Listed"
-  )
+  val tabs =
+      listOf(
+          TicketTab.CURRENT to "Current",
+          TicketTab.EXPIRED to "Expired",
+          TicketTab.LISTED to "Listed")
 
   Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
     tabs.forEach { (tab, title) ->

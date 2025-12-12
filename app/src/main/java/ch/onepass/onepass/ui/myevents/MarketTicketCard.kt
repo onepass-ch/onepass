@@ -92,111 +92,118 @@ fun MarketTicketCard(
                   }
 
               // Ticket info
-              Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                // Event title
-                Text(
-                    text = marketTicket.eventTitle,
-                    style =
-                        MaterialTheme.typography.bodyLarge.copy(
-                            fontFamily = MarcFontFamily, fontWeight = FontWeight.Bold),
-                    color = colorResource(id = R.color.on_background),
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.testTag(MyEventsTestTags.MARKET_TICKET_TITLE))
+              Column(
+                  modifier = Modifier.weight(1f),
+                  verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    // Event title
+                    Text(
+                        text = marketTicket.eventTitle,
+                        style =
+                            MaterialTheme.typography.bodyLarge.copy(
+                                fontFamily = MarcFontFamily, fontWeight = FontWeight.Bold),
+                        color = colorResource(id = R.color.on_background),
+                        maxLines = 2,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.testTag(MyEventsTestTags.MARKET_TICKET_TITLE))
 
-                // Event date
-                Text(
-                    text = marketTicket.eventDate,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = colorResource(id = R.color.gray),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.testTag(MyEventsTestTags.MARKET_TICKET_DATE))
+                    // Event date
+                    Text(
+                        text = marketTicket.eventDate,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = colorResource(id = R.color.gray),
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.testTag(MyEventsTestTags.MARKET_TICKET_DATE))
 
-                // Event location
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                  Icon(
-                      imageVector = Icons.Default.LocationOn,
-                      contentDescription = "Location",
-                      tint = colorResource(id = R.color.gray),
-                      modifier = Modifier.size(14.dp))
-                  Spacer(modifier = Modifier.width(4.dp))
-                  Text(
-                      text = marketTicket.eventLocation,
-                      style = MaterialTheme.typography.bodySmall,
-                      color = colorResource(id = R.color.gray),
-                      maxLines = 1,
-                      overflow = TextOverflow.Ellipsis,
-                      modifier = Modifier.testTag(MyEventsTestTags.MARKET_TICKET_LOCATION))
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                // Price section
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically) {
-                      // Price comparison
-                      Column {
-                        // Seller price (highlighted)
-                        Text(
-                            text = "${marketTicket.currency} ${formatPriceCompact(marketTicket.sellerPrice)}",
-                            style =
-                                MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold),
-                            color = colorResource(id = R.color.tab_selected),
-                            modifier = Modifier.testTag(MyEventsTestTags.MARKET_TICKET_SELLER_PRICE))
-
-                        // Original price (strikethrough if different)
-                        if (marketTicket.originalPrice != marketTicket.sellerPrice) {
-                          Text(
-                              text =
-                                  "Original: ${marketTicket.currency} ${formatPriceCompact(marketTicket.originalPrice)}",
-                              style =
-                                  MaterialTheme.typography.bodySmall.copy(
-                                      textDecoration = TextDecoration.LineThrough),
-                              color = colorResource(id = R.color.gray),
-                              modifier =
-                                  Modifier.testTag(MyEventsTestTags.MARKET_TICKET_ORIGINAL_PRICE))
-                        }
-                      }
-
-                      // Buy button
-                      if (!isCurrentUserSeller) {
-                        Button(
-                            onClick = onBuyClick,
-                            enabled = !isLoading,
-                            colors =
-                                ButtonDefaults.buttonColors(
-                                    containerColor = colorResource(id = R.color.event_buy_button_bg),
-                                    contentColor = colorResource(id = R.color.white)),
-                            shape = RoundedCornerShape(8.dp),
-                            modifier =
-                                Modifier.height(36.dp)
-                                    .testTag(MyEventsTestTags.MARKET_TICKET_BUY_BUTTON)) {
-                              Text(
-                                  text = if (isLoading) "..." else "Buy",
-                                  style =
-                                      MaterialTheme.typography.bodyMedium.copy(
-                                          fontWeight = FontWeight.SemiBold))
-                            }
-                      } else {
-                        // Show "Your listing" label for seller's own tickets
-                        Box(
-                            modifier =
-                                Modifier.background(
-                                        colorResource(id = R.color.accent_purple).copy(alpha = 0.2f),
-                                        RoundedCornerShape(8.dp))
-                                    .padding(horizontal = 12.dp, vertical = 8.dp)) {
-                              Text(
-                                  text = "Your listing",
-                                  style = MaterialTheme.typography.bodySmall,
-                                  color = colorResource(id = R.color.accent_purple))
-                            }
-                      }
+                    // Event location
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                      Icon(
+                          imageVector = Icons.Default.LocationOn,
+                          contentDescription = "Location",
+                          tint = colorResource(id = R.color.gray),
+                          modifier = Modifier.size(14.dp))
+                      Spacer(modifier = Modifier.width(4.dp))
+                      Text(
+                          text = marketTicket.eventLocation,
+                          style = MaterialTheme.typography.bodySmall,
+                          color = colorResource(id = R.color.gray),
+                          maxLines = 1,
+                          overflow = TextOverflow.Ellipsis,
+                          modifier = Modifier.testTag(MyEventsTestTags.MARKET_TICKET_LOCATION))
                     }
-              }
+
+                    Spacer(modifier = Modifier.height(4.dp))
+
+                    // Price section
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically) {
+                          // Price comparison
+                          Column {
+                            // Seller price (highlighted)
+                            Text(
+                                text =
+                                    "${marketTicket.currency} ${formatPriceCompact(marketTicket.sellerPrice)}",
+                                style =
+                                    MaterialTheme.typography.titleMedium.copy(
+                                        fontWeight = FontWeight.Bold),
+                                color = colorResource(id = R.color.tab_selected),
+                                modifier =
+                                    Modifier.testTag(MyEventsTestTags.MARKET_TICKET_SELLER_PRICE))
+
+                            // Original price (strikethrough if different)
+                            if (marketTicket.originalPrice != marketTicket.sellerPrice) {
+                              Text(
+                                  text =
+                                      "Original: ${marketTicket.currency} ${formatPriceCompact(marketTicket.originalPrice)}",
+                                  style =
+                                      MaterialTheme.typography.bodySmall.copy(
+                                          textDecoration = TextDecoration.LineThrough),
+                                  color = colorResource(id = R.color.gray),
+                                  modifier =
+                                      Modifier.testTag(
+                                          MyEventsTestTags.MARKET_TICKET_ORIGINAL_PRICE))
+                            }
+                          }
+
+                          // Buy button
+                          if (!isCurrentUserSeller) {
+                            Button(
+                                onClick = onBuyClick,
+                                enabled = !isLoading,
+                                colors =
+                                    ButtonDefaults.buttonColors(
+                                        containerColor =
+                                            colorResource(id = R.color.event_buy_button_bg),
+                                        contentColor = colorResource(id = R.color.white)),
+                                shape = RoundedCornerShape(8.dp),
+                                modifier =
+                                    Modifier.height(36.dp)
+                                        .testTag(MyEventsTestTags.MARKET_TICKET_BUY_BUTTON)) {
+                                  Text(
+                                      text = if (isLoading) "..." else "Buy",
+                                      style =
+                                          MaterialTheme.typography.bodyMedium.copy(
+                                              fontWeight = FontWeight.SemiBold))
+                                }
+                          } else {
+                            // Show "Your listing" label for seller's own tickets
+                            Box(
+                                modifier =
+                                    Modifier.background(
+                                            colorResource(id = R.color.accent_purple)
+                                                .copy(alpha = 0.2f),
+                                            RoundedCornerShape(8.dp))
+                                        .padding(horizontal = 12.dp, vertical = 8.dp)) {
+                                  Text(
+                                      text = "Your listing",
+                                      style = MaterialTheme.typography.bodySmall,
+                                      color = colorResource(id = R.color.accent_purple))
+                                }
+                          }
+                        }
+                  }
             }
       }
 }

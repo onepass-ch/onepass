@@ -10,8 +10,8 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Coverage tests for YourTicketsSection component.
- * These tests verify the display and interaction of the your tickets section.
+ * Coverage tests for YourTicketsSection component. These tests verify the display and interaction
+ * of the your tickets section.
  */
 class YourTicketsSectionTest {
 

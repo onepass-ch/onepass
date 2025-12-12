@@ -15,8 +15,8 @@ import org.junit.Rule
 import org.junit.Test
 
 /**
- * Coverage tests for SellTicketDialog component.
- * These tests verify the display and interaction of the sell ticket dialog.
+ * Coverage tests for SellTicketDialog component. These tests verify the display and interaction of
+ * the sell ticket dialog.
  */
 class SellTicketDialogTest {
 

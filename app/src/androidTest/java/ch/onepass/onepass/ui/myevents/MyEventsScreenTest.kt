@@ -80,8 +80,7 @@ class MyEventsScreenTest {
 
   @Test
   fun mainTabs_switchToMarket_displaysMarketSection() {
-    val viewModel =
-        createFakeMyEventsViewModel(ticketRepository = MarketReadyTicketRepository())
+    val viewModel = createFakeMyEventsViewModel(ticketRepository = MarketReadyTicketRepository())
 
     composeTestRule.setContent {
       OnePassTheme { MyEventsContent(userQrData = "USER-QR-DATA", viewModel = viewModel) }
@@ -193,9 +192,8 @@ class FakeTicketRepository : TicketRepository {
       Result.success(Unit)
 }
 
-class MarketReadyTicketRepository(
-    private val includeSellableTicket: Boolean = false
-) : TicketRepository {
+class MarketReadyTicketRepository(private val includeSellableTicket: Boolean = false) :
+    TicketRepository {
   override fun getActiveTickets(
       userId: String
   ): Flow<List<ch.onepass.onepass.model.ticket.Ticket>> =
@@ -203,7 +201,10 @@ class MarketReadyTicketRepository(
           if (includeSellableTicket)
               listOf(
                   createTestTicket(
-                      ticketId = "sellable", eventId = "e1", state = TicketState.ISSUED, userId = userId))
+                      ticketId = "sellable",
+                      eventId = "e1",
+                      state = TicketState.ISSUED,
+                      userId = userId))
           else emptyList())
 
   override fun getExpiredTickets(
