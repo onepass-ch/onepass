@@ -20,6 +20,7 @@ import java.util.*
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 
@@ -56,12 +57,16 @@ class FeedScreenTest {
           ticketsIssued = 100,
           pricingTiers = emptyList())
 
-  // Mocks needed for FeedViewModel instantiation in tests
-  private val mockUserRepository = mockk<UserRepository>(relaxed = true)
-  private val mockAuth = mockk<FirebaseAuth>(relaxed = true)
-  private val mockUser = mockk<FirebaseUser>(relaxed = true)
+  private lateinit var mockUserRepository: UserRepository
+  private lateinit var mockAuth: FirebaseAuth
+  private lateinit var mockUser: FirebaseUser
 
-  init {
+  @Before
+  fun setup() {
+    mockUserRepository = mockk(relaxed = true)
+    mockAuth = mockk(relaxed = true)
+    mockUser = mockk(relaxed = true)
+
     every { mockAuth.currentUser } returns mockUser
     every { mockUser.uid } returns "test-user-id"
     every { mockUserRepository.getFavoriteEvents(any()) } returns flowOf(emptySet())
@@ -121,9 +126,6 @@ class FeedScreenTest {
 
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_SCREEN).assertIsDisplayed()
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TOP_BAR).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertIsDisplayed()
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_LOCATION).assertIsDisplayed()
-    // Check for new favorites button
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FAVORITES_BUTTON).assertIsDisplayed()
   }
 
@@ -180,30 +182,6 @@ class FeedScreenTest {
   }
 
   @Test
-  fun feedScreen_displayLocationText() {
-    val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_LOCATION).assertTextEquals("SWITZERLAND")
-  }
-
-  @Test
-  fun feedScreen_displayTitleText() {
-    val mockRepository = MockEventRepository(emptyList())
-    val viewModel = FeedViewModel(mockRepository, mockUserRepository, mockAuth)
-
-    composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
-
-    composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("WELCOME")
-  }
-
-  @Test
   fun feedScreen_displayMultipleEvents() {
     val events = listOf(testEvent1, testEvent2)
     val mockRepository = MockEventRepository(events)
@@ -248,8 +226,6 @@ class FeedScreenTest {
         .assertIsDisplayed()
   }
 
-  // ============ NEW TESTS TO COVER MISSING LINES ============
-
   @Test
   fun feedScreen_displayErrorState_whenLoadingFails() {
     val mockRepository = MockEventRepository(shouldThrowError = true)
@@ -259,7 +235,6 @@ class FeedScreenTest {
 
     composeTestRule.waitForIdle()
 
-    // Verify error state is displayed
     composeTestRule.onNodeWithTag(FeedScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
     composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
     composeTestRule.onNodeWithText("Test error").assertIsDisplayed()
@@ -298,8 +273,6 @@ class FeedScreenTest {
 
     composeTestRule.setContent { OnePassTheme { FeedScreen(viewModel = viewModel) } }
 
-    // The loading indicator should appear briefly during initial load
-    // We need to check this before waitForIdle completes
     Thread.sleep(50) // Small delay to catch the loading state
 
     // After loading completes, empty state should show
@@ -412,21 +385,13 @@ class FeedScreenTest {
 
     composeTestRule.waitForIdle()
 
-    // Initial state: Welcome
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("WELCOME")
-
     // Click favorites
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FAVORITES_BUTTON).performClick()
     composeTestRule.waitForIdle()
 
-    // Title should change
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("FAVORITES")
-
     // Click again to toggle back
     composeTestRule.onNodeWithTag(FeedScreenTestTags.FAVORITES_BUTTON).performClick()
     composeTestRule.waitForIdle()
-
-    composeTestRule.onNodeWithTag(FeedScreenTestTags.FEED_TITLE).assertTextEquals("WELCOME")
   }
 
   @Test

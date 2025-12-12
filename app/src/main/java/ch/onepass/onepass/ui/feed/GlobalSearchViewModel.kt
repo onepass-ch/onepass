@@ -1,6 +1,7 @@
 package ch.onepass.onepass.ui.feed
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
@@ -52,24 +53,31 @@ class GlobalSearchViewModel(
 
   /** StateFlow holding the current UI state for global search. */
   private val _uiState = MutableStateFlow(GlobalSearchUiState())
+
   /** Publicly exposed StateFlow for observing the UI state. */
   val uiState: StateFlow<GlobalSearchUiState> = _uiState
 
   /** Variables for pagination and tracking the last fetched event. */
   private var lastEvent: Event? = null
+
   /** Current search query string. */
   private var currentQuery: String = ""
+
   /** Current page indices for events, users, and organizations. */
   private var currentEventPage = 0
+
   /** Current page index for users. */
   private var currentUserPage = 0
+
   /** Current page index for organizations. */
   private var currentOrgPage = 0
 
   /** Maximum number of results to fetch for each category. */
   private val MAX_EVENT_RESULTS = 3
+
   /** Maximum number of organization results to fetch. */
   private val MAX_ORG_RESULTS = 2
+
   /** Maximum number of user results to fetch. */
   private val MAX_USER_RESULTS = 3
 
@@ -221,5 +229,25 @@ class GlobalSearchViewModel(
   private fun wordDistance(s: String, t: String): Int {
     val d = LevenshteinDistance()
     return d.apply(s.lowercase().trim(), t.lowercase().trim())
+  }
+
+  /**
+   * Factory for creating instances of [GlobalSearchViewModel].
+   *
+   * @param userRepo Repository for user data operations.
+   * @param eventRepo Repository for event data operations.
+   * @param orgRepo Repository for organization data operations.
+   */
+  class Factory(
+      private val userRepo: UserRepository,
+      private val eventRepo: EventRepository,
+      private val orgRepo: OrganizationRepository,
+  ) : ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+      if (modelClass.isAssignableFrom(GlobalSearchViewModel::class.java)) {
+        @Suppress("UNCHECKED_CAST") return GlobalSearchViewModel(userRepo, eventRepo, orgRepo) as T
+      }
+      throw IllegalArgumentException("Unknown ViewModel class")
+    }
   }
 }

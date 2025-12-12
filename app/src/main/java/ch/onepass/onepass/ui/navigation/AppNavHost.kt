@@ -18,8 +18,11 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import ch.onepass.onepass.model.event.EventRepositoryFirebase
+import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import ch.onepass.onepass.model.pass.PassRepositoryFirebase
 import ch.onepass.onepass.model.scan.TicketScanRepositoryFirebase
+import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import ch.onepass.onepass.ui.auth.AuthScreen
 import ch.onepass.onepass.ui.auth.AuthViewModel
 import ch.onepass.onepass.ui.eventdetail.EventDetailScreen
@@ -29,6 +32,8 @@ import ch.onepass.onepass.ui.eventform.createform.CreateEventFormViewModel
 import ch.onepass.onepass.ui.eventform.editform.EditEventForm
 import ch.onepass.onepass.ui.eventform.editform.EditEventFormViewModel
 import ch.onepass.onepass.ui.feed.FeedScreen
+import ch.onepass.onepass.ui.feed.GlobalSearchItemClick
+import ch.onepass.onepass.ui.feed.GlobalSearchViewModel
 import ch.onepass.onepass.ui.map.MapScreen
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.myevents.MyEventsScreen
@@ -126,7 +131,25 @@ fun AppNavHost(
           onNavigateToEvent = { eventId ->
             navController.navigate(Screen.EventDetail.route(eventId))
           },
-          onNavigateToNotifications = { navController.navigate(Screen.Notification.route) })
+          globalSearchItemClickListener = { item ->
+            when (item) {
+              is GlobalSearchItemClick.EventClick ->
+                  navController.navigate(Screen.EventDetail.route(item.eventId))
+              is GlobalSearchItemClick.OrganizationClick ->
+                  navController.navigate(Screen.OrganizationProfile.route(item.organizationId))
+              is GlobalSearchItemClick.UserClick -> {
+                // Do nothing
+              }
+            }
+          },
+          onNavigateToNotifications = { navController.navigate(Screen.Notification.route) },
+          globalSearchViewModel =
+              viewModel(
+                  factory =
+                      GlobalSearchViewModel.Factory(
+                          userRepo = UserRepositoryFirebase(),
+                          eventRepo = EventRepositoryFirebase(),
+                          orgRepo = OrganizationRepositoryFirebase())))
     }
 
     // ------------------ Notifications ------------------
