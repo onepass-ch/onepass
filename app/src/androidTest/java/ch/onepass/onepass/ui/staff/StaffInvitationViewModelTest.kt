@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.staff
 
+import ch.onepass.onepass.model.membership.Membership
 import ch.onepass.onepass.model.organization.FakeOrganizationRepository
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.OrganizationInvitation
@@ -8,6 +9,7 @@ import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.model.user.FakeUserRepository
 import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.model.user.UserSearchType
+import ch.onepass.onepass.utils.TestMockMembershipRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,11 +23,12 @@ import org.junit.Test
 @OptIn(ExperimentalCoroutinesApi::class)
 class StaffInvitationViewModelTest {
 
-  private val testDispatcher = StandardTestDispatcher()
+  private val testDispatcher = UnconfinedTestDispatcher()
   private val testScope = TestScope(testDispatcher)
 
   private lateinit var userRepository: FakeUserRepository
   private lateinit var organizationRepository: FakeOrganizationRepository
+  private lateinit var membershipRepository: TestMockMembershipRepository
   private val testOrganizationId = "org_123"
   private val testUserId = "user_123"
 
@@ -48,6 +51,16 @@ class StaffInvitationViewModelTest {
     Dispatchers.setMain(testDispatcher)
     userRepository = FakeUserRepository(currentUser = testUser)
     organizationRepository = FakeOrganizationRepository()
+    membershipRepository =
+        TestMockMembershipRepository(
+            usersByOrganization =
+                mapOf(
+                    testOrganizationId to
+                        listOf(
+                            Membership(
+                                userId = testUserId,
+                                orgId = testOrganizationId,
+                                role = OrganizationRole.OWNER))))
   }
 
   @After
@@ -72,6 +85,8 @@ class StaffInvitationViewModelTest {
         assertNull(state.errorMessage)
         assertEquals(emptySet<String>(), state.invitedUserIds)
         assertEquals(emptySet<String>(), state.alreadyInvitedUserIds)
+        assertNull(state.selectedUserForInvite)
+        assertEquals(OrganizationRole.STAFF, state.selectedRole)
       }
 
   @Test
@@ -95,7 +110,8 @@ class StaffInvitationViewModelTest {
             StaffInvitationViewModel(
                 organizationId = testOrganizationId,
                 userRepository = repoWithoutUser,
-                organizationRepository = organizationRepository)
+                organizationRepository = organizationRepository,
+                membershipRepository = membershipRepository)
 
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -114,7 +130,8 @@ class StaffInvitationViewModelTest {
             StaffInvitationViewModel(
                 organizationId = testOrganizationId,
                 userRepository = repoWithError,
-                organizationRepository = organizationRepository)
+                organizationRepository = organizationRepository,
+                membershipRepository = membershipRepository)
 
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -412,7 +429,7 @@ class StaffInvitationViewModelTest {
   // ========== User Selection and Invitation Tests ==========
 
   @Test
-  fun staffInvitationViewModel_onUserSelected_createsInvitationSuccessfully() =
+  fun staffInvitationViewModel_onUserSelected_opensConfirmationDialog() =
       testScope.runTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -422,23 +439,75 @@ class StaffInvitationViewModelTest {
 
         val state = viewModel.uiState.value
         assertFalse(state.isInviting)
+        assertEquals(testSearchResult1, state.selectedUserForInvite)
+        assertEquals(OrganizationRole.STAFF, state.selectedRole)
+        assertNull(state.errorMessage)
+        // Invitation should NOT be sent yet
+        assertTrue(state.invitedUserIds.isEmpty())
+      }
+
+  @Test
+  fun staffInvitationViewModel_confirmInvitation_sendsInvitation() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Select user first
+        viewModel.onUserSelected(testSearchResult1)
+
+        // Confirm invitation
+        viewModel.confirmInvitation()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertFalse(state.isInviting)
         assertTrue(testSearchResult1.id in state.invitedUserIds)
+        assertNull(state.selectedUserForInvite) // Dialog should be closed
         assertNull(state.errorMessage)
       }
 
   @Test
-  fun staffInvitationViewModel_onUserSelected_setsInvitingState() =
+  fun staffInvitationViewModel_cancelInvitation_clearsSelection() =
       testScope.runTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onUserSelected(testSearchResult1)
+        assertNotNull(viewModel.uiState.value.selectedUserForInvite)
+
+        viewModel.cancelInvitation()
+
+        val state = viewModel.uiState.value
+        assertNull(state.selectedUserForInvite)
+        assertNull(state.errorMessage)
+        assertTrue(state.invitedUserIds.isEmpty())
+      }
+
+  @Test
+  fun staffInvitationViewModel_selectRole_updatesRole() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onUserSelected(testSearchResult1)
+        assertEquals(OrganizationRole.STAFF, viewModel.uiState.value.selectedRole)
+
+        viewModel.selectRole(OrganizationRole.OWNER)
+        assertEquals(OrganizationRole.OWNER, viewModel.uiState.value.selectedRole)
+      }
+
+  @Test
+  fun staffInvitationViewModel_confirmInvitation_setsInvitingState() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onUserSelected(testSearchResult1)
+        viewModel.confirmInvitation()
+
         // Run current tasks to ensure the coroutine has started and isInviting is set
         testDispatcher.scheduler.runCurrent()
 
-        // Since repository calls are synchronous in test, the invitation may complete
-        // immediately. We check if isInviting was set (it may already be false if
-        // the invitation completed synchronously).
         val stateAfterRun = viewModel.uiState.value
         // Verify invitation was processed (either isInviting is true or invitation completed)
         assertTrue(stateAfterRun.isInviting || testSearchResult1.id in stateAfterRun.invitedUserIds)
@@ -459,7 +528,8 @@ class StaffInvitationViewModelTest {
             StaffInvitationViewModel(
                 organizationId = testOrganizationId,
                 userRepository = repoWithoutUser,
-                organizationRepository = organizationRepository)
+                organizationRepository = organizationRepository,
+                membershipRepository = membershipRepository)
 
         testDispatcher.scheduler.advanceUntilIdle()
 
@@ -473,7 +543,7 @@ class StaffInvitationViewModelTest {
       }
 
   @Test
-  fun staffInvitationViewModel_onUserSelected_detectsAlreadyPendingInvitation() =
+  fun staffInvitationViewModel_confirmInvitation_detectsAlreadyPendingInvitation() =
       testScope.runTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -490,17 +560,20 @@ class StaffInvitationViewModelTest {
         organizationRepository.addTestInvitation(existingInvitation)
 
         viewModel.onUserSelected(testSearchResult1)
+        viewModel.confirmInvitation()
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
         assertFalse(state.isInviting)
-        assertTrue(testSearchResult1.id in state.alreadyInvitedUserIds)
-        assertNotNull(state.errorMessage)
-        assertTrue(state.errorMessage?.contains("already been invited", ignoreCase = true) == true)
+        // onUserSelected detects it and shows snackbar, so confirmInvitation is not called
+        assertNotNull(state.snackbarMessage)
+        assertTrue(
+            state.snackbarMessage?.contains("already been invited", ignoreCase = true) == true)
+        assertNull(state.selectedUserForInvite) // Dialog should not open
       }
 
   @Test
-  fun staffInvitationViewModel_onUserSelected_detectsAlreadyAcceptedInvitation() =
+  fun staffInvitationViewModel_confirmInvitation_detectsAlreadyAcceptedInvitation() =
       testScope.runTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -517,17 +590,19 @@ class StaffInvitationViewModelTest {
         organizationRepository.addTestInvitation(existingInvitation)
 
         viewModel.onUserSelected(testSearchResult1)
+        viewModel.confirmInvitation()
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
         assertFalse(state.isInviting)
-        assertTrue(testSearchResult1.id in state.alreadyInvitedUserIds)
-        assertNotNull(state.errorMessage)
-        assertTrue(state.errorMessage?.contains("already a member", ignoreCase = true) == true)
+        // onUserSelected detects it and shows snackbar
+        assertNotNull(state.snackbarMessage)
+        assertTrue(state.snackbarMessage?.contains("already a member", ignoreCase = true) == true)
+        assertNull(state.selectedUserForInvite) // Dialog should not open
       }
 
   @Test
-  fun staffInvitationViewModel_onUserSelected_ignoresInvitationsForDifferentOrgs() =
+  fun staffInvitationViewModel_confirmInvitation_ignoresInvitationsForDifferentOrgs() =
       testScope.runTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -544,6 +619,7 @@ class StaffInvitationViewModelTest {
         organizationRepository.addTestInvitation(otherOrgInvitation)
 
         viewModel.onUserSelected(testSearchResult1)
+        viewModel.confirmInvitation()
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -552,7 +628,7 @@ class StaffInvitationViewModelTest {
       }
 
   @Test
-  fun staffInvitationViewModel_onUserSelected_ignoresNonPendingInvitations() =
+  fun staffInvitationViewModel_confirmInvitation_ignoresNonPendingInvitations() =
       testScope.runTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
@@ -569,6 +645,7 @@ class StaffInvitationViewModelTest {
         organizationRepository.addTestInvitation(rejectedInvitation)
 
         viewModel.onUserSelected(testSearchResult1)
+        viewModel.confirmInvitation()
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -577,29 +654,35 @@ class StaffInvitationViewModelTest {
       }
 
   @Test
-  fun staffInvitationViewModel_onUserSelected_handlesInvitationCreationError() =
+  fun staffInvitationViewModel_confirmInvitation_handlesInvitationCreationError() =
       testScope.runTest {
         val failingOrgRepo = FakeOrganizationRepository(shouldThrowOnCreate = true)
         val viewModel =
             StaffInvitationViewModel(
                 organizationId = testOrganizationId,
                 userRepository = userRepository,
-                organizationRepository = failingOrgRepo)
+                organizationRepository = failingOrgRepo,
+                membershipRepository = membershipRepository)
 
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onUserSelected(testSearchResult1)
+        viewModel.confirmInvitation()
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
         assertFalse(state.isInviting)
-        assertNotNull(state.errorMessage)
+        assertNotNull(state.invitationResultMessage)
         assertTrue(
-            state.errorMessage?.contains("Failed to create invitation", ignoreCase = true) == true)
+            state.invitationResultMessage?.contains(
+                "Failed to create invitation", ignoreCase = true) == true)
+        assertEquals(InvitationResultType.ERROR, state.invitationResultType)
+        // Dialog closes on error
+        assertNull(state.selectedUserForInvite)
       }
 
   @Test
-  fun staffInvitationViewModel_onUserSelected_handlesExceptionDuringInvitation() =
+  fun staffInvitationViewModel_confirmInvitation_handlesExceptionDuringInvitation() =
       testScope.runTest {
         // Make getInvitationsByEmail throw
         val failingOrgRepo = FakeOrganizationRepository(shouldThrowOnGetInvitations = true)
@@ -607,28 +690,37 @@ class StaffInvitationViewModelTest {
             StaffInvitationViewModel(
                 organizationId = testOrganizationId,
                 userRepository = userRepository,
-                organizationRepository = failingOrgRepo)
+                organizationRepository = failingOrgRepo,
+                membershipRepository = membershipRepository)
 
         testDispatcher.scheduler.advanceUntilIdle()
 
         failingViewModel.onUserSelected(testSearchResult1)
+        failingViewModel.confirmInvitation()
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = failingViewModel.uiState.value
         assertFalse(state.isInviting)
         assertNotNull(state.errorMessage)
         assertTrue(
-            state.errorMessage?.contains("Failed to send invitation", ignoreCase = true) == true)
+            state.errorMessage?.contains("Failed to check invitation status", ignoreCase = true) ==
+                true)
       }
 
   @Test
-  fun staffInvitationViewModel_onUserSelected_createsInvitationWithCorrectData() =
+  fun staffInvitationViewModel_confirmInvitation_createsInvitationWithCorrectData() =
       testScope.runTest {
         val viewModel = createViewModel()
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onUserSelected(testSearchResult1)
+        viewModel.selectRole(OrganizationRole.OWNER)
+        viewModel.confirmInvitation()
         testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNull(
+            "Error message should be null: ${viewModel.uiState.value.errorMessage}",
+            viewModel.uiState.value.errorMessage)
 
         // Verify invitation was created
         val invitations =
@@ -638,7 +730,7 @@ class StaffInvitationViewModelTest {
         val invitation = invitations.first()
         assertEquals(testOrganizationId, invitation.orgId)
         assertEquals(testSearchResult1.email, invitation.inviteeEmail)
-        assertEquals(OrganizationRole.STAFF, invitation.role)
+        assertEquals(OrganizationRole.OWNER, invitation.role)
         assertEquals(testUserId, invitation.invitedBy)
         assertEquals(InvitationStatus.PENDING, invitation.status)
       }
@@ -682,6 +774,7 @@ class StaffInvitationViewModelTest {
 
         // Invite first user
         viewModel.onUserSelected(testSearchResult1)
+        viewModel.confirmInvitation()
         testDispatcher.scheduler.advanceUntilIdle()
 
         assertTrue(testSearchResult1.id in viewModel.uiState.value.invitedUserIds)
@@ -689,11 +782,15 @@ class StaffInvitationViewModelTest {
 
         // Try to invite same user again - should be prevented by early return
         viewModel.onUserSelected(testSearchResult1)
+        viewModel.confirmInvitation()
         testDispatcher.scheduler.advanceUntilIdle()
 
-        // User should still be in invitedUserIds but NOT in alreadyInvitedUserIds
+        // User should still be in invitedUserIds
         assertTrue(testSearchResult1.id in viewModel.uiState.value.invitedUserIds)
-        assertFalse(testSearchResult1.id in viewModel.uiState.value.alreadyInvitedUserIds)
+        // Should show snackbar because we added the check for already invited users in session
+        assertNotNull(viewModel.uiState.value.snackbarMessage)
+        assertTrue(
+            viewModel.uiState.value.snackbarMessage?.contains("already been invited") == true)
       }
 
   @Test
@@ -703,9 +800,11 @@ class StaffInvitationViewModelTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onUserSelected(testSearchResult1)
+        viewModel.confirmInvitation()
         testDispatcher.scheduler.advanceUntilIdle()
 
         viewModel.onUserSelected(testSearchResult2)
+        viewModel.confirmInvitation()
         testDispatcher.scheduler.advanceUntilIdle()
 
         val state = viewModel.uiState.value
@@ -714,13 +813,151 @@ class StaffInvitationViewModelTest {
         assertEquals(2, state.invitedUserIds.size)
       }
 
+  @Test
+  fun staffInvitationViewModel_init_loadsCurrentUserRole() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertEquals(OrganizationRole.OWNER, viewModel.uiState.value.currentUserRole)
+      }
+
+  @Test
+  fun staffInvitationViewModel_onUserSelected_showsPermissionDeniedForNonAdmin() =
+      testScope.runTest {
+        // Setup user as MEMBER (not OWNER or ADMIN)
+        membershipRepository =
+            TestMockMembershipRepository(
+                usersByOrganization =
+                    mapOf(
+                        testOrganizationId to
+                            listOf(
+                                Membership(
+                                    userId = testUserId,
+                                    orgId = testOrganizationId,
+                                    role = OrganizationRole.MEMBER))))
+
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        viewModel.onUserSelected(testSearchResult1)
+
+        assertTrue(viewModel.uiState.value.showPermissionDeniedDialog)
+        assertNull(viewModel.uiState.value.selectedUserForInvite)
+      }
+
+  @Test
+  fun staffInvitationViewModel_checkAndCreateInvitation_preventsSelfInvitation() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Create a search result that matches the current user
+        val selfSearchResult =
+            StaffSearchResult(
+                id = testUserId,
+                email = testUser.email,
+                displayName = testUser.displayName,
+                avatarUrl = null)
+
+        viewModel.onUserSelected(selfSearchResult)
+        viewModel.confirmInvitation()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertEquals(InvitationResultType.ERROR, state.invitationResultType)
+        assertTrue(state.invitationResultMessage?.contains("cannot invite yourself") == true)
+      }
+
+  @Test
+  fun staffInvitationViewModel_dismissPermissionDeniedDialog_hidesDialog() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        // Manually set state to show dialog (or trigger it via non-admin flow)
+        // Using reflection or just triggering it is easier if we have the setup.
+        // Let's use the public method to trigger it by mocking a MEMBER role.
+        membershipRepository =
+            TestMockMembershipRepository(
+                usersByOrganization =
+                    mapOf(
+                        testOrganizationId to
+                            listOf(
+                                Membership(
+                                    userId = testUserId,
+                                    orgId = testOrganizationId,
+                                    role = OrganizationRole.MEMBER))))
+        val memberViewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        memberViewModel.onUserSelected(testSearchResult1)
+        assertTrue(memberViewModel.uiState.value.showPermissionDeniedDialog)
+
+        memberViewModel.dismissPermissionDeniedDialog()
+        assertFalse(memberViewModel.uiState.value.showPermissionDeniedDialog)
+      }
+
+  @Test
+  fun staffInvitationViewModel_dismissInvitationResultDialog_clearsResult() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Trigger a success result
+        viewModel.onUserSelected(testSearchResult1)
+        viewModel.confirmInvitation()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        assertNotNull(viewModel.uiState.value.invitationResultType)
+
+        viewModel.dismissInvitationResultDialog()
+
+        assertNull(viewModel.uiState.value.invitationResultType)
+        assertNull(viewModel.uiState.value.invitationResultMessage)
+      }
+
+  @Test
+  fun staffInvitationViewModel_clearSnackbarMessage_clearsMessage() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        // Trigger a snackbar (e.g. already invited)
+        val existingInvitation =
+            OrganizationInvitation(
+                id = "inv_1",
+                orgId = testOrganizationId,
+                inviteeEmail = testSearchResult1.email,
+                role = OrganizationRole.STAFF,
+                invitedBy = testUserId,
+                status = InvitationStatus.PENDING)
+        organizationRepository.addTestInvitation(existingInvitation)
+
+        viewModel.onUserSelected(testSearchResult1)
+        assertNotNull(viewModel.uiState.value.snackbarMessage)
+
+        viewModel.clearSnackbarMessage()
+        assertNull(viewModel.uiState.value.snackbarMessage)
+      }
+
+  @Test
+  fun staffInvitationViewModel_getAvailableRoles_excludesOwner() =
+      testScope.runTest {
+        val viewModel = createViewModel()
+        val roles = viewModel.getAvailableRoles()
+
+        assertFalse(roles.contains(OrganizationRole.OWNER))
+        assertTrue(roles.contains(OrganizationRole.ADMIN))
+        assertTrue(roles.contains(OrganizationRole.MEMBER))
+      }
+
   // ========== Helper Methods ==========
 
   private fun createViewModel(): StaffInvitationViewModel {
     return StaffInvitationViewModel(
         organizationId = testOrganizationId,
         userRepository = userRepository,
-        organizationRepository = organizationRepository)
+        organizationRepository = organizationRepository,
+        membershipRepository = membershipRepository)
   }
 
   @Test

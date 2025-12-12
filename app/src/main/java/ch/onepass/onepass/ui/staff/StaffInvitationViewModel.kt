@@ -1,7 +1,10 @@
 package ch.onepass.onepass.ui.staff
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import ch.onepass.onepass.model.membership.MembershipRepository
+import ch.onepass.onepass.model.membership.MembershipRepositoryFirebase
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.OrganizationInvitation
 import ch.onepass.onepass.model.organization.OrganizationRepository
@@ -30,6 +33,10 @@ import kotlinx.coroutines.launch
  * @property errorMessage Error message to display, null if no error.
  * @property invitedUserIds Set of user IDs that have been successfully invited in this session.
  * @property alreadyInvitedUserIds Set of user IDs that were already invited before this session.
+ * @property currentUserRole The role of the current user in this organization.
+ * @property showPermissionDeniedDialog Whether to show the permission denied dialog.
+ * @property invitationResultMessage Message to display in the invitation result dialog.
+ * @property invitationResultType Type of invitation result (success or error).
  */
 data class StaffInvitationUiState(
     val selectedTab: UserSearchType = UserSearchType.DISPLAY_NAME,
@@ -39,8 +46,21 @@ data class StaffInvitationUiState(
     val isInviting: Boolean = false,
     val errorMessage: String? = null,
     val invitedUserIds: Set<String> = emptySet(),
-    val alreadyInvitedUserIds: Set<String> = emptySet()
+    val alreadyInvitedUserIds: Set<String> = emptySet(),
+    val selectedUserForInvite: StaffSearchResult? = null,
+    val selectedRole: OrganizationRole = OrganizationRole.STAFF,
+    val currentUserRole: OrganizationRole? = null,
+    val showPermissionDeniedDialog: Boolean = false,
+    val invitationResultMessage: String? = null,
+    val invitationResultType: InvitationResultType? = null,
+    val snackbarMessage: String? = null
 )
+
+/** Type of invitation result. */
+enum class InvitationResultType {
+  SUCCESS,
+  ERROR
+}
 
 /**
  * Result of an invitation attempt.
@@ -74,7 +94,8 @@ sealed class InvitationResult {
 class StaffInvitationViewModel(
     private val organizationId: String,
     private val userRepository: UserRepository = UserRepositoryFirebase(),
-    private val organizationRepository: OrganizationRepository = OrganizationRepositoryFirebase()
+    private val organizationRepository: OrganizationRepository = OrganizationRepositoryFirebase(),
+    private val membershipRepository: MembershipRepository = MembershipRepositoryFirebase()
 ) : ViewModel() {
 
   private val _uiState = MutableStateFlow(StaffInvitationUiState())
@@ -85,6 +106,7 @@ class StaffInvitationViewModel(
 
   init {
     loadCurrentUserId()
+    loadCurrentUserRole()
   }
 
   /** Loads the current user ID for creating invitations. */
@@ -101,6 +123,21 @@ class StaffInvitationViewModel(
         _uiState.value =
             _uiState.value.copy(
                 errorMessage = "Failed to load user: ${e.message ?: "Unknown error"}")
+      }
+    }
+  }
+
+  /** Loads the current user's role in this organization. */
+  private fun loadCurrentUserRole() {
+    viewModelScope.launch {
+      try {
+        val userId = currentUserId ?: userRepository.getCurrentUser()?.uid ?: return@launch
+        val memberships =
+            membershipRepository.getUsersByOrganization(organizationId).getOrNull() ?: emptyList()
+        val membership = memberships.find { it.userId == userId }
+        _uiState.value = _uiState.value.copy(currentUserRole = membership?.role)
+      } catch (e: Exception) {
+        Log.e("StaffInvitationVM", "Failed to load user role", e)
       }
     }
   }
@@ -200,30 +237,113 @@ class StaffInvitationViewModel(
       return
     }
 
+    // Check if user is already invited in this session
+    if (_uiState.value.invitedUserIds.contains(user.id)) {
+      _uiState.value =
+          _uiState.value.copy(snackbarMessage = "${user.displayName} has already been invited.")
+      return
+    }
+
+    // Check if user has permission to invite
+    val currentRole = _uiState.value.currentUserRole
+    if (currentRole != OrganizationRole.OWNER && currentRole != OrganizationRole.ADMIN) {
+      _uiState.value = _uiState.value.copy(showPermissionDeniedDialog = true)
+      return
+    }
+
+    viewModelScope.launch {
+      try {
+        // Check if user is already invited or a member
+        val existingInvitations = organizationRepository.getInvitationsByEmail(user.email).first()
+
+        val hasPendingInvitation =
+            existingInvitations.any {
+              it.orgId == organizationId && it.status == InvitationStatus.PENDING
+            }
+
+        if (hasPendingInvitation) {
+          _uiState.value =
+              _uiState.value.copy(snackbarMessage = "${user.displayName} has already been invited.")
+          return@launch
+        }
+
+        val hasAcceptedInvitation =
+            existingInvitations.any {
+              it.orgId == organizationId && it.status == InvitationStatus.ACCEPTED
+            }
+
+        if (hasAcceptedInvitation) {
+          _uiState.value =
+              _uiState.value.copy(snackbarMessage = "${user.displayName} is already a member.")
+          return@launch
+        }
+
+        // Instead of inviting immediately, we set the user for confirmation
+        _uiState.value =
+            _uiState.value.copy(
+                selectedUserForInvite = user,
+                selectedRole = OrganizationRole.STAFF, // Default role
+                errorMessage = null)
+      } catch (e: Exception) {
+        _uiState.value =
+            _uiState.value.copy(
+                errorMessage = "Failed to check invitation status: ${e.message ?: "Unknown error"}")
+      }
+    }
+  }
+
+  /**
+   * Updates the selected role for the pending invitation.
+   *
+   * @param role The new role to select.
+   */
+  fun selectRole(role: OrganizationRole) {
+    _uiState.value = _uiState.value.copy(selectedRole = role)
+  }
+
+  /** Cancels the pending invitation. */
+  fun cancelInvitation() {
+    _uiState.value = _uiState.value.copy(selectedUserForInvite = null, errorMessage = null)
+  }
+
+  /** Confirms and sends the invitation to the selected user with the selected role. */
+  fun confirmInvitation() {
+    val user = _uiState.value.selectedUserForInvite ?: return
+    val role = _uiState.value.selectedRole
+
     if (_uiState.value.isInviting || _uiState.value.invitedUserIds.contains(user.id)) return
 
     viewModelScope.launch {
       _uiState.value = _uiState.value.copy(isInviting = true, errorMessage = null)
 
       try {
-        val invitationResult = checkAndCreateInvitation(user)
+        val invitationResult = checkAndCreateInvitation(user, role)
 
         when (invitationResult) {
           is InvitationResult.Success -> {
             _uiState.value =
                 _uiState.value.copy(
-                    isInviting = false, invitedUserIds = _uiState.value.invitedUserIds + user.id)
+                    isInviting = false,
+                    invitedUserIds = _uiState.value.invitedUserIds + user.id,
+                    selectedUserForInvite = null, // Close dialog on success
+                    invitationResultMessage = user.displayName,
+                    invitationResultType = InvitationResultType.SUCCESS)
           }
           is InvitationResult.AlreadyInvited -> {
             _uiState.value =
                 _uiState.value.copy(
                     isInviting = false,
                     alreadyInvitedUserIds = _uiState.value.alreadyInvitedUserIds + user.id,
-                    errorMessage = invitationResult.message)
+                    errorMessage = invitationResult.message,
+                    selectedUserForInvite = null) // Close dialog on already invited
           }
           is InvitationResult.Error -> {
             _uiState.value =
-                _uiState.value.copy(isInviting = false, errorMessage = invitationResult.message)
+                _uiState.value.copy(
+                    isInviting = false,
+                    selectedUserForInvite = null, // Close confirmation dialog
+                    invitationResultMessage = invitationResult.message,
+                    invitationResultType = InvitationResultType.ERROR)
           }
         }
       } catch (e: Exception) {
@@ -241,7 +361,10 @@ class StaffInvitationViewModel(
    * @param user The user to check and invite.
    * @return The result of the invitation attempt.
    */
-  private suspend fun checkAndCreateInvitation(user: StaffSearchResult): InvitationResult {
+  private suspend fun checkAndCreateInvitation(
+      user: StaffSearchResult,
+      role: OrganizationRole
+  ): InvitationResult {
     if (user.id == currentUserId) {
       return InvitationResult.Error("You cannot invite yourself.")
     }
@@ -275,7 +398,7 @@ class StaffInvitationViewModel(
         OrganizationInvitation(
             orgId = organizationId,
             inviteeEmail = user.email,
-            role = OrganizationRole.STAFF,
+            role = role,
             invitedBy = currentUserId ?: "",
             status = InvitationStatus.PENDING)
 
@@ -291,6 +414,27 @@ class StaffInvitationViewModel(
   /** Clears the current error message. */
   fun clearError() {
     _uiState.value = _uiState.value.copy(errorMessage = null)
+  }
+
+  /** Dismisses the permission denied dialog. */
+  fun dismissPermissionDeniedDialog() {
+    _uiState.value = _uiState.value.copy(showPermissionDeniedDialog = false)
+  }
+
+  /** Dismisses the invitation result dialog. */
+  fun dismissInvitationResultDialog() {
+    _uiState.value =
+        _uiState.value.copy(invitationResultMessage = null, invitationResultType = null)
+  }
+
+  /** Clears the snackbar message. */
+  fun clearSnackbarMessage() {
+    _uiState.value = _uiState.value.copy(snackbarMessage = null)
+  }
+
+  /** Returns the list of available roles for invitation (excludes OWNER). */
+  fun getAvailableRoles(): List<OrganizationRole> {
+    return OrganizationRole.entries.filter { it != OrganizationRole.OWNER }
   }
 
   companion object {

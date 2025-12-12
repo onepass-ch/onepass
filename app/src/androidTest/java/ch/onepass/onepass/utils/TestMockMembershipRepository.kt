@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.flow
 class TestMockMembershipRepository(
     private val addMembershipResult: Result<String> = Result.success("membership-1"),
     private val organizationsByUser: Map<String, List<Membership>> = emptyMap(),
+    private val usersByOrganization: Map<String, List<Membership>> = emptyMap(),
     private val getOrganizationsByUserError: Throwable? = null
 ) : MembershipRepository {
   val addMembershipCalls = mutableListOf<Triple<String, String, OrganizationRole>>()
@@ -38,7 +39,7 @@ class TestMockMembershipRepository(
   ): Result<Unit> = Result.success(Unit)
 
   override suspend fun getUsersByOrganization(orgId: String): Result<List<Membership>> =
-      Result.success(emptyList())
+      Result.success(usersByOrganization[orgId] ?: emptyList())
 
   override fun getUsersByOrganizationFlow(orgId: String): Flow<List<Membership>> = flow {
     emit(emptyList())

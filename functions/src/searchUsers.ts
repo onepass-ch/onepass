@@ -3,13 +3,12 @@
 
    const db = admin.firestore();
 
-   export const searchUsers = functions.https.onCall(async (request) => {
-     const uid = request.auth?.uid;
+   export const searchUsers = functions.https.onCall(async (payload, context) => {
+     const uid = context.auth?.uid;
      if (!uid) {
        throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
      }
 
-     const payload = request.data;
      const { query, searchType, organizationId } = payload || {};
      const trimmed = (query ?? "").trim();
      if (!trimmed) {
@@ -19,12 +18,12 @@
      let q: any = db.collection("users");
      if (searchType === "EMAIL") {
        q = q
-         .where("emailLower", ">=", trimmed.toLowerCase())
-         .where("emailLower", "<", trimmed.toLowerCase() + "\uf8ff");
+         .where("email", ">=", trimmed)
+         .where("email", "<", trimmed + "\uf8ff");
      } else if (searchType === "NAME") {
        q = q
-         .where("displayNameLower", ">=", trimmed.toLowerCase())
-         .where("displayNameLower", "<", trimmed.toLowerCase() + "\uf8ff");
+         .where("displayName", ">=", trimmed)
+         .where("displayName", "<", trimmed + "\uf8ff");
      } else {
        throw new functions.https.HttpsError("invalid-argument", "Invalid searchType.");
      }
@@ -35,12 +34,11 @@
      // If organizationId is not null, exclude all users in the organization
      let exclude = new Set<string>();
      if (organizationId) {
-       const membersSnap = await db
-         .collection("organizations")
-         .doc(organizationId)
-         .collection("members")
+       const membershipsSnap = await db
+         .collection("memberships")
+         .where("orgId", "==", organizationId)
          .get();
-       exclude = new Set(membersSnap.docs.map((d) => d.id));
+       exclude = new Set(membershipsSnap.docs.map((d) => d.data().userId));
      }
 
      const users = results

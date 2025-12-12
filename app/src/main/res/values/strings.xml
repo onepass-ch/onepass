@@ -2,4 +2,28 @@
     <string name="app_name">OnePass</string>
     <string name="title_activity_main">OnePass</string>
     <string name="default_web_client_id">475889926955-in78smn54fn00ojr3h6cuuhsk8hsc4ud.apps.googleusercontent.com</string>
+
+    <!-- Staff Invitation -->
+    <string name="staff_invitation_title">Add staff</string>
+    <string name="staff_invitation_tab_username">Search by username</string>
+    <string name="staff_invitation_tab_email">Search by e-mail</string>
+    <string name="staff_invitation_search_by_name">Search by name</string>
+    <string name="staff_invitation_search_by_email">Search by email</string>
+    <string name="staff_invitation_search_users">Search users</string>
+    <string name="staff_invitation_enter_query">Enter search query</string>
+    <string name="staff_invitation_no_users">No users found</string>
+    <string name="staff_invitation_try_different">Try a different search term</string>
+    <string name="staff_invitation_dialog_title">Invite User</string>
+    <string name="staff_invitation_dialog_message">Invite %1$s to your organization?</string>
+    <string name="staff_invitation_select_role">Select Role</string>
+    <string name="staff_invitation_invite_button">Invite</string>
+    <string name="staff_invitation_cancel_button">Cancel</string>
+    <string name="staff_invitation_permission_denied_title">Permission Denied</string>
+    <string name="staff_invitation_permission_denied_message">Only owners and administrators can invite new members.</string>
+    <string name="staff_invitation_permission_denied_ok">OK</string>
+    <string name="staff_invitation_success_title">Invitation Sent</string>
+    <string name="staff_invitation_success_message">Successfully invited %1$s to the organization.</string>
+    <string name="staff_invitation_error_title">Invitation Failed</string>
+    <string name="staff_invitation_error_message">Failed to send invitation: %1$s</string>
+    <string name="staff_invitation_result_ok">OK</string>
 </resources>
