@@ -20,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.tasks.await
 
 /**
  * Immutable UI state for the scanner screen.
@@ -28,7 +29,10 @@ import kotlinx.coroutines.sync.Mutex
  * @property message Display message for the user
  * @property lastTicketId Last validated ticket ID
  * @property lastScannedAt Last scan timestamp from server
+ * @property lastScannedUserName Display name of last scanned user
  * @property remaining Remaining event capacity
+ * @property validated Number of tickets validated in this session
+ * @property eventTitle Title of the event being scanned
  * @property status Current visual status
  */
 data class ScannerUiState(
@@ -36,7 +40,10 @@ data class ScannerUiState(
     val message: String = "Scan a pass…",
     val lastTicketId: String? = null,
     val lastScannedAt: Long? = null,
+    val lastScannedUserName: String? = null,
     val remaining: Int? = null,
+    val validated: Int = 0,
+    val eventTitle: String? = null,
     val status: Status = Status.IDLE,
 ) {
   enum class Status {
@@ -105,6 +112,7 @@ class ScannerViewModel(
   private val scope: CoroutineScope = coroutineScope ?: viewModelScope
   private var cleanupJob: Job? = null
   private var resetJob: Job? = null
+  private var eventListenerJob: Job? = null
 
   init {
     if (enableAutoCleanup) {
@@ -116,6 +124,37 @@ class ScannerViewModel(
             }
           }
     }
+
+    // Listen to event's ticketsRedeemed in real-time
+    startEventListener()
+  }
+
+  /** Starts listening to the event's ticketsRedeemed field in Firestore */
+  private fun startEventListener() {
+    eventListenerJob =
+        scope.launch {
+          try {
+            val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            val eventRef = firestore.collection("events").document(eventId)
+
+            eventRef.addSnapshotListener { snapshot, error ->
+              if (error != null) {
+                Log.e(TAG, "Error listening to event", error)
+                return@addSnapshotListener
+              }
+
+              if (snapshot != null && snapshot.exists()) {
+                val ticketsRedeemed = snapshot.getLong("ticketsRedeemed")?.toInt() ?: 0
+                val eventTitle = snapshot.getString("title") ?: "Event"
+                _state.value =
+                    _state.value.copy(validated = ticketsRedeemed, eventTitle = eventTitle)
+                Log.d(TAG, "Event updated: title=$eventTitle, redeemed=$ticketsRedeemed")
+              }
+            }
+          } catch (e: Exception) {
+            Log.e(TAG, "Failed to start event listener", e)
+          }
+        }
   }
 
   /** Removes expired entries from the deduplication cache. */
@@ -208,6 +247,23 @@ class ScannerViewModel(
   }
 
   /**
+   * Fetches the user's display name from Firestore.
+   *
+   * @param uid User identifier
+   * @return Display name or null if not found
+   */
+  private suspend fun fetchUserDisplayName(uid: String): String? {
+    return try {
+      val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+      val userDoc = firestore.collection("users").document(uid).get().await()
+      userDoc.getString("displayName")
+    } catch (e: Exception) {
+      Log.w(TAG, "Failed to fetch user display name for uid=$uid", e)
+      null
+    }
+  }
+
+  /**
    * Handles the backend decision.
    *
    * @param decision The validation decision from backend
@@ -219,6 +275,11 @@ class ScannerViewModel(
     when (decision) {
       is ScanDecision.Accepted -> {
         Log.d(TAG, "Accepted: uid=$uid, ticket=${decision.ticketId}")
+
+        // Fetch user's display name
+        val userName = fetchUserDisplayName(uid)
+
+        // Note: validated count is now updated via Firestore listener
         _state.value =
             _state.value.copy(
                 isProcessing = false,
@@ -226,6 +287,7 @@ class ScannerViewModel(
                 message = "Access Granted",
                 lastTicketId = decision.ticketId,
                 lastScannedAt = decision.scannedAtSeconds,
+                lastScannedUserName = userName,
                 remaining = decision.remaining)
         _effects.emit(ScannerEffect.Accepted("Access Granted"))
       }
@@ -283,15 +345,26 @@ class ScannerViewModel(
         scope.launch {
           delay(stateResetDelayMs)
           if (isActive) {
-            _state.value = ScannerUiState()
+            // Reset to IDLE but preserve validated count
+            val currentValidated = _state.value.validated
+            _state.value = ScannerUiState(validated = currentValidated)
           }
         }
+  }
+
+  /** Manually reset state to IDLE (useful when dismissing error dialogs). */
+  fun resetToIdle() {
+    resetJob?.cancel()
+    // Reset to IDLE but preserve validated count
+    val currentValidated = _state.value.validated
+    _state.value = ScannerUiState(validated = currentValidated)
   }
 
   @VisibleForTesting
   public override fun onCleared() {
     cleanupJob?.cancel()
     resetJob?.cancel()
+    eventListenerJob?.cancel()
     recentScans.clear()
     super.onCleared()
   }

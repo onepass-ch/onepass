@@ -1,7 +1,13 @@
 package ch.onepass.onepass.model.scan
 
+import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseAuthException
 import com.google.firebase.functions.ktx.functions
 import com.google.firebase.ktx.Firebase
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import kotlinx.coroutines.tasks.await
 
 /**
@@ -17,7 +23,42 @@ class TicketScanRepositoryFirebase : TicketScanRepository {
   override suspend fun validateByPass(qrText: String, eventId: String): Result<ScanDecision> =
       runCatching {
 
-        // Basic client-side guardrails — prevents useless requests
+        // Verify user authentication before calling Cloud Function
+        val currentUser =
+            FirebaseAuth.getInstance().currentUser
+                ?: throw IllegalStateException("Please login to scan tickets")
+
+        // Force refresh token to ensure it's valid
+        try {
+          currentUser.getIdToken(true).await()
+        } catch (e: Exception) {
+          // Distinguish between network errors and auth errors
+          when (e) {
+            is FirebaseNetworkException,
+            is IOException,
+            is UnknownHostException,
+            is SocketTimeoutException -> {
+              throw IOException("Network connection failed. Please check your internet connection.")
+            }
+            is FirebaseAuthException -> {
+              throw IllegalStateException("Session expired - please login again")
+            }
+            else -> {
+              // Check if message contains network-related keywords
+              val message = e.message?.lowercase() ?: ""
+              if (message.contains("network") ||
+                  message.contains("connection") ||
+                  message.contains("internet") ||
+                  message.contains("timeout")) {
+                throw IOException(
+                    "Network connection failed. Please check your internet connection.")
+              }
+              throw IllegalStateException("Session expired. Please login again")
+            }
+          }
+        }
+
+        // Basic client-side guardrails - prevents useless requests
         require(qrText.isNotBlank()) { "QR empty" }
         require(eventId.isNotBlank()) { "Event ID empty" }
 
@@ -47,13 +88,12 @@ class TicketScanRepositoryFirebase : TicketScanRepository {
         val reason =
             runCatching { ScanDecision.Reason.valueOf(reasonStr) }
                 .getOrDefault(ScanDecision.Reason.UNKNOWN)
-
         ScanDecision.Rejected(
             reason = reason, scannedAtSeconds = (data[KEY_SCANNED_AT] as? Number)?.toLong())
       }
 
   private companion object {
-    const val FN_VALIDATE = "validateEntryByPass"
+    const val FN_VALIDATE = "validateEntryByPassV2"
 
     const val KEY_STATUS = "status"
     const val KEY_REASON = "reason"

@@ -45,7 +45,7 @@ export async function getActiveKey(): Promise<SigningKey> {
  *
  * @param payload - JSON string to sign
  * @param privateKeyBase64 - Base64-encoded Ed25519 private key (64 bytes)
- * @returns Base64url-encoded signature
+ * @returns Base64url-encoded signature (no padding)
  * @throws HttpsError if private key format is invalid
  */
 export function signPayload(payload: string, privateKeyBase64: string): string {
@@ -62,6 +62,7 @@ export function signPayload(payload: string, privateKeyBase64: string): string {
   const message = util.decodeUTF8(payload);
   const signature = nacl.sign.detached(message, privateKey);
 
+  // Encode to Base64URL (no padding)
   return util.encodeBase64(signature)
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
@@ -71,8 +72,11 @@ export function signPayload(payload: string, privateKeyBase64: string): string {
 /**
  * Verifies an Ed25519 signature against a payload.
  *
+ * CRITICAL FIX: Properly handles Base64URL decoding with padding restoration.
+ * Without padding, util.decodeBase64() fails or produces incorrect results.
+ *
  * @param payload - Original JSON string that was signed
- * @param signatureBase64Url - Base64url-encoded signature
+ * @param signatureBase64Url - Base64url-encoded signature (no padding)
  * @param kid - Key ID to use for verification
  * @returns true if signature is valid, false otherwise
  */
@@ -93,7 +97,11 @@ export async function verifySignature(
 
   const signatureBase64 = signatureBase64Url
     .replace(/-/g, "+")
-    .replace(/_/g, "/");
+    .replace(/_/g, "/")
+    .padEnd(
+      signatureBase64Url.length + ((4 - (signatureBase64Url.length % 4)) % 4),
+      "="
+    );
 
   try {
     const publicKey = util.decodeBase64(keyData.publicKey);
@@ -108,7 +116,7 @@ export async function verifySignature(
 
     return nacl.sign.detached.verify(message, signature, publicKey);
   } catch (error) {
-    // Catch any decoding errors
+    // Catch any decoding errors (invalid Base64, etc.)
     return false;
   }
 }

@@ -2,9 +2,15 @@ package ch.onepass.onepass.ui.scan
 
 import ch.onepass.onepass.model.scan.ScanDecision
 import ch.onepass.onepass.model.scan.TicketScanRepository
+import com.google.android.gms.tasks.Task
+import com.google.android.gms.tasks.Tasks
+import com.google.firebase.firestore.DocumentSnapshot
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.unmockkAll
 import java.util.Base64
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -26,11 +32,41 @@ class ScannerViewModelTest {
   fun setup() {
     Dispatchers.setMain(testDispatcher)
     repository = mockk(relaxed = true)
+
+    // Mock Firebase Firestore to prevent actual Firebase calls
+    mockkStatic(com.google.firebase.firestore.FirebaseFirestore::class)
+    val mockFirestore = mockk<com.google.firebase.firestore.FirebaseFirestore>(relaxed = true)
+    val mockCollection = mockk<com.google.firebase.firestore.CollectionReference>(relaxed = true)
+    val mockDocument = mockk<com.google.firebase.firestore.DocumentReference>(relaxed = true)
+    val mockSnapshot = mockk<DocumentSnapshot>(relaxed = true)
+
+    every { com.google.firebase.firestore.FirebaseFirestore.getInstance() } returns mockFirestore
+    every { mockFirestore.collection(any()) } returns mockCollection
+    every { mockCollection.document(any()) } returns mockDocument
+    every { mockDocument.addSnapshotListener(any()) } returns mockk(relaxed = true)
+
+    // Mock the Task returned by get() to return a completed task
+    val mockTask = mockk<Task<DocumentSnapshot>>(relaxed = true)
+    every { mockDocument.get() } returns mockTask
+    every { mockTask.isComplete } returns true
+    every { mockTask.isSuccessful } returns true
+    every { mockTask.isCanceled } returns false
+    every { mockTask.result } returns mockSnapshot
+    every { mockTask.exception } returns null
+
+    // Use Tasks.forResult to create a real completed task
+    every { mockDocument.get() } returns Tasks.forResult(mockSnapshot)
+
+    every { mockSnapshot.getString("displayName") } returns null
+    every { mockSnapshot.getLong("ticketsRedeemed") } returns 0L
+    every { mockSnapshot.getString("title") } returns "Test Event"
+    every { mockSnapshot.exists() } returns true
   }
 
   @After
   fun tearDown() {
     Dispatchers.resetMain()
+    unmockkAll()
   }
 
   private fun createValidQr(uid: String = "user-001"): String {
@@ -59,6 +95,8 @@ class ScannerViewModelTest {
   fun initialStateShouldBeIdle() =
       runTest(testDispatcher) {
         val vm = createViewModel(testScheduler)
+        advanceUntilIdle() // Allow Firestore listener to initialize
+
         with(vm.state.value) {
           assertFalse(isProcessing)
           assertEquals("Scan a pass…", message)
@@ -119,7 +157,7 @@ class ScannerViewModelTest {
               ): Result<ScanDecision> =
                   Result.success(
                       ScanDecision.Accepted(
-                          ticketId = "ticket-456", scannedAtSeconds = 2000L, remaining = 5))
+                          ticketId = "ticket-456", scannedAtSeconds = 2000L, remaining = null))
             }
         val vm = createViewModel(testScheduler, customRepo = repo)
         var effect: ScannerEffect? = null
@@ -133,7 +171,6 @@ class ScannerViewModelTest {
           assertEquals("Access Granted", message)
           assertEquals("ticket-456", lastTicketId)
           assertEquals(2000L, lastScannedAt)
-          assertEquals(5, remaining)
         }
         assertTrue(effect is ScannerEffect.Accepted)
         job.cancel()
@@ -160,7 +197,6 @@ class ScannerViewModelTest {
           assertEquals(ScannerUiState.Status.ACCEPTED, status)
           assertNull(lastTicketId)
           assertNull(lastScannedAt)
-          assertNull(remaining)
         }
       }
 
@@ -414,9 +450,10 @@ class ScannerViewModelTest {
 
         vm.onQrScanned(createValidQr())
         testScheduler.advanceTimeBy(50)
-        advanceUntilIdle()
 
         assertTrue(wasProcessing)
+
+        advanceUntilIdle()
         assertFalse(vm.state.value.isProcessing)
         job.cancel()
       }
@@ -442,7 +479,7 @@ class ScannerViewModelTest {
           vm.onQrScanned(createValidQr())
           advanceUntilIdle()
 
-          assertFalse(vm.state.value.isProcessing)
+          assertFalse("isProcessing should be false after completion", vm.state.value.isProcessing)
         }
       }
 

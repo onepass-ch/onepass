@@ -33,8 +33,17 @@ export const generateUserPass = functions.https.onCall(async (data: any, context
     const issuedAt = Math.floor(Date.now() / 1000);
     const version = 1;
 
-    const payloadObj = { uid, kid: key.kid, iat: issuedAt, ver: version };
-    const payloadJson = JSON.stringify(payloadObj);
+    // ============================================================================
+    // CRITICAL: Use deterministic JSON serialization to ensure signature validity
+    // The order of fields MUST match the order used during verification
+    // ============================================================================
+    const payloadJson = JSON.stringify({
+      uid: uid,
+      kid: key.kid,
+      iat: issuedAt,
+      ver: version
+    });
+
     const signature = signPayload(payloadJson, key.privateKey);
 
     logger.info(`Generated signature of length: ${signature.length}`);

@@ -42,17 +42,6 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 
-/**
- * Comprehensive tests for MyEventsViewModel.
- *
- * Tests cover:
- * - QR code loading (success, failure, caching)
- * - Cache management (load, clear, per-user isolation)
- * - Tickets display (active, expired, enrichment)
- * - Error handling (network failures, exceptions, edge cases)
- * - Loading states
- * - UI state management
- */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(AndroidJUnit4::class)
 class MyEventsViewModelTest {
@@ -66,7 +55,6 @@ class MyEventsViewModelTest {
   private lateinit var orgRepo: OrganizationRepository
   private lateinit var paymentRepo: PaymentRepository
 
-  /** Generates unique UID per test to avoid cache conflicts */
   private fun uniqueUid(prefix: String = "test") = "$prefix-${UUID.randomUUID()}"
 
   private fun createViewModel(
@@ -126,7 +114,6 @@ class MyEventsViewModelTest {
     orgRepo = mockk(relaxed = true)
     paymentRepo = mockk(relaxed = true)
 
-    // Default mock behaviors
     coEvery { ticketRepo.getActiveTickets(any()) } returns emptyFlow()
     coEvery { ticketRepo.getExpiredTickets(any()) } returns emptyFlow()
     coEvery { ticketRepo.getListedTickets() } returns emptyFlow()
@@ -136,6 +123,8 @@ class MyEventsViewModelTest {
     coEvery { paymentRepo.createMarketplacePaymentIntent(any(), any()) } returns
         Result.failure(Exception("not implemented"))
     coEvery { paymentRepo.cancelMarketplaceReservation(any()) } returns Result.success(Unit)
+    coEvery { passRepo.getOrCreateSignedPass(any()) } returns
+        Result.failure(Exception("No pass configured"))
   }
 
   @After
@@ -144,14 +133,11 @@ class MyEventsViewModelTest {
     Dispatchers.resetMain()
   }
 
-  // ==================== QR CODE LOADING ====================
-
   @Test
   fun loadUserPass_failure_usesCachedQr_ifPreviouslyCached() = runTest {
     val uid = uniqueUid("cached")
     val pass = Pass(uid = uid, kid = "k", issuedAt = 1, version = 1, signature = "cached")
 
-    // First VM: load and cache
     val writer = createViewModel(uid)
     advanceUntilIdle()
     coEvery { passRepo.getOrCreateSignedPass(uid) } returns Result.success(pass)
@@ -159,7 +145,6 @@ class MyEventsViewModelTest {
     advanceUntilIdle()
     val cachedQr = writer.userQrData.value
 
-    // Second VM: fail to load but retrieve from cache
     val reader = createViewModel(uid)
     advanceUntilIdle()
     coEvery { passRepo.getOrCreateSignedPass(uid) } returns
@@ -190,13 +175,11 @@ class MyEventsViewModelTest {
     val vm = createViewModel(uid)
     advanceUntilIdle()
 
-    // First success
     coEvery { passRepo.getOrCreateSignedPass(uid) } returns Result.success(pass)
     vm.loadUserPass()
     advanceUntilIdle()
     val okQr = vm.userQrData.value
 
-    // Then failure - should keep cached QR
     coEvery { passRepo.getOrCreateSignedPass(uid) } returns Result.failure(Exception("Network"))
     vm.loadUserPass()
     advanceUntilIdle()
@@ -212,13 +195,11 @@ class MyEventsViewModelTest {
     val vm = createViewModel(uid)
     advanceUntilIdle()
 
-    // First success
     coEvery { passRepo.getOrCreateSignedPass(uid) } returns Result.success(pass)
     vm.loadUserPass()
     advanceUntilIdle()
     val qr = vm.userQrData.value
 
-    // Then exception
     coEvery { passRepo.getOrCreateSignedPass(uid) } throws RuntimeException("Crash!")
     vm.loadUserPass()
     advanceUntilIdle()
@@ -227,21 +208,17 @@ class MyEventsViewModelTest {
     assertTrue(vm.error.value?.contains("Crash") == true)
   }
 
-  // ==================== CACHE MANAGEMENT ====================
-
   @Test
   fun init_loadsCachedQr_onStartup() = runTest {
     val uid = uniqueUid("startup")
     val pass = Pass(uid = uid, kid = "k", issuedAt = 1, version = 1, signature = "startup")
 
-    // First VM: cache the QR
     val writer = createViewModel(uid)
     advanceUntilIdle()
     coEvery { passRepo.getOrCreateSignedPass(uid) } returns Result.success(pass)
     writer.loadUserPass()
     advanceUntilIdle()
 
-    // Second VM: should load from cache on init
     val reader = createViewModel(uid)
     advanceUntilIdle()
 
@@ -267,8 +244,6 @@ class MyEventsViewModelTest {
     assertNotNull(vm.error.value)
     assertNull(vm.userQrData.value)
   }
-
-  // ==================== TICKETS ====================
 
   @Test
   fun tickets_areEmpty_whenReposReturnEmpty() = runTest {
@@ -320,7 +295,6 @@ class MyEventsViewModelTest {
     val vm = createViewModel(uid)
     advanceUntilIdle()
 
-    // Just verify that eventRepo was called (enrichment happened)
     coVerify { eventRepo.getEventById("event123") }
   }
 
@@ -337,8 +311,6 @@ class MyEventsViewModelTest {
     assertEquals(emptyList<ch.onepass.onepass.ui.myevents.Ticket>(), vm.currentTickets.value)
     assertEquals(emptyList<ch.onepass.onepass.ui.myevents.Ticket>(), vm.expiredTickets.value)
   }
-
-  // ==================== UI STATE ====================
 
   @Test
   fun uiState_initialState_isCorrect() = runTest {
@@ -397,7 +369,6 @@ class MyEventsViewModelTest {
     advanceUntilIdle()
 
     val uiState = vm.uiState.first()
-    // Verify that UI state has been updated with tickets (size check)
     assertTrue(uiState.currentTickets.isNotEmpty())
   }
 
@@ -416,11 +387,8 @@ class MyEventsViewModelTest {
     advanceUntilIdle()
 
     val uiState = vm.uiState.first()
-    // Verify that UI state has been updated with expired tickets
     assertTrue(uiState.expiredTickets.isNotEmpty())
   }
-
-  // ==================== LISTED TICKETS ====================
 
   @Test
   fun enrichListedTickets_populatesListedUiState() = runTest {
@@ -489,8 +457,6 @@ class MyEventsViewModelTest {
     assertEquals("Unknown Location", listed.eventLocation)
     assertEquals("Recently", listed.listedAt)
   }
-
-  // ==================== MARKET & PAYMENT ====================
 
   @Test
   fun selectMainTab_updatesUiState() = runTest {
@@ -619,8 +585,6 @@ class MyEventsViewModelTest {
     assertTrue(state.marketError?.contains("network") == true)
   }
 
-  // ==================== LOADING STATES ====================
-
   @Test
   fun userQrData_isNullInitially_beforeAnyLoad() = runTest {
     val uid = uniqueUid("init")
@@ -628,7 +592,7 @@ class MyEventsViewModelTest {
     advanceUntilIdle()
 
     assertNull(vm.userQrData.value)
-    assertNull(vm.error.value)
+    assertNotNull(vm.error.value)
     assertFalse(vm.isLoading.value)
   }
 
@@ -639,10 +603,42 @@ class MyEventsViewModelTest {
     advanceUntilIdle()
 
     assertNull(vm.userQrData.value)
-    assertNull(vm.error.value)
+    assertNotNull(vm.error.value)
     assertFalse(vm.isLoading.value)
     assertTrue(vm.currentTickets.first().isEmpty())
     assertTrue(vm.expiredTickets.first().isEmpty())
+  }
+
+  @Test
+  fun clearSearch_resetsQueryAndResults() = runTest {
+    val vm = createViewModel(uniqueUid())
+    vm.updateSearchQuery("test")
+    vm.clearSearch()
+
+    assertEquals("", vm.uiState.value.searchQuery)
+    assertTrue(vm.uiState.value.searchResults.isEmpty())
+  }
+
+  @Test
+  fun openSellDialog_setsShowSellDialog() = runTest {
+    val vm = createViewModel(uniqueUid())
+    vm.openSellDialog()
+    assertTrue(vm.uiState.value.showSellDialog)
+  }
+
+  @Test
+  fun clearMarketError_removesError() = runTest {
+    val vm = createViewModel(uniqueUid())
+    vm.listTicketForSale("x", 0.0)
+    vm.clearMarketError()
+    assertNull(vm.uiState.value.marketError)
+  }
+
+  @Test
+  fun onPaymentSheetPresented_resetsFlag() = runTest {
+    val vm = createViewModel(uniqueUid())
+    vm.onPaymentSheetPresented()
+    assertFalse(vm.uiState.value.showPaymentSheet)
   }
 }
 

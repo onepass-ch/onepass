@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -63,6 +64,8 @@ object ScanTestTags {
   const val SCAN_FRAME = "scan_frame"
   const val STATUS_ICON = "scan_status_icon"
   const val STATS_CARD = "scan_stats_card"
+  const val BACK_BUTTON = "scan_back_button"
+  const val NETWORK_ERROR_DIALOG = "scan_network_error_dialog"
 }
 
 /** Dark palette aligned with the Profile screen aesthetics. */
@@ -84,6 +87,7 @@ private object ScanColors {
 fun ScanScreen(
     viewModel: ScannerViewModel,
     modifier: Modifier = Modifier,
+    onNavigateBack: () -> Unit = {},
     onEffect: ((ScannerEffect) -> Unit)? = null
 ) {
   LaunchedEffect(viewModel, onEffect) {
@@ -92,16 +96,33 @@ fun ScanScreen(
 
   CameraPermissionGate(
       modifier = modifier.fillMaxSize(),
-      grantedContent = { ScanContent(viewModel) },
+      grantedContent = { ScanContent(viewModel, onNavigateBack) },
       deniedContent = { PermissionDeniedScreen() })
 }
 
 /** Main content: edge-to-edge camera preview with scanning frame and bottom HUD. */
 @Composable
-fun ScanContent(viewModel: ScannerViewModel) {
+fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
   val context = LocalContext.current
   val lifecycle = LocalLifecycleOwner.current
   val uiState by viewModel.state.collectAsState()
+
+  // Network error dialog state
+  var showNetworkErrorDialog by remember { mutableStateOf(false) }
+  var showSessionExpiredDialog by remember { mutableStateOf(false) }
+  var lastScannedQr by remember { mutableStateOf<String?>(null) }
+
+  // Audio feedback with ToneGenerator
+  val toneGenerator = remember {
+    try {
+      android.media.ToneGenerator(android.media.AudioManager.STREAM_NOTIFICATION, 80)
+    } catch (e: Exception) {
+      Log.w("ScanContent", "Failed to create ToneGenerator", e)
+      null
+    }
+  }
+
+  DisposableEffect(toneGenerator) { onDispose { toneGenerator?.release() } }
 
   // Haptic feedback (safe vibration with permission check)
   val vibrator = remember {
@@ -109,19 +130,186 @@ fun ScanContent(viewModel: ScannerViewModel) {
     context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
   }
 
+  // Detect errors and show appropriate dialog + play sounds
   LaunchedEffect(viewModel) {
     viewModel.effects.collectLatest { effect ->
-      if (ContextCompat.checkSelfPermission(context, Manifest.permission.VIBRATE) ==
-          PackageManager.PERMISSION_GRANTED) {
-        vibrator?.let { vib ->
+      when (effect) {
+        is ScannerEffect.Accepted -> {
+          // Play success beep (short, pleasant tone)
           try {
-            vibrateForEffect(vib, effect)
+            toneGenerator?.startTone(android.media.ToneGenerator.TONE_PROP_BEEP, 150)
           } catch (e: Exception) {
-            Log.w("ScanContent", "Vibration failed", e)
+            Log.w("ScanContent", "Failed to play accept sound", e)
+          }
+
+          // Vibration
+          if (ContextCompat.checkSelfPermission(context, Manifest.permission.VIBRATE) ==
+              PackageManager.PERMISSION_GRANTED) {
+            vibrator?.let { vib ->
+              try {
+                vibrateForEffect(vib, effect)
+              } catch (e: Exception) {
+                Log.w("ScanContent", "Vibration failed", e)
+              }
+            }
+          }
+        }
+        is ScannerEffect.Rejected -> {
+          // Play error buzz (harsh, double beep)
+          try {
+            toneGenerator?.startTone(android.media.ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 200)
+          } catch (e: Exception) {
+            Log.w("ScanContent", "Failed to play reject sound", e)
+          }
+
+          // Vibration
+          if (ContextCompat.checkSelfPermission(context, Manifest.permission.VIBRATE) ==
+              PackageManager.PERMISSION_GRANTED) {
+            vibrator?.let { vib ->
+              try {
+                vibrateForEffect(vib, effect)
+              } catch (e: Exception) {
+                Log.w("ScanContent", "Vibration failed", e)
+              }
+            }
+          }
+        }
+        is ScannerEffect.Error -> {
+          val message = effect.message.lowercase()
+          when {
+            // Session expired - should navigate to login
+            message.contains("session expired") || message.contains("please login") -> {
+              showSessionExpiredDialog = true
+            }
+            // Network errors - can retry
+            message.contains("network") ||
+                message.contains("connection") ||
+                message.contains("internet") ||
+                message.contains("timeout") -> {
+              showNetworkErrorDialog = true
+            }
+            // Other errors - just show in HUD (dialog not needed)
+            else -> {
+              // Error is already shown in the HUD message, no dialog needed
+            }
+          }
+
+          // Play warning sound (medium tone)
+          try {
+            toneGenerator?.startTone(android.media.ToneGenerator.TONE_PROP_NACK, 300)
+          } catch (e: Exception) {
+            Log.w("ScanContent", "Failed to play error sound", e)
+          }
+
+          // Vibration
+          if (ContextCompat.checkSelfPermission(context, Manifest.permission.VIBRATE) ==
+              PackageManager.PERMISSION_GRANTED) {
+            vibrator?.let { vib ->
+              try {
+                vibrateForEffect(vib, effect)
+              } catch (e: Exception) {
+                Log.w("ScanContent", "Vibration failed", e)
+              }
+            }
           }
         }
       }
     }
+  }
+
+  // Session expired dialog
+  if (showSessionExpiredDialog) {
+    AlertDialog(
+        onDismissRequest = {
+          showSessionExpiredDialog = false
+          onNavigateBack()
+        },
+        icon = {
+          Icon(
+              imageVector = Icons.Outlined.Error,
+              contentDescription = null,
+              tint = ScanColors.Error)
+        },
+        title = {
+          Text(
+              text = "Session Expired",
+              style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+        },
+        text = {
+          Text(
+              text = "Your session has expired. Please login again to continue scanning tickets.",
+              style = MaterialTheme.typography.bodyMedium,
+              color = ScanColors.TextSecondary)
+        },
+        confirmButton = {
+          Button(
+              onClick = {
+                showSessionExpiredDialog = false
+                onNavigateBack() // Go back, auth system will handle redirect to login
+              },
+              colors = ButtonDefaults.buttonColors(containerColor = ScanColors.Error)) {
+                Text("OK")
+              }
+        },
+        containerColor = ScanColors.Card,
+        titleContentColor = ScanColors.TextPrimary,
+        textContentColor = ScanColors.TextSecondary,
+        modifier = Modifier.testTag("scan_session_expired_dialog"))
+  }
+
+  // Network error dialog
+  if (showNetworkErrorDialog) {
+    AlertDialog(
+        onDismissRequest = {
+          showNetworkErrorDialog = false
+          // Reset state to IDLE when dismissing to prevent error showing in HUD
+          viewModel.resetToIdle()
+          onNavigateBack() // Back on dismiss
+        },
+        icon = {
+          Icon(
+              imageVector = Icons.Outlined.Error,
+              contentDescription = null,
+              tint = ScanColors.Warning)
+        },
+        title = {
+          Text(
+              text = "No Internet Connection",
+              style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
+        },
+        text = {
+          Text(
+              text =
+                  "Please check your internet connection and try again. The scanner requires an active internet connection to validate tickets.",
+              style = MaterialTheme.typography.bodyMedium,
+              color = ScanColors.TextSecondary)
+        },
+        confirmButton = {
+          Button(
+              onClick = {
+                showNetworkErrorDialog = false
+                // Reset state before retry
+                viewModel.resetToIdle()
+                lastScannedQr?.let { qr -> viewModel.onQrScanned(qr) }
+              },
+              colors = ButtonDefaults.buttonColors(containerColor = ScanColors.Accent)) {
+                Text("Retry")
+              }
+        },
+        dismissButton = {
+          TextButton(
+              onClick = {
+                showNetworkErrorDialog = false
+                viewModel.resetToIdle()
+                onNavigateBack()
+              }) {
+                Text("Back")
+              }
+        },
+        containerColor = ScanColors.Card,
+        titleContentColor = ScanColors.TextPrimary,
+        textContentColor = ScanColors.TextSecondary,
+        modifier = Modifier.testTag(ScanTestTags.NETWORK_ERROR_DIALOG))
   }
 
   val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
@@ -158,7 +346,10 @@ fun ScanContent(viewModel: ScannerViewModel) {
           .process(image)
           .addOnSuccessListener { barcodes ->
             if (isActive) {
-              barcodes.firstOrNull()?.rawValue?.let(viewModel::onQrScanned)
+              barcodes.firstOrNull()?.rawValue?.let { qr ->
+                lastScannedQr = qr
+                viewModel.onQrScanned(qr)
+              }
             }
           }
           .addOnCompleteListener { imageProxy.close() }
@@ -232,20 +423,41 @@ fun ScanContent(viewModel: ScannerViewModel) {
                       Brush.verticalGradient(
                           listOf(Color.Transparent, Color(0x33000000), ScanColors.Scrim))))
 
+      // Back button (top-left)
+      IconButton(
+          onClick = onNavigateBack,
+          modifier =
+              Modifier.align(Alignment.TopStart)
+                  .padding(16.dp)
+                  .size(48.dp)
+                  .background(ScanColors.Card.copy(alpha = 0.7f), CircleShape)
+                  .testTag(ScanTestTags.BACK_BUTTON)) {
+            Icon(
+                imageVector = Icons.Default.ArrowBack,
+                contentDescription = "Back",
+                tint = Color.White,
+                modifier = Modifier.size(24.dp))
+          }
+
       // Animated scanning frame
       ScanningFrame(uiState = uiState)
 
       // Top stats card (when not idle)
       AnimatedVisibility(
-          visible = uiState.remaining != null && uiState.status != ScannerUiState.Status.IDLE,
+          visible =
+              uiState.validated > 0 ||
+                  uiState.status != ScannerUiState.Status.IDLE ||
+                  uiState.eventTitle != null,
           enter = fadeIn() + slideInVertically(),
           exit = fadeOut() + slideOutVertically(),
           modifier = Modifier.align(Alignment.TopCenter)) {
-            TopStatsCard(remaining = uiState.remaining ?: 0)
+            TopStatsCard(validated = uiState.validated, eventTitle = uiState.eventTitle)
           }
 
-      // Bottom HUD
-      ScanHud(uiState = uiState)
+      // Bottom HUD (hide when dialogs are shown to avoid redundancy)
+      if (!showNetworkErrorDialog && !showSessionExpiredDialog) {
+        ScanHud(uiState = uiState)
+      }
     }
   }
 }
@@ -408,29 +620,39 @@ private fun BoxScope.FrameCorners(color: Color) {
   }
 }
 
-/** Top stats card showing remaining capacity - Internal for testing */
+/** Top stats card showing event title and validated tickets count - Internal for testing */
 @Composable
-internal fun TopStatsCard(remaining: Int) {
+internal fun TopStatsCard(validated: Int, eventTitle: String?) {
   Surface(
       color = ScanColors.Card.copy(alpha = 0.95f),
       shape = RoundedCornerShape(16.dp),
       tonalElevation = 4.dp,
       modifier = Modifier.padding(top = 24.dp).testTag(ScanTestTags.STATS_CARD)) {
-        Row(
+        Column(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center) {
-              Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            horizontalAlignment = Alignment.CenterHorizontally) {
+              // Event title
+              if (eventTitle != null) {
                 Text(
-                    text = remaining.toString(),
-                    color = ScanColors.Accent,
+                    text = eventTitle,
+                    color = ScanColors.TextPrimary,
                     style =
-                        MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
-                Text(
-                    text = "Remaining",
-                    color = ScanColors.TextSecondary,
-                    style = MaterialTheme.typography.bodySmall)
+                        MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+                    maxLines = 1,
+                    textAlign = TextAlign.Center)
+                Spacer(Modifier.height(8.dp))
               }
+
+              // Validated count
+              Text(
+                  text = validated.toString(),
+                  color = ScanColors.Accent,
+                  style =
+                      MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
+              Text(
+                  text = "Validated",
+                  color = ScanColors.TextSecondary,
+                  style = MaterialTheme.typography.bodySmall)
             }
       }
 }
@@ -474,6 +696,17 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
                                 MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold),
                             modifier = Modifier.testTag(ScanTestTags.MESSAGE))
+
+                        if (uiState.lastScannedUserName != null &&
+                            uiState.status == ScannerUiState.Status.ACCEPTED) {
+                          Spacer(Modifier.height(4.dp))
+                          Text(
+                              text = uiState.lastScannedUserName,
+                              color = ScanColors.TextPrimary,
+                              style =
+                                  MaterialTheme.typography.bodyLarge.copy(
+                                      fontWeight = FontWeight.Medium))
+                        }
 
                         if (uiState.lastTicketId != null) {
                           Spacer(Modifier.height(6.dp))
@@ -592,7 +825,9 @@ internal fun PreviewScanHudAccepted() {
               isProcessing = false,
               message = "Access Granted",
               lastTicketId = "T-4821",
-              remaining = 41,
+              lastScannedUserName = "John Doe",
+              validated = 41,
+              eventTitle = "Summer Music Festival",
               status = ScannerUiState.Status.ACCEPTED))
 }
 
@@ -638,8 +873,8 @@ internal fun PreviewHudContainer(state: ScannerUiState) {
                         },
                     shape = RoundedCornerShape(24.dp)))
 
-    if (state.remaining != null) {
-      TopStatsCard(remaining = state.remaining)
+    if (state.validated > 0 || state.eventTitle != null) {
+      TopStatsCard(validated = state.validated, eventTitle = state.eventTitle)
     }
 
     ScanHud(uiState = state)

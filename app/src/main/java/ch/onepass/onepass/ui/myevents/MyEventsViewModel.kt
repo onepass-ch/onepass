@@ -311,6 +311,10 @@ class MyEventsViewModel(
   init {
     // Load cached QR at startup for offline support
     viewModelScope.launch { loadCachedQr() }
+
+    // Load or generate user pass at startup (creates pass for legacy users)
+    loadUserPass()
+
     // Observe tickets and update UI state
     observeCurrentTickets()
     observeExpiredTickets()

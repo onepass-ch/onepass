@@ -338,9 +338,8 @@ fun AppNavHost(
                       ScannerViewModel(eventId = eventId, repo = TicketScanRepositoryFirebase())
                     }
                   })
-      ScanScreen(viewModel = scannerVm)
+      ScanScreen(viewModel = scannerVm, onNavigateBack = { navController.popBackStack() })
     }
-
     // ------------------ Staff Invitation ------------------
     composable(Screen.StaffInvitation.route) { backStackEntry ->
       val organizationId =

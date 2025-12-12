@@ -1,134 +1,325 @@
 package ch.onepass.onepass.model.scan
 
 import com.google.android.gms.tasks.Tasks
+import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.FirebaseUser
+import com.google.firebase.auth.GetTokenResult
 import com.google.firebase.functions.FirebaseFunctions
 import com.google.firebase.functions.HttpsCallableReference
 import com.google.firebase.functions.HttpsCallableResult
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.mockkStatic
+import io.mockk.slot
+import io.mockk.unmockkAll
+import io.mockk.verify
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import kotlinx.coroutines.test.runTest
+import org.junit.After
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 
 class TicketScanRepositoryFirebaseTest {
 
-  private lateinit var functions: FirebaseFunctions
-  private lateinit var callable: HttpsCallableReference
-  private lateinit var result: HttpsCallableResult
-  private lateinit var repo: TicketScanRepositoryFirebase
+  private lateinit var mockAuth: FirebaseAuth
+  private lateinit var mockUser: FirebaseUser
+  private lateinit var mockFunctions: FirebaseFunctions
+  private lateinit var mockCallable: HttpsCallableReference
+  private lateinit var repository: TicketScanRepositoryFirebase
+
+  private val testQr = "onepass:user:v1.payload.signature"
+  private val testEventId = "event-123"
 
   @Before
-  fun setUp() {
-    functions = mockk(relaxed = true)
-    callable = mockk(relaxed = true)
-    result = mockk(relaxed = true)
+  fun setup() {
+    mockkStatic(FirebaseAuth::class)
+    mockAuth = mockk(relaxed = true)
+    mockUser = mockk(relaxed = true)
+    every { FirebaseAuth.getInstance() } returns mockAuth
+    every { mockAuth.currentUser } returns mockUser
 
-    // Real repo; inject mocked FirebaseFunctions via reflection (no DI changes needed)
-    repo = TicketScanRepositoryFirebase()
-    repo.javaClass.getDeclaredField("functions").apply {
-      isAccessible = true
-      set(repo, functions)
-    }
+    val mockTokenResult = mockk<GetTokenResult>(relaxed = true)
+    every { mockUser.getIdToken(any()) } returns Tasks.forResult(mockTokenResult)
 
-    every { functions.getHttpsCallable(any()) } returns callable
+    mockkStatic(FirebaseFunctions::class)
+    mockFunctions = mockk(relaxed = true)
+    mockCallable = mockk(relaxed = true)
+
+    every { FirebaseFunctions.getInstance() } returns mockFunctions
+    every { mockFunctions.getHttpsCallable(any()) } returns mockCallable
+
+    repository = TicketScanRepositoryFirebase()
+  }
+
+  @After
+  fun tearDown() {
+    unmockkAll()
+  }
+
+  private fun mockCloudFunctionResponse(responseData: Map<String, Any?>) {
+    val mockResult = mockk<HttpsCallableResult>()
+    every { mockResult.data } returns responseData
+    every { mockCallable.call(any()) } returns Tasks.forResult(mockResult)
+  }
+
+  // ========== Auth & Validation ==========
+
+  @Test
+  fun shouldFailWhenUserNotAuthenticated() = runTest {
+    every { mockAuth.currentUser } returns null
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertEquals("Please login to scan tickets", result.exceptionOrNull()?.message)
   }
 
   @Test
-  fun returnsAcceptedDecision() = runTest {
-    val data =
-        mapOf("status" to "accepted", "ticketId" to "T123", "scannedAt" to 111L, "remaining" to 2)
-    every { result.data } returns data
-    every { callable.call(any()) } returns Tasks.forResult(result)
-
-    val res = repo.validateByPass("qr", "event")
-
-    assertTrue(res.isSuccess)
-    val accepted = res.getOrNull() as ScanDecision.Accepted
-    assertEquals("T123", accepted.ticketId)
-    assertEquals(111L, accepted.scannedAtSeconds)
-    assertEquals(2, accepted.remaining)
+  fun shouldFailOnBlankQrOrEventId() = runTest {
+    assertTrue(repository.validateByPass("  ", testEventId).isFailure)
+    assertTrue(repository.validateByPass(testQr, "  ").isFailure)
   }
 
   @Test
-  fun acceptedDecisionHandlesIntNumbersAndNullRemaining() = runTest {
-    // scannedAt as Int, remaining absent
-    val data =
+  fun shouldHandleNetworkErrorDuringTokenRefresh() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(FirebaseNetworkException("Network error"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleFirebaseAuthException() = runTest {
+    val authException = Exception("FirebaseAuthException: Session expired")
+    every { mockUser.getIdToken(any()) } returns Tasks.forException(authException)
+
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Session expired") == true)
+  }
+
+  @Test
+  fun shouldHandleIOException() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(IOException("Connection failed"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleUnknownHostException() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(UnknownHostException("Unknown host"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleSocketTimeoutException() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(SocketTimeoutException("Timeout"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleGenericExceptionWithNetworkKeywords() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(RuntimeException("Network timeout occurred"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleGenericExceptionWithConnectionKeyword() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(RuntimeException("Connection interrupted"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleGenericExceptionWithInternetKeyword() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(RuntimeException("No internet available"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleGenericExceptionWithTimeoutKeyword() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(RuntimeException("Request timeout"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleGenericExceptionWithoutNetworkKeywords() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(RuntimeException("Some random error"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Session expired") == true)
+  }
+
+  // ========== Accepted Flow ==========
+
+  @Test
+  fun shouldReturnAcceptedWithAllFields() = runTest {
+    mockCloudFunctionResponse(
         mapOf(
-            "status" to "ACCEPTED", // uppercase to test lowercase() path
-            "ticketId" to "T999",
-            "scannedAt" to 321, // Int instead of Long
-            // no remaining
-        )
-    every { result.data } returns data
-    every { callable.call(any()) } returns Tasks.forResult(result)
+            "status" to "accepted",
+            "ticketId" to "ticket-456",
+            "scannedAt" to 1234567890L,
+            "remaining" to 42))
 
-    val res = repo.validateByPass("qr", "event")
+    val result = repository.validateByPass(testQr, testEventId)
 
-    assertTrue(res.isSuccess)
-    val accepted = res.getOrNull() as ScanDecision.Accepted
-    assertEquals("T999", accepted.ticketId)
-    assertEquals(321L, accepted.scannedAtSeconds) // Int → Long
-    assertNull(accepted.remaining) // missing → null
+    assertTrue(result.isSuccess)
+    val decision = result.getOrNull() as ScanDecision.Accepted
+    assertEquals("ticket-456", decision.ticketId)
+    assertEquals(1234567890L, decision.scannedAtSeconds)
+    assertEquals(42, decision.remaining)
   }
 
   @Test
-  fun returnsRejectedDecision() = runTest {
-    val data = mapOf("status" to "rejected", "reason" to "UNREGISTERED", "scannedAt" to 222L)
-    every { result.data } returns data
-    every { callable.call(any()) } returns Tasks.forResult(result)
+  fun shouldReturnAcceptedWithNullFields() = runTest {
+    mockCloudFunctionResponse(mapOf("status" to "accepted"))
 
-    val res = repo.validateByPass("qr", "event")
+    val decision =
+        repository.validateByPass(testQr, testEventId).getOrNull() as ScanDecision.Accepted
 
-    assertTrue(res.isSuccess)
-    val rejected = res.getOrNull() as ScanDecision.Rejected
-    assertEquals(ScanDecision.Reason.UNREGISTERED, rejected.reason)
-    assertEquals(222L, rejected.scannedAtSeconds)
+    assertNull(decision.ticketId)
+    assertNull(decision.scannedAtSeconds)
+    assertNull(decision.remaining)
+  }
+
+  // ========== Rejected Flow ==========
+
+  @Test
+  fun shouldReturnRejectedForAllReasons() = runTest {
+    val testCases =
+        mapOf(
+            "UNREGISTERED" to ScanDecision.Reason.UNREGISTERED,
+            "ALREADY_SCANNED" to ScanDecision.Reason.ALREADY_SCANNED,
+            "BAD_SIGNATURE" to ScanDecision.Reason.BAD_SIGNATURE,
+            "REVOKED" to ScanDecision.Reason.REVOKED,
+            "UNKNOWN_REASON" to ScanDecision.Reason.UNKNOWN)
+
+    for ((reasonStr, expectedReason) in testCases) {
+      mockCloudFunctionResponse(mapOf("status" to "rejected", "reason" to reasonStr))
+
+      val decision =
+          repository.validateByPass(testQr, testEventId).getOrNull() as ScanDecision.Rejected
+      assertEquals(expectedReason, decision.reason)
+    }
   }
 
   @Test
-  fun rejectedDecisionMapsUnknownReason() = runTest {
-    val data = mapOf("status" to "rejected", "reason" to "SOMETHING_WEIRD", "scannedAt" to 333L)
-    every { result.data } returns data
-    every { callable.call(any()) } returns Tasks.forResult(result)
+  fun shouldHandleLowercaseReasonAndMissingReason() = runTest {
+    mockCloudFunctionResponse(mapOf("status" to "rejected", "reason" to "unregistered"))
+    var decision =
+        repository.validateByPass(testQr, testEventId).getOrNull() as ScanDecision.Rejected
+    assertEquals(ScanDecision.Reason.UNREGISTERED, decision.reason)
 
-    val res = repo.validateByPass("qr", "event")
-
-    assertTrue(res.isSuccess)
-    val rejected = res.getOrNull() as ScanDecision.Rejected
-    assertEquals(ScanDecision.Reason.UNKNOWN, rejected.reason)
-    assertEquals(333L, rejected.scannedAtSeconds)
+    mockCloudFunctionResponse(mapOf("status" to "rejected"))
+    decision = repository.validateByPass(testQr, testEventId).getOrNull() as ScanDecision.Rejected
+    assertEquals(ScanDecision.Reason.UNKNOWN, decision.reason)
   }
 
   @Test
-  fun failsOnEmptyQr() = runTest {
-    val res = repo.validateByPass("", "event")
-    assertTrue(res.isFailure)
+  fun shouldIncludeScannedAtInRejectedResponse() = runTest {
+    mockCloudFunctionResponse(
+        mapOf("status" to "rejected", "reason" to "ALREADY_SCANNED", "scannedAt" to 1234567890L))
+
+    val decision =
+        repository.validateByPass(testQr, testEventId).getOrNull() as ScanDecision.Rejected
+    assertEquals(1234567890L, decision.scannedAtSeconds)
+  }
+
+  // ========== Error Handling ==========
+
+  @Test
+  fun shouldFailOnInvalidResponseFormat() = runTest {
+    val testCases = listOf("not a map", null, mapOf("noStatus" to "value"))
+
+    for (invalidData in testCases) {
+      val mockResult = mockk<HttpsCallableResult>()
+      every { mockResult.data } returns invalidData
+      every { mockCallable.call(any()) } returns Tasks.forResult(mockResult)
+
+      assertTrue(repository.validateByPass(testQr, testEventId).isFailure)
+    }
   }
 
   @Test
-  fun failsOnEmptyEventId() = runTest {
-    val res = repo.validateByPass("qr", "")
-    assertTrue(res.isFailure)
+  fun shouldPreserveCloudFunctionExceptions() = runTest {
+    val originalException = RuntimeException("CF error")
+    every { mockCallable.call(any()) } returns Tasks.forException(originalException)
+
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertEquals(originalException, result.exceptionOrNull())
   }
 
-  @Test
-  fun failsWhenMissingStatusInResponse() = runTest {
-    val data =
-        mapOf( // deliberately no "status"
-            "ticketId" to "T123")
-    every { result.data } returns data
-    every { callable.call(any()) } returns Tasks.forResult(result)
+  // ========== Function Call Verification ==========
 
-    val res = repo.validateByPass("qr", "event")
-    assertTrue(res.isFailure)
+  @Test
+  fun shouldCallCorrectFunctionWithCorrectParams() = runTest {
+    mockCloudFunctionResponse(mapOf("status" to "accepted"))
+
+    val payloadSlot = slot<Any>()
+    every { mockCallable.call(capture(payloadSlot)) } returns
+        Tasks.forResult(
+            mockk<HttpsCallableResult>().apply {
+              every { data } returns mapOf("status" to "accepted")
+            })
+
+    repository.validateByPass(testQr, testEventId)
+
+    verify { mockFunctions.getHttpsCallable("validateEntryByPassV2") }
+
+    val capturedPayload = payloadSlot.captured as Map<*, *>
+    assertEquals(testQr, capturedPayload["qrText"])
+    assertEquals(testEventId, capturedPayload["eventId"])
+
+    verify { mockUser.getIdToken(true) }
   }
 
-  @Test
-  fun returnsFailureWhenCloudFunctionThrows() = runTest {
-    every { callable.call(any()) } returns Tasks.forException(RuntimeException("CF down"))
+  // ========== Edge Cases ==========
 
-    val res = repo.validateByPass("qr", "event")
-    assertTrue(res.isFailure)
+  @Test
+  fun shouldHandleNumberTypesForNumericFields() = runTest {
+    mockCloudFunctionResponse(
+        mapOf("status" to "accepted", "scannedAt" to 123, "remaining" to 10.0))
+
+    val decision =
+        repository.validateByPass(testQr, testEventId).getOrNull() as ScanDecision.Accepted
+
+    assertEquals(123L, decision.scannedAtSeconds)
+    assertEquals(10, decision.remaining)
   }
 }
