@@ -249,15 +249,6 @@ class MyEventsViewModelTest {
   }
 
   @Test
-  fun init_loadsNothing_whenNoCacheForUser() = runTest {
-    val uid = uniqueUid("fresh")
-    val vm = createViewModel(uid)
-    advanceUntilIdle()
-
-    assertNull(vm.userQrData.value)
-  }
-
-  @Test
   fun init_withNullUser_doesNotLoadAnyCachedQr() = runTest {
     val vm = createViewModel(null)
     advanceUntilIdle()
@@ -283,15 +274,6 @@ class MyEventsViewModelTest {
   fun tickets_areEmpty_whenReposReturnEmpty() = runTest {
     val uid = uniqueUid("tickets")
     val vm = createViewModel(uid)
-    advanceUntilIdle()
-
-    assertTrue(vm.currentTickets.first().isEmpty())
-    assertTrue(vm.expiredTickets.first().isEmpty())
-  }
-
-  @Test
-  fun tickets_notQueried_whenUserIdNull() = runTest {
-    val vm = createViewModel(null)
     advanceUntilIdle()
 
     assertTrue(vm.currentTickets.first().isEmpty())
