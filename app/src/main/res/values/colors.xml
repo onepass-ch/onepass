@@ -32,9 +32,9 @@
     <!-- small Icon Colors -->
     <color name="icon_color_detailScreen">#C4C4C4</color>
     <!-- Status Colors -->
-    <color name="status_currently">#FF4C3D</color>
+    <color name="status_currently">#4CAF50</color>
     <color name="status_upcoming">#683F88</color>
-    <color name="status_expired">#FF202B</color>
+    <color name="status_expired">#6F6F6F</color>
 
     <!-- Tab Colors -->
     <color name="tab_selected">#BB86FC</color>

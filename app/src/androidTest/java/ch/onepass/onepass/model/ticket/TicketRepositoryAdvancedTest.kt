@@ -56,7 +56,10 @@ class TicketRepositoryAdvancedTest : FirestoreTestBase() {
 
     // Verify each state has correct count
     val activeTickets = ticketRepository.getActiveTickets(userId).first()
-    assertEquals("Should have 3 active tickets", 3, activeTickets.size)
+    assertEquals("Should have 2 active tickets", 2, activeTickets.size)
+    assertTrue(
+        "Active tickets should only contain ISSUED or TRANSFERRED",
+        activeTickets.all { it.state == TicketState.ISSUED || it.state == TicketState.TRANSFERRED })
 
     val expiredTickets = ticketRepository.getExpiredTickets(userId).first()
     assertEquals("Should have 2 expired tickets", 2, expiredTickets.size)
@@ -185,10 +188,13 @@ class TicketRepositoryAdvancedTest : FirestoreTestBase() {
     mixedTickets.forEach { ticketRepository.createTicket(it) }
 
     val activeTickets = ticketRepository.getActiveTickets(userId).first()
-    assertEquals("Should have 2 active tickets", 2, activeTickets.size)
+    assertEquals("Should have 1 active ticket", 1, activeTickets.size)
     assertTrue(
-        "All active tickets should be ISSUED or LISTED",
-        activeTickets.all { it.state == TicketState.ISSUED || it.state == TicketState.LISTED })
+        "All active tickets should be ISSUED or TRANSFERRED",
+        activeTickets.all { it.state == TicketState.ISSUED || it.state == TicketState.TRANSFERRED })
+    assertTrue(
+        "Listed tickets should not be treated as active",
+        activeTickets.none { it.state == TicketState.LISTED })
 
     val expiredTickets = ticketRepository.getExpiredTickets(userId).first()
     assertEquals("Should have 2 expired tickets", 2, expiredTickets.size)
