@@ -100,27 +100,32 @@ fun Ticket.computeUiStatus(
   return when (state) {
     TicketState.REDEEMED,
     TicketState.REVOKED -> TicketStatus.EXPIRED
-    else -> {
-      // Check if ticket has expired by its own expiration time
-      if (expiresAt != null && currentTime.seconds > expiresAt.seconds) {
-        TicketStatus.EXPIRED
-      }
-      // Check if event has ended
-      else if (event?.endTime != null && currentTime.seconds > event.endTime.seconds) {
-        TicketStatus.EXPIRED
-      }
-      // Check if event has started (use event start time if available, otherwise fall back to
-      // issuedAt)
-      else if (event?.startTime != null && currentTime.seconds >= event.startTime.seconds) {
-        TicketStatus.CURRENTLY
-      } else if (event?.startTime == null &&
-          issuedAt != null &&
-          currentTime.seconds >= issuedAt.seconds) {
-        // Fallback: if no event start time, use ticket issuedAt
-        TicketStatus.CURRENTLY
-      } else {
-        TicketStatus.UPCOMING
-      }
-    }
+    else ->
+        // Check if ticket has expired by its own expiration time
+        when {
+          expiresAt != null && currentTime.seconds > expiresAt.seconds -> {
+            TicketStatus.EXPIRED
+          }
+
+          // Check if event has ended
+          event?.endTime != null && currentTime.seconds > event.endTime.seconds -> {
+            TicketStatus.EXPIRED
+          }
+
+          // Check if event has started (use event start time if available, otherwise fall back to
+          // issuedAt)
+          event?.startTime != null && currentTime.seconds >= event.startTime.seconds -> {
+            TicketStatus.CURRENTLY
+          }
+          event?.startTime == null &&
+              issuedAt != null &&
+              currentTime.seconds >= issuedAt.seconds -> {
+            // Fallback: if no event start time, use ticket issuedAt
+            TicketStatus.CURRENTLY
+          }
+          else -> {
+            TicketStatus.UPCOMING
+          }
+        }
   }
 }

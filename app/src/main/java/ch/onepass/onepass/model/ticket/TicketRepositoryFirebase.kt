@@ -154,7 +154,7 @@ class TicketRepositoryFirebase : TicketRepository {
         Firebase.firestore
             .runTransaction { transaction ->
               val ticketRef = ticketsCollection.document(ticketId)
-              val ticketSnapshot = transaction.get(ticketRef)
+              val ticketSnapshot = transaction[ticketRef]
               val ticket = ticketSnapshot.toObject(Ticket::class.java)
 
               requireNotNull(ticket) { "Ticket not found" }
