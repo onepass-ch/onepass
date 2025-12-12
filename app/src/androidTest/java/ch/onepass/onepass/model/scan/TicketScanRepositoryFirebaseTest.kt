@@ -14,6 +14,9 @@ import io.mockk.mockkStatic
 import io.mockk.slot
 import io.mockk.unmockkAll
 import io.mockk.verify
+import java.io.IOException
+import java.net.SocketTimeoutException
+import java.net.UnknownHostException
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.*
@@ -88,6 +91,97 @@ class TicketScanRepositoryFirebaseTest {
 
     assertTrue(result.isFailure)
     assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleFirebaseAuthException() = runTest {
+    val authException = Exception("FirebaseAuthException: Session expired")
+    every { mockUser.getIdToken(any()) } returns Tasks.forException(authException)
+
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Session expired") == true)
+  }
+
+  @Test
+  fun shouldHandleIOException() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(IOException("Connection failed"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleUnknownHostException() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(UnknownHostException("Unknown host"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleSocketTimeoutException() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(SocketTimeoutException("Timeout"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleGenericExceptionWithNetworkKeywords() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(RuntimeException("Network timeout occurred"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleGenericExceptionWithConnectionKeyword() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(RuntimeException("Connection interrupted"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleGenericExceptionWithInternetKeyword() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(RuntimeException("No internet available"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleGenericExceptionWithTimeoutKeyword() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(RuntimeException("Request timeout"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Network connection failed") == true)
+  }
+
+  @Test
+  fun shouldHandleGenericExceptionWithoutNetworkKeywords() = runTest {
+    every { mockUser.getIdToken(any()) } returns
+        Tasks.forException(RuntimeException("Some random error"))
+    val result = repository.validateByPass(testQr, testEventId)
+
+    assertTrue(result.isFailure)
+    assertTrue(result.exceptionOrNull()?.message?.contains("Session expired") == true)
   }
 
   // ========== Accepted Flow ==========
