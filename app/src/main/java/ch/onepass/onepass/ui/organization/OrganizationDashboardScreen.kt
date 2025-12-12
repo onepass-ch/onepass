@@ -35,6 +35,7 @@ import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
+import ch.onepass.onepass.ui.theme.CardBackground
 import ch.onepass.onepass.ui.theme.EventDateColor
 import ch.onepass.onepass.ui.theme.TextSecondary
 import coil.compose.SubcomposeAsyncImage
@@ -180,12 +181,9 @@ private fun DashboardContent(
               .verticalScroll(scrollState)
               .padding(horizontal = 20.dp, vertical = 16.dp),
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        // Organization Summary Card
-        OrganizationSummaryCard(
-            organizationName = organization.name,
-            followers = organization.followerCount,
-            rating = organization.averageRating,
-            onClick = { onNavigateToProfile(organization.id) })
+        // Organization Card (using standard component)
+        OrganizationCard(
+            organization = organization, onClick = { onNavigateToProfile(organization.id) })
 
         // Manage Events Section
         ManageEventsSection(
@@ -201,83 +199,6 @@ private fun DashboardContent(
             currentUserRole = uiState.currentUserRole,
             onAddStaff = { onNavigateToAddStaff(organization.id) },
             onRemoveStaff = onRemoveStaff)
-      }
-}
-
-/**
- * Displays a summary card for the organization.
- *
- * @param organizationName The name of the organization.
- * @param followers The number of followers.
- * @param rating The average rating of the organization.
- * @param onClick Callback invoked when the card is clicked.
- */
-@Composable
-private fun OrganizationSummaryCard(
-    organizationName: String,
-    followers: Int,
-    rating: Float,
-    onClick: () -> Unit
-) {
-  Surface(
-      modifier =
-          Modifier.fillMaxWidth()
-              .shadow(elevation = 4.dp, shape = RoundedCornerShape(8.dp))
-              .clickable(onClick = onClick)
-              .testTag(OrganizationDashboardTestTags.ORG_SUMMARY_CARD),
-      shape = RoundedCornerShape(8.dp),
-      color = MaterialTheme.colorScheme.surfaceVariant) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-              // Placeholder for organization logo/image
-              Box(
-                  modifier =
-                      Modifier.size(72.dp)
-                          .background(
-                              MaterialTheme.colorScheme.surfaceContainer, RoundedCornerShape(6.dp)))
-
-              Spacer(modifier = Modifier.width(16.dp))
-
-              Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = organizationName.uppercase(Locale.getDefault()),
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.testTag(OrganizationDashboardTestTags.ORG_NAME))
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(16.dp),
-                    verticalAlignment = Alignment.CenterVertically) {
-                      Text(
-                          text = "${followers / 1000f}K FOLLOWERS",
-                          style = MaterialTheme.typography.bodyMedium,
-                          color = TextSecondary,
-                          modifier = Modifier.testTag(OrganizationDashboardTestTags.ORG_FOLLOWERS))
-
-                      Row(
-                          verticalAlignment = Alignment.CenterVertically,
-                          horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                            Icon(
-                                painter = painterResource(id = android.R.drawable.btn_star_big_on),
-                                contentDescription = "Rating",
-                                tint = EventDateColor,
-                                modifier = Modifier.size(16.dp))
-                            Text(
-                                text = rating.toString(),
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                                modifier =
-                                    Modifier.testTag(OrganizationDashboardTestTags.ORG_RATING))
-                          }
-                    }
-              }
-            }
       }
 }
 
@@ -337,7 +258,7 @@ private fun ManageEventsSection(
                     .clickable { eventsExpanded = !eventsExpanded }
                     .testTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN),
             shape = RoundedCornerShape(6.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant) {
+            color = CardBackground) {
               Column {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -547,7 +468,7 @@ private fun ManageStaffSection(
                     .clickable { staffExpanded = !staffExpanded }
                     .testTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN),
             shape = RoundedCornerShape(6.dp),
-            color = MaterialTheme.colorScheme.surfaceVariant) {
+            color = CardBackground) {
               Column {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
