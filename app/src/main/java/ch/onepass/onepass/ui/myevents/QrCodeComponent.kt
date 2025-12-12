@@ -9,6 +9,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -82,7 +83,10 @@ fun QrCodeComponent(
           modifier
               .fillMaxWidth()
               .size(animatedHeight, animatedHeight)
-              .clickable { onToggleExpanded() }
+              .clickable(
+                  interactionSource = remember { MutableInteractionSource() }, indication = null) {
+                    onToggleExpanded()
+                  }
               .testTag(MyEventsTestTags.QR_CODE_CARD),
       shape = RoundedCornerShape(16.dp),
       colors = CardDefaults.cardColors(containerColor = colorResource(id = R.color.background))) {
