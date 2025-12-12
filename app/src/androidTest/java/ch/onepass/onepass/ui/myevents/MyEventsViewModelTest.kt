@@ -8,6 +8,7 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
+import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.pass.Pass
 import ch.onepass.onepass.model.pass.PassRepository
@@ -15,10 +16,14 @@ import ch.onepass.onepass.model.payment.MarketplacePaymentIntentResponse
 import ch.onepass.onepass.model.payment.PaymentRepository
 import ch.onepass.onepass.model.ticket.Ticket
 import ch.onepass.onepass.model.ticket.TicketRepository
+import ch.onepass.onepass.model.ticket.TicketState
+import com.google.firebase.Timestamp
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import io.mockk.verify
+import java.text.SimpleDateFormat
+import java.util.Locale
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -433,6 +438,76 @@ class MyEventsViewModelTest {
     assertTrue(uiState.expiredTickets.isNotEmpty())
   }
 
+  // ==================== LISTED TICKETS ====================
+
+  @Test
+  fun enrichListedTickets_populatesListedUiState() = runTest {
+    val listedAt = Timestamp(1_735_680_000, 0)
+    val event =
+        Event(
+            eventId = "event-listed",
+            title = "Listed Showcase",
+            location = Location(name = "Basel"),
+            startTime = listedAt)
+    val ticket =
+        Ticket(
+            ticketId = "listed-ticket",
+            eventId = event.eventId,
+            ownerId = "user",
+            state = TicketState.LISTED,
+            purchasePrice = 40.0,
+            listingPrice = 55.0,
+            listedAt = listedAt,
+            currency = "EUR")
+
+    val vm =
+        createViewModel(
+            uid = "user",
+            ticketRepository = ListedTicketsRepo(listOf(ticket)),
+            eventRepository = SingleEventRepository(event))
+    advanceUntilIdle()
+
+    val listed = vm.uiState.value.listedTickets.single()
+    val expectedDate =
+        SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(listedAt.toDate())
+
+    assertEquals("Listed Showcase", listed.eventTitle)
+    assertEquals(event.displayDateTime, listed.eventDate)
+    assertEquals("Basel", listed.eventLocation)
+    assertEquals(55.0, listed.listingPrice, 0.0)
+    assertEquals(40.0, listed.originalPrice, 0.0)
+    assertEquals("EUR", listed.currency)
+    assertEquals(expectedDate, listed.listedAt)
+  }
+
+  @Test
+  fun enrichListedTickets_handlesMissingEventGracefully() = runTest {
+    val ticket =
+        Ticket(
+            ticketId = "listed-missing-event",
+            eventId = "missing",
+            ownerId = "user",
+            state = TicketState.LISTED,
+            purchasePrice = 10.0,
+            listingPrice = 15.0,
+            listedAt = null,
+            currency = "USD")
+
+    val vm =
+        createViewModel(
+            uid = "user",
+            ticketRepository = ListedTicketsRepo(listOf(ticket)),
+            eventRepository = SingleEventRepository(null))
+    advanceUntilIdle()
+
+    val listed = vm.uiState.value.listedTickets.single()
+
+    assertEquals("Unknown Event", listed.eventTitle)
+    assertEquals("Date not set", listed.eventDate)
+    assertEquals("Unknown Location", listed.eventLocation)
+    assertEquals("Recently", listed.listedAt)
+  }
+
   // ==================== MARKET & PAYMENT ====================
 
   @Test
@@ -587,4 +662,68 @@ class MyEventsViewModelTest {
     assertTrue(vm.currentTickets.first().isEmpty())
     assertTrue(vm.expiredTickets.first().isEmpty())
   }
+}
+
+private class ListedTicketsRepo(private val tickets: List<Ticket>) : TicketRepository {
+  override fun getActiveTickets(userId: String) = flowOf(emptyList<Ticket>())
+
+  override fun getExpiredTickets(userId: String) = flowOf(emptyList<Ticket>())
+
+  override fun getTicketsByUser(userId: String) = flowOf(emptyList<Ticket>())
+
+  override fun getListedTicketsByUser(userId: String) = flowOf(tickets)
+
+  override fun getListedTickets() = flowOf(emptyList<Ticket>())
+
+  override fun getListedTicketsByEvent(eventId: String) = flowOf(emptyList<Ticket>())
+
+  override fun getTicketById(ticketId: String) = flowOf<Ticket?>(null)
+
+  override suspend fun createTicket(ticket: Ticket) = Result.success(ticket.ticketId)
+
+  override suspend fun updateTicket(ticket: Ticket) = Result.success(Unit)
+
+  override suspend fun deleteTicket(ticketId: String) = Result.success(Unit)
+
+  override suspend fun listTicketForSale(ticketId: String, askingPrice: Double) =
+      Result.success(Unit)
+
+  override suspend fun cancelTicketListing(ticketId: String) = Result.success(Unit)
+
+  override suspend fun purchaseListedTicket(ticketId: String, buyerId: String) =
+      Result.success(Unit)
+}
+
+private class SingleEventRepository(private val event: Event?) : EventRepository {
+  override fun getEventById(eventId: String) =
+      flowOf(if (event?.eventId == eventId) event else null)
+
+  override fun getAllEvents() = flowOf(event?.let { listOf(it) } ?: emptyList())
+
+  override fun searchEvents(query: String) =
+      flowOf(event?.takeIf { it.title.contains(query) }?.let { listOf(it) } ?: emptyList())
+
+  override fun getEventsByOrganization(orgId: String) = flowOf(emptyList<Event>())
+
+  override fun getEventsByLocation(center: Location, radiusKm: Double) = flowOf(emptyList<Event>())
+
+  override fun getEventsByTag(tag: String) = flowOf(emptyList<Event>())
+
+  override fun getFeaturedEvents() = flowOf(event?.let { listOf(it) } ?: emptyList())
+
+  override fun getEventsByStatus(status: ch.onepass.onepass.model.event.EventStatus) =
+      flowOf(emptyList<Event>())
+
+  override suspend fun createEvent(event: Event) = Result.success(event.eventId)
+
+  override suspend fun updateEvent(event: Event) = Result.success(Unit)
+
+  override suspend fun deleteEvent(eventId: String) = Result.success(Unit)
+
+  override suspend fun addEventImage(eventId: String, imageUrl: String) = Result.success(Unit)
+
+  override suspend fun removeEventImage(eventId: String, imageUrl: String) = Result.success(Unit)
+
+  override suspend fun updateEventImages(eventId: String, imageUrls: List<String>) =
+      Result.success(Unit)
 }
