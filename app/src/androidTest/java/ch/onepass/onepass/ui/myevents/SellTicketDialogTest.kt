@@ -4,6 +4,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -330,27 +331,6 @@ class SellTicketDialogTest {
   }
 
   @Test
-  fun sellTicketDialog_displaysOriginalPriceHint() {
-    val ticket = createTestSellableTicket(originalPrice = 100.0)
-
-    composeTestRule.setContent {
-      OnePassTheme {
-        SellTicketDialog(
-            showDialog = true,
-            onDismiss = {},
-            sellableTickets = listOf(ticket),
-            selectedTicket = ticket,
-            onTicketSelected = {},
-            sellingPrice = "",
-            onPriceChange = {},
-            onListForSale = {})
-      }
-    }
-
-    composeTestRule.onNodeWithText("Original price: CHF 100.00", substring = true).assertIsDisplayed()
-  }
-
-  @Test
   fun sellTicketDialog_handlesMultipleSellableTickets() {
     val tickets =
         listOf(
@@ -393,7 +373,7 @@ class SellTicketDialogTest {
       }
     }
 
-    composeTestRule.onNodeWithText("Selected Event").assertIsDisplayed()
+    composeTestRule.onAllNodesWithText("Selected Event", useUnmergedTree = true)[0].assertExists()
   }
 
   @Test

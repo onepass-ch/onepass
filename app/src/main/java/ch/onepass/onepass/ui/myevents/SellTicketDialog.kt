@@ -54,7 +54,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.MarcFontFamily
-import ch.onepass.onepass.utils.FormatUtils.formatPrice
+import ch.onepass.onepass.utils.FormatUtils.formatPriceCompact
 
 /**
  * Bottom sheet dialog for selling a ticket with dropdown ticket selection.
@@ -250,7 +250,7 @@ fun SellTicketDialog(
 
                 // Original price hint
                 Text(
-                    text = "Original price: CHF ${formatPrice(selectedTicket.originalPrice)}",
+                    text = "Original price: CHF ${formatPriceCompact(selectedTicket.originalPrice)}",
                     style = MaterialTheme.typography.bodySmall,
                     color = colorResource(id = R.color.gray))
               }
@@ -511,7 +511,7 @@ private fun SelectedTicketPreview(ticket: SellableTicket) {
                     style = MaterialTheme.typography.labelSmall,
                     color = colorResource(id = R.color.gray))
                 Text(
-                    text = "CHF ${formatPrice(ticket.originalPrice)}",
+                    text = "CHF ${formatPriceCompact(ticket.originalPrice)}",
                     style =
                         MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = colorResource(id = R.color.on_background))

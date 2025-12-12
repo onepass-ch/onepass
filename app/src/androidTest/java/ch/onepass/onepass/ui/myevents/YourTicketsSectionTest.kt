@@ -67,7 +67,7 @@ class YourTicketsSectionTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_CURRENT).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Current").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_CURRENT).assertIsDisplayed()
   }
 
   @Test
@@ -305,7 +305,11 @@ class YourTicketsSectionTest {
       }
     }
 
-    composeTestRule.onNodeWithText("Current").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_CURRENT).assertIsDisplayed()
+
+    composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_EXPIRED).performClick()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_EXPIRED).assertIsDisplayed()
   }
 
   @Test
@@ -325,7 +329,7 @@ class YourTicketsSectionTest {
       }
     }
 
-    composeTestRule.onNodeWithTag(MyEventsTestTags.QR_CODE_ICON).performClick()
+    composeTestRule.onNodeWithTag(MyEventsTestTags.QR_CODE_CARD).performClick()
     assert(qrExpanded)
   }
 

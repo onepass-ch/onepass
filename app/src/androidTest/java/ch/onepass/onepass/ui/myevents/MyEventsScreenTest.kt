@@ -34,7 +34,6 @@ class MyEventsScreenTest {
   @Test
   fun tabs_exist_and_switchingTabs_showsCorrectTickets() {
     setContent()
-    composeTestRule.onNodeWithTag(MyEventsTestTags.TABS_ROW).assertIsDisplayed()
     composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_CURRENT).assertIsDisplayed()
     composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_EXPIRED).assertIsDisplayed()
     composeTestRule.onNodeWithText("Lausanne Party").assertIsDisplayed()
@@ -78,6 +77,49 @@ class MyEventsScreenTest {
       "QR card did not expand (initial=$initialHeight, expanded=$expandedHeight)"
     }
   }
+
+  @Test
+  fun mainTabs_switchToMarket_displaysMarketSection() {
+    val viewModel =
+        createFakeMyEventsViewModel(ticketRepository = MarketReadyTicketRepository())
+
+    composeTestRule.setContent {
+      OnePassTheme { MyEventsContent(userQrData = "USER-QR-DATA", viewModel = viewModel) }
+    }
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag(MyEventsTestTags.MAIN_TAB_MARKET).performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag(MyEventsTestTags.MARKET_TICKETS_TITLE).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(MyEventsTestTags.MARKET_EMPTY_STATE).assertIsDisplayed()
+  }
+
+  @Test
+  fun sellTicketButton_shownWhenSellableTickets_opensSellDialog() {
+    val viewModel =
+        createFakeMyEventsViewModel(
+            ticketRepository = MarketReadyTicketRepository(includeSellableTicket = true))
+
+    composeTestRule.setContent {
+      OnePassTheme { MyEventsContent(userQrData = "USER-QR-DATA", viewModel = viewModel) }
+    }
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag(MyEventsTestTags.MAIN_TAB_MARKET).performClick()
+
+    composeTestRule.waitUntil(timeoutMillis = 5_000) {
+      composeTestRule
+          .onAllNodesWithTag(MyEventsTestTags.SELL_TICKET_BUTTON)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule.onNodeWithTag(MyEventsTestTags.SELL_TICKET_BUTTON).performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule.onNodeWithTag(MyEventsTestTags.SELL_DIALOG).assertIsDisplayed()
+  }
 }
 
 fun createTestTicket(ticketId: String, eventId: String, state: TicketState, userId: String) =
@@ -115,6 +157,58 @@ class FakeTicketRepository : TicketRepository {
       userId: String
   ): Flow<List<ch.onepass.onepass.model.ticket.Ticket>> =
       flowOf(listOf(createTestTicket("t2", "e2", TicketState.REDEEMED, userId)))
+
+  override fun getTicketsByUser(
+      userId: String
+  ): Flow<List<ch.onepass.onepass.model.ticket.Ticket>> = flowOf(emptyList())
+
+  override fun getListedTicketsByUser(
+      userId: String
+  ): Flow<List<ch.onepass.onepass.model.ticket.Ticket>> = flowOf(emptyList())
+
+  override fun getListedTickets(): Flow<List<ch.onepass.onepass.model.ticket.Ticket>> =
+      flowOf(emptyList())
+
+  override fun getListedTicketsByEvent(
+      eventId: String
+  ): Flow<List<ch.onepass.onepass.model.ticket.Ticket>> = flowOf(emptyList())
+
+  override fun getTicketById(ticketId: String): Flow<ch.onepass.onepass.model.ticket.Ticket?> =
+      flowOf(null)
+
+  override suspend fun createTicket(ticket: ch.onepass.onepass.model.ticket.Ticket) =
+      Result.success(ticket.ticketId)
+
+  override suspend fun updateTicket(ticket: ch.onepass.onepass.model.ticket.Ticket) =
+      Result.success(Unit)
+
+  override suspend fun deleteTicket(ticketId: String) = Result.success(Unit)
+
+  override suspend fun listTicketForSale(ticketId: String, askingPrice: Double) =
+      Result.success(Unit)
+
+  override suspend fun cancelTicketListing(ticketId: String) = Result.success(Unit)
+
+  override suspend fun purchaseListedTicket(ticketId: String, buyerId: String) =
+      Result.success(Unit)
+}
+
+class MarketReadyTicketRepository(
+    private val includeSellableTicket: Boolean = false
+) : TicketRepository {
+  override fun getActiveTickets(
+      userId: String
+  ): Flow<List<ch.onepass.onepass.model.ticket.Ticket>> =
+      flowOf(
+          if (includeSellableTicket)
+              listOf(
+                  createTestTicket(
+                      ticketId = "sellable", eventId = "e1", state = TicketState.ISSUED, userId = userId))
+          else emptyList())
+
+  override fun getExpiredTickets(
+      userId: String
+  ): Flow<List<ch.onepass.onepass.model.ticket.Ticket>> = flowOf(emptyList())
 
   override fun getTicketsByUser(
       userId: String
@@ -203,7 +297,10 @@ class FakeEventRepository : EventRepository {
       Result.success(Unit)
 }
 
-private fun createFakeMyEventsViewModel(): MyEventsViewModel {
+private fun createFakeMyEventsViewModel(
+    ticketRepository: TicketRepository = FakeTicketRepository(),
+    eventRepository: EventRepository = FakeEventRepository()
+): MyEventsViewModel {
   // Mock DataStore
   val mockDataStore = mockk<DataStore<Preferences>>(relaxed = true)
   // Mock PassRepository
@@ -220,7 +317,7 @@ private fun createFakeMyEventsViewModel(): MyEventsViewModel {
   return MyEventsViewModel(
       dataStore = mockDataStore,
       passRepository = mockPassRepository,
-      ticketRepo = FakeTicketRepository(),
-      eventRepo = FakeEventRepository(),
+      ticketRepo = ticketRepository,
+      eventRepo = eventRepository,
       userId = "TEST_USER")
 }

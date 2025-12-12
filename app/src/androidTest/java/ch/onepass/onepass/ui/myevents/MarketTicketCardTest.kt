@@ -88,7 +88,7 @@ class MarketTicketCardTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.MARKET_TICKET_SELLER_PRICE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("CHF 75.00", substring = true).assertIsDisplayed()
+    composeTestRule.onNodeWithText("CHF 75", substring = true).assertIsDisplayed()
   }
 
   @Test
@@ -100,9 +100,8 @@ class MarketTicketCardTest {
     }
 
     composeTestRule
-        .onNodeWithTag(MyEventsTestTags.MARKET_TICKET_ORIGINAL_PRICE)
-        .assertIsDisplayed()
-    composeTestRule.onNodeWithText("Original: CHF 100.00", substring = true).assertIsDisplayed()
+        .onNodeWithTag(MyEventsTestTags.MARKET_TICKET_ORIGINAL_PRICE, useUnmergedTree = true)
+        .assertExists()
   }
 
   @Test

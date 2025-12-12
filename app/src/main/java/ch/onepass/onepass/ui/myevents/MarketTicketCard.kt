@@ -37,7 +37,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.MarcFontFamily
-import ch.onepass.onepass.utils.FormatUtils.formatPrice
+import ch.onepass.onepass.utils.FormatUtils.formatPriceCompact
 import coil.compose.AsyncImage
 
 /**
@@ -141,7 +141,7 @@ fun MarketTicketCard(
                       Column {
                         // Seller price (highlighted)
                         Text(
-                            text = "${marketTicket.currency} ${formatPrice(marketTicket.sellerPrice)}",
+                            text = "${marketTicket.currency} ${formatPriceCompact(marketTicket.sellerPrice)}",
                             style =
                                 MaterialTheme.typography.titleMedium.copy(
                                     fontWeight = FontWeight.Bold),
@@ -152,7 +152,7 @@ fun MarketTicketCard(
                         if (marketTicket.originalPrice != marketTicket.sellerPrice) {
                           Text(
                               text =
-                                  "Original: ${marketTicket.currency} ${formatPrice(marketTicket.originalPrice)}",
+                                  "Original: ${marketTicket.currency} ${formatPriceCompact(marketTicket.originalPrice)}",
                               style =
                                   MaterialTheme.typography.bodySmall.copy(
                                       textDecoration = TextDecoration.LineThrough),
