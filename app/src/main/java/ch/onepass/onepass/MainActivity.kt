@@ -106,6 +106,7 @@ class MainActivity : ComponentActivity() {
     paymentSheet =
         if (stripePublishableKey.isNotEmpty()) {
           createPaymentSheet(this)
+
         } else {
           null
         }
