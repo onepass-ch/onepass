@@ -98,4 +98,61 @@ class ProfileScreenComposeTest {
     compose.onNodeWithTag(ProfileTestTags.HEADER_AVATAR).assertDoesNotExist()
     compose.onNodeWithText("WS").assertIsDisplayed()
   }
+
+  @Test
+  fun invitationsBadge_notShownWhenCountIsZero() {
+    val state =
+        ProfileUiState(
+            displayName = "Test User",
+            email = "test@email.com",
+            initials = "TU",
+            pendingInvitations = 0, // Zero invitations
+            loading = false)
+    val fakeVm = FakeProfileViewModel(state)
+
+    compose.setContent { ProfileScreen(viewModel = fakeVm, onEffect = {}) }
+
+    // Badge should not exist when count is 0
+    compose.onNodeWithTag(ProfileTestTags.SETTINGS_INVITATIONS_BADGE).assertDoesNotExist()
+  }
+
+  @Test
+  fun invitationsBadge_shownWhenCountIsGreaterThanZero() {
+    val state =
+        ProfileUiState(
+            displayName = "Test User",
+            email = "test@email.com",
+            initials = "TU",
+            pendingInvitations = 3, // 3 pending invitations
+            loading = false)
+    val fakeVm = FakeProfileViewModel(state)
+
+    compose.setContent { ProfileScreen(viewModel = fakeVm, onEffect = {}) }
+
+    // Badge should be displayed - use useUnmergedTree = true
+    compose
+        .onNodeWithTag(ProfileTestTags.SETTINGS_INVITATIONS_BADGE, useUnmergedTree = true)
+        .assertIsDisplayed()
+    // Badge should show the correct count
+    compose.onNodeWithText("3", useUnmergedTree = true).assertIsDisplayed()
+  }
+
+  @Test
+  fun invitationsBadge_displaysCorrectCount() {
+    val state =
+        ProfileUiState(
+            displayName = "Test User",
+            email = "test@email.com",
+            initials = "TU",
+            pendingInvitations = 15, // 15 pending invitations
+            loading = false)
+    val fakeVm = FakeProfileViewModel(state)
+
+    compose.setContent { ProfileScreen(viewModel = fakeVm, onEffect = {}) }
+
+    compose
+        .onNodeWithTag(ProfileTestTags.SETTINGS_INVITATIONS_BADGE, useUnmergedTree = true)
+        .assertIsDisplayed()
+    compose.onNodeWithText("15", useUnmergedTree = true).assertIsDisplayed()
+  }
 }
