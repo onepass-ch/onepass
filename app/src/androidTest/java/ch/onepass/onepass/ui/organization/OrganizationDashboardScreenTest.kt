@@ -666,4 +666,44 @@ class OrganizationDashboardScreenTest {
         .onNodeWithTag(OrganizationDashboardTestTags.getEventEditButtonTag("event-1"))
         .assertIsDisplayed()
   }
+
+  @Test
+  fun organizationDashboardScreen_displaysAdminRole() {
+    val adminMembership =
+        OrganizationDashboardTestData.createTestMembership(
+            userId = "admin-user", role = OrganizationRole.ADMIN)
+    val (mockAuth, _) = OrganizationDashboardTestData.createMockAuth("admin-user")
+
+    val viewModel =
+        OrganizationDashboardViewModel(
+            organizationRepository = MockOrganizationRepository(organization = testOrg),
+            eventRepository = MockEventRepository(),
+            membershipRepository = MockMembershipRepository(listOf(adminMembership)),
+            userRepository = MockUserRepository(),
+            auth = mockAuth)
+
+    setScreen(viewModel = viewModel)
+    waitForTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN)
+    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN).performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule
+          .onAllNodes(
+              hasText("ADMIN") and
+                  hasAnyAncestor(
+                      hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("admin-user"))),
+              useUnmergedTree = true)
+          .fetchSemanticsNodes()
+          .isNotEmpty()
+    }
+
+    composeTestRule
+        .onNode(
+            hasText("ADMIN") and
+                hasAnyAncestor(
+                    hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("admin-user"))),
+            useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
 }

@@ -243,6 +243,9 @@ dependencies {
     // ------------- GeoFirestore ------------------
     implementation(libs.geofirestore.android)
 
+    // ---------- Apache Commons Text ------------
+    implementation(libs.commons.text)
+
     // --------- Coroutines Test Support ---------
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")
     androidTestImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3")

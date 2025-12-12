@@ -1,5 +1,6 @@
 package ch.onepass.onepass
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -12,7 +13,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
@@ -30,6 +35,7 @@ import ch.onepass.onepass.ui.auth.AuthViewModel
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.navigation.AppNavHost
 import ch.onepass.onepass.ui.navigation.BottomNavigationBar
+import ch.onepass.onepass.ui.navigation.DeepLinkHandler
 import ch.onepass.onepass.ui.navigation.NavigationDestinations
 import ch.onepass.onepass.ui.navigation.navigateToTopLevel
 import ch.onepass.onepass.ui.payment.LocalPaymentSheet
@@ -41,6 +47,7 @@ import com.mapbox.common.MapboxOptions
 import com.onesignal.OneSignal
 import com.onesignal.debug.LogLevel
 import com.stripe.android.PaymentConfiguration
+import com.stripe.android.paymentsheet.PaymentSheet
 import kotlinx.coroutines.launch
 
 /**
@@ -52,6 +59,8 @@ class MainActivity : ComponentActivity() {
   private val deviceTokenRepository by lazy { DeviceTokenRepositoryFirebase() }
   private lateinit var authStateListener: FirebaseAuth.AuthStateListener
   private lateinit var deviceTokenManager: DeviceTokenManager
+  private var newIntent by mutableStateOf<Intent?>(null)
+  private var paymentSheet: PaymentSheet? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
@@ -94,7 +103,7 @@ class MainActivity : ComponentActivity() {
     }
 
     // Create PaymentSheet instance early in onCreate to avoid lifecycle registration issues
-    val paymentSheet =
+    paymentSheet =
         if (stripePublishableKey.isNotEmpty()) {
           createPaymentSheet(this)
         } else {
@@ -103,9 +112,20 @@ class MainActivity : ComponentActivity() {
 
     setContent {
       OnePassTheme {
-        CompositionLocalProvider(LocalPaymentSheet provides paymentSheet) { MainActivityContent() }
+        CompositionLocalProvider(LocalPaymentSheet provides paymentSheet) {
+          MainActivityContent(newIntent)
+        }
       }
     }
+  }
+
+  override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+
+    Log.d("MainActivity", "onNewIntent called with: ${intent.data}")
+
+    newIntent = intent
+    setIntent(newIntent)
   }
 
   override fun onDestroy() {
@@ -120,11 +140,13 @@ class MainActivity : ComponentActivity() {
  * ViewModel state collection, and theming for the app.
  */
 @Composable
-internal fun MainActivityContent() {
+internal fun MainActivityContent(intentToCheck: Intent? = null, enableDeepLinking: Boolean = true) {
   Surface(
       modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
       color = MaterialTheme.colorScheme.background) {
-        OnePassApp() // Let each map screen create its own ViewModel
+        OnePassApp(
+            initialIntent = intentToCheck,
+            enableDeepLinking = enableDeepLinking) // Let each map screen create its own ViewModel
   }
 }
 
@@ -148,7 +170,9 @@ fun OnePassApp(
     navController: NavHostController = rememberNavController(),
     profileViewModelFactory: ViewModelProvider.Factory? = viewModelFactory {
       initializer { ProfileViewModel() }
-    }
+    },
+    initialIntent: Intent? = null,
+    enableDeepLinking: Boolean = true
 ) {
   // Which route are we on?
   val backstack by navController.currentBackStackEntryAsState()
@@ -157,7 +181,17 @@ fun OnePassApp(
   // Show bottom bar only on top-level destinations
   val topLevelRoutes = NavigationDestinations.tabs.map { it.destination.route }
   val showBottomBar = currentRoute in topLevelRoutes
+  var currentIntent by remember { mutableStateOf(initialIntent) }
 
+  LaunchedEffect(initialIntent) { currentIntent = initialIntent }
+  if (enableDeepLinking) {
+    LaunchedEffect(currentIntent) {
+      DeepLinkHandler.setupNotificationClickListener(navController, coroutineScope = this)
+      if (currentIntent != null) {
+        DeepLinkHandler.handleIntent(currentIntent, navController)
+      }
+    }
+  }
   Scaffold(
       bottomBar = {
         if (showBottomBar) {

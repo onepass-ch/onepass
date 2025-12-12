@@ -45,6 +45,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
+import ch.onepass.onepass.ui.theme.PurplePrimary
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.flow.collectLatest
@@ -66,6 +67,7 @@ object ProfileTestTags {
   const val ORG_CTA = "profile_org_cta"
   const val SETTINGS_ACCOUNT = "profile_settings_account"
   const val SETTINGS_INVITATIONS = "profile_settings_invitations"
+  const val SETTINGS_INVITATIONS_BADGE = "profile_settings_invitations_badge"
   const val SETTINGS_PAYMENTS = "profile_settings_payments"
   const val SETTINGS_HELP = "profile_settings_help"
   const val SETTINGS_SIGN_OUT = "profile_settings_sign_out"
@@ -156,7 +158,8 @@ private fun ProfileContent(
               title = "My Invitations",
               titleColor = colorResource(id = R.color.white),
               onClick = onInvitations,
-              testTag = ProfileTestTags.SETTINGS_INVITATIONS)
+              testTag = ProfileTestTags.SETTINGS_INVITATIONS,
+              badgeCount = state.pendingInvitations)
           SettingsItem(
               icon = Icons.Outlined.AccountCircle,
               title = "Account Settings",
@@ -324,7 +327,25 @@ private fun OrganizerCard(isOrganizer: Boolean, onOrganizationButton: () -> Unit
     }
   }
 }
-
+/** Displays a circular badge with a count, styled in purple. Only displays when count > 0. */
+@Composable
+private fun BadgeCount(count: Int, modifier: Modifier = Modifier) {
+  if (count > 0) {
+    Box(
+        modifier =
+            modifier
+                .background(color = PurplePrimary, shape = CircleShape)
+                .padding(horizontal = 8.dp, vertical = 4.dp)
+                .testTag(ProfileTestTags.SETTINGS_INVITATIONS_BADGE),
+        contentAlignment = Alignment.Center) {
+          Text(
+              text = count.toString(),
+              color = Color.White,
+              style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+              maxLines = 1)
+        }
+  }
+}
 /** List item used for settings actions. */
 @Composable
 private fun SettingsItem(
@@ -332,14 +353,15 @@ private fun SettingsItem(
     title: String,
     titleColor: Color,
     onClick: () -> Unit,
-    testTag: String
+    testTag: String,
+    badgeCount: Int = 0
 ) {
   Row(
       modifier =
           Modifier.fillMaxWidth()
               .heightIn(min = 52.dp)
               .clickable(onClick = onClick)
-              .semantics {
+              .semantics(mergeDescendants = false) {
                 role = Role.Button
                 this.contentDescription = title
               }
@@ -351,6 +373,13 @@ private fun SettingsItem(
             contentDescription = null,
             tint = colorResource(id = R.color.profile_settings_icon))
         Spacer(Modifier.width(16.dp))
-        Text(title, color = titleColor, style = MaterialTheme.typography.bodyLarge)
+        Text(
+            title,
+            color = titleColor,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.weight(1f))
+        if (badgeCount > 0) {
+          BadgeCount(count = badgeCount)
+        }
       }
 }

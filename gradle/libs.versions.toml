@@ -1,6 +1,7 @@
 [versions]
 androidx-navigation = "2.7.7"
 agp = "8.3.0"
+commonsText = "1.12.0"
 kotlin = "1.9.10"
 coreKtx = "1.12.0"
 ktfmt = "0.17.0"
@@ -35,6 +36,7 @@ camerax-core = { module = "androidx.camera:camera-core", version.ref = "camerax"
 camerax-camera2 = { module = "androidx.camera:camera-camera2", version.ref = "camerax" }
 camerax-lifecycle = { module = "androidx.camera:camera-lifecycle", version.ref = "camerax" }
 camerax-view = { module = "androidx.camera:camera-view", version.ref = "camerax" }
+commons-text = { module = "org.apache.commons:commons-text", version.ref = "commonsText" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
 firebase-functions-ktx = { module = "com.google.firebase:firebase-functions-ktx" }
 kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version = "1.7.3" }

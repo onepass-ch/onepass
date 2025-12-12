@@ -5,37 +5,60 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.colorResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
+import ch.onepass.onepass.model.organization.OrganizationRole
+import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.model.user.UserSearchType
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
+import kotlinx.coroutines.launch
 
 object StaffInvitationTestTags {
   const val SCREEN = "staffInvitation_screen"
@@ -50,6 +73,12 @@ object StaffInvitationTestTags {
   const val EMPTY_STATE = "staffInvitation_emptyState"
   const val LOADING_INDICATOR = "staffInvitation_loadingIndicator"
   const val ERROR_MESSAGE = "staffInvitation_errorMessage"
+  const val CONFIRMATION_DIALOG = "staffInvitation_confirmationDialog"
+  const val ROLE_DROPDOWN = "staffInvitation_roleDropdown"
+  const val CONFIRM_BUTTON = "staffInvitation_confirmButton"
+  const val CANCEL_BUTTON = "staffInvitation_cancelButton"
+  const val PERMISSION_DENIED_DIALOG = "staffInvitation_permissionDeniedDialog"
+  const val INVITATION_RESULT_DIALOG = "staffInvitation_invitationResultDialog"
 }
 
 /**
@@ -65,12 +94,24 @@ fun StaffInvitationScreen(
     onNavigateBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-  val uiState by viewModel.uiState.collectAsState()
+  val uiState = viewModel.uiState.collectAsState().value
+  val snackbarHostState = remember { SnackbarHostState() }
+  val scope = rememberCoroutineScope()
+
+  LaunchedEffect(uiState.snackbarMessage) {
+    uiState.snackbarMessage?.let { message ->
+      scope.launch {
+        snackbarHostState.showSnackbar(
+            message = message, duration = SnackbarDuration.Short, withDismissAction = true)
+      }
+      viewModel.clearSnackbarMessage()
+    }
+  }
   val selectedTabIndex = if (uiState.selectedTab == UserSearchType.DISPLAY_NAME) 0 else 1
 
   BackNavigationScaffold(
       TopBarConfig(
-          title = "Add staff",
+          title = stringResource(R.string.staff_invitation_title),
           topBarTestTag = StaffInvitationTestTags.TOP_BAR,
           backButtonTestTag = StaffInvitationTestTags.BACK_BUTTON,
           titleTestTag = StaffInvitationTestTags.TITLE),
@@ -93,7 +134,7 @@ fun StaffInvitationScreen(
                     Tab(
                         text = {
                           Text(
-                              text = "Search by username",
+                              text = stringResource(R.string.staff_invitation_tab_username),
                               style = MaterialTheme.typography.titleMedium,
                               color =
                                   if (uiState.selectedTab == UserSearchType.DISPLAY_NAME)
@@ -107,7 +148,7 @@ fun StaffInvitationScreen(
                     Tab(
                         text = {
                           Text(
-                              text = "Search by e-mail",
+                              text = stringResource(R.string.staff_invitation_tab_email),
                               style = MaterialTheme.typography.titleMedium,
                               color =
                                   if (uiState.selectedTab == UserSearchType.EMAIL)
@@ -125,8 +166,9 @@ fun StaffInvitationScreen(
                   value = uiState.searchQuery,
                   onValueChange = viewModel::updateSearchQuery,
                   placeholder =
-                      if (uiState.selectedTab == UserSearchType.DISPLAY_NAME) "Search by name"
-                      else "Search by email",
+                      if (uiState.selectedTab == UserSearchType.DISPLAY_NAME)
+                          stringResource(R.string.staff_invitation_search_by_name)
+                      else stringResource(R.string.staff_invitation_search_by_email),
                   modifier = Modifier.fillMaxWidth().padding(top = 16.dp))
 
               // Error Message
@@ -151,15 +193,15 @@ fun StaffInvitationScreen(
                   }
                   uiState.searchQuery.isBlank() -> {
                     EmptyState(
-                        title = "Search Users",
-                        message = "Enter a search query to find users",
+                        title = stringResource(R.string.staff_invitation_search_users),
+                        message = stringResource(R.string.staff_invitation_enter_query),
                         modifier = Modifier.fillMaxSize(),
                         testTag = StaffInvitationTestTags.EMPTY_STATE)
                   }
                   uiState.searchResults.isEmpty() -> {
                     EmptyState(
-                        title = "No Users Found",
-                        message = "Try a different search query.",
+                        title = stringResource(R.string.staff_invitation_no_users),
+                        message = stringResource(R.string.staff_invitation_try_different),
                         modifier = Modifier.fillMaxSize(),
                         testTag = StaffInvitationTestTags.EMPTY_STATE)
                   }
@@ -189,6 +231,135 @@ fun StaffInvitationScreen(
               }
             }
       }
+
+  // Confirmation Dialog
+  if (uiState.selectedUserForInvite != null) {
+    StaffInvitationDialog(
+        user = uiState.selectedUserForInvite!!,
+        selectedRole = uiState.selectedRole,
+        isInviting = uiState.isInviting,
+        availableRoles = viewModel.getAvailableRoles(),
+        onRoleSelected = viewModel::selectRole,
+        onConfirm = viewModel::confirmInvitation,
+        onCancel = viewModel::cancelInvitation)
+  }
+
+  // Permission Denied Dialog
+  if (uiState.showPermissionDeniedDialog) {
+    PermissionDeniedDialog(onDismiss = viewModel::dismissPermissionDeniedDialog)
+  }
+
+  // Invitation Result Dialog
+  if (uiState.invitationResultMessage != null && uiState.invitationResultType != null) {
+    InvitationResultDialog(
+        userName = uiState.invitationResultMessage!!,
+        resultType = uiState.invitationResultType!!,
+        onDismiss = viewModel::dismissInvitationResultDialog)
+  }
+
+  // Snackbar Host
+  Box(modifier = Modifier.fillMaxSize()) {
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)) { data ->
+          androidx.compose.material3.Snackbar(
+              snackbarData = data,
+              containerColor = colorResource(R.color.surface_container),
+              contentColor = MaterialTheme.colorScheme.onSurface,
+              actionColor = MaterialTheme.colorScheme.primary,
+              dismissActionContentColor = MaterialTheme.colorScheme.onSurface)
+        }
+  }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun StaffInvitationDialog(
+    user: StaffSearchResult,
+    selectedRole: OrganizationRole,
+    isInviting: Boolean,
+    availableRoles: List<OrganizationRole>,
+    onRoleSelected: (OrganizationRole) -> Unit,
+    onConfirm: () -> Unit,
+    onCancel: () -> Unit
+) {
+  var expanded by remember { mutableStateOf(false) }
+
+  AlertDialog(
+      onDismissRequest = { if (!isInviting) onCancel() },
+      title = { Text(text = stringResource(R.string.staff_invitation_dialog_title)) },
+      text = {
+        Column {
+          Text(text = stringResource(R.string.staff_invitation_dialog_message, user.displayName))
+          Spacer(modifier = Modifier.height(16.dp))
+
+          Text(
+              text = stringResource(R.string.staff_invitation_select_role),
+              style = MaterialTheme.typography.labelMedium,
+              color = MaterialTheme.colorScheme.onSurfaceVariant)
+          Spacer(modifier = Modifier.height(8.dp))
+
+          ExposedDropdownMenuBox(
+              expanded = expanded,
+              onExpandedChange = { if (!isInviting) expanded = !expanded },
+              modifier = Modifier.fillMaxWidth()) {
+                TextField(
+                    value = selectedRole.name,
+                    onValueChange = {},
+                    readOnly = true,
+                    trailingIcon = {
+                      ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+                    },
+                    modifier =
+                        Modifier.menuAnchor()
+                            .fillMaxWidth()
+                            .testTag(StaffInvitationTestTags.ROLE_DROPDOWN),
+                    colors =
+                        ExposedDropdownMenuDefaults.textFieldColors(
+                            focusedIndicatorColor = colorResource(R.color.primary),
+                            focusedLabelColor = colorResource(R.color.primary),
+                            cursorColor = colorResource(R.color.primary)))
+
+                ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+                  availableRoles.forEach { role ->
+                    DropdownMenuItem(
+                        text = { Text(role.name) },
+                        onClick = {
+                          onRoleSelected(role)
+                          expanded = false
+                        })
+                  }
+                }
+              }
+        }
+      },
+      confirmButton = {
+        Button(
+            onClick = onConfirm,
+            enabled = !isInviting,
+            colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.primary)),
+            modifier = Modifier.testTag(StaffInvitationTestTags.CONFIRM_BUTTON)) {
+              if (isInviting) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(24.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    strokeWidth = 2.dp)
+              } else {
+                Text(stringResource(R.string.staff_invitation_invite_button))
+              }
+            }
+      },
+      dismissButton = {
+        TextButton(
+            onClick = onCancel,
+            enabled = !isInviting,
+            colors = ButtonDefaults.textButtonColors(contentColor = colorResource(R.color.primary)),
+            modifier = Modifier.testTag(StaffInvitationTestTags.CANCEL_BUTTON)) {
+              Text(stringResource(R.string.staff_invitation_cancel_button))
+            }
+      },
+      modifier = Modifier.testTag(StaffInvitationTestTags.CONFIRMATION_DIALOG),
+      shape = RoundedCornerShape(10.dp))
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -226,4 +397,57 @@ private fun SearchInputField(
       shape = RoundedCornerShape(10.dp),
       textStyle = MaterialTheme.typography.bodySmall,
       singleLine = true)
+}
+
+/** Dialog shown when user doesn't have permission to invite members. */
+@Composable
+fun PermissionDeniedDialog(onDismiss: () -> Unit) {
+  AlertDialog(
+      onDismissRequest = onDismiss,
+      title = { Text(text = stringResource(R.string.staff_invitation_permission_denied_title)) },
+      text = { Text(text = stringResource(R.string.staff_invitation_permission_denied_message)) },
+      confirmButton = {
+        Button(onClick = onDismiss, shape = RoundedCornerShape(10.dp)) {
+          Text(stringResource(R.string.staff_invitation_permission_denied_ok))
+        }
+      },
+      modifier = Modifier.testTag(StaffInvitationTestTags.PERMISSION_DENIED_DIALOG),
+      shape = RoundedCornerShape(10.dp))
+}
+
+/** Dialog shown after invitation attempt (success or error). */
+@Composable
+fun InvitationResultDialog(
+    userName: String,
+    resultType: InvitationResultType,
+    onDismiss: () -> Unit
+) {
+  val (title, message, buttonColor) =
+      when (resultType) {
+        InvitationResultType.SUCCESS ->
+            Triple(
+                stringResource(R.string.staff_invitation_success_title),
+                stringResource(R.string.staff_invitation_success_message, userName),
+                colorResource(R.color.primary))
+        InvitationResultType.ERROR ->
+            Triple(
+                stringResource(R.string.staff_invitation_error_title),
+                stringResource(R.string.staff_invitation_error_message, userName),
+                colorResource(R.color.error_red))
+      }
+
+  AlertDialog(
+      onDismissRequest = onDismiss,
+      title = { Text(text = title) },
+      text = { Text(text = message) },
+      confirmButton = {
+        Button(
+            onClick = onDismiss,
+            colors = ButtonDefaults.buttonColors(containerColor = buttonColor),
+            shape = RoundedCornerShape(10.dp)) {
+              Text(stringResource(R.string.staff_invitation_result_ok))
+            }
+      },
+      modifier = Modifier.testTag(StaffInvitationTestTags.INVITATION_RESULT_DIALOG),
+      shape = RoundedCornerShape(10.dp))
 }

@@ -43,6 +43,10 @@ open class CreateEventFormViewModel(
 
   /** Creates a new event with the current form data */
   fun createEvent() {
+    if (_uiState.value is CreateEventUiState.Loading ||
+        _uiState.value is CreateEventUiState.Success)
+        return
+
     android.util.Log.d("CreateEventFormVM", "createEvent() called")
     viewModelScope.launch {
       val orgId = _organizationId.value

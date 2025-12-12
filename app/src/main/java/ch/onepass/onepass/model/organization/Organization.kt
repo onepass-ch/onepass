@@ -112,6 +112,8 @@ enum class OrganizationStatus {
 enum class OrganizationRole {
   /** **Full control** over the organization (manage members, events, and settings). */
   OWNER,
+  /** **Administrator** role, has most permissions but cannot delete the organization. */
+  ADMIN,
   /** **Standard member** role, typically allowed to create or manage assigned events. */
   MEMBER,
   /** **On-site staff** role, authorized to perform tasks like ticket scanning and validation. */

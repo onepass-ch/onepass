@@ -4,6 +4,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.membership.MembershipRepository
 import ch.onepass.onepass.model.membership.MembershipRepositoryFirebase
+import ch.onepass.onepass.model.organization.InvitationStatus
+import ch.onepass.onepass.model.organization.OrganizationRepository
+import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import ch.onepass.onepass.model.user.User
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
@@ -12,6 +15,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 // --- UI Models ---
@@ -30,6 +34,7 @@ data class ProfileUiState(
     val isOrganizer: Boolean = false,
     val loading: Boolean = true,
     val errorMessage: String? = null,
+    val pendingInvitations: Int = 0
 )
 
 sealed interface ProfileEffect {
@@ -50,7 +55,8 @@ sealed interface ProfileEffect {
 
 open class ProfileViewModel(
     private val userRepository: UserRepository = UserRepositoryFirebase(),
-    private val membershipRepository: MembershipRepository = MembershipRepositoryFirebase()
+    private val membershipRepository: MembershipRepository = MembershipRepositoryFirebase(),
+    private val organizationRepository: OrganizationRepository = OrganizationRepositoryFirebase()
 ) : ViewModel() {
 
   private val _state = MutableStateFlow(ProfileUiState())
@@ -61,8 +67,30 @@ open class ProfileViewModel(
 
   init {
     loadProfile()
+    observePendingInvitations()
   }
 
+  private fun observePendingInvitations() {
+    viewModelScope.launch {
+      try {
+        val user = userRepository.getCurrentUser() ?: return@launch
+        organizationRepository.getInvitationsByEmail(user.email).collect { invitations ->
+          val pendingCount = invitations.count { it.status == InvitationStatus.PENDING }
+          _state.value = _state.value.copy(pendingInvitations = pendingCount)
+        }
+      } catch (_: Exception) {}
+    }
+  }
+
+  private suspend fun loadPendingInvitationsCount(): Int {
+    return try {
+      val user = userRepository.getCurrentUser() ?: return 0
+      val invitations = organizationRepository.getInvitationsByEmail(user.email).first()
+      invitations.count { it.status == InvitationStatus.PENDING }
+    } catch (_: Exception) {
+      0
+    }
+  }
   /** Fetches the current user profile from Firestore. */
   fun loadProfile() {
     viewModelScope.launch {
@@ -75,7 +103,9 @@ open class ProfileViewModel(
           val memberships =
               membershipRepository.getOrganizationsByUser(user.uid).getOrNull() ?: emptyList()
           val isOrganizer = memberships.isNotEmpty()
-          _state.value = user.toUiState(isOrganizer)
+          val pendingCount = loadPendingInvitationsCount()
+
+          _state.value = user.toUiState(isOrganizer).copy(pendingInvitations = pendingCount)
         } else {
           _state.value =
               _state.value.copy(loading = false, errorMessage = "User not found or not logged in")

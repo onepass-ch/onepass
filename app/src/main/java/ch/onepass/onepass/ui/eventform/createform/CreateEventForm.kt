@@ -123,9 +123,10 @@ fun CreateEventForm(
       // Use the shared EventFormFields composable
       EventFormFields(viewModel = viewModel)
 
-      // Create Button - disabled during loading
-      CreateEventButton(
-          onClick = { viewModel.createEvent() }, enabled = uiState !is CreateEventUiState.Loading)
+      // Create Button - disabled during loading and while success is being handled
+      val isSubmitting =
+          uiState is CreateEventUiState.Loading || uiState is CreateEventUiState.Success
+      CreateEventButton(onClick = { viewModel.createEvent() }, enabled = !isSubmitting)
       Spacer(modifier = Modifier.height(24.dp))
     }
 

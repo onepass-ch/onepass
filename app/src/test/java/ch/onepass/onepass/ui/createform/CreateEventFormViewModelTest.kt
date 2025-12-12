@@ -15,6 +15,7 @@ import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.*
 import org.junit.After
@@ -702,5 +703,62 @@ class CreateEventFormViewModelTest {
 
         // Verify storage repository was never called
         coVerify(exactly = 0) { mockStorageRepository.uploadImage(any(), any()) }
+      }
+
+  @Test
+  fun `createEvent does nothing when already in Loading state`() =
+      runTest(testDispatcher) {
+        // Arrange: Set state to Loading
+        val loadingState = CreateEventUiState.Loading
+        // We need to set the private _uiState to Loading
+        val uiStateField = CreateEventFormViewModel::class.java.getDeclaredField("_uiState")
+        uiStateField.isAccessible = true
+        val mutableStateFlow = uiStateField.get(viewModel) as MutableStateFlow<CreateEventUiState>
+        mutableStateFlow.value = loadingState
+
+        // Fill valid form data
+        viewModel.updateTitle("Test Event")
+        viewModel.updateDescription("Test Description")
+        viewModel.updateDate("25/12/2025")
+        viewModel.updateStartTime("14:30")
+        viewModel.updateEndTime("16:30")
+        viewModel.selectLocation(testLocation)
+        viewModel.updatePrice("25.50")
+        viewModel.updateCapacity("100")
+
+        // Act
+        viewModel.createEvent()
+        advanceUntilIdle()
+
+        // Assert: Repository should not be called
+        coVerify(exactly = 0) { mockEventRepository.createEvent(any()) }
+      }
+
+  @Test
+  fun `createEvent does nothing when already in Success state`() =
+      runTest(testDispatcher) {
+        // Arrange: Set state to Success
+        val successState = CreateEventUiState.Success("already-created")
+        val uiStateField = CreateEventFormViewModel::class.java.getDeclaredField("_uiState")
+        uiStateField.isAccessible = true
+        val mutableStateFlow = uiStateField.get(viewModel) as MutableStateFlow<CreateEventUiState>
+        mutableStateFlow.value = successState
+
+        // Fill valid form data
+        viewModel.updateTitle("Test Event")
+        viewModel.updateDescription("Test Description")
+        viewModel.updateDate("25/12/2025")
+        viewModel.updateStartTime("14:30")
+        viewModel.updateEndTime("16:30")
+        viewModel.selectLocation(testLocation)
+        viewModel.updatePrice("25.50")
+        viewModel.updateCapacity("100")
+
+        // Act
+        viewModel.createEvent()
+        advanceUntilIdle()
+
+        // Assert: Repository should not be called
+        coVerify(exactly = 0) { mockEventRepository.createEvent(any()) }
       }
 }

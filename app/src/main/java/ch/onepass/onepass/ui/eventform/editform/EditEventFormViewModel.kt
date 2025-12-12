@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventRepositoryFirebase
+import ch.onepass.onepass.model.event.EventTag
 import ch.onepass.onepass.model.event.PricingTier
 import ch.onepass.onepass.model.map.LocationRepository
 import ch.onepass.onepass.model.map.NominatimLocationRepository
@@ -58,6 +59,8 @@ class EditEventFormViewModel(
 
   /** Updates the event with current form data */
   fun updateEvent() {
+    if (_uiState.value is EditEventUiState.Updating) return
+
     viewModelScope.launch {
       // Original event check first
       val original = originalEvent
@@ -224,6 +227,6 @@ private fun Event.toFormState(): EventFormViewModel.EventFormState {
       price = if (lowestPrice > 0u) lowestPrice.toString() else "0",
       capacity = capacity.toString(),
       selectedLocation = this.location,
-      selectedImageUris = emptyList() // Existing images are in Event.images, not form state
-      )
+      selectedImageUris = emptyList(), // Existing images are in Event.images, not form state
+      selectedTags = this.tags.mapNotNull { EventTag.fromString(it) }.toSet())
 }
