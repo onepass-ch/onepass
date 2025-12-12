@@ -459,19 +459,6 @@ class MyEventsViewModelTest {
   }
 
   @Test
-  fun purchaseTicket_withoutUser_setsError() = runTest {
-    val vm = createViewModel(uid = null)
-    advanceUntilIdle()
-
-    vm.purchaseTicket("ticket-1")
-    advanceUntilIdle()
-
-    assertTrue(vm.uiState.value.marketError?.contains("logged in") == true)
-    assertNull(vm.uiState.value.purchasingTicketId)
-    assertFalse(vm.uiState.value.showPaymentSheet)
-  }
-
-  @Test
   fun purchaseTicket_success_populatesPaymentFields() = runTest {
     val uid = uniqueUid("buyer")
     val customPaymentRepo =

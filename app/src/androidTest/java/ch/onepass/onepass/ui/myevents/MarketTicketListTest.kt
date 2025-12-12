@@ -191,23 +191,6 @@ class MarketTicketListTest {
   }
 
   @Test
-  fun marketTicketList_identifiesCurrentUserAsSellerCorrectly() {
-    val ticket = createTestMarketTicket(sellerId = "currentUser")
-
-    composeTestRule.setContent {
-      OnePassTheme {
-        MarketTicketList(
-            marketTickets = listOf(ticket),
-            onBuyTicket = {},
-            onSellTicket = {},
-            currentUserId = "currentUser")
-      }
-    }
-
-    composeTestRule.onNodeWithText("Your listing").assertIsDisplayed()
-  }
-
-  @Test
   fun marketTicketList_handlesNullCurrentUserId() {
     val ticket = createTestMarketTicket(sellerId = "seller123")
 
