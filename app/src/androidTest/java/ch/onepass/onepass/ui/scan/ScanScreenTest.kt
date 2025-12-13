@@ -668,6 +668,104 @@ class ScanScreenTest {
     compose.onNodeWithText("25").assertIsDisplayed()
   }
 
+  // ==================== STATS CARD EDGE CASES ====================
+
+  @Test
+  fun topStatsCard_withZeroValidations_displaysZero() {
+    compose.setContent { TopStatsCard(validated = 0, eventTitle = "Test Event") }
+
+    compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
+    compose.onNodeWithText("0").assertIsDisplayed()
+    compose.onNodeWithText("Validated").assertIsDisplayed()
+  }
+
+  // ==================== MULTIPLE SCANS SEQUENCE ====================
+
+  @Test
+  fun networkDialog_retryWithLastScannedQr_retriesSameQr() {
+    val repo = FakeRepo().apply { next = Result.failure(Exception("Network timeout")) }
+    val vm = createVM(repo)
+
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(ScanTestTags.NETWORK_ERROR_DIALOG).assertIsDisplayed()
+
+    // Update repo to succeed
+    repo.next = Result.success(ScanDecision.Accepted(ticketId = "T-RETRY"))
+
+    // Click retry - should use the last scanned QR
+    compose.onNodeWithText("Retry").performClick()
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(ScanTestTags.NETWORK_ERROR_DIALOG).assertDoesNotExist()
+  }
+
+  // ==================== INVALID QR VARIATIONS ====================
+
+  @Test
+  fun invalidQr_emptyString_showsInvalidFormat() {
+    val vm = createVM()
+
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    compose.runOnIdle { vm.onQrScanned("") }
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Invalid", substring = true)
+  }
+
+  @Test
+  fun invalidQr_partialValidFormat_showsInvalidFormat() {
+    val vm = createVM()
+
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    compose.runOnIdle { vm.onQrScanned("onepass:user:") }
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Invalid", substring = true)
+  }
+
+  @Test
+  fun previewHudWithLongMessage_rendersCorrectly() {
+    val longMessage =
+        "This is a very long error message that should be displayed correctly in the HUD without causing layout issues"
+    compose.setContent {
+      PreviewHudContainer(
+          state =
+              ScannerUiState(
+                  isProcessing = false,
+                  message = longMessage,
+                  status = ScannerUiState.Status.ERROR))
+    }
+
+    compose.onNodeWithText(longMessage, substring = true).assertIsDisplayed()
+  }
+
+  // ==================== REGRESSION TESTS ====================
+
+  @Test
+  fun multipleFastScans_doesNotCrash() {
+    val repo = FakeRepo()
+    val vm = createVM(repo)
+
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    // Simulate rapid scanning
+    repeat(5) { i ->
+      repo.next = Result.success(ScanDecision.Accepted(ticketId = "T-$i"))
+      compose.runOnIdle { vm.onQrScanned("qr-$i") }
+    }
+
+    compose.waitForIdle()
+
+    // Should not crash and should show some result
+    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertIsDisplayed()
+  }
+
   // ==================== FAKE REPOSITORY ====================
 
   class FakeRepo : TicketScanRepository {
