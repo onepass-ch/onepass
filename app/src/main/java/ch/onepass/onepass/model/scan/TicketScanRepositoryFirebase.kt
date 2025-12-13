@@ -93,7 +93,7 @@ class TicketScanRepositoryFirebase : TicketScanRepository {
       }
 
   private companion object {
-    const val FN_VALIDATE = "validateEntryByPassV2"
+    const val FN_VALIDATE = "validatingEntryByPass"
 
     const val KEY_STATUS = "status"
     const val KEY_REASON = "reason"

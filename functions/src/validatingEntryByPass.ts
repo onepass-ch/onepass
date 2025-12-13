@@ -12,7 +12,7 @@ const db = admin.firestore();
 *
 * Security Flow:
 * 1. Authenticates the scanner (must be logged in)
-* 2. Authorizes the scanner (must have STAFF, SECURITY, ADMIN, or ORGANIZER role)
+* 2. Authorizes the scanner (must have STAFF, ADMIN, or OWNER role in the organization)
 * 3. Parses and validates the QR code format
 * 4. Verifies the Ed25519 cryptographic signature
 * 5. Checks the pass status (active, not revoked)
@@ -49,7 +49,7 @@ const db = admin.firestore();
 *   scannedAt: 1701234000
 * }
 */
-export const validateEntryByPassV2 = functions.https.onCall(
+export const validatingEntryByPass = functions.https.onCall(
  async (data: any, context: any) => {
    // ============================================================================
    // 1. AUTHENTICATION CHECK
@@ -73,14 +73,48 @@ export const validateEntryByPassV2 = functions.https.onCall(
 
 
    // ============================================================================
-   // 2. AUTHORIZATION CHECK
+   // 2. AUTHORIZATION CHECK - Vérifie le rôle dans memberships
    // ============================================================================
-   const scannerDoc = await db.collection("users").doc(scannerUid).get();
-   const scannerData = scannerDoc.data();
-   const scannerRole = scannerData?.role;
+   const eventDoc = await db.collection("events").doc(eventId).get();
+   if (!eventDoc.exists) {
+     throw new functions.https.HttpsError(
+       "not-found",
+       "Event not found"
+     );
+   }
 
+   const eventData = eventDoc.data();
+   const organizationId = eventData?.organizerId;
 
-   const allowedRoles = ["STAFF","ADMIN","OWNER"];
+   if (!organizationId) {
+     throw new functions.https.HttpsError(
+       "invalid-argument",
+       "Event has no organization"
+     );
+   }
+
+   // Query memberships collection for this user + organization
+   const membershipQuery = await db
+     .collection("memberships")
+     .where("userId", "==", scannerUid)
+     .where("orgId", "==", organizationId)
+     .limit(1)
+     .get();
+
+   if (membershipQuery.empty) {
+     logger.warn(
+       `Scanner ${scannerUid} is not a member of organization ${organizationId}`
+     );
+     throw new functions.https.HttpsError(
+       "permission-denied",
+       "Not a member of this organization"
+     );
+   }
+
+   const membershipData = membershipQuery.docs[0].data();
+   const scannerRole = membershipData?.role;
+
+   const allowedRoles = ["STAFF", "ADMIN", "OWNER"];
    if (!allowedRoles.includes(scannerRole)) {
      logger.warn(
        `Unauthorized scan attempt by ${scannerUid} (role: ${scannerRole})`
@@ -90,7 +124,6 @@ export const validateEntryByPassV2 = functions.https.onCall(
        "Not authorized to scan tickets"
      );
    }
-
 
    logger.info(
      `Scanner ${scannerUid} (${scannerRole}) validating entry for event ${eventId}`
@@ -159,7 +192,6 @@ export const validateEntryByPassV2 = functions.https.onCall(
 
 
    try {
-     // Convert Base64URL to standard Base64 and add padding if needed
      const payloadB64 = payloadB64Url
        .replace(/-/g, "+")
        .replace(/_/g, "/")
@@ -302,7 +334,6 @@ export const validateEntryByPassV2 = functions.https.onCall(
        }
 
 
-       // Mark ticket as redeemed
        transaction.update(ticketDoc.ref, {
          state: "REDEEMED",
          redeemedAt: admin.firestore.FieldValue.serverTimestamp(),
@@ -311,19 +342,16 @@ export const validateEntryByPassV2 = functions.https.onCall(
        });
 
 
-       // Update user's pass with last scan timestamp
        transaction.update(db.collection("users").doc(uid), {
          "pass.lastScannedAt": scannedAtSeconds,
        });
 
 
-       // Increment tickets redeemed counter
        transaction.update(eventRef, {
          ticketsRedeemed: admin.firestore.FieldValue.increment(1),
        });
 
 
-       // Log successful validation
        transaction.set(db.collection("validations").doc(), {
          uid,
          eventId,
@@ -336,7 +364,6 @@ export const validateEntryByPassV2 = functions.https.onCall(
      });
 
 
-     // Fetch updated redeemed count
      const updatedEvent = await db.collection("events").doc(eventId).get();
      const redeemed = updatedEvent.data()?.ticketsRedeemed ?? 0;
 
@@ -350,7 +377,7 @@ export const validateEntryByPassV2 = functions.https.onCall(
        status: "accepted",
        ticketId,
        scannedAt: scannedAtSeconds,
-       remaining: null, // No longer tracking remaining
+       remaining: null,
      };
    } catch (error: any) {
      logger.error(`Transaction failed for uid=${uid}:`, error);

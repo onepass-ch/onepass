@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.pass.Pass
 import ch.onepass.onepass.model.scan.ScanDecision
 import ch.onepass.onepass.model.scan.TicketScanRepository
+import com.google.firebase.firestore.FirebaseFirestore
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
@@ -90,7 +91,7 @@ class ScannerViewModel(
     private val clock: () -> Long = { System.currentTimeMillis() },
     private val enableAutoCleanup: Boolean = true,
     private val cleanupPeriodMs: Long = 10_000L,
-    private val stateResetDelayMs: Long = 3_000L,
+    private val stateResetDelayMs: Long = 5_000L,
     coroutineScope: CoroutineScope? = null
 ) : ViewModel() {
 
@@ -134,7 +135,7 @@ class ScannerViewModel(
     eventListenerJob =
         scope.launch {
           try {
-            val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            val firestore = FirebaseFirestore.getInstance()
             val eventRef = firestore.collection("events").document(eventId)
 
             eventRef.addSnapshotListener { snapshot, error ->
@@ -254,7 +255,7 @@ class ScannerViewModel(
    */
   private suspend fun fetchUserDisplayName(uid: String): String? {
     return try {
-      val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+      val firestore = FirebaseFirestore.getInstance()
       val userDoc = firestore.collection("users").document(uid).get().await()
       userDoc.getString("displayName")
     } catch (e: Exception) {
@@ -345,9 +346,11 @@ class ScannerViewModel(
         scope.launch {
           delay(stateResetDelayMs)
           if (isActive) {
-            // Reset to IDLE but preserve validated count
+            // Reset to IDLE but preserve validated count and event title
             val currentValidated = _state.value.validated
-            _state.value = ScannerUiState(validated = currentValidated)
+            val currentEventTitle = _state.value.eventTitle
+            _state.value =
+                ScannerUiState(validated = currentValidated, eventTitle = currentEventTitle)
           }
         }
   }
@@ -355,9 +358,10 @@ class ScannerViewModel(
   /** Manually reset state to IDLE (useful when dismissing error dialogs). */
   fun resetToIdle() {
     resetJob?.cancel()
-    // Reset to IDLE but preserve validated count
+    // Reset to IDLE but preserve validated count and event title
     val currentValidated = _state.value.validated
-    _state.value = ScannerUiState(validated = currentValidated)
+    val currentEventTitle = _state.value.eventTitle
+    _state.value = ScannerUiState(validated = currentValidated, eventTitle = currentEventTitle)
   }
 
   @VisibleForTesting
