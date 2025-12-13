@@ -261,7 +261,7 @@ dependencies {
     implementation("com.mapbox.extension:maps-compose-ndk27:11.15.2")
 
     // ---------- Navigation --------
-    implementation("androidx.navigation:navigation-compose:2.6.0")
+    implementation("androidx.navigation:navigation-compose:2.7.3")
 
     // ---------- Stripe ------------
     implementation(libs.stripe.android)
