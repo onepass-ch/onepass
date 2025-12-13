@@ -12,10 +12,11 @@ import * as admin from "firebase-admin";
 
 admin.initializeApp();
 
-export { validateEntryByPassV2 } from "./validateEntryByPassV2";
+
 export { generateUserPass } from "./generateUserPass";
 export { onUserCreated } from "./onUserCreated";
 export { searchUsers } from "./searchUsers";
+export { validatingEntryByPass } from "./validatingEntryByPass";
 
 // Stripe payment functions
 export {
