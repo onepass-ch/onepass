@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.navigation
 
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
@@ -139,31 +140,31 @@ fun AppNavHost(
 
     // ------------------ Events (Feed) ------------------
     composable(Screen.Events.route) {
-        SwipeWrapper(swipeNavigationManager = swipeNavigationManager, currentScreen = Screen.Events) {
-          FeedScreen(
-              onNavigateToEvent = { eventId ->
-                navController.navigate(Screen.EventDetail.route(eventId))
-              },
-              globalSearchItemClickListener = { item ->
-                when (item) {
-                  is GlobalSearchItemClick.EventClick ->
-                      navController.navigate(Screen.EventDetail.route(item.eventId))
-                  is GlobalSearchItemClick.OrganizationClick ->
-                      navController.navigate(Screen.OrganizationProfile.route(item.organizationId))
-                  is GlobalSearchItemClick.UserClick -> {
-                    // Do nothing
-                  }
+      SwipeWrapper(swipeNavigationManager = swipeNavigationManager, currentScreen = Screen.Events) {
+        FeedScreen(
+            onNavigateToEvent = { eventId ->
+              navController.navigate(Screen.EventDetail.route(eventId))
+            },
+            globalSearchItemClickListener = { item ->
+              when (item) {
+                is GlobalSearchItemClick.EventClick ->
+                    navController.navigate(Screen.EventDetail.route(item.eventId))
+                is GlobalSearchItemClick.OrganizationClick ->
+                    navController.navigate(Screen.OrganizationProfile.route(item.organizationId))
+                is GlobalSearchItemClick.UserClick -> {
+                  // Do nothing
                 }
-              },
-              onNavigateToNotifications = { navController.navigate(Screen.Notification.route) },
-              globalSearchViewModel =
-                  viewModel(
-                      factory =
-                          GlobalSearchViewModel.Factory(
-                              userRepo = UserRepositoryFirebase(),
-                              eventRepo = EventRepositoryFirebase(),
-                              orgRepo = OrganizationRepositoryFirebase())))
-        }
+              }
+            },
+            onNavigateToNotifications = { navController.navigate(Screen.Notification.route) },
+            globalSearchViewModel =
+                viewModel(
+                    factory =
+                        GlobalSearchViewModel.Factory(
+                            userRepo = UserRepositoryFirebase(),
+                            eventRepo = EventRepositoryFirebase(),
+                            orgRepo = OrganizationRepositoryFirebase())))
+      }
     }
 
     // ------------------ Notifications ------------------
@@ -194,25 +195,26 @@ fun AppNavHost(
 
     // ------------------ Tickets (My Events) ------------------
     composable(Screen.Tickets.route) {
-        SwipeWrapper(
-            swipeNavigationManager = swipeNavigationManager, currentScreen = Screen.Tickets) {
-          val uid = FirebaseAuth.getInstance().currentUser?.uid ?: "LOCAL_TEST_UID"
+      SwipeWrapper(
+          swipeNavigationManager = swipeNavigationManager, currentScreen = Screen.Tickets) {
+            val uid = FirebaseAuth.getInstance().currentUser?.uid ?: "LOCAL_TEST_UID"
 
-          val myEventsVm: MyEventsViewModel =
-              viewModel(
-                  factory =
-                      viewModelFactory {
-                        initializer {
-                          MyEventsViewModel(
-                              dataStore = context.passDataStore,
-                              passRepository =
-                                  PassRepositoryFirebase(
-                                      FirebaseFirestore.getInstance(), FirebaseFunctions.getInstance()),
-                              userId = uid)
-                        }
-                      })
-          MyEventsScreen(viewModel = myEventsVm)
-        }
+            val myEventsVm: MyEventsViewModel =
+                viewModel(
+                    factory =
+                        viewModelFactory {
+                          initializer {
+                            MyEventsViewModel(
+                                dataStore = context.passDataStore,
+                                passRepository =
+                                    PassRepositoryFirebase(
+                                        FirebaseFirestore.getInstance(),
+                                        FirebaseFunctions.getInstance()),
+                                userId = uid)
+                          }
+                        })
+            MyEventsScreen(viewModel = myEventsVm)
+          }
     }
 
     // ------------------ Map ------------------
@@ -462,20 +464,34 @@ fun SwipeWrapper(
           Modifier.fillMaxSize().pointerInput(currentIndex) {
             awaitPointerEventScope {
               while (true) {
-                val event = awaitPointerEvent(PointerEventPass.Initial)
-                val drag = event.changes.firstOrNull()
-                drag?.let {
-                  if (it.positionChange().x > 50f && currentIndex > 0) {
-                    navController.navigate(swipeScreens[currentIndex - 1].route) {
-                      launchSingleTop = true
+                // Wait for the first pointer down. The returned value is not used,
+                // but this call is required to start gesture detection.
+                val down = awaitFirstDown()
+
+                var totalDx = 0f
+
+                while (true) {
+                  val event = awaitPointerEvent(PointerEventPass.Main)
+                  val change = event.changes.first()
+
+                  if (!change.pressed) break
+
+                  totalDx += change.positionChange().x
+                  change.consume()
+
+                  when {
+                    totalDx > 80f && currentIndex > 0 -> {
+                      navController.navigate(swipeScreens[currentIndex - 1].route) {
+                        launchSingleTop = true
+                      }
+                      break
                     }
-                    it.consume() // Only consume after a swipe
-                  } else if (it.positionChange().x < -50f &&
-                      currentIndex < swipeScreens.lastIndex) {
-                    navController.navigate(swipeScreens[currentIndex + 1].route) {
-                      launchSingleTop = true
+                    totalDx < -80f && currentIndex < swipeScreens.lastIndex -> {
+                      navController.navigate(swipeScreens[currentIndex + 1].route) {
+                        launchSingleTop = true
+                      }
+                      break
                     }
-                    it.consume()
                   }
                 }
               }
