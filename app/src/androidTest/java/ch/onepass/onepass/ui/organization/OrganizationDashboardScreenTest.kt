@@ -75,7 +75,7 @@ class OrganizationDashboardScreenTest {
             userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
-    waitForTag(OrganizationDashboardTestTags.ORG_SUMMARY_CARD)
+    waitForTag(OrganizationCardTestTags.getTestTagForOrganizationCard(testOrg.id))
 
     composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.SCREEN).assertIsDisplayed()
     composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.TITLE).assertIsDisplayed()
@@ -92,20 +92,20 @@ class OrganizationDashboardScreenTest {
             userRepository = MockUserRepository())
     setScreen(viewModel = viewModel)
 
-    waitForTag(OrganizationDashboardTestTags.ORG_SUMMARY_CARD)
+    waitForTag(OrganizationCardTestTags.getTestTagForOrganizationCard(testOrg.id))
 
     composeTestRule
-        .onNodeWithTag(OrganizationDashboardTestTags.ORG_SUMMARY_CARD)
+        .onNodeWithTag(OrganizationCardTestTags.getTestTagForOrganizationCard(testOrg.id))
         .assertIsDisplayed()
     composeTestRule
-        .onNode(hasTestTag(OrganizationDashboardTestTags.ORG_NAME), useUnmergedTree = true)
+        .onNode(hasTestTag(OrganizationCardTestTags.ORGANIZER_NAME), useUnmergedTree = true)
         .assertIsDisplayed()
-        .assertTextEquals(testOrg.name.uppercase(Locale.getDefault()))
+        .assertTextEquals(testOrg.name)
     composeTestRule
-        .onNode(hasTestTag(OrganizationDashboardTestTags.ORG_FOLLOWERS), useUnmergedTree = true)
-        .assertTextContains("1.5K FOLLOWERS")
+        .onNode(hasTestTag(OrganizationCardTestTags.ORGANIZER_FOLLOWER_COUNT))
+        .assertTextContains("1.5K")
     composeTestRule
-        .onNode(hasTestTag(OrganizationDashboardTestTags.ORG_RATING), useUnmergedTree = true)
+        .onNode(hasTestTag(OrganizationCardTestTags.ORGANIZER_RATING))
         .assertTextEquals("4.5")
   }
 
@@ -401,9 +401,11 @@ class OrganizationDashboardScreenTest {
     var clickedOrgId: String? = null
     setScreen(viewModel = viewModel, onNavigateToProfile = { clickedOrgId = it })
 
-    waitForTag(OrganizationDashboardTestTags.ORG_SUMMARY_CARD)
+    waitForTag(OrganizationCardTestTags.getTestTagForOrganizationCard(testOrg.id))
 
-    composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.ORG_SUMMARY_CARD).performClick()
+    composeTestRule
+        .onNodeWithTag(OrganizationCardTestTags.getTestTagForOrganizationCard(testOrg.id))
+        .performClick()
     assert(clickedOrgId == "test-org-1")
   }
 
