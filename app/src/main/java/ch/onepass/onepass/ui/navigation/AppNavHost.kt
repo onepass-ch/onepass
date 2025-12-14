@@ -185,10 +185,12 @@ fun AppNavHost(
     // ------------------ Notifications ------------------
     composable(Screen.Notification.route) {
       val notificationViewModel: NotificationsViewModel = viewModel()
-      NotificationsScreen(
-          navController = navController,
-          viewModel = notificationViewModel,
-          onNavigateBack = { navController.popBackStack() })
+      SwipeBackWrapper(onSwipeBack = { navController.popBackStack() }) {
+        NotificationsScreen(
+            navController = navController,
+            viewModel = notificationViewModel,
+            onNavigateBack = { navController.popBackStack() })
+      }
     }
 
     // ------------------ Event Detail ------------------
@@ -198,14 +200,16 @@ fun AppNavHost(
           viewModel(
               factory =
                   viewModelFactory { initializer { EventDetailViewModel(eventId = eventId) } })
-      EventDetailScreen(
-          eventId = eventId,
-          viewModel = eventDetailVm,
-          onNavigateToMap = { navController.navigateToTopLevel(Screen.Map.route) },
-          onNavigateToOrganizerProfile = { orgId ->
-            navController.navigate(Screen.OrganizationProfile.route(orgId))
-          },
-          onBack = { navController.popBackStack() })
+      SwipeBackWrapper(onSwipeBack = { navController.popBackStack() }) {
+        EventDetailScreen(
+            eventId = eventId,
+            viewModel = eventDetailVm,
+            onNavigateToMap = { navController.navigateToTopLevel(Screen.Map.route) },
+            onNavigateToOrganizerProfile = { orgId ->
+              navController.navigate(Screen.OrganizationProfile.route(orgId))
+            },
+            onBack = { navController.popBackStack() })
+      }
     }
 
     // ------------------ Tickets (My Events) ------------------
@@ -284,14 +288,16 @@ fun AppNavHost(
     // ------------------ Organization Feed ------------------
     composable(Screen.OrganizationFeed.route) {
       val orgFeedVm: OrganizationFeedViewModel = viewModel()
-      OrganizationFeedScreen(
-          userId = FirebaseAuth.getInstance().currentUser?.uid ?: "",
-          viewModel = orgFeedVm,
-          onNavigateToOrganization = { organizationId ->
-            navController.navigate(Screen.OrganizationDashboard.route(organizationId))
-          },
-          onNavigateBack = { navController.popBackStack() },
-          onFabClick = { navController.navigate(Screen.BecomeOrganizer.route) })
+      SwipeBackWrapper(onSwipeBack = { navController.popBackStack() }) {
+        OrganizationFeedScreen(
+            userId = FirebaseAuth.getInstance().currentUser?.uid ?: "",
+            viewModel = orgFeedVm,
+            onNavigateToOrganization = { organizationId ->
+              navController.navigate(Screen.OrganizationDashboard.route(organizationId))
+            },
+            onNavigateBack = { navController.popBackStack() },
+            onFabClick = { navController.navigate(Screen.BecomeOrganizer.route) })
+      }
     }
 
     // ------------------ Organization Dashboard ------------------
@@ -301,25 +307,27 @@ fun AppNavHost(
               ?: ""
       val orgDashboardVm: OrganizationDashboardViewModel =
           viewModel(factory = viewModelFactory { initializer { OrganizationDashboardViewModel() } })
-      OrganizationDashboardScreen(
-          organizationId = organizationId,
-          viewModel = orgDashboardVm,
-          onNavigateBack = { navController.popBackStack() },
-          onNavigateToProfile = { orgId ->
-            navController.navigate(Screen.OrganizationProfile.route(orgId))
-          },
-          onNavigateToCreateEvent = {
-            navController.navigate(Screen.CreateEvent.route(organizationId))
-          },
-          onNavigateToAddStaff = { orgId ->
-            navController.navigate(Screen.StaffInvitation.route(organizationId))
-          },
-          onNavigateToScanTickets = { eventId ->
-            navController.navigate(Screen.Scan.route(eventId))
-          },
-          onNavigateToEditEvent = { eventId ->
-            navController.navigate(Screen.EditEvent.route(eventId))
-          })
+      SwipeBackWrapper(onSwipeBack = { navController.popBackStack() }) {
+        OrganizationDashboardScreen(
+            organizationId = organizationId,
+            viewModel = orgDashboardVm,
+            onNavigateBack = { navController.popBackStack() },
+            onNavigateToProfile = { orgId ->
+              navController.navigate(Screen.OrganizationProfile.route(orgId))
+            },
+            onNavigateToCreateEvent = {
+              navController.navigate(Screen.CreateEvent.route(organizationId))
+            },
+            onNavigateToAddStaff = { orgId ->
+              navController.navigate(Screen.StaffInvitation.route(organizationId))
+            },
+            onNavigateToScanTickets = { eventId ->
+              navController.navigate(Screen.Scan.route(eventId))
+            },
+            onNavigateToEditEvent = { eventId ->
+              navController.navigate(Screen.EditEvent.route(eventId))
+            })
+      }
     }
 
     // ------------------ Organization Profile ------------------
@@ -328,22 +336,25 @@ fun AppNavHost(
           backStackEntry.arguments?.getString(Screen.OrganizationProfile.ARG_ORGANIZATION_ID) ?: ""
       val orgProfileVm: OrganizerProfileViewModel = viewModel()
 
-      OrganizerProfileScreen(
-          organizationId = organizationId,
-          viewModel = orgProfileVm,
-          onEffect = { effect ->
-            when (effect) {
-              is OrganizerProfileEffect.NavigateToEditOrganization ->
-                  navController.navigate(Screen.EditOrganization.route(effect.organizationId))
-              is OrganizerProfileEffect.NavigateToEvent ->
-                  navController.navigate(Screen.EventDetail.route(effect.eventId))
-              is OrganizerProfileEffect.OpenSocialMedia ->
-                  navController.navigate(Screen.ComingSoon.route)
-              is OrganizerProfileEffect.OpenWebsite ->
-                  navController.navigate(Screen.ComingSoon.route)
-              is OrganizerProfileEffect.ShowError -> navController.navigate(Screen.ComingSoon.route)
-            }
-          })
+      SwipeBackWrapper(onSwipeBack = { navController.popBackStack() }) {
+        OrganizerProfileScreen(
+            organizationId = organizationId,
+            viewModel = orgProfileVm,
+            onEffect = { effect ->
+              when (effect) {
+                is OrganizerProfileEffect.NavigateToEditOrganization ->
+                    navController.navigate(Screen.EditOrganization.route(effect.organizationId))
+                is OrganizerProfileEffect.NavigateToEvent ->
+                    navController.navigate(Screen.EventDetail.route(effect.eventId))
+                is OrganizerProfileEffect.OpenSocialMedia ->
+                    navController.navigate(Screen.ComingSoon.route)
+                is OrganizerProfileEffect.OpenWebsite ->
+                    navController.navigate(Screen.ComingSoon.route)
+                is OrganizerProfileEffect.ShowError ->
+                    navController.navigate(Screen.ComingSoon.route)
+              }
+            })
+      }
     }
 
     // ------------------ Create Event ------------------
@@ -351,22 +362,26 @@ fun AppNavHost(
       val organizationId =
           backStackEntry.arguments?.getString(Screen.CreateEvent.ARG_ORGANIZATION_ID) ?: ""
       val createEventVm: CreateEventFormViewModel = viewModel()
-      CreateEventForm(
-          organizationId = organizationId,
-          viewModel = createEventVm,
-          onNavigateBack = { navController.popBackStack() },
-          onEventCreated = { navController.popBackStack() })
+      SwipeBackWrapper(onSwipeBack = { navController.popBackStack() }) {
+        CreateEventForm(
+            organizationId = organizationId,
+            viewModel = createEventVm,
+            onNavigateBack = { navController.popBackStack() },
+            onEventCreated = { navController.popBackStack() })
+      }
     }
 
     // ------------------ Edit Event ------------------
     composable(Screen.EditEvent.route) { backStackEntry ->
       val eventId = backStackEntry.arguments?.getString(Screen.EditEvent.ARG_EVENT_ID) ?: ""
       val editEventVm: EditEventFormViewModel = viewModel()
-      EditEventForm(
-          eventId = eventId,
-          viewModel = editEventVm,
-          onNavigateBack = { navController.popBackStack() },
-          onEventUpdated = { navController.popBackStack() })
+      SwipeBackWrapper(onSwipeBack = { navController.popBackStack() }) {
+        EditEventForm(
+            eventId = eventId,
+            viewModel = editEventVm,
+            onNavigateBack = { navController.popBackStack() },
+            onEventUpdated = { navController.popBackStack() })
+      }
     }
 
     // ------------------ Scan Tickets ------------------
@@ -380,7 +395,9 @@ fun AppNavHost(
                       ScannerViewModel(eventId = eventId, repo = TicketScanRepositoryFirebase())
                     }
                   })
-      ScanScreen(viewModel = scannerVm, onNavigateBack = { navController.popBackStack() })
+      SwipeBackWrapper(onSwipeBack = { navController.popBackStack() }) {
+        ScanScreen(viewModel = scannerVm, onNavigateBack = { navController.popBackStack() })
+      }
     }
     // ------------------ Staff Invitation ------------------
     composable(Screen.StaffInvitation.route) { backStackEntry ->
@@ -392,29 +409,35 @@ fun AppNavHost(
                   viewModelFactory {
                     initializer { StaffInvitationViewModel(organizationId = organizationId) }
                   })
-      StaffInvitationScreen(
-          viewModel = staffInvitationVm, onNavigateBack = { navController.popBackStack() })
+      SwipeBackWrapper(onSwipeBack = { navController.popBackStack() }) {
+        StaffInvitationScreen(
+            viewModel = staffInvitationVm, onNavigateBack = { navController.popBackStack() })
+      }
     }
 
     // ------------------ Become Organizer ------------------
     composable(Screen.BecomeOrganizer.route) {
       val becomeOrganizerVm: OrganizationFormViewModel = viewModel()
       val currentUserId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-      CreateOrganizationScreen(
-          ownerId = currentUserId,
-          viewModel = becomeOrganizerVm,
-          onOrganizationCreated = {
-            navController.navigate(Screen.OrganizationFeed.route) {
-              popUpTo(Screen.BecomeOrganizer.route) { inclusive = true }
-            }
-          },
-          onNavigateBack = { navController.popBackStack() })
+      SwipeBackWrapper(onSwipeBack = { navController.popBackStack() }) {
+        CreateOrganizationScreen(
+            ownerId = currentUserId,
+            viewModel = becomeOrganizerVm,
+            onOrganizationCreated = {
+              navController.navigate(Screen.OrganizationFeed.route) {
+                popUpTo(Screen.BecomeOrganizer.route) { inclusive = true }
+              }
+            },
+            onNavigateBack = { navController.popBackStack() })
+      }
     }
 
     // ------------------ My Invitations ----------------
     composable(Screen.MyInvitations.route) {
       val myInvVm: MyInvitationsViewModel = viewModel()
-      MyInvitationsScreen(viewModel = myInvVm, onNavigateBack = { navController.popBackStack() })
+      SwipeBackWrapper(onSwipeBack = { navController.popBackStack() }) {
+        MyInvitationsScreen(viewModel = myInvVm, onNavigateBack = { navController.popBackStack() })
+      }
     }
 
     // ---------------- Edit Organization -------------
@@ -422,16 +445,20 @@ fun AppNavHost(
       val organizationId =
           backStackEntry.arguments?.getString(Screen.EditOrganization.ARG_ORGANIZATION_ID) ?: ""
       val editVm: OrganizationEditorViewModel = viewModel()
-      EditOrganizationScreen(
-          organizationId = organizationId,
-          viewModel = editVm,
-          onOrganizationUpdated = { navController.popBackStack() },
-          onNavigateBack = { navController.popBackStack() })
+      SwipeBackWrapper(onSwipeBack = { navController.popBackStack() }) {
+        EditOrganizationScreen(
+            organizationId = organizationId,
+            viewModel = editVm,
+            onOrganizationUpdated = { navController.popBackStack() },
+            onNavigateBack = { navController.popBackStack() })
+      }
     }
 
     // ------------------ Placeholders ------------------
     composable(Screen.ComingSoon.route) {
-      ComingSoonScreen(onBack = { navController.popBackStack() })
+      SwipeBackWrapper(onSwipeBack = { navController.popBackStack() }) {
+        ComingSoonScreen(onBack = { navController.popBackStack() })
+      }
     }
   }
 }
@@ -451,6 +478,33 @@ fun NavHostController.navigateToTopLevel(route: String) {
 }
 
 // ---------------- SWIPE MANAGEMENT ---------------- //
+
+/**
+ * Wrapper composable that detects swipe back gestures.
+ *
+ * @param onSwipeBack Lambda function to be invoked when a swipe back gesture is detected.
+ * @param content Composable content to be wrapped.
+ */
+@Composable
+fun SwipeBackWrapper(onSwipeBack: () -> Unit, content: @Composable () -> Unit) {
+  val touchSlop = LocalViewConfiguration.current.touchSlop
+
+  Box(
+      modifier =
+          Modifier.fillMaxSize().pointerInput(Unit) {
+            detectHorizontalSwipe(
+                touchSlop = touchSlop,
+                onSwipeStart = {},
+                onSwipeEnd = { totalDx ->
+                  // Back = right swipe only
+                  if (totalDx > 0f) {
+                    onSwipeBack()
+                  }
+                })
+          }) {
+        content()
+      }
+}
 
 /**
  * Wrapper composable that adds swipe navigation between top-level screens.
