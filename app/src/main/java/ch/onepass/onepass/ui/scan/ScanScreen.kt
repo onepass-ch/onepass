@@ -17,6 +17,7 @@ import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
 import androidx.compose.animation.*
 import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -34,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -81,6 +83,123 @@ private object ScanColors {
   val TextSecondary = Color(0xFFB0B0B0)
   val Scrim = Color(0xAA000000)
   val ScanFrame = Color(0xFF9C6BFF)
+}
+
+/** Stylish rotating gradient spinner with multiple animated layers */
+@Composable
+private fun RotatingSpinner(modifier: Modifier = Modifier, color: Color = ScanColors.Accent) {
+  var rotation by remember { mutableStateOf(0f) }
+  var glowPulse by remember { mutableStateOf(0f) }
+
+  // Main rotation animation
+  LaunchedEffect(Unit) {
+    while (true) {
+      rotation = (rotation + 10f) % 360f
+      delay(16)
+    }
+  }
+
+  // Glow pulse animation
+  LaunchedEffect(Unit) {
+    while (true) {
+      for (i in 0..100) {
+        glowPulse = i / 100f
+        delay(10)
+      }
+      for (i in 100 downTo 0) {
+        glowPulse = i / 100f
+        delay(10)
+      }
+    }
+  }
+
+  Box(modifier = modifier.size(40.dp), contentAlignment = Alignment.Center) {
+    // Outer glow ring (static, pulsing)
+    Canvas(modifier = Modifier.fillMaxSize().alpha(0.3f + glowPulse * 0.2f)) {
+      drawCircle(
+          brush =
+              Brush.radialGradient(
+                  colors =
+                      listOf(
+                          color.copy(alpha = 0.4f), color.copy(alpha = 0.1f), Color.Transparent)),
+          radius = size.minDimension / 2)
+    }
+
+    // Primary spinning arc with gradient
+    Canvas(modifier = Modifier.fillMaxSize().rotate(rotation)) {
+      val strokeWidth = 4.dp.toPx()
+
+      // Main gradient arc
+      drawArc(
+          brush =
+              Brush.sweepGradient(
+                  colors =
+                      listOf(
+                          Color.Transparent,
+                          color.copy(alpha = 0.2f),
+                          color.copy(alpha = 0.5f),
+                          color.copy(alpha = 0.8f),
+                          color,
+                          color,
+                          color.copy(alpha = 0.8f),
+                          color.copy(alpha = 0.5f),
+                          Color.Transparent)),
+          startAngle = 0f,
+          sweepAngle = 360f,
+          useCenter = false,
+          style =
+              androidx.compose.ui.graphics.drawscope.Stroke(
+                  width = strokeWidth, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+    }
+
+    // Secondary counter-rotating arc (faster, thinner)
+    Canvas(modifier = Modifier.size(32.dp).rotate(-rotation * 1.8f)) {
+      val strokeWidth = 2.5.dp.toPx()
+
+      drawArc(
+          brush =
+              Brush.sweepGradient(
+                  colors =
+                      listOf(
+                          Color.Transparent,
+                          color.copy(alpha = 0.3f),
+                          color.copy(alpha = 0.6f),
+                          color.copy(alpha = 0.3f),
+                          Color.Transparent)),
+          startAngle = 0f,
+          sweepAngle = 180f,
+          useCenter = false,
+          style =
+              androidx.compose.ui.graphics.drawscope.Stroke(
+                  width = strokeWidth, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+    }
+
+    // Orbiting dots with trails
+    Canvas(modifier = Modifier.size(28.dp).rotate(rotation * 0.7f)) {
+      val orbitRadius = size.minDimension / 2.5f
+
+      for (i in 0..5) {
+        val angle = (i * 60f) * (Math.PI / 180f).toFloat()
+        val x = center.x + orbitRadius * kotlin.math.cos(angle)
+        val y = center.y + orbitRadius * kotlin.math.sin(angle)
+
+        val dotSize = if (i % 2 == 0) 2.5.dp.toPx() else 1.5.dp.toPx()
+        val alpha = if (i % 2 == 0) 0.8f else 0.4f
+
+        drawCircle(
+            color = color.copy(alpha = alpha),
+            radius = dotSize,
+            center = androidx.compose.ui.geometry.Offset(x, y))
+      }
+    }
+
+    // Center dot with pulse
+    Canvas(modifier = Modifier.size(6.dp)) {
+      drawCircle(
+          color = color.copy(alpha = 0.8f + glowPulse * 0.2f),
+          radius = (2.dp.toPx() + glowPulse * 1.dp.toPx()))
+    }
+  }
 }
 
 @Composable
@@ -771,13 +890,22 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
                         }
                       }
 
-                      if (uiState.isProcessing) {
-                        Spacer(Modifier.width(16.dp))
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(32.dp).testTag(ScanTestTags.PROGRESS),
-                            color = ScanColors.Accent,
-                            strokeWidth = 3.dp)
-                      }
+                      // CUSTOM ROTATING SPINNER - THIS WILL DEFINITELY ANIMATE!
+                      AnimatedVisibility(
+                          visible = uiState.isProcessing,
+                          enter =
+                              fadeIn(animationSpec = tween(150)) +
+                                  scaleIn(animationSpec = tween(150)),
+                          exit =
+                              fadeOut(animationSpec = tween(150)) +
+                                  scaleOut(animationSpec = tween(150))) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                              Spacer(Modifier.width(16.dp))
+                              RotatingSpinner(
+                                  modifier = Modifier.testTag(ScanTestTags.PROGRESS),
+                                  color = ScanColors.Accent)
+                            }
+                          }
                     }
               }
         }
