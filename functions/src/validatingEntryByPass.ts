@@ -73,7 +73,7 @@ export const validatingEntryByPass = functions.https.onCall(
 
 
    // ============================================================================
-   // 2. AUTHORIZATION CHECK - Vérifie le rôle dans memberships
+   // 2. AUTHORIZATION CHECK
    // ============================================================================
    const eventDoc = await db.collection("events").doc(eventId).get();
    if (!eventDoc.exists) {
