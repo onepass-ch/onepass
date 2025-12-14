@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.navigation
 
+import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -8,12 +9,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerInputScope
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalViewConfiguration
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTag
 import androidx.lifecycle.ViewModelProvider
@@ -70,6 +75,7 @@ import ch.onepass.onepass.ui.staff.StaffInvitationViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.functions.FirebaseFunctions
+import kotlin.math.absoluteValue
 
 /**
  * Navigation host that registers all app routes and wires view models to screens.
@@ -140,31 +146,40 @@ fun AppNavHost(
 
     // ------------------ Events (Feed) ------------------
     composable(Screen.Events.route) {
-      SwipeWrapper(swipeNavigationManager = swipeNavigationManager, currentScreen = Screen.Events) {
-        FeedScreen(
-            onNavigateToEvent = { eventId ->
-              navController.navigate(Screen.EventDetail.route(eventId))
-            },
-            globalSearchItemClickListener = { item ->
-              when (item) {
-                is GlobalSearchItemClick.EventClick ->
-                    navController.navigate(Screen.EventDetail.route(item.eventId))
-                is GlobalSearchItemClick.OrganizationClick ->
-                    navController.navigate(Screen.OrganizationProfile.route(item.organizationId))
-                is GlobalSearchItemClick.UserClick -> {
-                  // Do nothing
-                }
-              }
-            },
-            onNavigateToNotifications = { navController.navigate(Screen.Notification.route) },
-            globalSearchViewModel =
-                viewModel(
-                    factory =
-                        GlobalSearchViewModel.Factory(
-                            userRepo = UserRepositoryFirebase(),
-                            eventRepo = EventRepositoryFirebase(),
-                            orgRepo = OrganizationRepositoryFirebase())))
-      }
+      var blockCardClick by remember { mutableStateOf(false) }
+
+      SwipeWrapper(
+          swipeNavigationManager = swipeNavigationManager,
+          currentScreen = Screen.Events,
+          onHorizontalSwipeStart = { blockCardClick = true },
+          onGestureEnd = { blockCardClick = false }) {
+            FeedScreen(
+                onNavigateToEvent = { eventId ->
+                  if (!blockCardClick) {
+                    navController.navigate(Screen.EventDetail.route(eventId))
+                  }
+                },
+                globalSearchItemClickListener = { item ->
+                  when (item) {
+                    is GlobalSearchItemClick.EventClick ->
+                        navController.navigate(Screen.EventDetail.route(item.eventId))
+                    is GlobalSearchItemClick.OrganizationClick ->
+                        navController.navigate(
+                            Screen.OrganizationProfile.route(item.organizationId))
+                    is GlobalSearchItemClick.UserClick -> {
+                      // Do nothing
+                    }
+                  }
+                },
+                onNavigateToNotifications = { navController.navigate(Screen.Notification.route) },
+                globalSearchViewModel =
+                    viewModel(
+                        factory =
+                            GlobalSearchViewModel.Factory(
+                                userRepo = UserRepositoryFirebase(),
+                                eventRepo = EventRepositoryFirebase(),
+                                orgRepo = OrganizationRepositoryFirebase())))
+          }
     }
 
     // ------------------ Notifications ------------------
@@ -435,6 +450,8 @@ fun NavHostController.navigateToTopLevel(route: String) {
   }
 }
 
+// ---------------- SWIPE MANAGEMENT ---------------- //
+
 /**
  * Wrapper composable that adds swipe navigation between top-level screens.
  *
@@ -448,6 +465,8 @@ fun SwipeWrapper(
     swipeNavigationManager: SwipeNavigationManager,
     currentScreen: Screen,
     canLeave: Boolean = true,
+    onHorizontalSwipeStart: () -> Unit = {},
+    onGestureEnd: () -> Unit = {},
     content: @Composable () -> Unit
 ) {
   if (!canLeave) {
@@ -456,47 +475,102 @@ fun SwipeWrapper(
   }
 
   val navController = swipeNavigationManager.navController
-  val swipeScreens = swipeNavigationManager.screens
-  val currentIndex = swipeScreens.indexOf(currentScreen)
+  val screens = swipeNavigationManager.screens
+  val currentIndex = screens.indexOf(currentScreen)
+  val touchSlop = LocalViewConfiguration.current.touchSlop
 
   Box(
       modifier =
           Modifier.fillMaxSize().pointerInput(currentIndex) {
-            awaitPointerEventScope {
-              while (true) {
-                // Wait for the first pointer down. The returned value is not used,
-                // but this call is required to start gesture detection.
-                val down = awaitFirstDown()
-
-                var totalDx = 0f
-
-                while (true) {
-                  val event = awaitPointerEvent(PointerEventPass.Main)
-                  val change = event.changes.first()
-
-                  if (!change.pressed) break
-
-                  totalDx += change.positionChange().x
-                  change.consume()
-
-                  when {
-                    totalDx > 80f && currentIndex > 0 -> {
-                      navController.navigate(swipeScreens[currentIndex - 1].route) {
-                        launchSingleTop = true
-                      }
-                      break
-                    }
-                    totalDx < -80f && currentIndex < swipeScreens.lastIndex -> {
-                      navController.navigate(swipeScreens[currentIndex + 1].route) {
-                        launchSingleTop = true
-                      }
-                      break
-                    }
-                  }
-                }
-              }
-            }
+            detectHorizontalSwipe(
+                touchSlop = touchSlop,
+                onSwipeStart = onHorizontalSwipeStart,
+                onSwipeEnd = { totalDx ->
+                  handleNavigation(
+                      totalDx = totalDx,
+                      currentIndex = currentIndex,
+                      screens = screens,
+                      navigateTo = { s -> navController.navigateToTopLevel(s) })
+                  onGestureEnd()
+                })
           }) {
         content()
       }
+}
+
+/**
+ * Detects a horizontal swipe gesture.
+ *
+ * @param touchSlop Minimum distance before a swipe is recognized
+ * @param onSwipeStart Called when a horizontal swipe is first detected
+ * @param onSwipeEnd Called when the gesture ends with the total horizontal delta
+ */
+private suspend fun PointerInputScope.detectHorizontalSwipe(
+    touchSlop: Float,
+    onSwipeStart: () -> Unit,
+    onSwipeEnd: (totalDx: Float) -> Unit
+) {
+  awaitEachGesture {
+    val down = awaitFirstDown(pass = PointerEventPass.Initial)
+
+    var totalDx = 0f
+    var totalDy = 0f
+    var isHorizontalSwipe = false
+
+    while (true) {
+      val event = awaitPointerEvent(PointerEventPass.Initial)
+      val change = event.changes.firstOrNull { it.id == down.id } ?: break
+      if (!change.pressed) break
+
+      val delta = change.positionChange()
+      totalDx += delta.x
+      totalDy += delta.y
+
+      if (!isHorizontalSwipe && isPastHorizontalSlop(totalDx, totalDy, touchSlop)) {
+        isHorizontalSwipe = true
+        onSwipeStart()
+        change.consume()
+      } else if (isHorizontalSwipe) {
+        change.consume()
+      }
+    }
+
+    if (isHorizontalSwipe) {
+      onSwipeEnd(totalDx)
+    }
+  }
+}
+
+/**
+ * Checks whether accumulated movement qualifies as a horizontal swipe.
+ *
+ * @param dx Total horizontal movement
+ * @param dy Total vertical movement
+ * @param touchSlop Minimum distance before recognition
+ * @return true if movement is mostly horizontal and past slop
+ */
+private fun isPastHorizontalSlop(dx: Float, dy: Float, touchSlop: Float): Boolean {
+  val absDx = dx.absoluteValue
+  val absDy = dy.absoluteValue
+  return absDx > touchSlop && absDx > absDy * 2f
+}
+
+/**
+ * Navigates to the adjacent screen based on swipe direction.
+ *
+ * @param totalDx Total horizontal movement of the swipe
+ * @param currentIndex Index of the current screen
+ * @param screens List of available screens
+ * @param navigateTo Function used to navigate to a route
+ */
+private fun handleNavigation(
+    totalDx: Float,
+    currentIndex: Int,
+    screens: List<Screen>,
+    navigateTo: (String) -> Unit
+) {
+  when {
+    totalDx > 0f && currentIndex > 0 -> navigateTo(screens[currentIndex - 1].route)
+    totalDx < 0f && currentIndex < screens.lastIndex -> navigateTo(screens[currentIndex + 1].route)
+  }
 }
