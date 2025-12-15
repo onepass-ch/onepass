@@ -7,7 +7,7 @@
  * See a full list of supported triggers at https://firebase.google.com/docs/functions
  */
 
-// import * as functions from "firebase-functions/v1";
+import * as functions from "firebase-functions/v1";
 import * as admin from "firebase-admin";
 
 admin.initializeApp();
@@ -24,3 +24,14 @@ export {
   cancelMarketplaceReservation,
   stripeWebhook,
 } from "./stripe";
+
+/**
+ * Returns the current Firebase server time in milliseconds.
+ * Used by the client to calculate the clock skew.
+ */
+export const getServerTime = functions.https.onCall((data, context) => {
+    // Return the current server time in milliseconds
+    return {
+        timestamp: admin.firestore.Timestamp.now().toMillis()
+    };
+});
