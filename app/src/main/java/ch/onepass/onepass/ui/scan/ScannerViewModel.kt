@@ -91,7 +91,7 @@ class ScannerViewModel(
     private val clock: () -> Long = { System.currentTimeMillis() },
     private val enableAutoCleanup: Boolean = true,
     private val cleanupPeriodMs: Long = 10_000L,
-    private val stateResetDelayMs: Long = 2_000L, // Changed from 5s to 2s
+    private val stateResetDelayMs: Long = 2_000L,
     coroutineScope: CoroutineScope? = null
 ) : ViewModel() {
 
