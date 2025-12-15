@@ -42,12 +42,18 @@ import ch.onepass.onepass.ui.payment.LocalPaymentSheet
 import ch.onepass.onepass.ui.payment.createPaymentSheet
 import ch.onepass.onepass.ui.profile.ProfileViewModel
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import ch.onepass.onepass.utils.ServerSyncedTimeProvider
+import ch.onepass.onepass.utils.TimeProvider
+import ch.onepass.onepass.utils.TimeProviderHolder
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.functions.FirebaseFunctions
 import com.mapbox.common.MapboxOptions
 import com.onesignal.OneSignal
 import com.onesignal.debug.LogLevel
 import com.stripe.android.PaymentConfiguration
 import com.stripe.android.paymentsheet.PaymentSheet
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
 /**
@@ -59,11 +65,22 @@ class MainActivity : ComponentActivity() {
   private val deviceTokenRepository by lazy { DeviceTokenRepositoryFirebase() }
   private lateinit var authStateListener: FirebaseAuth.AuthStateListener
   private lateinit var deviceTokenManager: DeviceTokenManager
+  lateinit var timeProvider: TimeProvider
+    private set
+
   private var newIntent by mutableStateOf<Intent?>(null)
   private var paymentSheet: PaymentSheet? = null
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
+
+    // Initialize the time provider
+    timeProvider = ServerSyncedTimeProvider(FirebaseFunctions.getInstance())
+    // Store in singleton for ViewModels to access
+    TimeProviderHolder.initialize(timeProvider)
+    // Start sync in background
+    CoroutineScope(Dispatchers.IO).launch { timeProvider.syncWithServer() }
+
     // Mapbox access token
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
     OneSignal.Debug.logLevel = if (BuildConfig.DEBUG) LogLevel.VERBOSE else LogLevel.WARN
