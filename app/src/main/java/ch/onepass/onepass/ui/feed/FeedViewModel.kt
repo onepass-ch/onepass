@@ -10,6 +10,8 @@ import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import ch.onepass.onepass.utils.EventFilteringUtils.applyFiltersLocally
+import ch.onepass.onepass.utils.TimeProvider
+import ch.onepass.onepass.utils.TimeProviderHolder
 import com.google.firebase.auth.FirebaseAuth
 import java.time.Instant
 import java.time.temporal.ChronoUnit
@@ -52,7 +54,7 @@ open class FeedViewModel(
     private val repository: EventRepository = EventRepositoryFirebase(),
     private val userRepository: UserRepository = UserRepositoryFirebase(),
     private val auth: FirebaseAuth = FirebaseAuth.getInstance(),
-    private val timeProvider: TimeProvider = FirebaseTimeProvider()
+    private val timeProvider: TimeProvider = TimeProviderHolder.instance
 ) : ViewModel() {
 
   companion object {
@@ -125,7 +127,7 @@ open class FeedViewModel(
    */
   private fun filterActiveEvents(events: List<Event>): List<Event> {
     // Use Firebase server timestamp for consistency across all devices
-    val nowSeconds = timeProvider.currentTimestamp().seconds
+    val nowSeconds = timeProvider.now().seconds
 
     return events.filter { event ->
       // Check if event has ended
@@ -194,7 +196,7 @@ open class FeedViewModel(
    */
   fun recommendEvents(candidateEvents: List<Event>, userLikedEventIds: Set<String>): List<Event> {
     val userInterestProfile = buildUserInterestProfile(userLikedEventIds)
-    val now = timeProvider.currentInstant()
+    val now = timeProvider.now().toDate().toInstant()
 
     val scoredEvents =
         candidateEvents.map { event ->

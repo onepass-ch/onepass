@@ -10,6 +10,8 @@ import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.repository.RepositoryProvider
 import ch.onepass.onepass.utils.EventFilteringUtils.applyFiltersLocally
+import ch.onepass.onepass.utils.TimeProvider
+import ch.onepass.onepass.utils.TimeProviderHolder
 import com.google.gson.JsonPrimitive
 import com.mapbox.android.gestures.MoveGestureDetector
 import com.mapbox.geojson.Point
@@ -67,6 +69,7 @@ private const val TAG = "MapViewModel"
  */
 class MapViewModel(
     private val eventRepository: EventRepository = RepositoryProvider.eventRepository,
+    private val timeProvider: TimeProvider = TimeProviderHolder.instance
 ) : ViewModel() {
   companion object {
     object CameraConfig {
@@ -138,16 +141,26 @@ class MapViewModel(
   // --- Event handling ---
   /**
    * Fetches all published events and updates [_uiState]. Filters out events with invalid or null
-   * coordinates.
+   * coordinates and events that have already ended.
    */
   private fun fetchPublishedEvents() {
     viewModelScope.launch {
       eventRepository.getEventsByStatus(EventStatus.PUBLISHED).collect { events ->
-        // Filter events with valid coordinates
+        val nowSeconds = timeProvider.now().seconds
+
+        // Filter events with valid coordinates and active time
         val validEvents =
             events.filter { event ->
               val coords = event.location?.coordinates
-              coords != null && isValidCoordinate(coords.latitude, coords.longitude)
+              val isValidLocation =
+                  coords != null && isValidCoordinate(coords.latitude, coords.longitude)
+
+              // Check if event has ended
+              // If endTime is missing, we consider it valid (not ended)
+              val endTimeSeconds = event.endTime?.seconds ?: Long.MAX_VALUE
+              val isEventActive = endTimeSeconds > nowSeconds
+
+              isValidLocation && isEventActive
             }
         _allEvents.value = validEvents
         _uiState.value = _uiState.value.copy(events = validEvents)
