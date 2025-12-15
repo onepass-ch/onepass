@@ -9,6 +9,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -46,7 +47,7 @@ fun CloseButton(onDismiss: () -> Unit, modifier: Modifier = Modifier) {
     Icon(
         imageVector = Icons.Default.Close,
         contentDescription = "Close",
-        tint = Color.White,
+        tint = colorScheme.onBackground,
         modifier = Modifier.size(24.dp),
     )
   }

@@ -2,29 +2,47 @@ package ch.onepass.onepass.ui.eventform
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.EventTag
 import ch.onepass.onepass.ui.components.buttons.UploadImageButton
 import ch.onepass.onepass.ui.components.forms.DatePickerField
 import ch.onepass.onepass.ui.components.forms.LocationSearchField
 import ch.onepass.onepass.ui.components.forms.TimePickerField
-import ch.onepass.onepass.ui.theme.EventDateColor
+import ch.onepass.onepass.ui.theme.Error
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -44,29 +62,24 @@ fun TitleInputField(value: String, onValueChange: (String) -> Unit, modifier: Mo
             placeholder = {
               Text(
                   "Amazing event",
-                  style =
-                      MaterialTheme.typography.bodySmall.copy(
-                          color = colorResource(id = R.color.gray)))
+                  style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
             },
             modifier =
                 Modifier.fillMaxWidth()
-                    .border(
-                        1.dp,
-                        colorResource(id = R.color.eventform_field_border),
-                        RoundedCornerShape(10.dp))
+                    .border(1.dp, colorScheme.onSurface, RoundedCornerShape(10.dp))
                     .heightIn(min = 50.dp)
                     .testTag("title_input_field"),
             colors =
                 TextFieldDefaults.colors(
-                    focusedContainerColor = colorResource(id = R.color.eventform_field_bg),
-                    unfocusedContainerColor = colorResource(id = R.color.eventform_field_bg),
+                    focusedContainerColor = colorScheme.surface,
+                    unfocusedContainerColor = colorScheme.surface,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
-                    focusedTextColor = colorResource(id = R.color.white),
-                    unfocusedTextColor = colorResource(id = R.color.white),
+                    focusedTextColor = colorScheme.onBackground,
+                    unfocusedTextColor = colorScheme.onBackground,
                 ),
             shape = RoundedCornerShape(10.dp),
-            textStyle = MaterialTheme.typography.bodySmall,
+            textStyle = MaterialTheme.typography.bodyMedium,
             singleLine = true)
       }
 }
@@ -93,32 +106,27 @@ fun DescriptionInputField(
         modifier =
             Modifier.fillMaxWidth()
                 .height(122.dp)
-                .border(
-                    1.dp,
-                    colorResource(id = R.color.eventform_field_border),
-                    RoundedCornerShape(10.dp))) {
+                .border(1.dp, colorScheme.onSurface, RoundedCornerShape(10.dp))) {
           TextField(
               value = value,
               onValueChange = onValueChange,
               placeholder = {
                 Text(
                     "This is amazing..",
-                    style =
-                        MaterialTheme.typography.bodySmall.copy(
-                            color = colorResource(id = R.color.gray)))
+                    style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
               },
               modifier = Modifier.fillMaxSize().testTag("description_input_field"),
               colors =
                   TextFieldDefaults.colors(
-                      focusedContainerColor = colorResource(id = R.color.eventform_field_bg),
-                      unfocusedContainerColor = colorResource(id = R.color.eventform_field_bg),
+                      focusedContainerColor = colorScheme.surface,
+                      unfocusedContainerColor = colorScheme.surface,
                       focusedIndicatorColor = Color.Transparent,
                       unfocusedIndicatorColor = Color.Transparent,
-                      focusedTextColor = colorResource(id = R.color.white),
-                      unfocusedTextColor = colorResource(id = R.color.white),
+                      focusedTextColor = colorScheme.onBackground,
+                      unfocusedTextColor = colorScheme.onBackground,
                   ),
               shape = RoundedCornerShape(10.dp),
-              textStyle = MaterialTheme.typography.bodySmall,
+              textStyle = MaterialTheme.typography.bodyMedium,
               maxLines = 5)
         }
   }
@@ -140,19 +148,14 @@ fun TimeInputField(
             text = "Date & time*",
             style =
                 MaterialTheme.typography.bodyMedium.copy(
-                    color = colorResource(id = R.color.white), textAlign = TextAlign.Center),
+                    color = colorScheme.onBackground, textAlign = TextAlign.Center),
             modifier = Modifier.fillMaxWidth())
 
         Column(
             modifier =
                 Modifier.fillMaxWidth()
-                    .background(
-                        colorResource(id = R.color.eventform_field_bg),
-                        shape = RoundedCornerShape(10.dp))
-                    .border(
-                        1.dp,
-                        colorResource(id = R.color.eventform_field_border),
-                        shape = RoundedCornerShape(10.dp))
+                    .background(colorScheme.surface, shape = RoundedCornerShape(10.dp))
+                    .border(1.dp, colorScheme.onSurface, shape = RoundedCornerShape(10.dp))
                     .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
               Row(
@@ -163,8 +166,8 @@ fun TimeInputField(
                       Text(
                           text = "Start time",
                           style =
-                              MaterialTheme.typography.bodySmall.copy(
-                                  color = colorResource(id = R.color.white)))
+                              MaterialTheme.typography.bodyMedium.copy(
+                                  color = colorScheme.onSurface))
                       Spacer(modifier = Modifier.height(4.dp))
                       TimePickerField(
                           value = startTimeValue,
@@ -175,8 +178,8 @@ fun TimeInputField(
                       Text(
                           text = "End time",
                           style =
-                              MaterialTheme.typography.bodySmall.copy(
-                                  color = colorResource(id = R.color.white)))
+                              MaterialTheme.typography.bodyMedium.copy(
+                                  color = colorScheme.onSurface))
                       Spacer(modifier = Modifier.height(4.dp))
                       TimePickerField(
                           value = endTimeValue,
@@ -239,7 +242,7 @@ fun TicketsInputField(
         text = "Tickets*",
         style =
             MaterialTheme.typography.bodyMedium.copy(
-                color = colorResource(id = R.color.white), textAlign = TextAlign.Center),
+                color = colorScheme.onBackground, textAlign = TextAlign.Center),
         modifier = Modifier.fillMaxWidth())
 
     Row(
@@ -258,10 +261,7 @@ fun TicketsInputField(
                 modifier =
                     Modifier.width(90.dp)
                         .height(50.dp)
-                        .border(
-                            1.dp,
-                            colorResource(id = R.color.eventform_field_border),
-                            RoundedCornerShape(10.dp))) {
+                        .border(1.dp, colorScheme.onSurface, RoundedCornerShape(10.dp))) {
                   TextField(
                       value = priceValue,
                       onValueChange = onPriceChange,
@@ -269,23 +269,21 @@ fun TicketsInputField(
                         Text(
                             "ex: 12",
                             style =
-                                MaterialTheme.typography.bodySmall.copy(
-                                    color = colorResource(id = R.color.gray)))
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    color = colorScheme.onSurface))
                       },
                       modifier = Modifier.fillMaxSize().testTag("price_input_field"),
                       colors =
                           TextFieldDefaults.colors(
-                              focusedContainerColor =
-                                  colorResource(id = R.color.eventform_field_bg),
-                              unfocusedContainerColor =
-                                  colorResource(id = R.color.eventform_field_bg),
+                              focusedContainerColor = colorScheme.surface,
+                              unfocusedContainerColor = colorScheme.surface,
                               focusedIndicatorColor = Color.Transparent,
                               unfocusedIndicatorColor = Color.Transparent,
-                              focusedTextColor = colorResource(id = R.color.white),
-                              unfocusedTextColor = colorResource(id = R.color.white),
+                              focusedTextColor = colorScheme.onBackground,
+                              unfocusedTextColor = colorScheme.onBackground,
                           ),
                       shape = RoundedCornerShape(10.dp),
-                      textStyle = MaterialTheme.typography.bodySmall,
+                      textStyle = MaterialTheme.typography.bodyMedium,
                       singleLine = true)
                 }
             // Reserve space for error to prevent layout shift
@@ -293,8 +291,8 @@ fun TicketsInputField(
               priceError?.let {
                 Text(
                     text = it,
-                    color = colorResource(id = R.color.error_red),
-                    style = MaterialTheme.typography.bodySmall,
+                    color = Error,
+                    style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1)
               }
             }
@@ -312,10 +310,7 @@ fun TicketsInputField(
                 modifier =
                     Modifier.width(90.dp)
                         .height(50.dp)
-                        .border(
-                            1.dp,
-                            colorResource(id = R.color.eventform_field_border),
-                            RoundedCornerShape(10.dp))) {
+                        .border(1.dp, colorScheme.onSurface, RoundedCornerShape(10.dp))) {
                   TextField(
                       value = capacityValue,
                       onValueChange = onCapacityChange,
@@ -323,23 +318,21 @@ fun TicketsInputField(
                         Text(
                             "ex: 100",
                             style =
-                                MaterialTheme.typography.bodySmall.copy(
-                                    color = colorResource(id = R.color.gray)))
+                                MaterialTheme.typography.bodyMedium.copy(
+                                    color = colorScheme.onSurface))
                       },
                       modifier = Modifier.fillMaxSize().testTag("capacity_input_field"),
                       colors =
                           TextFieldDefaults.colors(
-                              focusedContainerColor =
-                                  colorResource(id = R.color.eventform_field_bg),
-                              unfocusedContainerColor =
-                                  colorResource(id = R.color.eventform_field_bg),
+                              focusedContainerColor = colorScheme.surface,
+                              unfocusedContainerColor = colorScheme.surface,
                               focusedIndicatorColor = Color.Transparent,
                               unfocusedIndicatorColor = Color.Transparent,
-                              focusedTextColor = colorResource(id = R.color.white),
-                              unfocusedTextColor = colorResource(id = R.color.white),
+                              focusedTextColor = colorScheme.onBackground,
+                              unfocusedTextColor = colorScheme.onBackground,
                           ),
                       shape = RoundedCornerShape(10.dp),
-                      textStyle = MaterialTheme.typography.bodySmall,
+                      textStyle = MaterialTheme.typography.bodyMedium,
                       singleLine = true)
                 }
             // Reserve space for error to prevent layout shift
@@ -347,8 +340,8 @@ fun TicketsInputField(
               capacityError?.let {
                 Text(
                     text = it,
-                    color = colorResource(id = R.color.error_red),
-                    style = MaterialTheme.typography.bodySmall,
+                    color = Error,
+                    style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1)
               }
             }
@@ -367,12 +360,12 @@ fun TagsSelectionSection(
   Column(modifier = modifier.fillMaxWidth()) {
     Text(
         text = "Tags",
-        style = MaterialTheme.typography.bodyMedium.copy(color = colorResource(id = R.color.white)),
+        style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onBackground),
         modifier = Modifier.padding(bottom = 8.dp))
     Text(
         text =
             "Select up to ${EventFormViewModel.MAX_TAG_COUNT} tags (${selectedTags.size}/${EventFormViewModel.MAX_TAG_COUNT} selected).",
-        style = MaterialTheme.typography.bodySmall.copy(color = colorResource(id = R.color.gray)),
+        style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface),
         modifier = Modifier.padding(bottom = 16.dp))
 
     EventTag.categories.forEach { (header, tags) ->
@@ -380,7 +373,7 @@ fun TagsSelectionSection(
           text = header,
           style =
               MaterialTheme.typography.labelMedium.copy(
-                  color = colorResource(id = R.color.white), fontWeight = FontWeight.Bold),
+                  color = colorScheme.onBackground, fontWeight = FontWeight.Bold),
           modifier = Modifier.padding(vertical = 8.dp))
       FlowRow(
           horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -399,17 +392,16 @@ fun TagsSelectionSection(
                       },
                   colors =
                       FilterChipDefaults.filterChipColors(
-                          selectedContainerColor = EventDateColor,
-                          selectedLabelColor = Color.White,
-                          containerColor = colorResource(id = R.color.eventform_field_bg),
-                          labelColor = colorResource(id = R.color.white)),
+                          selectedContainerColor = colorScheme.primary,
+                          selectedLabelColor = colorScheme.onBackground,
+                          containerColor = colorScheme.surface,
+                          labelColor = colorScheme.onSurface),
                   border =
                       FilterChipDefaults.filterChipBorder(
                           enabled = true,
                           selected = isSelected,
                           borderColor =
-                              if (isSelected) Color.Transparent
-                              else colorResource(id = R.color.eventform_field_border)))
+                              if (isSelected) Color.Transparent else colorScheme.onSurface))
             }
           }
       Spacer(modifier = Modifier.height(16.dp))
@@ -440,16 +432,14 @@ fun FieldLabelWithCounter(
       verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = label,
-            style =
-                MaterialTheme.typography.bodyMedium.copy(color = colorResource(id = R.color.white)))
+            style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onBackground))
         Text(
             text = "$currentLength/$maxLength characters",
             style =
-                MaterialTheme.typography.bodySmall.copy(
+                MaterialTheme.typography.bodyMedium.copy(
                     color =
-                        if (isError || currentLength >= maxLength)
-                            colorResource(id = R.color.error_red)
-                        else colorResource(id = R.color.gray)))
+                        if (isError || currentLength >= maxLength) Error
+                        else colorScheme.onSurface))
       }
 }
 
@@ -477,16 +467,13 @@ fun CompactFieldLabel(
       horizontalAlignment = Alignment.Start) {
         Text(
             text = label,
-            style =
-                MaterialTheme.typography.bodySmall.copy(color = colorResource(id = R.color.white)))
+            style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onBackground))
         Text(
             text = "$currentLength/$maxLength characters",
             style =
                 MaterialTheme.typography.labelSmall.copy(
                     color =
-                        if (isError || currentLength >= maxLength)
-                            colorResource(id = R.color.error_red)
-                        else colorResource(id = R.color.gray),
+                        if (isError || currentLength >= maxLength) Error else colorScheme.onSurface,
                     fontSize = 10.sp))
       }
 }
@@ -511,8 +498,8 @@ fun EventFormFields(
     fieldErrors[EventFormViewModel.ValidationError.TITLE.key]?.let {
       Text(
           text = it,
-          color = colorResource(id = R.color.error_red),
-          style = MaterialTheme.typography.bodySmall,
+          color = Error,
+          style = MaterialTheme.typography.bodyMedium,
           modifier = Modifier.padding(start = 8.dp, top = 4.dp))
     }
     Spacer(modifier = Modifier.height(16.dp))
@@ -525,8 +512,8 @@ fun EventFormFields(
     fieldErrors[EventFormViewModel.ValidationError.DESCRIPTION.key]?.let {
       Text(
           text = it,
-          color = colorResource(id = R.color.error_red),
-          style = MaterialTheme.typography.bodySmall,
+          color = Error,
+          style = MaterialTheme.typography.bodyMedium,
           modifier = Modifier.padding(start = 8.dp, top = 4.dp))
     }
     Spacer(modifier = Modifier.height(16.dp))
@@ -543,22 +530,19 @@ fun EventFormFields(
       fieldErrors[EventFormViewModel.ValidationError.START_TIME.key]?.let {
         Text(
             text = it,
-            color = colorResource(id = R.color.error_red),
-            style = MaterialTheme.typography.bodySmall,
+            color = Error,
+            style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(end = 12.dp))
       }
       fieldErrors[EventFormViewModel.ValidationError.END_TIME.key]?.let {
-        Text(
-            text = it,
-            color = colorResource(id = R.color.error_red),
-            style = MaterialTheme.typography.bodySmall)
+        Text(text = it, color = Error, style = MaterialTheme.typography.bodyMedium)
       }
     }
     fieldErrors[EventFormViewModel.ValidationError.TIME.key]?.let {
       Text(
           text = it,
-          color = colorResource(id = R.color.error_red),
-          style = MaterialTheme.typography.bodySmall,
+          color = Error,
+          style = MaterialTheme.typography.bodyMedium,
           modifier = Modifier.padding(start = 8.dp, top = 4.dp))
     }
     Spacer(modifier = Modifier.height(16.dp))
@@ -572,8 +556,8 @@ fun EventFormFields(
     fieldErrors[EventFormViewModel.ValidationError.DATE.key]?.let {
       Text(
           text = it,
-          color = colorResource(id = R.color.error_red),
-          style = MaterialTheme.typography.bodySmall,
+          color = Error,
+          style = MaterialTheme.typography.bodyMedium,
           modifier = Modifier.padding(start = 8.dp, top = 4.dp))
     }
     Spacer(modifier = Modifier.height(16.dp))
@@ -587,8 +571,8 @@ fun EventFormFields(
     fieldErrors[EventFormViewModel.ValidationError.LOCATION.key]?.let {
       Text(
           text = it,
-          color = colorResource(id = R.color.error_red),
-          style = MaterialTheme.typography.bodySmall,
+          color = Error,
+          style = MaterialTheme.typography.bodyMedium,
           modifier = Modifier.padding(start = 8.dp, top = 4.dp))
     }
     Spacer(modifier = Modifier.height(16.dp))
@@ -624,8 +608,8 @@ fun EventFormFields(
       Spacer(modifier = Modifier.height(8.dp))
       Text(
           text = "${formState.selectedImageUris.size} image(s) selected",
-          style = MaterialTheme.typography.bodySmall,
-          color = colorResource(id = R.color.white),
+          style = MaterialTheme.typography.bodyMedium,
+          color = colorScheme.onBackground,
           modifier = Modifier.padding(start = 8.dp))
     }
 

@@ -27,13 +27,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
-import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.MarcFontFamily
 import ch.onepass.onepass.ui.theme.OnePassTheme
 
@@ -61,9 +59,7 @@ fun TicketComponent(
     Dialog(onDismissRequest = { showDetails = false }) {
       Card(
           shape = RoundedCornerShape(16.dp),
-          colors =
-              CardDefaults.cardColors(
-                  containerColor = colorResource(id = R.color.surface_container)),
+          colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
           modifier = Modifier.padding(16.dp)) {
             Column(
                 modifier = Modifier.fillMaxWidth().padding(24.dp),
@@ -74,7 +70,7 @@ fun TicketComponent(
                       style =
                           MaterialTheme.typography.bodyLarge.copy(
                               fontFamily = MarcFontFamily, fontWeight = FontWeight.Bold),
-                      color = colorResource(id = R.color.on_background))
+                      color = colorScheme.onBackground)
 
                   Row(
                       modifier = Modifier.testTag(MyEventsTestTags.TICKET_DIALOG_STATUS),
@@ -84,25 +80,25 @@ fun TicketComponent(
                             modifier =
                                 Modifier.size(8.dp)
                                     .clip(RoundedCornerShape(4.dp))
-                                    .background(colorResource(id = status.colorRes)))
+                                    .background(status.color))
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
                             text = status.name.lowercase().replaceFirstChar { it.uppercase() },
                             style = MaterialTheme.typography.bodyMedium,
-                            color = colorResource(id = R.color.on_background))
+                            color = colorScheme.onBackground)
                       }
 
                   Text(
                       text = dateTime,
                       modifier = Modifier.testTag(MyEventsTestTags.TICKET_DIALOG_DATE),
                       style = MaterialTheme.typography.bodyMedium,
-                      color = colorResource(id = R.color.on_background).copy(alpha = 0.7f))
+                      color = colorScheme.onBackground.copy(alpha = 0.7f))
 
                   Text(
                       text = location,
                       modifier = Modifier.testTag(MyEventsTestTags.TICKET_DIALOG_LOCATION),
                       style = MaterialTheme.typography.bodyMedium,
-                      color = colorResource(id = R.color.on_background).copy(alpha = 0.7f))
+                      color = colorScheme.onBackground.copy(alpha = 0.7f))
                 }
           }
     }
@@ -123,9 +119,7 @@ fun TicketComponent(
               .clickable { handleCardClick() }
               .testTag(MyEventsTestTags.TICKET_CARD),
       shape = RoundedCornerShape(12.dp),
-      colors =
-          CardDefaults.cardColors(
-              containerColor = colorResource(id = R.color.surface_card_color))) {
+      colors = CardDefaults.cardColors(containerColor = colorScheme.surface)) {
         Column(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -134,7 +128,7 @@ fun TicketComponent(
                   style =
                       MaterialTheme.typography.bodyLarge.copy(
                           fontFamily = MarcFontFamily, fontWeight = FontWeight.Bold),
-                  color = colorResource(id = R.color.on_background),
+                  color = colorScheme.onBackground,
                   maxLines = 1,
                   overflow = TextOverflow.Ellipsis,
                   modifier = Modifier.testTag(MyEventsTestTags.TICKET_TITLE))
@@ -147,24 +141,24 @@ fun TicketComponent(
                         modifier =
                             Modifier.size(8.dp)
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(colorResource(id = status.colorRes)))
+                                .background(status.color))
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
                         text = status.name.lowercase().replaceFirstChar { it.uppercase() },
                         style = MaterialTheme.typography.bodyMedium,
-                        color = colorResource(id = R.color.on_background))
+                        color = colorScheme.onBackground)
                   }
 
               Text(
                   text = dateTime,
                   style = MaterialTheme.typography.bodyMedium,
-                  color = colorResource(id = R.color.on_background).copy(alpha = 0.7f),
+                  color = colorScheme.onBackground.copy(alpha = 0.7f),
                   modifier = Modifier.testTag(MyEventsTestTags.TICKET_DATE))
 
               Text(
                   text = location,
                   style = MaterialTheme.typography.bodyMedium,
-                  color = colorResource(id = R.color.on_background).copy(alpha = 0.7f),
+                  color = colorScheme.onBackground.copy(alpha = 0.7f),
                   modifier = Modifier.testTag(MyEventsTestTags.TICKET_LOCATION))
             }
       }

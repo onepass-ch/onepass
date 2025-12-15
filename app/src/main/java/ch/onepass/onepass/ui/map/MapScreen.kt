@@ -19,7 +19,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -39,6 +39,7 @@ import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
 import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
 import ch.onepass.onepass.ui.eventfilters.FilterDialog
+import ch.onepass.onepass.ui.theme.Error
 import com.mapbox.maps.MapView
 import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
@@ -138,8 +139,8 @@ fun MapScreen(
     // --- Recenter Button with Tracking Indicator ---
     FloatingActionButton(
         onClick = { mapViewModel.recenterCamera() },
-        containerColor = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        containerColor = colorScheme.primary,
+        contentColor = colorScheme.onBackground,
         modifier =
             modifier
                 .align(Alignment.BottomEnd)
@@ -155,10 +156,10 @@ fun MapScreen(
           Box(
               modifier =
                   Modifier.size(TrackingIndicatorDimensions.SIZE)
-                      .background(MaterialTheme.colorScheme.error, CircleShape)
+                      .background(Error, CircleShape)
                       .border(
                           TrackingIndicatorDimensions.BORDER_WIDTH,
-                          MaterialTheme.colorScheme.surface,
+                          colorScheme.surface,
                           CircleShape)
                       .align(Alignment.TopEnd)
                       .offset(
@@ -172,8 +173,8 @@ fun MapScreen(
     // --- Filter Button ---
     FloatingActionButton(
         onClick = { mapViewModel.setShowFilterDialog(true) },
-        containerColor = MaterialTheme.colorScheme.primaryContainer,
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        containerColor = colorScheme.primary,
+        contentColor = colorScheme.onBackground,
         modifier =
             modifier
                 .align(Alignment.BottomEnd)
@@ -184,7 +185,7 @@ fun MapScreen(
       Icon(
           painter = painterResource(id = R.drawable.filter_icon),
           contentDescription = "Filter events",
-          modifier = modifier.padding(4.dp))
+          modifier = Modifier.size(24.dp).align(Alignment.Center))
     }
 
     // --- Event Card Popup ---

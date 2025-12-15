@@ -3,13 +3,32 @@ package ch.onepass.onepass.ui.auth
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
@@ -17,7 +36,6 @@ import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -26,6 +44,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.credentials.CredentialManager
 import ch.onepass.onepass.R
+import ch.onepass.onepass.ui.theme.BlurCircleBottom
+import ch.onepass.onepass.ui.theme.BlurCircleTop
 
 object SignInScreenTestTags {
   const val AUTH_SCREEN = "authScreen"
@@ -48,12 +68,9 @@ fun AuthScreen(onSignedIn: () -> Unit = {}, authViewModel: AuthViewModel = AuthV
 
   Scaffold(
       modifier = Modifier.fillMaxSize().testTag(SignInScreenTestTags.AUTH_SCREEN),
-      containerColor = MaterialTheme.colorScheme.background) { padding ->
+      containerColor = colorScheme.background) { padding ->
         Box(
-            modifier =
-                Modifier.fillMaxSize()
-                    .padding(padding)
-                    .background(MaterialTheme.colorScheme.background),
+            modifier = Modifier.fillMaxSize().padding(padding).background(colorScheme.background),
             contentAlignment = Alignment.Center) {
               BlurCircle(
                   modifier =
@@ -61,7 +78,7 @@ fun AuthScreen(onSignedIn: () -> Unit = {}, authViewModel: AuthViewModel = AuthV
                           .offset(x = (-190).dp, y = (-380).dp),
                   size = 481.dp,
                   blurRadius = 40.dp,
-                  color = colorResource(id = R.color.blur_circle_top))
+                  color = BlurCircleTop)
 
               BlurCircle(
                   modifier =
@@ -69,7 +86,7 @@ fun AuthScreen(onSignedIn: () -> Unit = {}, authViewModel: AuthViewModel = AuthV
                           .offset(x = (200).dp, y = (130).dp),
                   size = 200.dp,
                   blurRadius = 40.dp,
-                  color = colorResource(id = R.color.blur_circle_bottom))
+                  color = BlurCircleBottom)
 
               Logo(
                   modifier =
@@ -120,7 +137,7 @@ fun Logo(
     iconSize: Dp = 56.dp,
     gap: Dp = 12.dp,
     fontSize: Int = 36,
-    textColor: Color = MaterialTheme.colorScheme.onBackground
+    textColor: Color = colorScheme.onBackground
 ) {
   Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
     Image(
@@ -148,7 +165,7 @@ fun HeroTitle(
     modifier: Modifier = Modifier,
     titleTop: String,
     titleBottom: String,
-    textColor: Color = MaterialTheme.colorScheme.onBackground,
+    textColor: Color = colorScheme.onBackground,
     fontSize: Int = 42,
     lineHeight: Int = 44,
     fontWeight: FontWeight = FontWeight.ExtraBold,
@@ -172,7 +189,7 @@ fun GoogleSignInButton(onSignInClick: () -> Unit) {
       onClick = onSignInClick,
       colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent), // Button color
       shape = RoundedCornerShape(25), // Circular edges for the button
-      border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+      border = BorderStroke(1.dp, colorScheme.onSurface),
       modifier =
           Modifier.padding(8.dp)
               .height(48.dp) // Adjust height as needed
@@ -194,7 +211,7 @@ fun GoogleSignInButton(onSignInClick: () -> Unit) {
               // Text for the button
               Text(
                   text = "Sign in with Google",
-                  color = MaterialTheme.colorScheme.onBackground, // Text color
+                  color = colorScheme.onBackground, // Text color
                   fontSize = 16.sp, // Font size
                   fontWeight = FontWeight.Medium,
                   style = MaterialTheme.typography.bodyMedium)

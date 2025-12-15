@@ -3,7 +3,7 @@ package ch.onepass.onepass.ui.eventsfilters
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import ch.onepass.onepass.model.eventfilters.TagCategories
-import ch.onepass.onepass.ui.eventfilters.TagFilter
+import ch.onepass.onepass.model.eventfilters.TagFilter
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import org.junit.Rule
 import org.junit.Test

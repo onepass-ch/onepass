@@ -3,21 +3,48 @@ package ch.onepass.onepass.ui.components.forms
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import ch.onepass.onepass.R
-import ch.onepass.onepass.ui.theme.EventDateColor
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -47,9 +74,7 @@ fun TimePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
   Box(
       modifier =
           modifier
-              .background(
-                  colorResource(id = R.color.time_picker_background).copy(alpha = 0.12f),
-                  RoundedCornerShape(6.dp))
+              .background(colorScheme.onBackground.copy(alpha = 0.12f), RoundedCornerShape(6.dp))
               .clip(RoundedCornerShape(6.dp))
               .clickable { showDialog = true }
               .padding(horizontal = 12.dp, vertical = 14.dp),
@@ -59,8 +84,7 @@ fun TimePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
             style =
                 MaterialTheme.typography.headlineSmall.copy(
                     color =
-                        if (value.isEmpty()) colorResource(id = R.color.gray)
-                        else colorResource(id = R.color.black)))
+                        if (value.isEmpty()) colorScheme.onSurface else colorScheme.onBackground))
       }
 
   if (showDialog) {
@@ -70,7 +94,7 @@ fun TimePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
           Surface(
               modifier = Modifier.fillMaxWidth(0.9f).wrapContentHeight(),
               shape = RoundedCornerShape(16.dp),
-              color = colorResource(id = R.color.date_picker_background)) {
+              color = colorScheme.background) {
                 Column(
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally) {
@@ -78,37 +102,27 @@ fun TimePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
                           text = "Select Time",
                           style =
                               MaterialTheme.typography.titleLarge.copy(
-                                  color = colorResource(id = R.color.white)),
+                                  color = colorScheme.onBackground),
                           modifier = Modifier.padding(bottom = 16.dp))
 
                       TimePicker(
                           state = timePickerState,
                           colors =
                               TimePickerDefaults.colors(
-                                  clockDialColor =
-                                      colorResource(id = R.color.date_picker_background_darker),
-                                  selectorColor = EventDateColor,
-                                  containerColor =
-                                      colorResource(id = R.color.date_picker_background),
-                                  periodSelectorBorderColor =
-                                      colorResource(id = R.color.date_picker_border),
-                                  clockDialSelectedContentColor = colorResource(id = R.color.white),
-                                  clockDialUnselectedContentColor =
-                                      colorResource(id = R.color.gray),
-                                  periodSelectorSelectedContainerColor = EventDateColor,
-                                  periodSelectorUnselectedContainerColor =
-                                      colorResource(id = R.color.date_picker_background_darker),
-                                  periodSelectorSelectedContentColor =
-                                      colorResource(id = R.color.white),
-                                  periodSelectorUnselectedContentColor =
-                                      colorResource(id = R.color.gray),
-                                  timeSelectorSelectedContainerColor = EventDateColor,
-                                  timeSelectorUnselectedContainerColor =
-                                      colorResource(id = R.color.date_picker_background_darker),
-                                  timeSelectorSelectedContentColor =
-                                      colorResource(id = R.color.white),
-                                  timeSelectorUnselectedContentColor =
-                                      colorResource(id = R.color.gray)))
+                                  clockDialColor = colorScheme.surface,
+                                  selectorColor = colorScheme.primary,
+                                  containerColor = colorScheme.background,
+                                  periodSelectorBorderColor = colorScheme.onSurface,
+                                  clockDialSelectedContentColor = colorScheme.onBackground,
+                                  clockDialUnselectedContentColor = colorScheme.onSurface,
+                                  periodSelectorSelectedContainerColor = colorScheme.primary,
+                                  periodSelectorUnselectedContainerColor = colorScheme.surface,
+                                  periodSelectorSelectedContentColor = colorScheme.onBackground,
+                                  periodSelectorUnselectedContentColor = colorScheme.onSurface,
+                                  timeSelectorSelectedContainerColor = colorScheme.primary,
+                                  timeSelectorUnselectedContainerColor = colorScheme.surface,
+                                  timeSelectorSelectedContentColor = colorScheme.onBackground,
+                                  timeSelectorUnselectedContentColor = colorScheme.onSurface))
 
                       Row(
                           modifier = Modifier.fillMaxWidth().padding(top = 24.dp),
@@ -119,7 +133,7 @@ fun TimePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
                                   "Cancel",
                                   style =
                                       MaterialTheme.typography.labelLarge.copy(
-                                          color = colorResource(id = R.color.white)))
+                                          color = colorScheme.onBackground))
                             }
                             Spacer(modifier = Modifier.width(8.dp))
                             Button(
@@ -134,7 +148,8 @@ fun TimePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
                                   showDialog = false
                                 },
                                 colors =
-                                    ButtonDefaults.buttonColors(containerColor = EventDateColor)) {
+                                    ButtonDefaults.buttonColors(
+                                        containerColor = colorScheme.primary)) {
                                   Text("OK", style = MaterialTheme.typography.labelLarge)
                                 }
                           }
@@ -166,10 +181,8 @@ fun DatePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
   Box(
       modifier =
           modifier
-              .background(
-                  colorResource(id = R.color.date_picker_background), RoundedCornerShape(6.dp))
-              .border(
-                  1.dp, colorResource(id = R.color.date_picker_border), RoundedCornerShape(6.dp))
+              .background(colorScheme.surface, RoundedCornerShape(6.dp))
+              .border(1.dp, colorScheme.onSurface, RoundedCornerShape(6.dp))
               .clip(RoundedCornerShape(6.dp))
               .clickable { showDialog = true }
               .padding(horizontal = 16.dp, vertical = 14.dp),
@@ -180,57 +193,50 @@ fun DatePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
             verticalAlignment = Alignment.CenterVertically) {
               Text(
                   text = value.ifEmpty { "Select date" },
-                  style =
-                      MaterialTheme.typography.bodyMedium.copy(
-                          color =
-                              if (value.isEmpty())
-                                  colorResource(id = R.color.date_picker_text_secondary)
-                              else colorResource(id = R.color.white)))
+                  style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
               Icon(
                   imageVector = ImageVector.vectorResource(R.drawable.choosedateicon),
                   contentDescription = "Select date",
-                  tint = colorResource(id = R.color.gray),
+                  tint = colorScheme.onSurface,
                   modifier = Modifier.size(20.dp))
             }
       }
   if (showDialog) {
     val datePickerColors =
         DatePickerDefaults.colors(
-            containerColor = colorResource(id = R.color.date_picker_background),
-            titleContentColor = colorResource(id = R.color.white),
-            headlineContentColor = colorResource(id = R.color.white),
-            weekdayContentColor = colorResource(id = R.color.gray),
-            subheadContentColor = colorResource(id = R.color.white),
-            yearContentColor = colorResource(id = R.color.white),
-            currentYearContentColor = colorResource(id = R.color.white),
-            selectedYearContentColor = colorResource(id = R.color.white),
-            selectedYearContainerColor = EventDateColor,
-            dayContentColor = colorResource(id = R.color.white),
-            disabledDayContentColor = colorResource(id = R.color.gray),
-            selectedDayContentColor = colorResource(id = R.color.white),
-            disabledSelectedDayContentColor = colorResource(id = R.color.gray),
-            selectedDayContainerColor = EventDateColor,
-            todayContentColor = EventDateColor,
-            todayDateBorderColor = EventDateColor,
-            dayInSelectionRangeContentColor = colorResource(id = R.color.white),
-            dayInSelectionRangeContainerColor = EventDateColor.copy(alpha = 0.3f),
-            dividerColor = colorResource(id = R.color.date_picker_border),
+            containerColor = colorScheme.background,
+            titleContentColor = colorScheme.onBackground,
+            headlineContentColor = colorScheme.onBackground,
+            weekdayContentColor = colorScheme.onSurface,
+            subheadContentColor = colorScheme.onBackground,
+            yearContentColor = colorScheme.onBackground,
+            currentYearContentColor = colorScheme.onBackground,
+            selectedYearContentColor = colorScheme.onBackground,
+            selectedYearContainerColor = colorScheme.primary,
+            dayContentColor = colorScheme.onBackground,
+            disabledDayContentColor = colorScheme.onSurface,
+            selectedDayContentColor = colorScheme.onBackground,
+            disabledSelectedDayContentColor = colorScheme.onSurface,
+            selectedDayContainerColor = colorScheme.primary,
+            todayContentColor = colorScheme.primary,
+            todayDateBorderColor = colorScheme.primary,
+            dayInSelectionRangeContentColor = colorScheme.onBackground,
+            dayInSelectionRangeContainerColor = colorScheme.primary.copy(alpha = 0.3f),
+            dividerColor = colorScheme.onSurface,
             dateTextFieldColors =
                 TextFieldDefaults.colors(
-                    focusedContainerColor =
-                        colorResource(id = R.color.date_picker_background_darker),
-                    unfocusedContainerColor =
-                        colorResource(id = R.color.date_picker_background_darker),
-                    focusedTextColor = colorResource(id = R.color.white),
-                    unfocusedTextColor = colorResource(id = R.color.white),
-                    disabledTextColor = colorResource(id = R.color.white),
-                    cursorColor = EventDateColor,
-                    focusedIndicatorColor = EventDateColor,
-                    unfocusedIndicatorColor = colorResource(id = R.color.date_picker_border),
-                    disabledIndicatorColor = colorResource(id = R.color.date_picker_border),
-                    focusedLabelColor = EventDateColor,
-                    unfocusedLabelColor = colorResource(id = R.color.gray),
-                    disabledLabelColor = colorResource(id = R.color.gray)))
+                    focusedContainerColor = colorScheme.surface,
+                    unfocusedContainerColor = colorScheme.surface,
+                    focusedTextColor = colorScheme.onBackground,
+                    unfocusedTextColor = colorScheme.onBackground,
+                    disabledTextColor = colorScheme.onBackground,
+                    cursorColor = colorScheme.primary,
+                    focusedIndicatorColor = colorScheme.primary,
+                    unfocusedIndicatorColor = colorScheme.onSurface,
+                    disabledIndicatorColor = colorScheme.onSurface,
+                    focusedLabelColor = colorScheme.primary,
+                    unfocusedLabelColor = colorScheme.onSurface,
+                    disabledLabelColor = colorScheme.onSurface))
 
     DatePickerDialog(
         onDismissRequest = { showDialog = false },
@@ -244,7 +250,7 @@ fun DatePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
                 }
                 showDialog = false
               },
-              colors = ButtonDefaults.buttonColors(containerColor = EventDateColor)) {
+              colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary)) {
                 Text("OK", style = MaterialTheme.typography.labelLarge)
               }
         },
@@ -252,9 +258,7 @@ fun DatePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
           TextButton(onClick = { showDialog = false }) {
             Text(
                 "Cancel",
-                style =
-                    MaterialTheme.typography.labelLarge.copy(
-                        color = colorResource(id = R.color.white)))
+                style = MaterialTheme.typography.labelLarge.copy(color = colorScheme.onBackground))
           }
         },
         colors = datePickerColors) {

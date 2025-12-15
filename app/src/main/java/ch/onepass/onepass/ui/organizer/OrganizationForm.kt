@@ -9,14 +9,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.components.buttons.UploadImageButton
 import ch.onepass.onepass.ui.components.forms.FormTextField
 import ch.onepass.onepass.ui.components.forms.PrefixPhoneRow
@@ -80,7 +79,7 @@ fun OrganizerForm(
           modifier
               .fillMaxSize()
               .verticalScroll(scrollState)
-              .background(color = colorResource(id = R.color.background))
+              .background(color = colorScheme.background)
               .padding(16.dp)) {
 
         // Organization Name Field
@@ -172,7 +171,7 @@ fun OrganizerForm(
           Text(
               text = "✓ Profile image selected",
               style = MaterialTheme.typography.bodySmall,
-              color = colorResource(id = R.color.white),
+              color = colorScheme.onBackground,
               modifier = Modifier.padding(start = 8.dp))
         }
 
@@ -189,7 +188,7 @@ fun OrganizerForm(
           Text(
               text = "✓ Banner image selected",
               style = MaterialTheme.typography.bodySmall,
-              color = colorResource(id = R.color.white),
+              color = colorScheme.onBackground,
               modifier = Modifier.padding(start = 8.dp))
         }
 

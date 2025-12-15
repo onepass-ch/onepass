@@ -1,12 +1,23 @@
 package ch.onepass.onepass.ui.navigation
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -23,7 +34,7 @@ import ch.onepass.onepass.R
 fun ComingSoonScreen(onBack: () -> Unit) {
   Surface(
       modifier = Modifier.fillMaxSize(),
-      color = colorResource(id = R.color.background) // dark background from theme
+      color = colorScheme.background // dark background from theme
       ) {
         Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 32.dp, vertical = 24.dp),
@@ -44,7 +55,7 @@ fun ComingSoonScreen(onBack: () -> Unit) {
                   style =
                       MaterialTheme.typography.headlineMedium.copy(
                           fontSize = 28.sp, fontWeight = FontWeight.Bold),
-                  color = colorResource(id = R.color.on_background))
+                  color = colorScheme.onBackground)
 
               Spacer(modifier = Modifier.height(12.dp))
 
@@ -52,7 +63,7 @@ fun ComingSoonScreen(onBack: () -> Unit) {
               Text(
                   text = "This feature isn’t ready yet.\nStay tuned for updates!",
                   style = MaterialTheme.typography.bodyLarge,
-                  color = colorResource(id = R.color.on_background).copy(alpha = 0.75f),
+                  color = colorScheme.onBackground.copy(alpha = 0.75f),
                   lineHeight = 22.sp,
                   modifier = Modifier.padding(horizontal = 16.dp),
                   textAlign = androidx.compose.ui.text.style.TextAlign.Center)
@@ -64,8 +75,8 @@ fun ComingSoonScreen(onBack: () -> Unit) {
                   onClick = onBack,
                   colors =
                       ButtonDefaults.buttonColors(
-                          containerColor = colorResource(id = R.color.primary),
-                          contentColor = colorResource(id = R.color.shadow_qr_code)),
+                          containerColor = colorScheme.primary,
+                          contentColor = colorScheme.onBackground),
                   modifier = Modifier.fillMaxWidth(0.6f).height(50.dp)) {
                     Text("Go Back", style = MaterialTheme.typography.bodyLarge)
                   }

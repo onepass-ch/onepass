@@ -1,7 +1,14 @@
 package ch.onepass.onepass.ui.feed
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
@@ -12,14 +19,28 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
@@ -40,6 +61,7 @@ import ch.onepass.onepass.ui.feed.FeedScreenTestTags.getTestTagForSearchEvent
 import ch.onepass.onepass.ui.feed.FeedScreenTestTags.getTestTagForSearchOrg
 import ch.onepass.onepass.ui.feed.FeedScreenTestTags.getTestTagForSearchUser
 import ch.onepass.onepass.ui.organization.OrganizationCard
+import ch.onepass.onepass.ui.theme.Error
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -162,7 +184,7 @@ fun FeedScreen(
             onFavoritesClick = { viewModel.toggleFavoritesMode() },
             onClearFilters = { filterViewModel.clearFilters() })
       },
-      containerColor = colorResource(id = R.color.screen_background),
+      containerColor = colorScheme.background,
   ) { paddingValues ->
     PullToRefreshBox(
         isRefreshing = uiState.isRefreshing,
@@ -301,7 +323,7 @@ private fun FeedContentStateSwitcher(
               item {
                 Text(
                     text = "Error: ${searchState.error}",
-                    color = MaterialTheme.colorScheme.error,
+                    color = Error,
                     modifier = Modifier.padding(16.dp).testTag(FeedScreenTestTags.ERROR_MESSAGE))
               }
             }
@@ -461,7 +483,7 @@ private fun FeedTopBar(
 ) {
   Surface(
       modifier = modifier.fillMaxWidth().testTag(FeedScreenTestTags.FEED_TOP_BAR),
-      color = colorResource(id = R.color.screen_background),
+      color = colorScheme.background,
       tonalElevation = 0.dp,
   ) {
     Row(
@@ -476,6 +498,12 @@ private fun FeedTopBar(
               modifier = Modifier.weight(1f).testTag(FeedScreenTestTags.SEARCH_TEXT_FIELD),
               shape = RoundedCornerShape(10.dp),
               keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
+              colors =
+                  OutlinedTextFieldDefaults.colors(
+                      focusedBorderColor = colorScheme.primary,
+                      unfocusedBorderColor = colorScheme.onBackground,
+                      cursorColor = colorScheme.onBackground,
+                      disabledBorderColor = colorScheme.primary),
           )
 
           Row(
@@ -489,7 +517,7 @@ private fun FeedTopBar(
                               if (isShowingFavorites) Icons.Filled.Favorite
                               else Icons.Outlined.FavoriteBorder,
                           contentDescription = "Favorites",
-                          tint = colorResource(id = R.color.white),
+                          tint = colorScheme.onBackground,
                           modifier = Modifier.size(24.dp))
                     }
 
@@ -500,7 +528,7 @@ private fun FeedTopBar(
                       Icon(
                           imageVector = Icons.Default.Notifications,
                           contentDescription = "Notifications",
-                          tint = colorResource(id = R.color.white),
+                          tint = colorScheme.onBackground,
                           modifier = Modifier.size(24.dp))
                     }
 
@@ -510,7 +538,7 @@ private fun FeedTopBar(
                       Icon(
                           painter = painterResource(id = R.drawable.filter_icon),
                           contentDescription = "Filter events",
-                          tint = colorResource(id = R.color.white),
+                          tint = colorScheme.onBackground,
                           modifier = Modifier.size(24.dp))
                     }
               }

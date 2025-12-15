@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.myevents
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
@@ -37,6 +38,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -54,18 +56,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
 import ch.onepass.onepass.model.payment.StripePaymentHelper
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.payment.LocalPaymentSheet
+import ch.onepass.onepass.ui.theme.Error
 import ch.onepass.onepass.ui.theme.MarcFontFamily
 import com.google.firebase.auth.FirebaseAuth
 
@@ -187,9 +187,9 @@ fun MyEventsContent(userQrData: String, viewModel: MyEventsViewModel) {
     }
   }
 
-  Surface(modifier = Modifier.fillMaxSize(), color = colorResource(id = R.color.background)) {
+  Surface(modifier = Modifier.fillMaxSize(), color = colorScheme.background) {
     Box(modifier = Modifier.fillMaxSize()) {
-      Column(modifier = Modifier.fillMaxSize().background(colorResource(id = R.color.background))) {
+      Column(modifier = Modifier.fillMaxSize().background(colorScheme.background)) {
         // Header with gradient and modern segmented control
         Box(
             modifier =
@@ -198,8 +198,8 @@ fun MyEventsContent(userQrData: String, viewModel: MyEventsViewModel) {
                         Brush.verticalGradient(
                             colors =
                                 listOf(
-                                    colorResource(id = R.color.accent_purple).copy(alpha = 0.15f),
-                                    colorResource(id = R.color.background))))
+                                    colorScheme.primary.copy(alpha = 0.15f),
+                                    colorScheme.background)))
                     .padding(top = 16.dp, bottom = 24.dp)) {
               Column(
                   modifier = Modifier.fillMaxWidth(),
@@ -245,8 +245,8 @@ fun MyEventsContent(userQrData: String, viewModel: MyEventsViewModel) {
           modifier = Modifier.align(Alignment.BottomCenter).padding(16.dp)) { data ->
             Snackbar(
                 snackbarData = data,
-                containerColor = colorResource(id = R.color.surface_container),
-                contentColor = colorResource(id = R.color.error_red),
+                containerColor = colorScheme.surface,
+                contentColor = Error,
                 shape = RoundedCornerShape(12.dp))
           }
     }
@@ -316,7 +316,7 @@ private fun ModernSegmentedControl(
               .fillMaxWidth()
               .height(56.dp)
               .clip(RoundedCornerShape(28.dp))
-              .background(colorResource(id = R.color.surface_container))) {
+              .background(colorScheme.surface)) {
         // Animated pill indicator
         Box(
             modifier =
@@ -329,8 +329,7 @@ private fun ModernSegmentedControl(
                         Brush.horizontalGradient(
                             colors =
                                 listOf(
-                                    colorResource(id = R.color.accent_purple),
-                                    colorResource(id = R.color.accent_purple).copy(alpha = 0.8f)))))
+                                    colorScheme.primary, colorScheme.primary.copy(alpha = 0.8f)))))
 
         // Tab items
         Row(modifier = Modifier.fillMaxSize()) {
@@ -339,7 +338,8 @@ private fun ModernSegmentedControl(
 
             val textColor by
                 animateColorAsState(
-                    targetValue = if (isSelected) Color.White else colorResource(id = R.color.gray),
+                    targetValue =
+                        if (isSelected) colorScheme.onBackground else colorScheme.onSurface,
                     label = "textColor")
 
             Box(
@@ -499,6 +499,7 @@ private fun ListedTicketsList(
 }
 
 /** Card displaying a listed ticket with cancel option. */
+@SuppressLint("DefaultLocale")
 @Composable
 private fun ListedTicketCard(
     ticket: ListedTicket,
@@ -510,9 +511,7 @@ private fun ListedTicketCard(
   Card(
       modifier = modifier.fillMaxWidth(),
       shape = RoundedCornerShape(16.dp),
-      colors =
-          CardDefaults.cardColors(
-              containerColor = colorResource(id = R.color.surface_card_color))) {
+      colors = CardDefaults.cardColors(containerColor = colorScheme.surface)) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
           // Header with event title
           Row(
@@ -525,7 +524,7 @@ private fun ListedTicketCard(
                       style =
                           MaterialTheme.typography.titleMedium.copy(
                               fontWeight = FontWeight.SemiBold),
-                      color = colorResource(id = R.color.on_background),
+                      color = colorScheme.onBackground,
                       maxLines = 2,
                       overflow = TextOverflow.Ellipsis)
 
@@ -534,12 +533,12 @@ private fun ListedTicketCard(
                   Text(
                       text = ticket.eventDate,
                       style = MaterialTheme.typography.bodySmall,
-                      color = colorResource(id = R.color.gray))
+                      color = colorScheme.onSurface)
 
                   Text(
                       text = ticket.eventLocation,
                       style = MaterialTheme.typography.bodySmall,
-                      color = colorResource(id = R.color.gray),
+                      color = colorScheme.onSurface,
                       maxLines = 1,
                       overflow = TextOverflow.Ellipsis)
                 }
@@ -548,15 +547,14 @@ private fun ListedTicketCard(
                 Box(
                     modifier =
                         Modifier.clip(RoundedCornerShape(8.dp))
-                            .background(
-                                colorResource(id = R.color.accent_purple).copy(alpha = 0.15f))
+                            .background(colorScheme.primary.copy(alpha = 0.15f))
                             .padding(horizontal = 10.dp, vertical = 4.dp)) {
                       Text(
                           text = "On Sale",
                           style =
                               MaterialTheme.typography.labelSmall.copy(
                                   fontWeight = FontWeight.SemiBold),
-                          color = colorResource(id = R.color.accent_purple))
+                          color = colorScheme.primary)
                     }
               }
 
@@ -571,23 +569,23 @@ private fun ListedTicketCard(
                   Text(
                       text = "Asking Price",
                       style = MaterialTheme.typography.labelSmall,
-                      color = colorResource(id = R.color.gray))
+                      color = colorScheme.onSurface)
                   Text(
                       text = "${ticket.currency} ${String.format("%.2f", ticket.listingPrice)}",
                       style =
                           MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
-                      color = colorResource(id = R.color.accent_purple))
+                      color = colorScheme.primary)
                 }
 
                 Column(horizontalAlignment = Alignment.End) {
                   Text(
                       text = "Original Price",
                       style = MaterialTheme.typography.labelSmall,
-                      color = colorResource(id = R.color.gray))
+                      color = colorScheme.onSurface)
                   Text(
                       text = "${ticket.currency} ${String.format("%.2f", ticket.originalPrice)}",
                       style = MaterialTheme.typography.bodyMedium,
-                      color = colorResource(id = R.color.on_background).copy(alpha = 0.7f))
+                      color = colorScheme.onBackground.copy(alpha = 0.7f))
                 }
               }
 
@@ -596,7 +594,7 @@ private fun ListedTicketCard(
           Text(
               text = "Listed on ${ticket.listedAt}",
               style = MaterialTheme.typography.labelSmall,
-              color = colorResource(id = R.color.gray))
+              color = colorScheme.onSurface)
 
           Spacer(modifier = Modifier.height(12.dp))
 
@@ -606,8 +604,7 @@ private fun ListedTicketCard(
               modifier = Modifier.fillMaxWidth().height(44.dp),
               colors =
                   ButtonDefaults.buttonColors(
-                      containerColor = colorResource(id = R.color.error_red).copy(alpha = 0.1f),
-                      contentColor = colorResource(id = R.color.error_red)),
+                      containerColor = Error.copy(alpha = 0.1f), contentColor = Error),
               shape = RoundedCornerShape(12.dp)) {
                 Text(
                     text = "Cancel Listing",
@@ -638,13 +635,13 @@ private fun ListedTicketCard(
                 showCancelDialog = false
                 onCancelListing()
               }) {
-                Text(text = "Cancel Listing", color = colorResource(id = R.color.error_red))
+                Text(text = "Cancel Listing", color = Error)
               }
         },
         dismissButton = {
           TextButton(onClick = { showCancelDialog = false }) { Text(text = "Keep Listed") }
         },
-        containerColor = colorResource(id = R.color.surface_container))
+        containerColor = colorScheme.surface)
   }
 }
 
@@ -668,14 +665,12 @@ private fun ModernSubTabs(
 
       val backgroundColor by
           animateColorAsState(
-              targetValue =
-                  if (isSelected) colorResource(id = R.color.accent_purple)
-                  else colorResource(id = R.color.surface_container),
+              targetValue = if (isSelected) colorScheme.primary else colorScheme.surface,
               label = "backgroundColor")
 
       val textColor by
           animateColorAsState(
-              targetValue = if (isSelected) Color.White else colorResource(id = R.color.gray),
+              targetValue = if (isSelected) colorScheme.onBackground else colorScheme.onSurface,
               label = "textColor")
 
       val tabTestTag =
@@ -724,7 +719,7 @@ private fun MarketSection(
           modifier
               .fillMaxWidth()
               .verticalScroll(rememberScrollState())
-              .background(colorResource(id = R.color.background))) {
+              .background(colorScheme.background)) {
         Spacer(modifier = Modifier.height(8.dp))
 
         // Search bar
@@ -788,7 +783,7 @@ private fun MarketTicketListInline(
               style =
                   MaterialTheme.typography.titleMedium.copy(
                       fontFamily = MarcFontFamily, fontWeight = FontWeight.Bold),
-              color = colorResource(id = R.color.on_background),
+              color = colorScheme.onBackground,
               modifier = Modifier.testTag(MyEventsTestTags.MARKET_TICKETS_TITLE))
 
           if (hasSellableTickets) {
@@ -796,8 +791,8 @@ private fun MarketTicketListInline(
                 onClick = onSellTicket,
                 colors =
                     ButtonDefaults.buttonColors(
-                        containerColor = colorResource(id = R.color.accent_purple),
-                        contentColor = colorResource(id = R.color.white)),
+                        containerColor = colorScheme.primary,
+                        contentColor = colorScheme.onBackground),
                 shape = RoundedCornerShape(8.dp),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                 modifier = Modifier.testTag(MyEventsTestTags.SELL_TICKET_BUTTON)) {
@@ -821,7 +816,7 @@ private fun MarketTicketListInline(
                 Modifier.fillMaxWidth().height(200.dp).testTag(MyEventsTestTags.MARKET_LOADING),
             contentAlignment = Alignment.Center) {
               CircularProgressIndicator(
-                  color = colorResource(id = R.color.primary), modifier = Modifier.size(40.dp))
+                  color = colorScheme.primary, modifier = Modifier.size(40.dp))
             }
       }
       marketTickets.isEmpty() -> {

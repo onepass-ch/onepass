@@ -24,6 +24,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -47,7 +48,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
@@ -58,6 +58,7 @@ import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
+import ch.onepass.onepass.ui.theme.Error
 import kotlinx.coroutines.launch
 
 object StaffInvitationTestTags {
@@ -123,13 +124,13 @@ fun StaffInvitationScreen(
               TabRow(
                   modifier = Modifier.fillMaxWidth().testTag(StaffInvitationTestTags.TAB_ROW),
                   selectedTabIndex = selectedTabIndex,
-                  containerColor = colorResource(id = R.color.screen_surface),
-                  contentColor = colorResource(id = R.color.on_surface),
+                  containerColor = colorScheme.surface,
+                  contentColor = colorScheme.onSurface,
                   indicator = { tabPositions ->
                     TabRowDefaults.Indicator(
                         modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
                         height = 4.dp,
-                        color = colorResource(id = R.color.tab_indicator))
+                        color = colorScheme.primary)
                   }) {
                     Tab(
                         text = {
@@ -138,9 +139,8 @@ fun StaffInvitationScreen(
                               style = MaterialTheme.typography.titleMedium,
                               color =
                                   if (uiState.selectedTab == UserSearchType.DISPLAY_NAME)
-                                      colorResource(id = R.color.tab_selected)
-                                  else
-                                      colorResource(id = R.color.tab_unselected).copy(alpha = 0.6f))
+                                      colorScheme.primary
+                                  else colorScheme.outline)
                         },
                         selected = uiState.selectedTab == UserSearchType.DISPLAY_NAME,
                         onClick = { viewModel.selectTab(UserSearchType.DISPLAY_NAME) },
@@ -152,9 +152,8 @@ fun StaffInvitationScreen(
                               style = MaterialTheme.typography.titleMedium,
                               color =
                                   if (uiState.selectedTab == UserSearchType.EMAIL)
-                                      colorResource(id = R.color.tab_selected)
-                                  else
-                                      colorResource(id = R.color.tab_unselected).copy(alpha = 0.6f))
+                                      colorScheme.primary
+                                  else colorScheme.outline)
                         },
                         selected = uiState.selectedTab == UserSearchType.EMAIL,
                         onClick = { viewModel.selectTab(UserSearchType.EMAIL) },
@@ -175,7 +174,7 @@ fun StaffInvitationScreen(
               uiState.errorMessage?.let { error ->
                 Text(
                     text = error,
-                    color = colorResource(id = R.color.error_red),
+                    color = Error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier =
                         Modifier.fillMaxWidth()
@@ -264,10 +263,10 @@ fun StaffInvitationScreen(
         modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)) { data ->
           androidx.compose.material3.Snackbar(
               snackbarData = data,
-              containerColor = colorResource(R.color.surface_container),
-              contentColor = MaterialTheme.colorScheme.onSurface,
-              actionColor = MaterialTheme.colorScheme.primary,
-              dismissActionContentColor = MaterialTheme.colorScheme.onSurface)
+              containerColor = colorScheme.surface,
+              contentColor = colorScheme.onSurface,
+              actionColor = colorScheme.primary,
+              dismissActionContentColor = colorScheme.onSurface)
         }
   }
 }
@@ -296,7 +295,7 @@ fun StaffInvitationDialog(
           Text(
               text = stringResource(R.string.staff_invitation_select_role),
               style = MaterialTheme.typography.labelMedium,
-              color = MaterialTheme.colorScheme.onSurfaceVariant)
+              color = colorScheme.onBackground)
           Spacer(modifier = Modifier.height(8.dp))
 
           ExposedDropdownMenuBox(
@@ -316,9 +315,9 @@ fun StaffInvitationDialog(
                             .testTag(StaffInvitationTestTags.ROLE_DROPDOWN),
                     colors =
                         ExposedDropdownMenuDefaults.textFieldColors(
-                            focusedIndicatorColor = colorResource(R.color.primary),
-                            focusedLabelColor = colorResource(R.color.primary),
-                            cursorColor = colorResource(R.color.primary)))
+                            focusedIndicatorColor = colorScheme.primary,
+                            focusedLabelColor = colorScheme.primary,
+                            cursorColor = colorScheme.primary))
 
                 ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                   availableRoles.forEach { role ->
@@ -337,12 +336,12 @@ fun StaffInvitationDialog(
         Button(
             onClick = onConfirm,
             enabled = !isInviting,
-            colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.primary)),
+            colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary),
             modifier = Modifier.testTag(StaffInvitationTestTags.CONFIRM_BUTTON)) {
               if (isInviting) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    color = colorScheme.onBackground,
                     strokeWidth = 2.dp)
               } else {
                 Text(stringResource(R.string.staff_invitation_invite_button))
@@ -353,7 +352,7 @@ fun StaffInvitationDialog(
         TextButton(
             onClick = onCancel,
             enabled = !isInviting,
-            colors = ButtonDefaults.textButtonColors(contentColor = colorResource(R.color.primary)),
+            colors = ButtonDefaults.textButtonColors(contentColor = colorScheme.primary),
             modifier = Modifier.testTag(StaffInvitationTestTags.CANCEL_BUTTON)) {
               Text(stringResource(R.string.staff_invitation_cancel_button))
             }
@@ -376,23 +375,22 @@ private fun SearchInputField(
       placeholder = {
         Text(
             text = placeholder,
-            style = MaterialTheme.typography.bodyMedium.copy(color = colorResource(R.color.gray)))
+            style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.outline))
       },
       modifier =
           modifier
               .fillMaxWidth()
-              .border(
-                  1.dp, colorResource(id = R.color.staff_search_border), RoundedCornerShape(10.dp))
+              .border(1.dp, colorScheme.onSurface, RoundedCornerShape(10.dp))
               .heightIn(min = 50.dp)
               .testTag(StaffInvitationTestTags.SEARCH_FIELD),
       colors =
           TextFieldDefaults.colors(
-              focusedContainerColor = colorResource(R.color.staff_search_container),
-              unfocusedContainerColor = colorResource(R.color.staff_search_container),
+              focusedContainerColor = colorScheme.surface,
+              unfocusedContainerColor = colorScheme.surface,
               focusedIndicatorColor = Color.Transparent,
               unfocusedIndicatorColor = Color.Transparent,
-              focusedTextColor = colorResource(R.color.white),
-              unfocusedTextColor = colorResource(R.color.white),
+              focusedTextColor = colorScheme.onBackground,
+              unfocusedTextColor = colorScheme.onBackground,
           ),
       shape = RoundedCornerShape(10.dp),
       textStyle = MaterialTheme.typography.bodySmall,
@@ -428,12 +426,12 @@ fun InvitationResultDialog(
             Triple(
                 stringResource(R.string.staff_invitation_success_title),
                 stringResource(R.string.staff_invitation_success_message, userName),
-                colorResource(R.color.primary))
+                colorScheme.primary)
         InvitationResultType.ERROR ->
             Triple(
                 stringResource(R.string.staff_invitation_error_title),
                 stringResource(R.string.staff_invitation_error_message, userName),
-                colorResource(R.color.error_red))
+                Error)
       }
 
   AlertDialog(

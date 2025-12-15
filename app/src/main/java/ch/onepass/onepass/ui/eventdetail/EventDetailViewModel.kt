@@ -10,7 +10,10 @@ import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import ch.onepass.onepass.model.payment.PaymentRepository
 import ch.onepass.onepass.model.payment.PaymentRepositoryFirebase
 import ch.onepass.onepass.repository.RepositoryProvider
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.launch
 
 /** Represents the different states of a payment process. */

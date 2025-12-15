@@ -3,9 +3,23 @@ package ch.onepass.onepass.ui.event
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,7 +29,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -29,11 +42,8 @@ import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.resources.C
 import ch.onepass.onepass.ui.components.buttons.LikeButton
-import ch.onepass.onepass.ui.theme.CardBackground
-import ch.onepass.onepass.ui.theme.CardShadow
 import ch.onepass.onepass.ui.theme.EventCardDimens
-import ch.onepass.onepass.ui.theme.EventDateColor
-import ch.onepass.onepass.ui.theme.TextSecondary
+import ch.onepass.onepass.ui.theme.Shadow
 import ch.onepass.onepass.utils.FormatUtils.formatPriceCompact
 import coil.compose.AsyncImage
 
@@ -91,20 +101,20 @@ fun EventCard(
               .clickable(onClick = onCardClick)
               .shadow(
                   elevation = EventCardDimens.shadowElevation1,
-                  spotColor = CardShadow,
-                  ambientColor = CardShadow,
+                  spotColor = Shadow,
+                  ambientColor = Shadow,
               )
               .shadow(
                   elevation = EventCardDimens.shadowElevation2,
-                  spotColor = CardShadow,
-                  ambientColor = CardShadow,
+                  spotColor = Shadow,
+                  ambientColor = Shadow,
               )
               .fillMaxWidth()
               .widthIn(max = EventCardDimens.maxWidth)
               .onSizeChanged { size -> cardWidth = with(density) { size.width.toDp() } }
               .then(calculatedHeight?.let { height -> Modifier.heightIn(min = height) } ?: Modifier)
               .background(
-                  color = CardBackground,
+                  color = colorScheme.surface,
                   shape = RoundedCornerShape(size = EventCardDimens.cornerRadius),
               ),
       verticalArrangement = Arrangement.spacedBy(EventCardDimens.verticalSpacing, Alignment.Top),
@@ -164,7 +174,7 @@ fun EventCard(
         Text(
             text = title,
             style = MaterialTheme.typography.headlineMedium.copy(fontSize = 24.sp),
-            color = Color.White,
+            color = colorScheme.onBackground,
             modifier =
                 Modifier.padding(top = EventCardDimens.titleTopPadding)
                     .testTag(C.Tag.event_card_title),
@@ -176,7 +186,7 @@ fun EventCard(
             style =
                 MaterialTheme.typography.headlineMedium.copy(
                     fontSize = 18.sp, fontWeight = FontWeight.Normal),
-            color = TextSecondary,
+            color = colorScheme.onSurface,
             modifier = Modifier.testTag(C.Tag.event_card_organizer),
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
@@ -190,7 +200,7 @@ fun EventCard(
       Text(
           text = date,
           style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp),
-          color = EventDateColor,
+          color = colorScheme.onBackground,
           modifier = Modifier.testTag(C.Tag.event_card_date),
           maxLines = 1,
           overflow = TextOverflow.Ellipsis,
@@ -207,7 +217,7 @@ fun EventCard(
         Text(
             text = location,
             style = MaterialTheme.typography.bodyLarge.copy(fontSize = 16.sp),
-            color = Color.White,
+            color = colorScheme.onBackground,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.weight(1f, fill = false).testTag(C.Tag.event_card_location),
@@ -218,7 +228,7 @@ fun EventCard(
         Text(
             text = price,
             style = MaterialTheme.typography.headlineSmall,
-            color = Color.White,
+            color = colorScheme.onBackground,
             modifier = Modifier.testTag(C.Tag.event_card_price),
         )
       }

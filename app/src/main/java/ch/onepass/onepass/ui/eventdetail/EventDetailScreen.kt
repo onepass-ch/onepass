@@ -6,15 +6,37 @@ import androidx.annotation.VisibleForTesting
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.LocationCity
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,7 +45,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -40,7 +61,6 @@ import ch.onepass.onepass.ui.components.buttons.LikeButton
 import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.organization.OrganizationCard
 import ch.onepass.onepass.ui.payment.LocalPaymentSheet
-import ch.onepass.onepass.ui.theme.DefaultBackground
 import coil.compose.AsyncImage
 
 object EventDetailTestTags {
@@ -178,13 +198,13 @@ internal fun EventDetailScreenContent(
   Box(
       modifier =
           Modifier.fillMaxSize()
-              .background(DefaultBackground)
+              .background(colorScheme.background)
               .testTag(EventDetailTestTags.SCREEN)) {
         when {
           uiState.isLoading -> {
             CircularProgressIndicator(
                 modifier = Modifier.align(Alignment.Center).testTag(EventDetailTestTags.LOADING),
-                color = MaterialTheme.colorScheme.primary)
+                color = colorScheme.primary)
           }
           uiState.errorMessage != null -> {
             Column(
@@ -194,7 +214,7 @@ internal fun EventDetailScreenContent(
                         .testTag(EventDetailTestTags.ERROR),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                  Text(text = uiState.errorMessage, color = Color.White)
+                  Text(text = uiState.errorMessage, color = colorScheme.onBackground)
                   Button(onClick = onBack) { Text("Go Back") }
                 }
           }
@@ -232,7 +252,7 @@ private fun BuyButton(
     isLoading: Boolean = false
 ) {
   // Buy ticket button - fixed at bottom with padding
-  Surface(modifier = modifier, shadowElevation = 8.dp, color = DefaultBackground) {
+  Surface(modifier = modifier, shadowElevation = 8.dp, color = colorScheme.background) {
     Box(modifier = Modifier.padding(horizontal = 10.dp, vertical = 16.dp)) {
       Button(
           onClick = onBuyTicket,
@@ -241,19 +261,20 @@ private fun BuyButton(
           shape = RoundedCornerShape(5.dp),
           colors =
               ButtonDefaults.buttonColors(
-                  containerColor = colorResource(id = R.color.event_buy_button_bg),
-                  disabledContainerColor =
-                      colorResource(id = R.color.event_buy_button_bg).copy(alpha = 0.6f))) {
+                  containerColor = colorScheme.primary,
+                  disabledContainerColor = colorScheme.primary.copy(alpha = 0.6f))) {
             if (isLoading) {
               CircularProgressIndicator(
-                  modifier = Modifier.size(20.dp), color = Color.White, strokeWidth = 2.dp)
+                  modifier = Modifier.size(20.dp),
+                  color = colorScheme.onBackground,
+                  strokeWidth = 2.dp)
             } else {
               Text(
                   text = priceText,
                   style =
                       MaterialTheme.typography.titleLarge.copy(
                           fontSize = 14.sp, lineHeight = 20.sp, fontWeight = FontWeight.Bold),
-                  color = Color.White,
+                  color = colorScheme.onBackground,
                   modifier = Modifier.padding(horizontal = 63.dp, vertical = 14.dp))
             }
           }
@@ -266,7 +287,7 @@ private fun BackSection(onBack: () -> Unit) {
   Row(
       modifier =
           Modifier.fillMaxWidth()
-              .background(colorResource(id = R.color.event_back_section_bg))
+              .background(colorScheme.background)
               .height(79.dp)
               .testTag(EventDetailTestTags.TITLE),
       verticalAlignment = Alignment.CenterVertically,
@@ -275,7 +296,7 @@ private fun BackSection(onBack: () -> Unit) {
           Icon(
               imageVector = Icons.AutoMirrored.Filled.ArrowBack,
               contentDescription = "Back",
-              tint = Color.White)
+              tint = colorScheme.onBackground)
         }
       }
 }
@@ -336,7 +357,7 @@ private fun EventDetailContent(
           Text(
               text = event.title.ifEmpty { "Event Title" },
               style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
-              color = Color.White,
+              color = colorScheme.onBackground,
               textAlign = TextAlign.Center,
               modifier =
                   Modifier.fillMaxWidth()
@@ -386,7 +407,7 @@ private fun OrganizerSection(
         Text(
             text = "ORGANIZER",
             style = MaterialTheme.typography.titleMedium,
-            color = Color.White,
+            color = colorScheme.onBackground,
             modifier = Modifier.padding(vertical = 10.dp))
 
         if (organization != null) {
@@ -397,7 +418,7 @@ private fun OrganizerSection(
           Text(
               text = organizerName,
               style = MaterialTheme.typography.titleMedium,
-              color = Color.White,
+              color = colorScheme.onBackground,
               modifier = Modifier.padding(vertical = 8.dp))
         }
       }
@@ -410,13 +431,13 @@ private fun AboutEventSection(description: String, modifier: Modifier = Modifier
     Text(
         text = "ABOUT EVENT",
         style = MaterialTheme.typography.titleMedium,
-        color = Color.White,
+        color = colorScheme.onBackground,
         modifier = Modifier.padding(vertical = 10.dp))
 
     Text(
         text = description.ifEmpty { "No description available." },
         style = MaterialTheme.typography.bodyMedium,
-        color = Color(R.color.icon_color_detailScreen),
+        color = colorScheme.onBackground,
         modifier = Modifier.testTag(EventDetailTestTags.ABOUT_EVENT))
   }
 }
@@ -441,11 +462,11 @@ private fun EventDetailsSection(
                 imageVector = Icons.Default.CalendarToday,
                 contentDescription = null,
                 modifier = Modifier.size(26.dp),
-                tint = colorResource(id = R.color.event_icon_gray))
+                tint = colorScheme.onBackground)
             Text(
                 text = event.displayDateTime,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                color = Color.White,
+                color = colorScheme.onBackground,
                 modifier = Modifier.testTag(EventDetailTestTags.EVENT_DATE))
           }
 
@@ -458,21 +479,22 @@ private fun EventDetailsSection(
                 imageVector = Icons.Default.LocationCity,
                 contentDescription = null,
                 modifier = Modifier.size(26.dp),
-                tint = colorResource(id = R.color.event_icon_gray))
+                tint = colorScheme.onBackground)
             Text(
                 text = event.displayLocation,
                 style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium),
-                color = Color.White,
+                color = colorScheme.onBackground,
                 modifier = Modifier.testTag(EventDetailTestTags.EVENT_LOCATION))
           }
     }
+
+    Spacer(modifier = Modifier.height(8.dp))
 
     // See event on map button
     Row(
         modifier =
             Modifier.fillMaxWidth()
-                .border(
-                    1.dp, colorResource(id = R.color.event_border_gray), RoundedCornerShape(0.dp))
+                .border(1.dp, colorScheme.onSurface, RoundedCornerShape(0.dp))
                 .clickable(onClick = onNavigateToMap)
                 .padding(vertical = 14.dp, horizontal = 16.dp)
                 .testTag(EventDetailTestTags.MAP_BUTTON),
@@ -481,14 +503,14 @@ private fun EventDetailsSection(
           Text(
               text = "See event on map",
               style = MaterialTheme.typography.titleMedium,
-              color = Color.White,
+              color = colorScheme.onBackground,
               modifier = Modifier.padding(end = 30.dp))
 
           Icon(
               imageVector = Icons.AutoMirrored.Filled.ArrowBack,
               contentDescription = null,
               modifier = Modifier.rotate(180f),
-              tint = Color.White)
+              tint = colorScheme.onBackground)
         }
   }
 }
@@ -513,13 +535,13 @@ private fun LoadingOverlay(uiState: EventDetailUiState) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)) {
-              CircularProgressIndicator(color = Color.White)
+              CircularProgressIndicator(color = colorScheme.onBackground)
               Text(
                   text =
                       if (uiState.paymentState is PaymentState.CreatingPaymentIntent)
                           "Preparing payment..."
                       else "Processing payment...",
-                  color = Color.White,
+                  color = colorScheme.onBackground,
                   style = MaterialTheme.typography.bodyLarge)
             }
       }

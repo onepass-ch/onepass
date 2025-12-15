@@ -14,18 +14,16 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.components.common.EmptyState
 
 /**
@@ -134,14 +132,12 @@ private fun ModernPillTabs(
 
       val backgroundColor by
           animateColorAsState(
-              targetValue =
-                  if (isSelected) colorResource(id = R.color.accent_purple)
-                  else colorResource(id = R.color.surface_container),
+              targetValue = if (isSelected) colorScheme.primary else colorScheme.surface,
               label = "backgroundColor")
 
       val textColor by
           animateColorAsState(
-              targetValue = if (isSelected) Color.White else colorResource(id = R.color.gray),
+              targetValue = if (isSelected) colorScheme.onBackground else colorScheme.onSurface,
               label = "textColor")
 
       val tabTestTag =

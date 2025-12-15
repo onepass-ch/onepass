@@ -32,6 +32,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -47,12 +48,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
+import ch.onepass.onepass.ui.theme.Error
 import ch.onepass.onepass.ui.theme.MarcFontFamily
 import ch.onepass.onepass.utils.FormatUtils.formatPriceCompact
 
@@ -95,7 +95,7 @@ fun SellTicketDialog(
   ModalBottomSheet(
       onDismissRequest = onDismiss,
       sheetState = sheetState,
-      containerColor = colorResource(id = R.color.surface_container),
+      containerColor = colorScheme.surface,
       shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
       modifier = modifier.testTag(MyEventsTestTags.SELL_DIALOG)) {
         Column(
@@ -111,14 +111,14 @@ fun SellTicketDialog(
                         style =
                             MaterialTheme.typography.titleLarge.copy(
                                 fontFamily = MarcFontFamily, fontWeight = FontWeight.Bold),
-                        color = colorResource(id = R.color.on_background),
+                        color = colorScheme.onBackground,
                         modifier = Modifier.testTag(MyEventsTestTags.SELL_DIALOG_TITLE))
 
                     IconButton(onClick = onDismiss) {
                       Icon(
                           imageVector = Icons.Default.Close,
                           contentDescription = "Close",
-                          tint = colorResource(id = R.color.gray))
+                          tint = colorScheme.onSurface)
                     }
                   }
 
@@ -128,12 +128,12 @@ fun SellTicketDialog(
                     modifier =
                         Modifier.fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(colorResource(id = R.color.error_red).copy(alpha = 0.1f))
+                            .background(Error)
                             .padding(12.dp)) {
                       Text(
                           text = errorMessage,
                           style = MaterialTheme.typography.bodySmall,
-                          color = colorResource(id = R.color.error_red),
+                          color = Error,
                           modifier = Modifier.testTag(MyEventsTestTags.SELL_DIALOG_ERROR))
                     }
               }
@@ -142,7 +142,7 @@ fun SellTicketDialog(
               Text(
                   text = "Select a ticket to sell",
                   style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                  color = colorResource(id = R.color.on_background))
+                  color = colorScheme.onBackground)
 
               if (sellableTickets.isEmpty()) {
                 // No tickets available
@@ -151,19 +151,19 @@ fun SellTicketDialog(
                         Modifier.fillMaxWidth()
                             .height(80.dp)
                             .clip(RoundedCornerShape(12.dp))
-                            .background(colorResource(id = R.color.surface_card_color)),
+                            .background(colorScheme.surface),
                     contentAlignment = Alignment.Center) {
                       Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Icon(
                             imageVector = Icons.Rounded.ConfirmationNumber,
                             contentDescription = null,
-                            tint = colorResource(id = R.color.gray),
+                            tint = colorScheme.onSurface,
                             modifier = Modifier.size(32.dp))
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "No tickets available to sell",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = colorResource(id = R.color.gray))
+                            color = colorScheme.onSurface)
                       }
                     }
               } else {
@@ -179,9 +179,7 @@ fun SellTicketDialog(
                   DropdownMenu(
                       expanded = dropdownExpanded,
                       onDismissRequest = { dropdownExpanded = false },
-                      modifier =
-                          Modifier.fillMaxWidth(0.9f)
-                              .background(colorResource(id = R.color.surface_card_color))) {
+                      modifier = Modifier.fillMaxWidth(0.9f).background(colorScheme.surface)) {
                         sellableTickets.forEach { ticket ->
                           DropdownMenuItem(
                               text = {
@@ -211,7 +209,7 @@ fun SellTicketDialog(
                     text = "Set your asking price",
                     style =
                         MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
-                    color = colorResource(id = R.color.on_background))
+                    color = colorScheme.onBackground)
 
                 OutlinedTextField(
                     value = sellingPrice,
@@ -230,19 +228,18 @@ fun SellTicketDialog(
                           style =
                               MaterialTheme.typography.bodyLarge.copy(
                                   fontWeight = FontWeight.SemiBold),
-                          color = colorResource(id = R.color.accent_purple),
+                          color = colorScheme.primary,
                           modifier = Modifier.padding(start = 16.dp))
                     },
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                     colors =
                         TextFieldDefaults.colors(
-                            focusedContainerColor = colorResource(id = R.color.surface_card_color),
-                            unfocusedContainerColor =
-                                colorResource(id = R.color.surface_card_color),
-                            focusedIndicatorColor = colorResource(id = R.color.accent_purple),
+                            focusedContainerColor = colorScheme.surface,
+                            unfocusedContainerColor = colorScheme.surface,
+                            focusedIndicatorColor = colorScheme.primary,
                             unfocusedIndicatorColor = Color.Transparent,
-                            focusedTextColor = colorResource(id = R.color.white),
-                            unfocusedTextColor = colorResource(id = R.color.white)),
+                            focusedTextColor = colorScheme.onBackground,
+                            unfocusedTextColor = colorScheme.onBackground),
                     shape = RoundedCornerShape(12.dp),
                     singleLine = true,
                     textStyle =
@@ -253,7 +250,7 @@ fun SellTicketDialog(
                     text =
                         "Original price: CHF ${formatPriceCompact(selectedTicket.originalPrice)}",
                     style = MaterialTheme.typography.bodySmall,
-                    color = colorResource(id = R.color.gray))
+                    color = colorScheme.onSurface)
               }
 
               Spacer(modifier = Modifier.height(8.dp))
@@ -272,17 +269,15 @@ fun SellTicketDialog(
                           .testTag(MyEventsTestTags.SELL_DIALOG_CONFIRM_BUTTON),
                   colors =
                       ButtonDefaults.buttonColors(
-                          containerColor = colorResource(id = R.color.accent_purple),
-                          contentColor = colorResource(id = R.color.white),
-                          disabledContainerColor =
-                              colorResource(id = R.color.accent_purple).copy(alpha = 0.4f),
-                          disabledContentColor =
-                              colorResource(id = R.color.white).copy(alpha = 0.6f)),
+                          containerColor = colorScheme.primary,
+                          contentColor = colorScheme.onBackground,
+                          disabledContainerColor = colorScheme.primary.copy(alpha = 0.4f),
+                          disabledContentColor = colorScheme.onBackground.copy(alpha = 0.6f)),
                   shape = RoundedCornerShape(16.dp)) {
                     if (isLoading) {
                       CircularProgressIndicator(
                           modifier = Modifier.size(24.dp),
-                          color = colorResource(id = R.color.white),
+                          color = colorScheme.onBackground,
                           strokeWidth = 2.dp)
                     } else {
                       Text(
@@ -303,8 +298,7 @@ fun SellTicketDialog(
                           .testTag(MyEventsTestTags.SELL_DIALOG_CANCEL_BUTTON),
                   colors =
                       ButtonDefaults.buttonColors(
-                          containerColor = Color.Transparent,
-                          contentColor = colorResource(id = R.color.gray)),
+                          containerColor = Color.Transparent, contentColor = colorScheme.onSurface),
                   shape = RoundedCornerShape(12.dp)) {
                     Text(
                         text = "Cancel",
@@ -326,8 +320,7 @@ private fun TicketDropdownSelector(
   val borderColor by
       animateColorAsState(
           targetValue =
-              if (isExpanded) colorResource(id = R.color.accent_purple)
-              else colorResource(id = R.color.gray).copy(alpha = 0.3f),
+              if (isExpanded) colorScheme.primary else colorScheme.onSurface.copy(alpha = 0.3f),
           label = "borderColor")
 
   Card(
@@ -338,9 +331,7 @@ private fun TicketDropdownSelector(
               .border(1.dp, borderColor, RoundedCornerShape(12.dp))
               .clickable(onClick = onClick),
       shape = RoundedCornerShape(12.dp),
-      colors =
-          CardDefaults.cardColors(
-              containerColor = colorResource(id = R.color.surface_card_color))) {
+      colors = CardDefaults.cardColors(containerColor = colorScheme.surface)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(16.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -354,14 +345,12 @@ private fun TicketDropdownSelector(
                           modifier =
                               Modifier.size(40.dp)
                                   .clip(RoundedCornerShape(10.dp))
-                                  .background(
-                                      colorResource(id = R.color.accent_purple)
-                                          .copy(alpha = 0.15f)),
+                                  .background(colorScheme.primary.copy(alpha = 0.15f)),
                           contentAlignment = Alignment.Center) {
                             Icon(
                                 imageVector = Icons.Rounded.ConfirmationNumber,
                                 contentDescription = null,
-                                tint = colorResource(id = R.color.accent_purple),
+                                tint = colorScheme.primary,
                                 modifier = Modifier.size(24.dp))
                           }
 
@@ -373,13 +362,13 @@ private fun TicketDropdownSelector(
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
                                     fontWeight = FontWeight.SemiBold),
-                            color = colorResource(id = R.color.on_background),
+                            color = colorScheme.onBackground,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis)
                         Text(
                             text = selectedTicket.eventDate,
                             style = MaterialTheme.typography.bodySmall,
-                            color = colorResource(id = R.color.gray),
+                            color = colorScheme.onSurface,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis)
                       }
@@ -388,7 +377,7 @@ private fun TicketDropdownSelector(
                 Text(
                     text = "Choose a ticket...",
                     style = MaterialTheme.typography.bodyMedium,
-                    color = colorResource(id = R.color.gray),
+                    color = colorScheme.onSurface,
                     modifier = Modifier.weight(1f))
               }
 
@@ -397,7 +386,7 @@ private fun TicketDropdownSelector(
                       if (isExpanded) Icons.Default.KeyboardArrowUp
                       else Icons.Default.KeyboardArrowDown,
                   contentDescription = if (isExpanded) "Collapse" else "Expand",
-                  tint = colorResource(id = R.color.gray))
+                  tint = colorScheme.onSurface)
             }
       }
 }
@@ -414,16 +403,13 @@ private fun TicketDropdownItem(ticket: SellableTicket, isSelected: Boolean) {
                 Modifier.size(36.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .background(
-                        if (isSelected)
-                            colorResource(id = R.color.accent_purple).copy(alpha = 0.15f)
-                        else colorResource(id = R.color.surface_container)),
+                        if (isSelected) colorScheme.primary.copy(alpha = 0.15f)
+                        else colorScheme.surface),
             contentAlignment = Alignment.Center) {
               Icon(
                   imageVector = Icons.Rounded.ConfirmationNumber,
                   contentDescription = null,
-                  tint =
-                      if (isSelected) colorResource(id = R.color.accent_purple)
-                      else colorResource(id = R.color.gray),
+                  tint = if (isSelected) colorScheme.primary else colorScheme.onSurface,
                   modifier = Modifier.size(20.dp))
             }
 
@@ -435,13 +421,13 @@ private fun TicketDropdownItem(ticket: SellableTicket, isSelected: Boolean) {
               style =
                   MaterialTheme.typography.bodyMedium.copy(
                       fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal),
-              color = colorResource(id = R.color.on_background),
+              color = colorScheme.onBackground,
               maxLines = 1,
               overflow = TextOverflow.Ellipsis)
           Text(
               text = "${ticket.eventDate} • ${ticket.eventLocation}",
               style = MaterialTheme.typography.bodySmall,
-              color = colorResource(id = R.color.gray),
+              color = colorScheme.onSurface,
               maxLines = 1,
               overflow = TextOverflow.Ellipsis)
         }
@@ -451,9 +437,12 @@ private fun TicketDropdownItem(ticket: SellableTicket, isSelected: Boolean) {
               modifier =
                   Modifier.size(20.dp)
                       .clip(RoundedCornerShape(10.dp))
-                      .background(colorResource(id = R.color.accent_purple)),
+                      .background(colorScheme.primary),
               contentAlignment = Alignment.Center) {
-                Text(text = "✓", style = MaterialTheme.typography.bodySmall, color = Color.White)
+                Text(
+                    text = "✓",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = colorScheme.onBackground)
               }
         }
       }
@@ -465,9 +454,7 @@ private fun SelectedTicketPreview(ticket: SellableTicket) {
   Card(
       modifier = Modifier.fillMaxWidth(),
       shape = RoundedCornerShape(12.dp),
-      colors =
-          CardDefaults.cardColors(
-              containerColor = colorResource(id = R.color.accent_purple).copy(alpha = 0.1f))) {
+      colors = CardDefaults.cardColors(containerColor = colorScheme.primary.copy(alpha = 0.1f))) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
             verticalAlignment = Alignment.CenterVertically) {
@@ -475,12 +462,12 @@ private fun SelectedTicketPreview(ticket: SellableTicket) {
                   modifier =
                       Modifier.size(48.dp)
                           .clip(RoundedCornerShape(12.dp))
-                          .background(colorResource(id = R.color.accent_purple).copy(alpha = 0.2f)),
+                          .background(colorScheme.primary.copy(alpha = 0.2f)),
                   contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector = Icons.Rounded.ConfirmationNumber,
                         contentDescription = null,
-                        tint = colorResource(id = R.color.accent_purple),
+                        tint = colorScheme.primary,
                         modifier = Modifier.size(28.dp))
                   }
 
@@ -491,29 +478,29 @@ private fun SelectedTicketPreview(ticket: SellableTicket) {
                     text = ticket.eventTitle,
                     style =
                         MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = colorResource(id = R.color.on_background),
+                    color = colorScheme.onBackground,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis)
                 Text(
                     text = ticket.eventDate,
                     style = MaterialTheme.typography.bodySmall,
-                    color = colorResource(id = R.color.gray))
+                    color = colorScheme.onSurface)
                 Text(
                     text = ticket.eventLocation,
                     style = MaterialTheme.typography.bodySmall,
-                    color = colorResource(id = R.color.gray))
+                    color = colorScheme.onSurface)
               }
 
               Column(horizontalAlignment = Alignment.End) {
                 Text(
                     text = "Original",
                     style = MaterialTheme.typography.labelSmall,
-                    color = colorResource(id = R.color.gray))
+                    color = colorScheme.onSurface)
                 Text(
                     text = "CHF ${formatPriceCompact(ticket.originalPrice)}",
                     style =
                         MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = colorResource(id = R.color.on_background))
+                    color = colorScheme.onBackground)
               }
             }
       }

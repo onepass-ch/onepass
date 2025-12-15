@@ -1,25 +1,51 @@
 package ch.onepass.onepass.ui.myinvitations
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import ch.onepass.onepass.R
-import ch.onepass.onepass.model.organization.*
+import ch.onepass.onepass.model.organization.Organization
+import ch.onepass.onepass.model.organization.OrganizationInvitation
+import ch.onepass.onepass.model.organization.OrganizationRepository
+import ch.onepass.onepass.model.organization.OrganizationRepositoryFirebase
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
+import ch.onepass.onepass.ui.theme.Error
 import kotlinx.coroutines.flow.first
 
 /**
@@ -140,7 +166,7 @@ internal fun MyInvitationsContent(
       TopBarConfig(title = "My Invitations"),
       onBack = onNavigateBack,
       modifier = modifier.testTag(MyInvitationsScreenTestTags.SCREEN),
-      containerColor = colorResource(id = R.color.screen_background),
+      containerColor = colorScheme.background,
       content = { paddingValues ->
         Box(
             modifier = Modifier.fillMaxSize().padding(paddingValues),
@@ -241,7 +267,7 @@ private fun InvitationCard(
           Modifier.fillMaxWidth()
               .testTag(MyInvitationsScreenTestTags.getInvitationCardTag(invitation.id)),
       shape = RoundedCornerShape(16.dp),
-      color = colorResource(id = R.color.myinvitations_card_background),
+      color = colorScheme.background,
       tonalElevation = 0.dp) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
           // Organization name
@@ -249,7 +275,7 @@ private fun InvitationCard(
               text = organization?.name ?: invitation.orgId,
               style = MaterialTheme.typography.titleMedium,
               fontWeight = FontWeight.Bold,
-              color = colorResource(id = R.color.white),
+              color = colorScheme.onBackground,
               modifier = Modifier.testTag(MyInvitationsScreenTestTags.INVITATION_ORG_NAME))
 
           Spacer(modifier = Modifier.height(8.dp))
@@ -258,7 +284,7 @@ private fun InvitationCard(
           Text(
               text = "Role: ${invitation.role.name}",
               style = MaterialTheme.typography.bodyMedium,
-              color = colorResource(id = R.color.gray),
+              color = colorScheme.onSurface,
               modifier = Modifier.testTag(MyInvitationsScreenTestTags.INVITATION_ROLE))
 
           Spacer(modifier = Modifier.height(16.dp))
@@ -275,8 +301,7 @@ private fun InvitationCard(
                             .testTag(MyInvitationsScreenTestTags.getRejectButtonTag(invitation.id)),
                     colors =
                         ButtonDefaults.buttonColors(
-                            containerColor = colorResource(id = R.color.myinvitations_reject_bg),
-                            contentColor = colorResource(id = R.color.myinvitations_reject_red)),
+                            containerColor = colorScheme.surface, contentColor = Error),
                     shape = RoundedCornerShape(10.dp)) {
                       Text(text = "Reject", fontWeight = FontWeight.Medium)
                     }
@@ -289,9 +314,8 @@ private fun InvitationCard(
                             .testTag(MyInvitationsScreenTestTags.getAcceptButtonTag(invitation.id)),
                     colors =
                         ButtonDefaults.buttonColors(
-                            containerColor =
-                                colorResource(id = R.color.myinvitations_accent_purple),
-                            contentColor = colorResource(id = R.color.white)),
+                            containerColor = colorScheme.primary,
+                            contentColor = colorScheme.onBackground),
                     shape = RoundedCornerShape(10.dp)) {
                       Text(text = "Accept", fontWeight = FontWeight.Medium)
                     }

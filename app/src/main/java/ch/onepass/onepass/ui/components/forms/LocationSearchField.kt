@@ -1,19 +1,36 @@
 package ch.onepass.onepass.ui.components.forms
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
 import ch.onepass.onepass.model.map.Location
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -45,7 +62,7 @@ fun LocationSearchField(
             text = "Location*",
             style =
                 MaterialTheme.typography.bodyMedium.copy(
-                    color = colorResource(id = R.color.white), textAlign = TextAlign.Center),
+                    color = colorScheme.onBackground, textAlign = TextAlign.Center),
             modifier = Modifier.fillMaxWidth())
 
         ExposedDropdownMenuBox(
@@ -55,63 +72,62 @@ fun LocationSearchField(
               // expanded = !expanded
             },
             modifier = Modifier.fillMaxWidth()) {
-              TextField(
-                  value = query,
-                  onValueChange = onQueryChange,
+              Column(
                   modifier =
                       Modifier.fillMaxWidth()
-                          .border(
-                              1.dp,
-                              colorResource(id = R.color.location_field_border),
-                              RoundedCornerShape(10.dp))
-                          .heightIn(min = 50.dp)
-                          .menuAnchor()
-                          .testTag(testTag),
-                  placeholder = {
-                    Text(
-                        "Type to search location",
-                        style =
-                            MaterialTheme.typography.bodySmall.copy(
-                                color = colorResource(id = R.color.gray)))
-                  },
-                  trailingIcon = {
-                    if (isLoading) {
-                      CircularProgressIndicator(modifier = Modifier.size(24.dp))
-                    }
-                  },
-                  colors =
-                      TextFieldDefaults.colors(
-                          focusedContainerColor =
-                              colorResource(id = R.color.location_field_container),
-                          unfocusedContainerColor =
-                              colorResource(id = R.color.location_field_container),
-                          focusedIndicatorColor = Color.Transparent,
-                          unfocusedIndicatorColor = Color.Transparent,
-                          focusedTextColor = colorResource(id = R.color.white),
-                          unfocusedTextColor = colorResource(id = R.color.white),
-                      ),
-                  shape = RoundedCornerShape(10.dp),
-                  textStyle = MaterialTheme.typography.bodySmall,
-                  singleLine = true)
+                          .border(1.dp, colorScheme.onSurface, RoundedCornerShape(10.dp))
+                          .background(colorScheme.surface, RoundedCornerShape(10.dp))
+                          .padding(horizontal = 16.dp, vertical = 8.dp)) {
+                    TextField(
+                        value = query,
+                        onValueChange = onQueryChange,
+                        placeholder = {
+                          Text(
+                              "Type to search location",
+                              style =
+                                  MaterialTheme.typography.bodySmall.copy(
+                                      color = colorScheme.onSurface))
+                        },
+                        trailingIcon = {
+                          if (isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        },
+                        modifier =
+                            Modifier.fillMaxWidth()
+                                .heightIn(min = 30.dp)
+                                .menuAnchor()
+                                .testTag(testTag),
+                        colors =
+                            TextFieldDefaults.colors(
+                                focusedContainerColor = colorScheme.surface,
+                                unfocusedContainerColor = colorScheme.surface,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                focusedTextColor = colorScheme.onBackground,
+                                unfocusedTextColor = colorScheme.onBackground),
+                        shape = RoundedCornerShape(10.dp),
+                        textStyle = MaterialTheme.typography.bodyMedium,
+                        singleLine = true)
 
-              ExposedDropdownMenu(
-                  expanded = expanded,
-                  onDismissRequest = { expanded = false },
-                  modifier = Modifier.fillMaxWidth()) {
-                    results.forEach { location ->
-                      DropdownMenuItem(
-                          text = {
-                            Text(
-                                text = location.name,
-                                maxLines = 2,
-                                overflow = TextOverflow.Ellipsis)
-                          },
-                          onClick = {
-                            onLocationSelected(location)
-                            expanded = false
-                          },
-                          modifier = Modifier.fillMaxWidth())
-                    }
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.fillMaxWidth()) {
+                          results.forEach { location ->
+                            DropdownMenuItem(
+                                text = {
+                                  Text(
+                                      text = location.name,
+                                      maxLines = 2,
+                                      overflow = TextOverflow.Ellipsis,
+                                      color = colorScheme.onBackground)
+                                },
+                                onClick = {
+                                  onLocationSelected(location)
+                                  expanded = false
+                                },
+                                modifier = Modifier.fillMaxWidth())
+                          }
+                        }
                   }
             }
       }

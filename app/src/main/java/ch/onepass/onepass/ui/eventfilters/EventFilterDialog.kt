@@ -1,13 +1,40 @@
 package ch.onepass.onepass.ui.eventfilters
 
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.DateRangePicker
+import androidx.compose.material3.DividerDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.runtime.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.rememberDateRangePickerState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -18,7 +45,8 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.model.eventfilters.DateRangePresets
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.eventfilters.SwissRegions
-import java.util.*
+import ch.onepass.onepass.model.eventfilters.TagFilter
+import java.util.Calendar
 
 /** Test tags for UI elements in the filter dialog. */
 object EventFilterDialogTestTags {
@@ -104,15 +132,18 @@ fun FilterDialog(
               enabled = uiState.localFilters.hasActiveFilters,
               modifier = Modifier.testTag(EventFilterDialogTestTags.RESET_FILTERS_BUTTON),
           ) {
-            Text("Reset All")
+            Text("Reset All", color = colorScheme.onBackground)
           }
           Button(
               onClick = { onApply(uiState.localFilters) },
               enabled = uiState.localFilters != viewModel.currentFilters.collectAsState().value,
               modifier = Modifier.testTag(EventFilterDialogTestTags.APPLY_FILTERS_BUTTON),
-          ) {
-            Text("Apply Filters")
-          }
+              colors =
+                  ButtonDefaults.buttonColors(
+                      containerColor = colorScheme.primary,
+                      contentColor = colorScheme.onBackground)) {
+                Text("Apply Filters")
+              }
         }
       }
     }
@@ -138,8 +169,14 @@ private fun RegionFilter(
           onClick = { onExpandedChange(true) },
           modifier = Modifier.fillMaxWidth().testTag(EventFilterDialogTestTags.REGION_DROPDOWN),
       ) {
-        Text(uiState.localFilters.region ?: SwissRegions.ALL_REGIONS, Modifier.weight(1f))
-        Icon(Icons.Default.ArrowDropDown, "Select region")
+        Text(
+            text = uiState.localFilters.region ?: SwissRegions.ALL_REGIONS,
+            modifier = Modifier.weight(1f),
+            color = colorScheme.onBackground)
+        Icon(
+            imageVector = Icons.Default.ArrowDropDown,
+            contentDescription = "Select region",
+            tint = colorScheme.onBackground)
       }
       DropdownMenu(
           expanded = uiState.expandedRegion,
@@ -201,9 +238,12 @@ private fun DateRangeFilter(
                 onFiltersChanged(
                     uiState.localFilters.copy(dateRange = if (isSelected) null else presetRange))
               },
-              label = { Text(label) },
-              modifier = Modifier.weight(1f),
-          )
+              label = {
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                  Text(label)
+                }
+              },
+              modifier = Modifier.weight(1f).height(45.dp))
         }
       }
       Spacer(Modifier.height(16.dp))
@@ -217,13 +257,17 @@ private fun DateRangeFilter(
           Text(
               formatDateRange(uiState.localFilters.dateRange) ?: "Not set",
               style = MaterialTheme.typography.bodySmall,
-              color = MaterialTheme.colorScheme.onSurfaceVariant,
+              color = colorScheme.onBackground,
               modifier = Modifier.testTag(EventFilterDialogTestTags.CUSTOM_RANGE_TEXT))
         }
         Button(
             onClick = { onShowDatePickerChange(true) },
-            Modifier.height(36.dp).testTag(EventFilterDialogTestTags.PICK_DATES_BUTTON)) {
-              Text("Pick dates")
+            Modifier.height(36.dp).testTag(EventFilterDialogTestTags.PICK_DATES_BUTTON),
+            colors =
+                ButtonDefaults.buttonColors(
+                    containerColor = colorScheme.primary,
+                    contentColor = colorScheme.onBackground)) {
+              Text(text = "Pick dates", color = colorScheme.onBackground)
             }
       }
       if (uiState.showDatePicker) {
@@ -318,11 +362,30 @@ fun DateRangePickerDialog(
                 Text(
                     text = headlineText!!,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    color = colorScheme.onBackground,
                     modifier = Modifier.padding(vertical = 8.dp))
               },
               state = state,
-          )
+              colors =
+                  DatePickerDefaults.colors(
+                      containerColor = colorScheme.surface,
+
+                      // Header / title
+                      headlineContentColor = colorScheme.primary,
+                      titleContentColor = colorScheme.onBackground,
+
+                      // Weekdays + labels
+                      weekdayContentColor = colorScheme.onBackground.copy(alpha = 0.7f),
+                      subheadContentColor = colorScheme.onBackground.copy(alpha = 0.7f),
+
+                      // Days
+                      dayContentColor = colorScheme.onBackground,
+                      selectedDayContainerColor = colorScheme.primary,
+                      selectedDayContentColor = colorScheme.onBackground,
+
+                      // Today indicator
+                      todayDateBorderColor = colorScheme.primary,
+                      todayContentColor = colorScheme.primary))
         }
       },
       confirmButton = {
@@ -333,12 +396,18 @@ fun DateRangePickerDialog(
                     (state.selectedStartDateMillis!!..state.selectedEndDateMillis!!)
                         .inclusiveEndOfDay()
                 onConfirm(range.start, range.endInclusive)
-              }) {
-                Text("Confirm")
+              },
+              colors =
+                  ButtonDefaults.buttonColors(
+                      containerColor = colorScheme.primary,
+                      contentColor = colorScheme.onBackground)) {
+                Text("Confirm", color = colorScheme.onBackground)
               }
         }
       },
-      dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
+      dismissButton = {
+        TextButton(onClick = onDismiss) { Text("Cancel", color = colorScheme.onBackground) }
+      })
 }
 
 /**

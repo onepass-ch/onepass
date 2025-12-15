@@ -1,8 +1,18 @@
 package ch.onepass.onepass.ui.eventfilters
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -117,8 +127,7 @@ fun ActiveFiltersBar(
       }
       TextButton(
           onClick = onClearFilters,
-          colors =
-              ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.primary),
+          colors = ButtonDefaults.textButtonColors(contentColor = colorScheme.primary),
       ) {
         Text(
             "Clear All",

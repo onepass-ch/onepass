@@ -3,19 +3,28 @@ package ch.onepass.onepass.ui.organization
 import android.annotation.SuppressLint
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Group
 import androidx.compose.material.icons.filled.Star
-import androidx.compose.material3.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
@@ -24,9 +33,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.ui.organization.OrganizationCardTestTags.getTestTagForOrganizationCard
-import ch.onepass.onepass.ui.theme.CardBackground
-import ch.onepass.onepass.ui.theme.EventDateColor
-import ch.onepass.onepass.ui.theme.TextSecondary
 import ch.onepass.onepass.utils.DateTimeUtils
 import ch.onepass.onepass.utils.FormatUtils
 import coil.compose.AsyncImage
@@ -55,7 +61,7 @@ private fun OrganizationProfileImage(imageUrl: String?, modifier: Modifier = Mod
           modifier
               .size(80.dp)
               .clip(RoundedCornerShape(8.dp))
-              .background(MaterialTheme.colorScheme.surfaceVariant)
+              .background(colorScheme.onSurface)
               .testTag(OrganizationCardTestTags.ORGANIZER_IMAGE),
       contentScale = ContentScale.Crop,
       error = rememberVectorPainter(Icons.Default.Business))
@@ -70,7 +76,7 @@ private fun OrganizationNameRow(name: String, verified: Boolean, modifier: Modif
         Text(
             text = name,
             style = MaterialTheme.typography.titleLarge,
-            color = Color.White,
+            color = colorScheme.onBackground,
             modifier =
                 Modifier.weight(1f, fill = false)
                     .semantics(mergeDescendants = true) {}
@@ -81,7 +87,7 @@ private fun OrganizationNameRow(name: String, verified: Boolean, modifier: Modif
           Icon(
               imageVector = Icons.Default.CheckCircle,
               contentDescription = "Verified",
-              tint = MaterialTheme.colorScheme.primary,
+              tint = colorScheme.onBackground,
               modifier =
                   Modifier.size(18.dp)
                       .semantics(mergeDescendants = true) {}
@@ -95,7 +101,7 @@ private fun OrganizationDescription(description: String, modifier: Modifier = Mo
   Text(
       text = description,
       style = MaterialTheme.typography.bodyMedium,
-      color = TextSecondary,
+      color = colorScheme.onBackground,
       maxLines = 2,
       overflow = TextOverflow.Ellipsis,
       modifier =
@@ -125,12 +131,11 @@ private fun OrganizationStatsRow(
               Icon(
                   imageVector = Icons.Default.Group,
                   contentDescription = null,
-                  modifier = Modifier.size(16.dp),
-                  tint = TextSecondary)
+                  modifier = Modifier.size(16.dp))
               Text(
                   text = FormatUtils.formatCompactNumber(followerCount),
                   style = MaterialTheme.typography.bodyMedium,
-                  color = Color.White)
+                  color = colorScheme.onBackground)
             }
 
         // avg rating
@@ -145,11 +150,11 @@ private fun OrganizationStatsRow(
                     imageVector = Icons.Default.Star,
                     contentDescription = null,
                     modifier = Modifier.size(16.dp),
-                    tint = MaterialTheme.colorScheme.primary)
+                    tint = colorScheme.onBackground)
                 Text(
                     text = String.format("%.1f", averageRating),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = Color.White)
+                    color = colorScheme.onBackground)
               }
         }
 
@@ -161,8 +166,8 @@ private fun OrganizationStatsRow(
               modifier = Modifier.testTag(OrganizationCardTestTags.ORGANIZER_CREATED_DATE)) {
                 Text(
                     text = "since " + DateTimeUtils.formatMemberSince(timestamp),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = EventDateColor)
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = colorScheme.onBackground)
               }
         }
       }
@@ -181,7 +186,7 @@ fun OrganizationCard(
               .clickable { onClick() }
               .testTag(getTestTagForOrganizationCard(organization.id)),
       shape = RoundedCornerShape(10.dp),
-      colors = CardDefaults.cardColors(containerColor = CardBackground),
+      colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
       elevation = CardDefaults.cardElevation(defaultElevation = 4.dp, pressedElevation = 2.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
