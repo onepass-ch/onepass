@@ -91,7 +91,7 @@ class ScannerViewModel(
     private val clock: () -> Long = { System.currentTimeMillis() },
     private val enableAutoCleanup: Boolean = true,
     private val cleanupPeriodMs: Long = 10_000L,
-    private val stateResetDelayMs: Long = 5_000L,
+    private val stateResetDelayMs: Long = 2_000L, // Changed from 5s to 2s
     coroutineScope: CoroutineScope? = null
 ) : ViewModel() {
 
@@ -229,7 +229,10 @@ class ScannerViewModel(
       return
     }
 
-    _state.value = _state.value.copy(isProcessing = true, message = "Validating…")
+    // Show "Validating..." immediately with spinner
+    _state.value =
+        _state.value.copy(
+            isProcessing = true, message = "Validating…", status = ScannerUiState.Status.IDLE)
 
     repo
         .validateByPass(qr, eventId)
@@ -280,16 +283,19 @@ class ScannerViewModel(
         // Fetch user's display name
         val userName = fetchUserDisplayName(uid)
 
+        // Update to ACCEPTED state (stops spinner, shows green bar)
         // Note: validated count is now updated via Firestore listener
         _state.value =
             _state.value.copy(
-                isProcessing = false,
+                isProcessing = false, // Stop spinner
                 status = ScannerUiState.Status.ACCEPTED,
                 message = "Access Granted",
                 lastTicketId = decision.ticketId,
                 lastScannedAt = decision.scannedAtSeconds,
                 lastScannedUserName = userName,
                 remaining = decision.remaining)
+
+        // Emit effect for sound/vibration/flash
         _effects.emit(ScannerEffect.Accepted("Access Granted"))
       }
       is ScanDecision.Rejected -> {
@@ -344,7 +350,7 @@ class ScannerViewModel(
     resetJob?.cancel()
     resetJob =
         scope.launch {
-          delay(stateResetDelayMs)
+          delay(stateResetDelayMs) // Now 2 seconds instead of 5
           if (isActive) {
             // Reset to IDLE but preserve validated count and event title
             val currentValidated = _state.value.validated

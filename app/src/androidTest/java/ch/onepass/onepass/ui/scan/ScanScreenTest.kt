@@ -1,6 +1,7 @@
 package ch.onepass.onepass.ui.scan
 
 import androidx.activity.ComponentActivity
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -16,11 +17,8 @@ private const val VALID_QR =
     "onepass:user:v1.eyJ1aWQiOiJ1c2VyMTIzIiwia2lkIjoia2V5MSIsImlhdCI6MTczMDAwMDAwMCwidmVyIjoxfQ.c2lnX3VzZXIxMjM"
 
 /**
- * Comprehensive Compose tests for the scanner.
- *
- * Coverage: ~98% (everything testable without real hardware)
- *
- * Intentionally not covered (requires hardware/system):
+ * Comprehensive Compose tests for the scanner. Intentionally not covered (requires
+ * hardware/system):
  * - Camera lifecycle and ML Kit analyzer
  * - vibrateForEffect() and MediaPlayer audio feedback
  * - Error handlers inside try-catch (system failures)
@@ -67,7 +65,6 @@ class ScanScreenTest {
     compose.waitForIdle()
 
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
-    compose.onNodeWithText("Ticket T-123").assertIsDisplayed()
     compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertIsDisplayed()
     compose.onNodeWithText("Position the QR code within the frame").assertDoesNotExist()
   }
@@ -487,7 +484,15 @@ class ScanScreenTest {
 
   @Test
   fun topStatsCard_displaysValidatedCount() {
-    compose.setContent { TopStatsCard(validated = 42, eventTitle = null) }
+    compose.setContent {
+      TopStatsCard(
+          validated = 42,
+          eventTitle = null,
+          colorCard = androidx.compose.ui.graphics.Color.Black,
+          colorAccent = androidx.compose.ui.graphics.Color.Blue,
+          colorTextPrimary = androidx.compose.ui.graphics.Color.White,
+          colorTextSecondary = androidx.compose.ui.graphics.Color.Gray)
+    }
 
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
     compose.onNodeWithText("42").assertIsDisplayed()
@@ -496,7 +501,15 @@ class ScanScreenTest {
 
   @Test
   fun topStatsCard_displaysEventTitle() {
-    compose.setContent { TopStatsCard(validated = 15, eventTitle = "Summer Festival") }
+    compose.setContent {
+      TopStatsCard(
+          validated = 15,
+          eventTitle = "Summer Festival",
+          colorCard = androidx.compose.ui.graphics.Color.Black,
+          colorAccent = androidx.compose.ui.graphics.Color.Blue,
+          colorTextPrimary = androidx.compose.ui.graphics.Color.White,
+          colorTextSecondary = androidx.compose.ui.graphics.Color.Gray)
+    }
 
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
     compose.onNodeWithText("Summer Festival").assertIsDisplayed()
@@ -506,7 +519,15 @@ class ScanScreenTest {
 
   @Test
   fun topStatsCard_showsWhenEventTitlePresent() {
-    compose.setContent { TopStatsCard(validated = 0, eventTitle = "Tech Conference") }
+    compose.setContent {
+      TopStatsCard(
+          validated = 0,
+          eventTitle = "Tech Conference",
+          colorCard = androidx.compose.ui.graphics.Color.Black,
+          colorAccent = androidx.compose.ui.graphics.Color.Blue,
+          colorTextPrimary = androidx.compose.ui.graphics.Color.White,
+          colorTextSecondary = androidx.compose.ui.graphics.Color.Gray)
+    }
 
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
     compose.onNodeWithText("Tech Conference").assertIsDisplayed()
@@ -514,7 +535,15 @@ class ScanScreenTest {
 
   @Test
   fun topStatsCard_handlesLargeNumbers() {
-    compose.setContent { TopStatsCard(validated = 9999, eventTitle = "Mega Event") }
+    compose.setContent {
+      TopStatsCard(
+          validated = 9999,
+          eventTitle = "Mega Event",
+          colorCard = androidx.compose.ui.graphics.Color.Black,
+          colorAccent = androidx.compose.ui.graphics.Color.Blue,
+          colorTextPrimary = androidx.compose.ui.graphics.Color.White,
+          colorTextSecondary = androidx.compose.ui.graphics.Color.Gray)
+    }
 
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
     compose.onNodeWithText("9999").assertIsDisplayed()
@@ -523,14 +552,30 @@ class ScanScreenTest {
   @Test
   fun topStatsCard_handlesLongEventTitle() {
     val longTitle = "This is a very long event title that should be truncated properly in the UI"
-    compose.setContent { TopStatsCard(validated = 10, eventTitle = longTitle) }
+    compose.setContent {
+      TopStatsCard(
+          validated = 10,
+          eventTitle = longTitle,
+          colorCard = androidx.compose.ui.graphics.Color.Black,
+          colorAccent = androidx.compose.ui.graphics.Color.Blue,
+          colorTextPrimary = androidx.compose.ui.graphics.Color.White,
+          colorTextSecondary = androidx.compose.ui.graphics.Color.Gray)
+    }
 
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
   }
 
   @Test
   fun topStatsCard_withZeroValidations_displaysZero() {
-    compose.setContent { TopStatsCard(validated = 0, eventTitle = "Test Event") }
+    compose.setContent {
+      TopStatsCard(
+          validated = 0,
+          eventTitle = "Test Event",
+          colorCard = androidx.compose.ui.graphics.Color.Black,
+          colorAccent = androidx.compose.ui.graphics.Color.Blue,
+          colorTextPrimary = androidx.compose.ui.graphics.Color.White,
+          colorTextSecondary = androidx.compose.ui.graphics.Color.Gray)
+    }
 
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
     compose.onNodeWithText("0").assertIsDisplayed()
@@ -1056,21 +1101,6 @@ class ScanScreenTest {
   // ==================== INSTRUCTIONS TEXT ====================
 
   @Test
-  fun instructions_hideAfterFirstScan() {
-    val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.onNodeWithText("Position the QR code within the frame").assertIsDisplayed()
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-
-    compose.onNodeWithText("Position the QR code within the frame").assertDoesNotExist()
-  }
-
-  @Test
   fun instructions_reappearAfterReset() {
     val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
     val vm = createVM(repo)
@@ -1190,6 +1220,163 @@ class ScanScreenTest {
 
     compose.waitForIdle()
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertIsDisplayed()
+  }
+  // ==================== COLOR RESOURCE TESTS ====================
+
+  @Test
+  fun scanScreen_loadsColorsFromResources() {
+    val vm = createVM()
+    compose.setContent { ScanContent(viewModel = vm) }
+    compose.onNodeWithTag(ScanTestTags.SCREEN).assertIsDisplayed()
+    compose.onNodeWithTag(ScanTestTags.HUD).assertIsDisplayed()
+    compose.onNodeWithTag(ScanTestTags.SCAN_FRAME).assertIsDisplayed()
+  }
+
+  @Test
+  fun topStatsCard_withColors_rendersCorrectly() {
+    compose.setContent {
+      TopStatsCard(
+          validated = 42,
+          eventTitle = "Test Event",
+          colorCard = Color.Black,
+          colorAccent = Color.Blue,
+          colorTextPrimary = Color.White,
+          colorTextSecondary = Color.Gray)
+    }
+
+    compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
+    compose.onNodeWithText("42").assertIsDisplayed()
+    compose.onNodeWithText("Test Event").assertIsDisplayed()
+  }
+
+  // ==================== NO TICKET ID DISPLAY ====================
+
+  @Test
+  fun acceptedScan_doesNotShowTicketId() {
+    val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
+    val vm = createVM(repo)
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
+    compose.waitForIdle()
+
+    // Vérifie que le ticket ID n'est PAS affiché
+    compose.onNodeWithText("Ticket T-123", substring = true).assertDoesNotExist()
+    compose.onNodeWithText("T-123").assertDoesNotExist()
+
+    // Mais vérifie que le message principal existe
+    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
+  }
+
+  @Test
+  fun acceptedScan_ticketIdNotNull_stillNotDisplayed() {
+    val repo =
+        FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "TICKET-999")) }
+    val vm = createVM(repo)
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
+    compose.waitForIdle()
+
+    compose.onNodeWithText("TICKET-999", substring = true).assertDoesNotExist()
+    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
+  }
+
+  // ==================== FASTER STATE TRANSITIONS ====================
+
+  @Test
+  fun acceptedScan_resetsToIdleAfterDelay() {
+    val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
+    // Use actual reset delay (2000ms) instead of Long.MAX_VALUE
+    val vm =
+        ScannerViewModel(
+            eventId = "event1",
+            repo = repo,
+            clock = { 0L },
+            enableAutoCleanup = false,
+            stateResetDelayMs = 2000L, // Use actual delay
+            coroutineScope = CoroutineScope(Dispatchers.Main))
+
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
+    compose.waitForIdle()
+
+    // Should show "Access Granted"
+    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
+
+    // Wait for auto-reset (2 seconds + buffer)
+    Thread.sleep(2500)
+    compose.waitForIdle()
+
+    // Should reset to idle
+    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Scan a pass", substring = true)
+  }
+
+  @Test
+  fun rejectedScan_resetsToIdleAfterDelay() {
+    val repo =
+        FakeRepo().apply {
+          next = Result.success(ScanDecision.Rejected(ScanDecision.Reason.ALREADY_SCANNED))
+        }
+    val vm =
+        ScannerViewModel(
+            eventId = "event1",
+            repo = repo,
+            clock = { 0L },
+            enableAutoCleanup = false,
+            stateResetDelayMs = 2000L,
+            coroutineScope = CoroutineScope(Dispatchers.Main))
+
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Already scanned")
+
+    Thread.sleep(2500)
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Scan a pass", substring = true)
+  }
+
+  // ==================== SPINNER BEHAVIOR ====================
+
+  @Test
+  fun validatingState_showsSpinnerWithNoColoredBar() {
+    val repo =
+        FakeRepo().apply {
+          delayMs = 500
+          next = Result.success(ScanDecision.Accepted(ticketId = "T-123"))
+        }
+    val vm = createVM(repo)
+
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
+
+    // During validation: spinner visible, message is "Validating…"
+    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Validating", substring = true)
+    compose.onNodeWithTag(ScanTestTags.PROGRESS).assertIsDisplayed()
+
+    compose.waitForIdle()
+  }
+
+  @Test
+  fun acceptedState_noSpinnerButShowsIcon() {
+    val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
+    val vm = createVM(repo)
+
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
+    compose.waitForIdle()
+
+    // After accepted: no spinner, but status icon visible
+    compose.onNodeWithTag(ScanTestTags.PROGRESS).assertDoesNotExist()
+    compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertIsDisplayed()
+    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
   }
 
   // ==================== FAKE REPOSITORY ====================

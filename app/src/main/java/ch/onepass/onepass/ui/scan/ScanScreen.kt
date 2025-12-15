@@ -24,7 +24,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.QrCodeScanner
@@ -41,6 +41,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -72,24 +73,35 @@ object ScanTestTags {
   const val NETWORK_ERROR_DIALOG = "scan_network_error_dialog"
 }
 
-private object ScanColors {
-  val Background = Color(0xFF111111)
-  val Card = Color(0xFF1B1B1B)
-  val Accent = Color(0xFF9C6BFF)
-  val Success = Color(0xFF4CAF50)
-  val Error = Color(0xFFD33A2C)
-  val Warning = Color(0xFFFF9800)
-  val TextPrimary = Color.White
-  val TextSecondary = Color(0xFFB0B0B0)
-  val Scrim = Color(0xAA000000)
-  val ScanFrame = Color(0xFF9C6BFF)
+private object ScanAlpha {
+  const val GLOW_BASE = 0.3f
+  const val GLOW_PULSE = 0.2f
+  const val RADIAL_START = 0.4f
+  const val RADIAL_MID = 0.1f
+  const val SWEEP_1 = 0.2f
+  const val SWEEP_2 = 0.5f
+  const val SWEEP_3 = 0.8f
+  const val SWEEP_4 = 0.3f
+  const val SWEEP_5 = 0.6f
+  const val DOT_MAIN = 0.8f
+  const val DOT_SECONDARY = 0.4f
+  const val CENTER_BASE = 0.8f
+  const val CENTER_PULSE = 0.2f
+  const val CARD = 0.7f
+  const val CARD_SURFACE = 0.95f
+  const val STATUS_BG = 0.2f
+  const val STATUS_SUCCESS = 0.15f
+  const val STATUS_ERROR = 0.15f
+  const val STATUS_WARNING = 0.15f
+  const val FLASH = 0.4f
+  const val PREVIEW = 0.5f
 }
 
 /** Stylish rotating gradient spinner with multiple animated layers */
 @Composable
-private fun RotatingSpinner(modifier: Modifier = Modifier, color: Color = ScanColors.Accent) {
-  var rotation by remember { mutableStateOf(0f) }
-  var glowPulse by remember { mutableStateOf(0f) }
+private fun RotatingSpinner(modifier: Modifier = Modifier, color: Color) {
+  var rotation by remember { mutableFloatStateOf(0f) }
+  var glowPulse by remember { mutableFloatStateOf(0f) }
 
   // Main rotation animation
   LaunchedEffect(Unit) {
@@ -115,15 +127,19 @@ private fun RotatingSpinner(modifier: Modifier = Modifier, color: Color = ScanCo
 
   Box(modifier = modifier.size(40.dp), contentAlignment = Alignment.Center) {
     // Outer glow ring (static, pulsing)
-    Canvas(modifier = Modifier.fillMaxSize().alpha(0.3f + glowPulse * 0.2f)) {
-      drawCircle(
-          brush =
-              Brush.radialGradient(
-                  colors =
-                      listOf(
-                          color.copy(alpha = 0.4f), color.copy(alpha = 0.1f), Color.Transparent)),
-          radius = size.minDimension / 2)
-    }
+    Canvas(
+        modifier =
+            Modifier.fillMaxSize().alpha(ScanAlpha.GLOW_BASE + glowPulse * ScanAlpha.GLOW_PULSE)) {
+          drawCircle(
+              brush =
+                  Brush.radialGradient(
+                      colors =
+                          listOf(
+                              color.copy(alpha = ScanAlpha.RADIAL_START),
+                              color.copy(alpha = ScanAlpha.RADIAL_MID),
+                              Color.Transparent)),
+              radius = size.minDimension / 2)
+        }
 
     // Primary spinning arc with gradient
     Canvas(modifier = Modifier.fillMaxSize().rotate(rotation)) {
@@ -136,13 +152,13 @@ private fun RotatingSpinner(modifier: Modifier = Modifier, color: Color = ScanCo
                   colors =
                       listOf(
                           Color.Transparent,
-                          color.copy(alpha = 0.2f),
-                          color.copy(alpha = 0.5f),
-                          color.copy(alpha = 0.8f),
+                          color.copy(alpha = ScanAlpha.SWEEP_1),
+                          color.copy(alpha = ScanAlpha.SWEEP_2),
+                          color.copy(alpha = ScanAlpha.SWEEP_3),
                           color,
                           color,
-                          color.copy(alpha = 0.8f),
-                          color.copy(alpha = 0.5f),
+                          color.copy(alpha = ScanAlpha.SWEEP_3),
+                          color.copy(alpha = ScanAlpha.SWEEP_2),
                           Color.Transparent)),
           startAngle = 0f,
           sweepAngle = 360f,
@@ -162,9 +178,9 @@ private fun RotatingSpinner(modifier: Modifier = Modifier, color: Color = ScanCo
                   colors =
                       listOf(
                           Color.Transparent,
-                          color.copy(alpha = 0.3f),
-                          color.copy(alpha = 0.6f),
-                          color.copy(alpha = 0.3f),
+                          color.copy(alpha = ScanAlpha.SWEEP_4),
+                          color.copy(alpha = ScanAlpha.SWEEP_5),
+                          color.copy(alpha = ScanAlpha.SWEEP_4),
                           Color.Transparent)),
           startAngle = 0f,
           sweepAngle = 180f,
@@ -184,7 +200,7 @@ private fun RotatingSpinner(modifier: Modifier = Modifier, color: Color = ScanCo
         val y = center.y + orbitRadius * kotlin.math.sin(angle)
 
         val dotSize = if (i % 2 == 0) 2.5.dp.toPx() else 1.5.dp.toPx()
-        val alpha = if (i % 2 == 0) 0.8f else 0.4f
+        val alpha = if (i % 2 == 0) ScanAlpha.DOT_MAIN else ScanAlpha.DOT_SECONDARY
 
         drawCircle(
             color = color.copy(alpha = alpha),
@@ -196,7 +212,7 @@ private fun RotatingSpinner(modifier: Modifier = Modifier, color: Color = ScanCo
     // Center dot with pulse
     Canvas(modifier = Modifier.size(6.dp)) {
       drawCircle(
-          color = color.copy(alpha = 0.8f + glowPulse * 0.2f),
+          color = color.copy(alpha = ScanAlpha.CENTER_BASE + glowPulse * ScanAlpha.CENTER_PULSE),
           radius = (2.dp.toPx() + glowPulse * 1.dp.toPx()))
     }
   }
@@ -225,6 +241,18 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
   val lifecycle = LocalLifecycleOwner.current
   val uiState by viewModel.state.collectAsState()
 
+  // Load colors from resources
+  val colorBackground = colorResource(R.color.scan_background)
+  val colorCard = colorResource(R.color.scan_card)
+  val colorAccent = colorResource(R.color.scan_accent)
+  val colorSuccess = colorResource(R.color.scan_success)
+  val colorError = colorResource(R.color.scan_error)
+  val colorWarning = colorResource(R.color.scan_warning)
+  val colorTextPrimary = colorResource(R.color.scan_text_primary)
+  val colorTextSecondary = colorResource(R.color.scan_text_secondary)
+  val colorScrim = colorResource(R.color.scan_scrim)
+  val colorFrame = colorResource(R.color.scan_frame)
+
   var showNetworkErrorDialog by remember { mutableStateOf(false) }
   var showSessionExpiredDialog by remember { mutableStateOf(false) }
   var lastScannedQr by remember { mutableStateOf<String?>(null) }
@@ -237,8 +265,8 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
   val successPlayer = remember {
     try {
       MediaPlayer.create(context, R.raw.success_beep1)
-    } catch (e: Exception) {
-      Log.w("ScanContent", "Failed to create success player", e)
+    } catch (_: Exception) {
+      Log.w("ScanContent", "Failed to create success player")
       null
     }
   }
@@ -247,8 +275,8 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
   val errorPlayer = remember {
     try {
       MediaPlayer.create(context, R.raw.error_beep1)
-    } catch (e: Exception) {
-      Log.w("ScanContent", "Failed to create error player", e)
+    } catch (_: Exception) {
+      Log.w("ScanContent", "Failed to create error player")
       null
     }
   }
@@ -271,7 +299,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
         is ScannerEffect.Accepted -> {
           // Don't flash if dialogs are showing
           if (!showNetworkErrorDialog && !showSessionExpiredDialog) {
-            flashColor = ScanColors.Success
+            flashColor = colorSuccess
             showFlash = true
           }
 
@@ -288,22 +316,22 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                         android.media.AudioManager.FX_KEY_CLICK, 1.0f)
                   }
                 }
-          } catch (e: Exception) {
-            Log.w("ScanContent", "Failed to play accept sound", e)
+          } catch (_: Exception) {
+            Log.w("ScanContent", "Failed to play accept sound")
           }
 
           vibrator?.let { vib ->
             try {
               vibrateForEffect(vib, effect)
-            } catch (e: Exception) {
-              Log.w("ScanContent", "Vibration failed", e)
+            } catch (_: Exception) {
+              Log.w("ScanContent", "Vibration failed")
             }
           }
         }
         is ScannerEffect.Rejected -> {
           // Don't flash if dialogs are showing
           if (!showNetworkErrorDialog && !showSessionExpiredDialog) {
-            flashColor = ScanColors.Error
+            flashColor = colorError
             showFlash = true
           }
 
@@ -320,21 +348,21 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                         android.media.AudioManager.FX_KEYPRESS_INVALID, 1.0f)
                   }
                 }
-          } catch (e: Exception) {
-            Log.w("ScanContent", "Failed to play reject sound", e)
+          } catch (_: Exception) {
+            Log.w("ScanContent", "Failed to play reject sound")
           }
 
           vibrator?.let { vib ->
             try {
               vibrateForEffect(vib, effect)
-            } catch (e: Exception) {
-              Log.w("ScanContent", "Vibration failed", e)
+            } catch (_: Exception) {
+              Log.w("ScanContent", "Vibration failed")
             }
           }
         }
         is ScannerEffect.Error -> {
           // Trigger red flash for errors too
-          flashColor = ScanColors.Error
+          flashColor = colorError
           showFlash = true
 
           val message = effect.message.lowercase()
@@ -348,7 +376,6 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                 message.contains("timeout") -> {
               showNetworkErrorDialog = true
             }
-            else -> {}
           }
 
           // Play same error sound as rejected
@@ -357,15 +384,15 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
               mp.seekTo(0)
               mp.start()
             }
-          } catch (e: Exception) {
-            Log.w("ScanContent", "Failed to play error sound", e)
+          } catch (_: Exception) {
+            Log.w("ScanContent", "Failed to play error sound")
           }
 
           vibrator?.let { vib ->
             try {
               vibrateForEffect(vib, effect)
-            } catch (e: Exception) {
-              Log.w("ScanContent", "Vibration failed", e)
+            } catch (_: Exception) {
+              Log.w("ScanContent", "Vibration failed")
             }
           }
         }
@@ -380,10 +407,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
           onNavigateBack()
         },
         icon = {
-          Icon(
-              imageVector = Icons.Outlined.Error,
-              contentDescription = null,
-              tint = ScanColors.Error)
+          Icon(imageVector = Icons.Outlined.Error, contentDescription = null, tint = colorError)
         },
         title = {
           Text(
@@ -394,7 +418,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
           Text(
               text = "Your session has expired. Please login again to continue scanning tickets.",
               style = MaterialTheme.typography.bodyMedium,
-              color = ScanColors.TextSecondary)
+              color = colorTextSecondary)
         },
         confirmButton = {
           Button(
@@ -402,13 +426,13 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                 showSessionExpiredDialog = false
                 onNavigateBack()
               },
-              colors = ButtonDefaults.buttonColors(containerColor = ScanColors.Error)) {
+              colors = ButtonDefaults.buttonColors(containerColor = colorError)) {
                 Text("OK")
               }
         },
-        containerColor = ScanColors.Card,
-        titleContentColor = ScanColors.TextPrimary,
-        textContentColor = ScanColors.TextSecondary,
+        containerColor = colorCard,
+        titleContentColor = colorTextPrimary,
+        textContentColor = colorTextSecondary,
         modifier = Modifier.testTag("scan_session_expired_dialog"))
   }
 
@@ -420,10 +444,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
           onNavigateBack()
         },
         icon = {
-          Icon(
-              imageVector = Icons.Outlined.Error,
-              contentDescription = null,
-              tint = ScanColors.Warning)
+          Icon(imageVector = Icons.Outlined.Error, contentDescription = null, tint = colorWarning)
         },
         title = {
           Text(
@@ -435,7 +456,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
               text =
                   "Please check your internet connection and try again. The scanner requires an active internet connection to validate tickets.",
               style = MaterialTheme.typography.bodyMedium,
-              color = ScanColors.TextSecondary)
+              color = colorTextSecondary)
         },
         confirmButton = {
           Button(
@@ -444,7 +465,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                 viewModel.resetToIdle()
                 lastScannedQr?.let { qr -> viewModel.onQrScanned(qr) }
               },
-              colors = ButtonDefaults.buttonColors(containerColor = ScanColors.Accent)) {
+              colors = ButtonDefaults.buttonColors(containerColor = colorAccent)) {
                 Text("Retry")
               }
         },
@@ -458,9 +479,9 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                 Text("Back")
               }
         },
-        containerColor = ScanColors.Card,
-        titleContentColor = ScanColors.TextPrimary,
-        textContentColor = ScanColors.TextSecondary,
+        containerColor = colorCard,
+        titleContentColor = colorTextPrimary,
+        textContentColor = colorTextSecondary,
         modifier = Modifier.testTag(ScanTestTags.NETWORK_ERROR_DIALOG))
   }
 
@@ -517,8 +538,8 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
       analyzer.third.invoke()
       try {
         analyzer.first.close()
-      } catch (e: Exception) {
-        Log.w("ScanContent", "Failed to close scanner", e)
+      } catch (_: Exception) {
+        Log.w("ScanContent", "Failed to close scanner")
       }
       analysisExecutor.shutdown()
       try {
@@ -528,7 +549,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
             Log.e("ScanContent", "Executor did not terminate")
           }
         }
-      } catch (e: InterruptedException) {
+      } catch (_: InterruptedException) {
         analysisExecutor.shutdownNow()
         Thread.currentThread().interrupt()
       }
@@ -547,14 +568,14 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
     try {
       controller.unbind()
       controller.bindToLifecycle(lifecycle)
-    } catch (e: Exception) {
-      Log.e("ScanContent", "Failed to bind camera", e)
+    } catch (_: Exception) {
+      Log.e("ScanContent", "Failed to bind camera")
     }
   }
 
   DisposableEffect(controller) { onDispose { controller.unbind() } }
 
-  Scaffold(containerColor = ScanColors.Background) { padding ->
+  Scaffold(containerColor = colorBackground) { padding ->
     Box(modifier = Modifier.fillMaxSize().padding(padding).testTag(ScanTestTags.SCREEN)) {
       AndroidView(
           factory = { ctx ->
@@ -571,7 +592,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
               Modifier.fillMaxSize()
                   .background(
                       Brush.verticalGradient(
-                          listOf(Color.Transparent, Color(0x33000000), ScanColors.Scrim))))
+                          listOf(Color.Transparent, Color(0x33000000), colorScrim))))
 
       IconButton(
           onClick = onNavigateBack,
@@ -579,16 +600,21 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
               Modifier.align(Alignment.TopStart)
                   .padding(16.dp)
                   .size(48.dp)
-                  .background(ScanColors.Card.copy(alpha = 0.7f), CircleShape)
+                  .background(colorCard.copy(alpha = ScanAlpha.CARD), CircleShape)
                   .testTag(ScanTestTags.BACK_BUTTON)) {
             Icon(
-                imageVector = Icons.Default.ArrowBack,
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
                 tint = Color.White,
                 modifier = Modifier.size(24.dp))
           }
 
-      ScanningFrame(uiState = uiState)
+      ScanningFrame(
+          uiState = uiState,
+          colorSuccess = colorSuccess,
+          colorError = colorError,
+          colorWarning = colorWarning,
+          colorFrame = colorFrame)
 
       AnimatedVisibility(
           visible =
@@ -598,11 +624,25 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
           enter = fadeIn() + slideInVertically(),
           exit = fadeOut() + slideOutVertically(),
           modifier = Modifier.align(Alignment.TopCenter)) {
-            TopStatsCard(validated = uiState.validated, eventTitle = uiState.eventTitle)
+            TopStatsCard(
+                validated = uiState.validated,
+                eventTitle = uiState.eventTitle,
+                colorCard = colorCard,
+                colorAccent = colorAccent,
+                colorTextPrimary = colorTextPrimary,
+                colorTextSecondary = colorTextSecondary)
           }
 
       if (!showNetworkErrorDialog && !showSessionExpiredDialog) {
-        ScanHud(uiState = uiState)
+        ScanHud(
+            uiState = uiState,
+            colorCard = colorCard,
+            colorAccent = colorAccent,
+            colorSuccess = colorSuccess,
+            colorError = colorError,
+            colorWarning = colorWarning,
+            colorTextPrimary = colorTextPrimary,
+            colorTextSecondary = colorTextSecondary)
       }
 
       // Flash screen overlay
@@ -618,11 +658,8 @@ private fun vibrateForEffect(vibrator: Vibrator, effect: ScannerEffect) {
     when (effect) {
       is ScannerEffect.Accepted -> vibrator.vibrate(VibrationEffect.createOneShot(100, 128))
       is ScannerEffect.Rejected ->
-          // Stronger and longer vibration for rejected
           vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 100, 80, 100), -1))
-      is ScannerEffect.Error ->
-          // Strong and long vibration for errors
-          vibrator.vibrate(VibrationEffect.createOneShot(400, 255))
+      is ScannerEffect.Error -> vibrator.vibrate(VibrationEffect.createOneShot(400, 255))
     }
   } else {
     @Suppress("DEPRECATION")
@@ -639,7 +676,7 @@ private fun vibrateForEffect(vibrator: Vibrator, effect: ScannerEffect) {
 private fun FlashOverlay(showFlash: Boolean, color: Color?, onFlashComplete: () -> Unit) {
   val alpha by
       animateFloatAsState(
-          targetValue = if (showFlash) 0.4f else 0f,
+          targetValue = if (showFlash) ScanAlpha.FLASH else 0f,
           animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
           finishedListener = { if (!showFlash) onFlashComplete() },
           label = "flash_alpha")
@@ -652,23 +689,26 @@ private fun FlashOverlay(showFlash: Boolean, color: Color?, onFlashComplete: () 
   }
 
   if (color != null) {
-    Box(
-        modifier = Modifier.fillMaxSize().background(color.copy(alpha = alpha))
-        // Removed pointerInput - don't block touches
-        )
+    Box(modifier = Modifier.fillMaxSize().background(color.copy(alpha = alpha)))
   }
 }
 
 @Composable
-private fun BoxScope.ScanningFrame(uiState: ScannerUiState) {
+private fun BoxScope.ScanningFrame(
+    uiState: ScannerUiState,
+    colorSuccess: Color,
+    colorError: Color,
+    colorWarning: Color,
+    colorFrame: Color
+) {
   val frameColor by
       animateColorAsState(
           targetValue =
               when (uiState.status) {
-                ScannerUiState.Status.ACCEPTED -> ScanColors.Success
-                ScannerUiState.Status.REJECTED -> ScanColors.Error
-                ScannerUiState.Status.ERROR -> ScanColors.Warning
-                else -> ScanColors.ScanFrame
+                ScannerUiState.Status.ACCEPTED -> colorSuccess
+                ScannerUiState.Status.REJECTED -> colorError
+                ScannerUiState.Status.ERROR -> colorWarning
+                else -> colorFrame
               },
           animationSpec = tween(300),
           label = "frame_color")
@@ -699,7 +739,7 @@ private fun BoxScope.ScanningFrame(uiState: ScannerUiState) {
                   modifier =
                       Modifier.size(80.dp)
                           .clip(CircleShape)
-                          .background(frameColor.copy(alpha = 0.2f)),
+                          .background(frameColor.copy(alpha = ScanAlpha.STATUS_BG)),
                   contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector =
@@ -788,9 +828,16 @@ private fun BoxScope.FrameCorners(color: Color) {
 }
 
 @Composable
-internal fun TopStatsCard(validated: Int, eventTitle: String?) {
+internal fun TopStatsCard(
+    validated: Int,
+    eventTitle: String?,
+    colorCard: Color,
+    colorAccent: Color,
+    colorTextPrimary: Color,
+    colorTextSecondary: Color
+) {
   Surface(
-      color = ScanColors.Card.copy(alpha = 0.95f),
+      color = colorCard.copy(alpha = ScanAlpha.CARD_SURFACE),
       shape = RoundedCornerShape(16.dp),
       tonalElevation = 4.dp,
       modifier = Modifier.padding(top = 24.dp).testTag(ScanTestTags.STATS_CARD)) {
@@ -800,7 +847,7 @@ internal fun TopStatsCard(validated: Int, eventTitle: String?) {
               if (eventTitle != null) {
                 Text(
                     text = eventTitle,
-                    color = ScanColors.TextPrimary,
+                    color = colorTextPrimary,
                     style =
                         MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     maxLines = 1,
@@ -810,33 +857,43 @@ internal fun TopStatsCard(validated: Int, eventTitle: String?) {
 
               Text(
                   text = validated.toString(),
-                  color = ScanColors.Accent,
+                  color = colorAccent,
                   style =
                       MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
               Text(
                   text = "Validated",
-                  color = ScanColors.TextSecondary,
+                  color = colorTextSecondary,
                   style = MaterialTheme.typography.bodySmall)
             }
       }
 }
 
 @Composable
-private fun BoxScope.ScanHud(uiState: ScannerUiState) {
+private fun BoxScope.ScanHud(
+    uiState: ScannerUiState,
+    colorCard: Color,
+    colorAccent: Color,
+    colorSuccess: Color,
+    colorError: Color,
+    colorWarning: Color,
+    colorTextPrimary: Color,
+    colorTextSecondary: Color
+) {
   val backgroundColor by
       animateColorAsState(
           targetValue =
               when (uiState.status) {
-                ScannerUiState.Status.ACCEPTED -> ScanColors.Success.copy(alpha = 0.15f)
-                ScannerUiState.Status.REJECTED -> ScanColors.Error.copy(alpha = 0.15f)
-                ScannerUiState.Status.ERROR -> ScanColors.Warning.copy(alpha = 0.15f)
+                ScannerUiState.Status.ACCEPTED ->
+                    colorSuccess.copy(alpha = ScanAlpha.STATUS_SUCCESS)
+                ScannerUiState.Status.REJECTED -> colorError.copy(alpha = ScanAlpha.STATUS_ERROR)
+                ScannerUiState.Status.ERROR -> colorWarning.copy(alpha = ScanAlpha.STATUS_WARNING)
                 else -> Color.Transparent
               },
           animationSpec = tween(300),
           label = "bg_color")
 
   Surface(
-      color = ScanColors.Card.copy(alpha = 0.95f),
+      color = colorCard.copy(alpha = ScanAlpha.CARD_SURFACE),
       tonalElevation = 0.dp,
       shadowElevation = 8.dp,
       shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
@@ -854,7 +911,7 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
                       Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = uiState.message,
-                            color = ScanColors.TextPrimary,
+                            color = colorTextPrimary,
                             style =
                                 MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold),
@@ -865,32 +922,21 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
                           Spacer(Modifier.height(4.dp))
                           Text(
                               text = uiState.lastScannedUserName,
-                              color = ScanColors.TextPrimary,
+                              color = colorTextPrimary,
                               style =
                                   MaterialTheme.typography.bodyLarge.copy(
                                       fontWeight = FontWeight.Medium))
-                        }
-
-                        if (uiState.lastTicketId != null) {
-                          Spacer(Modifier.height(6.dp))
-                          Text(
-                              text = "Ticket ${uiState.lastTicketId}",
-                              color = ScanColors.Accent,
-                              style =
-                                  MaterialTheme.typography.bodyMedium.copy(
-                                      fontWeight = FontWeight.SemiBold))
                         }
 
                         if (uiState.status == ScannerUiState.Status.IDLE) {
                           Spacer(Modifier.height(6.dp))
                           Text(
                               text = "Position the QR code within the frame",
-                              color = ScanColors.TextSecondary,
+                              color = colorTextSecondary,
                               style = MaterialTheme.typography.bodySmall)
                         }
                       }
 
-                      // CUSTOM ROTATING SPINNER - THIS WILL DEFINITELY ANIMATE!
                       AnimatedVisibility(
                           visible = uiState.isProcessing,
                           enter =
@@ -903,7 +949,7 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
                               Spacer(Modifier.width(16.dp))
                               RotatingSpinner(
                                   modifier = Modifier.testTag(ScanTestTags.PROGRESS),
-                                  color = ScanColors.Accent)
+                                  color = colorAccent)
                             }
                           }
                     }
@@ -914,9 +960,13 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
 
 @Composable
 internal fun PermissionDeniedScreen() {
+  val colorBackground = colorResource(R.color.scan_background)
+  val colorTextPrimary = colorResource(R.color.scan_text_primary)
+  val colorTextSecondary = colorResource(R.color.scan_text_secondary)
+
   Box(
       modifier =
-          Modifier.fillMaxSize().background(ScanColors.Background).testTag(ScanTestTags.PERMISSION),
+          Modifier.fillMaxSize().background(colorBackground).testTag(ScanTestTags.PERMISSION),
       contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -924,19 +974,19 @@ internal fun PermissionDeniedScreen() {
               Icon(
                   imageVector = Icons.Filled.QrCodeScanner,
                   contentDescription = "QR code scanner required",
-                  tint = ScanColors.TextSecondary,
+                  tint = colorTextSecondary,
                   modifier = Modifier.size(80.dp))
               Spacer(Modifier.height(24.dp))
               Text(
                   text = "Camera Access Required",
-                  color = ScanColors.TextPrimary,
+                  color = colorTextPrimary,
                   style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                   textAlign = TextAlign.Center)
               Spacer(Modifier.height(12.dp))
               Text(
                   text =
                       "To scan tickets, we need access to your camera. Please grant permission to continue.",
-                  color = ScanColors.TextSecondary,
+                  color = colorTextSecondary,
                   style = MaterialTheme.typography.bodyMedium,
                   textAlign = TextAlign.Center)
             }
@@ -992,7 +1042,6 @@ internal fun PreviewScanHudAccepted() {
           ScannerUiState(
               isProcessing = false,
               message = "Access Granted",
-              lastTicketId = "T-4821",
               lastScannedUserName = "John Doe",
               validated = 41,
               eventTitle = "Summer Music Festival",
@@ -1012,7 +1061,17 @@ internal fun PreviewScanHudRejected() {
 
 @Composable
 internal fun PreviewHudContainer(state: ScannerUiState) {
-  Box(modifier = Modifier.fillMaxSize().background(ScanColors.Background)) {
+  val colorBackground = colorResource(R.color.scan_background)
+  val colorCard = colorResource(R.color.scan_card)
+  val colorAccent = colorResource(R.color.scan_accent)
+  val colorSuccess = colorResource(R.color.scan_success)
+  val colorError = colorResource(R.color.scan_error)
+  val colorWarning = colorResource(R.color.scan_warning)
+  val colorTextPrimary = colorResource(R.color.scan_text_primary)
+  val colorTextSecondary = colorResource(R.color.scan_text_secondary)
+  val colorFrame = colorResource(R.color.scan_frame)
+
+  Box(modifier = Modifier.fillMaxSize().background(colorBackground)) {
     Box(
         modifier =
             Modifier.fillMaxSize()
@@ -1021,8 +1080,8 @@ internal fun PreviewHudContainer(state: ScannerUiState) {
         contentAlignment = Alignment.Center) {
           Text(
               text = "Camera Preview",
-              color = ScanColors.TextSecondary,
-              modifier = Modifier.alpha(0.5f))
+              color = colorTextSecondary,
+              modifier = Modifier.alpha(ScanAlpha.PREVIEW))
         }
 
     Box(
@@ -1033,17 +1092,31 @@ internal fun PreviewHudContainer(state: ScannerUiState) {
                     width = 3.dp,
                     color =
                         when (state.status) {
-                          ScannerUiState.Status.ACCEPTED -> ScanColors.Success
-                          ScannerUiState.Status.REJECTED -> ScanColors.Error
-                          ScannerUiState.Status.ERROR -> ScanColors.Warning
-                          else -> ScanColors.ScanFrame
+                          ScannerUiState.Status.ACCEPTED -> colorSuccess
+                          ScannerUiState.Status.REJECTED -> colorError
+                          ScannerUiState.Status.ERROR -> colorWarning
+                          else -> colorFrame
                         },
                     shape = RoundedCornerShape(24.dp)))
 
     if (state.validated > 0 || state.eventTitle != null) {
-      TopStatsCard(validated = state.validated, eventTitle = state.eventTitle)
+      TopStatsCard(
+          validated = state.validated,
+          eventTitle = state.eventTitle,
+          colorCard = colorCard,
+          colorAccent = colorAccent,
+          colorTextPrimary = colorTextPrimary,
+          colorTextSecondary = colorTextSecondary)
     }
 
-    ScanHud(uiState = state)
+    ScanHud(
+        uiState = state,
+        colorCard = colorCard,
+        colorAccent = colorAccent,
+        colorSuccess = colorSuccess,
+        colorError = colorError,
+        colorWarning = colorWarning,
+        colorTextPrimary = colorTextPrimary,
+        colorTextSecondary = colorTextSecondary)
   }
 }
