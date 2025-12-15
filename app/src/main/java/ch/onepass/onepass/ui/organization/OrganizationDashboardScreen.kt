@@ -58,6 +58,9 @@ import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
+import ch.onepass.onepass.ui.theme.Success
+import ch.onepass.onepass.ui.theme.UnSelected
+import ch.onepass.onepass.ui.theme.Warning
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import java.util.Locale
@@ -370,9 +373,9 @@ private fun EventCard(
                           .background(
                               color =
                                   when (event.status) {
-                                    EventStatus.DRAFT -> colorScheme.primary
-                                    EventStatus.PUBLISHED -> colorScheme.primary
-                                    else -> colorScheme.primary
+                                    EventStatus.DRAFT -> UnSelected
+                                    EventStatus.PUBLISHED -> Success
+                                    else -> Warning
                                   },
                               shape = RoundedCornerShape(2.dp)))
               Text(
