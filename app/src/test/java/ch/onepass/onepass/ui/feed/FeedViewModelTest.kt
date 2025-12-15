@@ -8,6 +8,8 @@ import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.ui.feed.FeedViewModel.Companion.LOADED_EVENTS_LIMIT
 import ch.onepass.onepass.utils.EventTestData
+import ch.onepass.onepass.utils.MockTimeProvider
+import ch.onepass.onepass.utils.TimeProviderHolder
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -24,7 +26,6 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -71,6 +72,10 @@ class FeedViewModelTest {
           pricingTiers = emptyList(),
           tags = emptyList(),
           createdAt = Timestamp(2000, 0))
+
+  private val FIXED_TEST_TIME_MILLIS = 1704067200000L // Jan 1, 2024, 00:00:00 GMT
+  private val FIXED_TEST_TIMESTAMP = Timestamp(Date(FIXED_TEST_TIME_MILLIS))
+  private val FIXED_TEST_INSTANT = Instant.ofEpochMilli(FIXED_TEST_TIME_MILLIS)
 
   // Mocks for new dependencies
   private lateinit var mockUserRepository: UserRepository
@@ -124,6 +129,9 @@ class FeedViewModelTest {
   @Before
   fun setup() {
     Dispatchers.setMain(testDispatcher)
+
+    TimeProviderHolder.initialize(MockTimeProvider(FIXED_TEST_TIMESTAMP))
+
     mockUserRepository = mockk(relaxed = true)
     mockAuth = mockk(relaxed = true)
     mockUser = mockk(relaxed = true)
@@ -606,7 +614,7 @@ class FeedViewModelTest {
   fun recommendEvents_sorts_by_tag_affinity_recency_and_like_status() {
     val viewModel = FeedViewModel(MockEventRepository(), mockUserRepository, mockAuth)
 
-    val currentTimestamp = Timestamp.now().seconds
+    val currentTimestamp = FIXED_TEST_TIMESTAMP.seconds
 
     val likedTechEvent1 = EventTestData.createTestEvent(eventId = "L1", tags = listOf("TECH"))
     val likedTechEvent2 =
@@ -648,7 +656,7 @@ class FeedViewModelTest {
   fun recommendEvents_penalizes_expiration_soon() = runTest {
     val viewModel = FeedViewModel(MockEventRepository(), mockUserRepository, mockAuth)
 
-    val now = Instant.now()
+    val now = FIXED_TEST_INSTANT
 
     // Ends in 30 minutes (should be penalized)
     val endingSoonEvent =
@@ -790,7 +798,7 @@ class FeedViewModelTest {
 
   @Test
   fun feedViewModel_loadEvents_filtersPastAndSoldOutEvents() = runTest {
-    val now = System.currentTimeMillis()
+    val now = FIXED_TEST_TIME_MILLIS
 
     val activeEvent =
         testEvent1.copy(
