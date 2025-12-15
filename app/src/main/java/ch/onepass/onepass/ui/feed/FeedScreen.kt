@@ -1,15 +1,9 @@
 package ch.onepass.onepass.ui.feed
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -19,25 +13,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme.colorScheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -46,6 +26,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
+import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.ui.components.common.EmptyState
@@ -308,113 +289,192 @@ private fun FeedContentStateSwitcher(
 ) {
   LazyColumn(
       modifier = Modifier.fillMaxSize().testTag(FeedScreenTestTags.EVENT_LIST),
+      state = listState,
       verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Branch: Search mode is active (non-blank query with search viewmodel)
         if (globalSearchViewModel != null && searchQuery.isNotBlank()) {
-          when {
-            searchState?.isLoading == true -> {
-              // Loading indicator when search bar is loading content
-              item {
-                LoadingState(modifier = Modifier.testTag(FeedScreenTestTags.LOADING_INDICATOR))
-              }
-            }
-            // Error message when there is one
-            searchState?.error != null -> {
-              item {
-                Text(
-                    text = "Error: ${searchState.error}",
-                    color = colorScheme.error,
-                    modifier = Modifier.padding(16.dp).testTag(FeedScreenTestTags.ERROR_MESSAGE))
-              }
-            }
-            else -> {
-              // User search results
-              searchState?.users?.let { users ->
-                if (users.isNotEmpty()) {
-                  items(users) { user ->
-                    UserSearchItem(
-                        user,
-                        globalSearchItemClickListener,
-                        modifier = Modifier.testTag(getTestTagForSearchUser(user.id)))
-                  }
-                }
-              }
-
-              // Event search results
-              searchState?.events?.let { events ->
-                if (events.isNotEmpty()) {
-                  items(events) { event ->
-                    EventCard(
-                        event = event,
-                        isLiked = likedEvents.contains(event.eventId),
-                        onLikeToggle = { eventCardViewModel.toggleLike(event.eventId) },
-                        onCardClick = { onNavigateToEvent(event.eventId) },
-                        modifier = Modifier.testTag(getTestTagForSearchEvent(event.eventId)))
-                  }
-                }
-              }
-
-              // Organisation search results
-              searchState?.organizations?.let { orgs ->
-                if (orgs.isNotEmpty()) {
-                  items(orgs) { org ->
-                    OrganizationCard(
-                        organization = org,
-                        onClick = {
-                          globalSearchItemClickListener?.onItemClick(
-                              GlobalSearchItemClick.OrganizationClick(org.id))
-                        },
-                        modifier = Modifier.testTag(getTestTagForSearchOrg(org.id)))
-                  }
-                }
-              }
-
-              // Text when no result is found
-              if ((searchState?.users.isNullOrEmpty() &&
-                  searchState?.events.isNullOrEmpty() &&
-                  searchState?.organizations.isNullOrEmpty())) {
-                item { Text("No results found", modifier = Modifier.padding(16.dp)) }
-              }
-            }
-          }
+          SearchContent(
+              searchState = searchState,
+              globalSearchItemClickListener = globalSearchItemClickListener,
+              eventCardViewModel = eventCardViewModel,
+              likedEvents = likedEvents,
+              onNavigateToEvent = onNavigateToEvent)
         } else {
-          // Feed content
-          if (uiState.isLoading && uiState.events.isEmpty() && !uiState.isRefreshing) {
-            item { LoadingState(modifier = Modifier.testTag(FeedScreenTestTags.LOADING_INDICATOR)) }
-          } else if (uiState.events.isNotEmpty()) {
-            items(uiState.events) { event ->
-              EventCard(
-                  event = event,
-                  isLiked = likedEvents.contains(event.eventId),
-                  onLikeToggle = { eventCardViewModel.toggleLike(event.eventId) },
-                  onCardClick = { onNavigateToEvent(event.eventId) },
-                  modifier = Modifier.testTag(getTestTagForEventItem(event.eventId)))
-            }
-            if (uiState.isLoading && uiState.events.isNotEmpty()) {
-              item {
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(16.dp),
-                    contentAlignment = Alignment.Center) {
-                      LoadingState()
-                    }
-              }
-            }
-          } else if (uiState.error != null) {
-            item {
-              ErrorState(
-                  error = uiState.error,
-                  onRetry = onRetry,
-                  testTag = FeedScreenTestTags.ERROR_MESSAGE)
-            }
-          } else {
-            item {
-              EmptyState(
-                  title = "No Events Found",
-                  message = "Check back later for new events in your area!",
-                  testTag = FeedScreenTestTags.EMPTY_STATE)
-            }
-          }
+          // Branch: Normal feed mode
+          FeedContent(
+              uiState = uiState,
+              onRetry = onRetry,
+              eventCardViewModel = eventCardViewModel,
+              likedEvents = likedEvents,
+              onNavigateToEvent = onNavigateToEvent)
         }
       }
+}
+
+/** Displays search results including users, events, and organizations. */
+private fun LazyListScope.SearchContent(
+    searchState: GlobalSearchUiState?,
+    globalSearchItemClickListener: GlobalSearchItemClickListener?,
+    eventCardViewModel: EventCardViewModel,
+    likedEvents: Set<String>,
+    onNavigateToEvent: (String) -> Unit
+) {
+  when {
+    searchState?.isLoading == true -> {
+      item { CenteredLoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR) }
+    }
+    searchState?.error != null -> {
+      item {
+        Text(
+            text = "Error: ${searchState.error}",
+            color = colorScheme.error,
+            modifier = Modifier.padding(16.dp).testTag(FeedScreenTestTags.ERROR_MESSAGE))
+      }
+    }
+    else -> {
+      SearchResultsContent(
+          searchState = searchState,
+          globalSearchItemClickListener = globalSearchItemClickListener,
+          eventCardViewModel = eventCardViewModel,
+          likedEvents = likedEvents,
+          onNavigateToEvent = onNavigateToEvent)
+    }
+  }
+}
+
+/** Displays the actual search results (users, events, organizations). */
+private fun LazyListScope.SearchResultsContent(
+    searchState: GlobalSearchUiState?,
+    globalSearchItemClickListener: GlobalSearchItemClickListener?,
+    eventCardViewModel: EventCardViewModel,
+    likedEvents: Set<String>,
+    onNavigateToEvent: (String) -> Unit
+) {
+  // User search results
+  searchState?.users?.let { users ->
+    if (users.isNotEmpty()) {
+      items(users) { user ->
+        UserSearchItem(
+            user,
+            globalSearchItemClickListener,
+            modifier = Modifier.testTag(getTestTagForSearchUser(user.id)))
+      }
+    }
+  }
+
+  // Event search results
+  searchState?.events?.let { events ->
+    if (events.isNotEmpty()) {
+      items(events) { event ->
+        EventCard(
+            event = event,
+            isLiked = likedEvents.contains(event.eventId),
+            onLikeToggle = { eventCardViewModel.toggleLike(event.eventId) },
+            onCardClick = { onNavigateToEvent(event.eventId) },
+            modifier = Modifier.testTag(getTestTagForSearchEvent(event.eventId)))
+      }
+    }
+  }
+
+  // Organisation search results
+  searchState?.organizations?.let { orgs ->
+    if (orgs.isNotEmpty()) {
+      items(orgs) { org ->
+        OrganizationCard(
+            organization = org,
+            onClick = {
+              globalSearchItemClickListener?.onItemClick(
+                  GlobalSearchItemClick.OrganizationClick(org.id))
+            },
+            modifier = Modifier.testTag(getTestTagForSearchOrg(org.id)))
+      }
+    }
+  }
+
+  // Text when no result is found
+  if (searchState?.users.isNullOrEmpty() &&
+      searchState?.events.isNullOrEmpty() &&
+      searchState?.organizations.isNullOrEmpty()) {
+    item { Text("No results found", modifier = Modifier.padding(16.dp)) }
+  }
+}
+
+/** Displays normal feed content with loading, error, empty, and event list states. */
+private fun LazyListScope.FeedContent(
+    uiState: FeedUIState,
+    onRetry: () -> Unit,
+    eventCardViewModel: EventCardViewModel,
+    likedEvents: Set<String>,
+    onNavigateToEvent: (String) -> Unit
+) {
+  when {
+    // Initial loading state (only show when not refreshing to avoid duplicate indicators)
+    uiState.isLoading && uiState.events.isEmpty() && !uiState.isRefreshing -> {
+      item { CenteredLoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR) }
+    }
+    // Error state (only show when we have no events to display)
+    uiState.error != null && uiState.events.isEmpty() -> {
+      item {
+        ErrorState(
+            error = uiState.error, onRetry = onRetry, testTag = FeedScreenTestTags.ERROR_MESSAGE)
+      }
+    }
+    // Empty state (only when not loading/refreshing and truly empty)
+    !uiState.isLoading && !uiState.isRefreshing && uiState.events.isEmpty() -> {
+      item {
+        EmptyState(
+            title = if (uiState.isShowingFavorites) "No Favorites" else "No Events Found",
+            message =
+                if (uiState.isShowingFavorites) "You haven't liked any events yet."
+                else "Check back later for new events in your area!",
+            testTag = FeedScreenTestTags.EMPTY_STATE)
+      }
+    }
+    // Normal content display (handles both initial load and refresh scenarios)
+    uiState.events.isNotEmpty() -> {
+      EventListContent(
+          events = uiState.events,
+          isLoadingMore = uiState.isLoading && !uiState.isRefreshing,
+          eventCardViewModel = eventCardViewModel,
+          likedEvents = likedEvents,
+          onNavigateToEvent = onNavigateToEvent)
+    }
+  }
+}
+
+/** Displays the list of events with optional loading indicator at the bottom. */
+private fun LazyListScope.EventListContent(
+    events: List<Event>,
+    isLoadingMore: Boolean,
+    eventCardViewModel: EventCardViewModel,
+    likedEvents: Set<String>,
+    onNavigateToEvent: (String) -> Unit
+) {
+  items(events) { event ->
+    EventCard(
+        event = event,
+        isLiked = likedEvents.contains(event.eventId),
+        onLikeToggle = { eventCardViewModel.toggleLike(event.eventId) },
+        onCardClick = { onNavigateToEvent(event.eventId) },
+        modifier = Modifier.testTag(getTestTagForEventItem(event.eventId)))
+  }
+
+  // Show loading indicator at bottom when loading more (not during refresh)
+  if (isLoadingMore) {
+    item {
+      Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+        LoadingState()
+      }
+    }
+  }
+}
+
+/** Helper composable to show a centered loading indicator. */
+@Composable
+private fun CenteredLoadingState(testTag: String) {
+  Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(), contentAlignment = Alignment.Center) {
+    LoadingState(modifier = Modifier.testTag(testTag))
+  }
 }
 
 /** Logic and display for the filter dialog. */
