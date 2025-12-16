@@ -147,7 +147,8 @@ fun MarketTicketCard(
                             // Seller price (highlighted)
                             Text(
                                 text =
-                                    "${marketTicket.currency} ${formatPriceCompact(marketTicket.sellerPrice)}",
+                                    formatPriceCompact(
+                                        marketTicket.sellerPrice, marketTicket.currency),
                                 style =
                                     MaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.Bold),
@@ -161,8 +162,7 @@ fun MarketTicketCard(
                                   text =
                                       stringResource(
                                           R.string.market_ticket_original_price_label,
-                                          marketTicket.currency,
-                                          formatPriceCompact(marketTicket.originalPrice)),
+                                          formatPriceCompact(marketTicket.originalPrice, marketTicket.currency)),
                                   style =
                                       MaterialTheme.typography.bodySmall.copy(
                                           textDecoration = TextDecoration.LineThrough),
