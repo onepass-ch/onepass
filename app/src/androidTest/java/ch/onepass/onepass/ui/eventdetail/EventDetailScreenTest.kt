@@ -889,11 +889,74 @@ class EventDetailScreenTest {
         .assertIsDisplayed()
   }
 
+  @Test
+  fun eventDetailScreen_displaysTags_whenTagsArePresent() {
+    val testEvent =
+        createTestEvent(tags = listOf("Technology", "Workshop", "Free", "In-Person"))
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState = EventDetailUiState(event = testEvent),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    // Tags section should be displayed
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.TAGS_SECTION, useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    // Each tag should be visible
+    composeTestRule
+        .onNodeWithText("Technology", substring = true, useUnmergedTree = true)
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText("Workshop", substring = true, useUnmergedTree = true)
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText("Free", substring = true, useUnmergedTree = true)
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText("In-Person", substring = true, useUnmergedTree = true)
+        .assertIsDisplayed()
+
+    // Verify tag chips are present
+    composeTestRule
+        .onNodeWithTag("${EventDetailTestTags.TAG_CHIP}_Technology", useUnmergedTree = true)
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun eventDetailScreen_doesNotDisplayTagsSection_whenNoTags() {
+    val testEvent = createTestEvent(tags = emptyList())
+
+    composeTestRule.setContent {
+      OnePassTheme {
+        EventDetailScreenContent(
+            uiState = EventDetailUiState(event = testEvent),
+            onBack = {},
+            onLikeToggle = {},
+            onNavigateToMap = {},
+            onBuyTicket = {})
+      }
+    }
+
+    // Tags section should not be displayed when there are no tags
+    composeTestRule
+        .onNodeWithTag(EventDetailTestTags.TAGS_SECTION, useUnmergedTree = true)
+        .assertDoesNotExist()
+  }
+
   // Helper function to create a test event
   private fun createTestEvent(
       title: String = "Test Event",
       description: String = "Test Description",
-      lowestPrice: UInt = 35u
+      lowestPrice: UInt = 35u,
+      tags: List<String> = listOf("test")
   ): Event {
     val calendar = Calendar.getInstance()
     calendar.set(2024, Calendar.DECEMBER, 15, 21, 0, 0)
@@ -920,7 +983,7 @@ class EventDetailScreenTest {
         currency = "CHF",
         pricingTiers = listOf(PricingTier("General", lowestPrice.toDouble(), 100, 50)),
         images = listOf(),
-        tags = listOf("test"))
+        tags = tags)
   }
 
   // Helper function to create a test organization
