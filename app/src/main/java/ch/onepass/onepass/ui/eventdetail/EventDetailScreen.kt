@@ -9,6 +9,8 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -72,6 +74,8 @@ object EventDetailTestTags {
   const val ORGANIZER_SECTION = "eventDetailOrganizerSection"
   const val ORGANIZER_RATING = "eventDetailOrganizerRating"
   const val ABOUT_EVENT = "eventDetailAboutEvent"
+  const val TAGS_SECTION = "eventDetailTagsSection"
+  const val TAG_CHIP = "eventDetailTagChip"
   const val EVENT_DATE = "eventDetailDate"
   const val EVENT_LOCATION = "eventDetailLocation"
   const val MAP_BUTTON = "eventDetailMapButton"
@@ -375,6 +379,11 @@ private fun EventDetailContent(
           AboutEventSection(
               description = event.description, modifier = Modifier.padding(horizontal = 10.dp))
 
+          // Tags section
+          if (event.tags.isNotEmpty()) {
+            TagsSection(tags = event.tags, modifier = Modifier.padding(horizontal = 10.dp))
+          }
+
           // TODO tiers section (only show if there are multiple tiers)
           // TODO : might add in future Quantity selector section (for paid events)
 
@@ -440,6 +449,49 @@ private fun AboutEventSection(description: String, modifier: Modifier = Modifier
         color = colorScheme.onBackground,
         modifier = Modifier.testTag(EventDetailTestTags.ABOUT_EVENT))
   }
+}
+
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+private fun TagsSection(tags: List<String>, modifier: Modifier = Modifier) {
+  Column(modifier = modifier.testTag(EventDetailTestTags.TAGS_SECTION), 
+         verticalArrangement = Arrangement.spacedBy(3.dp)) {
+    Text(
+        text = "TAGS",
+        style = MaterialTheme.typography.titleMedium,
+        color = colorScheme.onBackground,
+        modifier = Modifier.padding(vertical = 10.dp))
+
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.fillMaxWidth()) {
+          tags.forEach { tag ->
+            TagChip(tag = tag)
+          }
+        }
+  }
+}
+
+@Composable
+private fun TagChip(tag: String, modifier: Modifier = Modifier) {
+  Box(
+      modifier =
+          modifier
+              .border(
+                  width = 1.dp, 
+                  color = colorScheme.primary, 
+                  shape = RoundedCornerShape(16.dp))
+              .background(
+                  color = colorScheme.primary.copy(alpha = 0.15f), 
+                  shape = RoundedCornerShape(16.dp))
+              .padding(horizontal = 12.dp, vertical = 6.dp)
+              .testTag("${EventDetailTestTags.TAG_CHIP}_$tag")) {
+        Text(
+            text = tag,
+            style = MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.Medium),
+            color = colorScheme.primary)
+      }
 }
 
 @Composable
