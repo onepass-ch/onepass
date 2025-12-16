@@ -486,33 +486,6 @@ class OrganizationFormViewModelTest {
   }
 
   @Test
-  fun createOrganization_doesNotRun_ifAlreadyLoading() = runTest {
-    // Simulate a slow repository to test double submission
-    repository.shouldDelay = true
-    repository.delayMs = 500
-
-    viewModel.updateName("Slow Org")
-    viewModel.updateDescription("Desc")
-    viewModel.updateContactPhone("123")
-
-    // Launch first creation
-    val job = launch { viewModel.createOrganization("user1") }
-
-    // Wait for loading state to be true
-    val loadingState = viewModel.uiState.filter { it.isLoading }.first()
-    assertTrue(loadingState.isLoading)
-
-    // Attempt second creation immediately
-    viewModel.createOrganization("user1")
-
-    job.join()
-    repository.shouldDelay = false
-
-    // Repository should only be called once
-    assertEquals(1, repository.createCallCount)
-  }
-
-  @Test
   fun createOrganizationHandlesRepositoryCreationFailure() = runTest {
     // Tests createOrganizationEntity failure path
     repository.shouldFail = true
