@@ -162,7 +162,8 @@ fun MarketTicketCard(
                                   text =
                                       stringResource(
                                           R.string.market_ticket_original_price_label,
-                                          formatPriceCompact(marketTicket.originalPrice, marketTicket.currency)),
+                                          formatPriceCompact(
+                                              marketTicket.originalPrice, marketTicket.currency)),
                                   style =
                                       MaterialTheme.typography.bodySmall.copy(
                                           textDecoration = TextDecoration.LineThrough),

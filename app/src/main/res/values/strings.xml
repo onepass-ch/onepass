@@ -192,7 +192,7 @@
     <string name="market_ticket_event_image_description">Event image</string>
     <string name="market_ticket_default_image_description">Default event image</string>
     <string name="market_ticket_location_icon_description">Location</string>
-    <string name="market_ticket_original_price_label">Original: %1$s %2$s</string>
+    <string name="market_ticket_original_price_label">Original: %1$s</string>
     <string name="market_ticket_loading">&#8230;</string>
     <string name="market_ticket_buy_button">Buy</string>
     <string name="market_ticket_your_listing">Your listing</string>
