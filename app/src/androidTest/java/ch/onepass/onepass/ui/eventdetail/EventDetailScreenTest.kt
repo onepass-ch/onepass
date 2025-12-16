@@ -904,12 +904,16 @@ class EventDetailScreenTest {
       }
     }
 
-    // Tags section should be displayed
+    // Wait for composition to settle
+    composeTestRule.waitForIdle()
+
+    // Scroll to the tags section to ensure it's visible
     composeTestRule
         .onNodeWithTag(EventDetailTestTags.TAGS_SECTION, useUnmergedTree = true)
+        .performScrollTo()
         .assertIsDisplayed()
 
-    // Each tag should be visible
+    // Each tag should be visible after scrolling
     composeTestRule
         .onNodeWithText("Technology", substring = true, useUnmergedTree = true)
         .assertIsDisplayed()
