@@ -26,4 +26,13 @@
     <string name="staff_invitation_error_title">Invitation Failed</string>
     <string name="staff_invitation_error_message">Failed to send invitation: %1$s</string>
     <string name="staff_invitation_result_ok">OK</string>
+
+    <!-- Auth Screen -->
+    <string name="auth_hero_title_top">BUY, SELL</string>
+    <string name="auth_hero_title_bottom">DISCOVER</string>
+    <string name="auth_sign_in_google">Sign in with Google</string>
+    <string name="app_name_part_one">ONE</string>
+    <string name="app_name_part_two">PASS.</string>
+    <string name="content_desc_app_logo">App Logo Icon</string>
+    <string name="content_desc_google_logo">Google Logo</string>
 </resources>
