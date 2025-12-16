@@ -15,7 +15,11 @@ import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 /**

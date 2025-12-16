@@ -1,12 +1,24 @@
-package ch.onepass.onepass.ui.eventfilters
+package ch.onepass.onepass.model.eventfilters
 
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.model.eventfilters.TagCategories
+import ch.onepass.onepass.ui.eventfilters.FilterSection
 
 /** Test tags for tag filter UI */
 object TagFilterTestTags {
@@ -70,7 +82,7 @@ private fun TagCategorySection(
         Text(
             text = category,
             style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 8.dp))
 
         // Tags in this category as chips
@@ -91,7 +103,20 @@ private fun TagCategorySection(
                       onTagSelectionChange(updated)
                     },
                     label = { Text(tagDisplayValue) },
-                    modifier = Modifier.testTag("${TagFilterTestTags.TAG_CHIP}_${tagDisplayValue}"))
+                    modifier = Modifier.testTag("${TagFilterTestTags.TAG_CHIP}_${tagDisplayValue}"),
+                    colors =
+                        FilterChipDefaults.filterChipColors(
+                            selectedContainerColor = colorScheme.primary,
+                            selectedLabelColor = colorScheme.onSurface,
+                            containerColor = colorScheme.surface,
+                            labelColor = colorScheme.onSurface),
+                    border =
+                        FilterChipDefaults.filterChipBorder(
+                            enabled = true,
+                            selected = selectedTags.contains(tagDisplayValue),
+                            borderColor =
+                                if (selectedTags.contains(tagDisplayValue)) Color.Transparent
+                                else colorScheme.onSurface))
               }
             }
       }

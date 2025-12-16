@@ -1,9 +1,18 @@
 package ch.onepass.onepass.ui.organization
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -12,13 +21,27 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
@@ -35,9 +58,9 @@ import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
-import ch.onepass.onepass.ui.theme.CardBackground
-import ch.onepass.onepass.ui.theme.EventDateColor
-import ch.onepass.onepass.ui.theme.TextSecondary
+import ch.onepass.onepass.ui.theme.Success
+import ch.onepass.onepass.ui.theme.UnSelected
+import ch.onepass.onepass.ui.theme.Warning
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import java.util.Locale
@@ -229,7 +252,7 @@ private fun ManageEventsSection(
             text = "MANAGE EVENTS",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface)
+            color = colorScheme.onSurface)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -238,14 +261,18 @@ private fun ManageEventsSection(
             onClick = onCreateEvent,
             modifier =
                 Modifier.fillMaxWidth().testTag(OrganizationDashboardTestTags.CREATE_EVENT_BUTTON),
-            colors = ButtonDefaults.buttonColors(containerColor = EventDateColor),
+            colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary),
             shape = RoundedCornerShape(6.dp)) {
               Icon(
                   imageVector = Icons.Default.Add,
                   contentDescription = "Create",
-                  modifier = Modifier.size(20.dp))
+                  modifier = Modifier.size(20.dp),
+                  tint = colorScheme.onBackground)
               Spacer(modifier = Modifier.width(8.dp))
-              Text(text = "Create new event", style = MaterialTheme.typography.bodyLarge)
+              Text(
+                  text = "Create new event",
+                  style = MaterialTheme.typography.bodyLarge,
+                  color = colorScheme.onBackground)
             }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -258,7 +285,7 @@ private fun ManageEventsSection(
                     .clickable { eventsExpanded = !eventsExpanded }
                     .testTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN),
             shape = RoundedCornerShape(6.dp),
-            color = CardBackground) {
+            color = colorScheme.surface) {
               Column {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -267,24 +294,23 @@ private fun ManageEventsSection(
                       Text(
                           text = "Your events",
                           style = MaterialTheme.typography.bodyLarge,
-                          color = MaterialTheme.colorScheme.onSurfaceVariant)
+                          color = colorScheme.onBackground)
                       Icon(
                           imageVector =
                               if (eventsExpanded) Icons.Default.KeyboardArrowUp
                               else Icons.Default.KeyboardArrowDown,
                           contentDescription = if (eventsExpanded) "Collapse" else "Expand",
-                          tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                          tint = colorScheme.onBackground)
                     }
 
                 if (eventsExpanded) {
-                  HorizontalDivider(
-                      color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+                  HorizontalDivider(color = colorScheme.onSurface, thickness = 1.dp)
 
                   if (events.isEmpty()) {
                     Text(
                         text = "No events created yet.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary,
+                        color = colorScheme.onBackground,
                         modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally))
                   } else {
                     events.forEach { event ->
@@ -332,7 +358,7 @@ private fun EventCard(
             text = event.title.uppercase(),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface,
+            color = colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis)
 
@@ -347,15 +373,15 @@ private fun EventCard(
                           .background(
                               color =
                                   when (event.status) {
-                                    EventStatus.DRAFT -> EventDateColor
-                                    EventStatus.PUBLISHED -> EventDateColor
-                                    else -> TextSecondary
+                                    EventStatus.DRAFT -> UnSelected
+                                    EventStatus.PUBLISHED -> Success
+                                    else -> Warning
                                   },
                               shape = RoundedCornerShape(2.dp)))
               Text(
                   text = event.status.name.lowercase().replaceFirstChar { it.uppercase() },
                   style = MaterialTheme.typography.bodyMedium,
-                  color = MaterialTheme.colorScheme.onSurface)
+                  color = colorScheme.onSurface)
             }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -363,12 +389,12 @@ private fun EventCard(
         Text(
             text = event.displayDateTime,
             style = MaterialTheme.typography.bodySmall,
-            color = TextSecondary)
+            color = colorScheme.primary)
 
         Text(
             text = event.displayLocation,
             style = MaterialTheme.typography.bodySmall,
-            color = TextSecondary)
+            color = colorScheme.primary)
 
         Spacer(modifier = Modifier.height(12.dp))
 
@@ -384,9 +410,7 @@ private fun EventCard(
                             .testTag(
                                 OrganizationDashboardTestTags.getEventScanButtonTag(event.eventId)),
                     colors =
-                        ButtonDefaults.outlinedButtonColors(
-                            contentColor = MaterialTheme.colorScheme.onSurface),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+                        ButtonDefaults.outlinedButtonColors(contentColor = colorScheme.onSurface),
                     shape = RoundedCornerShape(4.dp)) {
                       Icon(
                           painter = painterResource(id = R.drawable.qr_code_icon),
@@ -402,7 +426,7 @@ private fun EventCard(
                         Modifier.weight(if (canScan) 1f else 2f)
                             .testTag(
                                 OrganizationDashboardTestTags.getEventEditButtonTag(event.eventId)),
-                    colors = ButtonDefaults.buttonColors(containerColor = EventDateColor),
+                    colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary),
                     shape = RoundedCornerShape(4.dp)) {
                       Text("Edit event")
                     }
@@ -410,7 +434,7 @@ private fun EventCard(
             }
       }
 
-  HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+  HorizontalDivider(color = colorScheme.onSurface, thickness = 1.dp)
 }
 
 /**
@@ -439,7 +463,7 @@ private fun ManageStaffSection(
             text = "MANAGE STAFF",
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.onSurface)
+            color = colorScheme.onSurface)
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -448,14 +472,18 @@ private fun ManageStaffSection(
             onClick = onAddStaff,
             modifier =
                 Modifier.fillMaxWidth().testTag(OrganizationDashboardTestTags.ADD_STAFF_BUTTON),
-            colors = ButtonDefaults.buttonColors(containerColor = EventDateColor),
+            colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary),
             shape = RoundedCornerShape(6.dp)) {
               Icon(
                   painter = painterResource(id = android.R.drawable.ic_input_add),
                   contentDescription = "Add",
-                  modifier = Modifier.size(20.dp))
+                  modifier = Modifier.size(20.dp),
+                  tint = colorScheme.onBackground)
               Spacer(modifier = Modifier.width(8.dp))
-              Text(text = "Add new staff", style = MaterialTheme.typography.bodyLarge)
+              Text(
+                  text = "Add new staff",
+                  style = MaterialTheme.typography.bodyLarge,
+                  color = colorScheme.onBackground)
             }
 
         Spacer(modifier = Modifier.height(8.dp))
@@ -468,7 +496,7 @@ private fun ManageStaffSection(
                     .clickable { staffExpanded = !staffExpanded }
                     .testTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN),
             shape = RoundedCornerShape(6.dp),
-            color = CardBackground) {
+            color = colorScheme.surface) {
               Column {
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
@@ -477,24 +505,23 @@ private fun ManageStaffSection(
                       Text(
                           text = "Staff list",
                           style = MaterialTheme.typography.bodyLarge,
-                          color = MaterialTheme.colorScheme.onSurfaceVariant)
+                          color = colorScheme.onBackground)
                       Icon(
                           imageVector =
                               if (staffExpanded) Icons.Default.KeyboardArrowUp
                               else Icons.Default.KeyboardArrowDown,
                           contentDescription = if (staffExpanded) "Collapse" else "Expand",
-                          tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                          tint = colorScheme.onBackground)
                     }
 
                 if (staffExpanded) {
-                  HorizontalDivider(
-                      color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+                  HorizontalDivider(color = colorScheme.onSurface, thickness = 1.dp)
 
                   if (staffMembers.isEmpty()) {
                     Text(
                         text = "No staff members added yet.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = TextSecondary,
+                        color = colorScheme.onBackground,
                         modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally))
                   } else {
                     staffMembers.forEach { memberState ->
@@ -521,7 +548,7 @@ private fun ManageStaffSection(
 private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRemove: () -> Unit) {
   if (memberState.isLoading || memberState.userProfile == null) {
     SkeletonStaffItem(userId = memberState.userId)
-    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+    HorizontalDivider(color = colorScheme.onSurface, thickness = 1.dp)
     return
   }
 
@@ -542,10 +569,7 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
         Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
           // Avatar
           Box(
-              modifier =
-                  Modifier.size(40.dp)
-                      .clip(CircleShape)
-                      .background(MaterialTheme.colorScheme.primaryContainer),
+              modifier = Modifier.size(40.dp).clip(CircleShape).background(colorScheme.primary),
               contentAlignment = Alignment.Center) {
                 if (user.avatarUrl.isNullOrBlank()) {
                   Text(
@@ -553,7 +577,7 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
                       style =
                           MaterialTheme.typography.labelLarge.copy(
                               fontWeight = FontWeight.SemiBold),
-                      color = MaterialTheme.colorScheme.onPrimaryContainer)
+                      color = colorScheme.onBackground)
                 } else {
                   SubcomposeAsyncImage(
                       model =
@@ -565,10 +589,7 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
                       contentScale = ContentScale.Crop,
                       modifier = Modifier.fillMaxSize().clip(CircleShape),
                       loading = {
-                        Box(
-                            modifier =
-                                Modifier.fillMaxSize()
-                                    .background(MaterialTheme.colorScheme.surfaceVariant))
+                        Box(modifier = Modifier.fillMaxSize().background(colorScheme.onSurface))
                       })
                 }
               }
@@ -580,11 +601,11 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
                 text = user.displayName.ifBlank { "Unknown User" },
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
-                color = MaterialTheme.colorScheme.onSurface)
+                color = colorScheme.onSurface)
             Text(
                 text = user.email,
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                color = colorScheme.onBackground)
           }
         }
 
@@ -594,15 +615,15 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
             shape = RoundedCornerShape(4.dp),
             color =
                 when (role) {
-                  OrganizationRole.OWNER -> EventDateColor
-                  OrganizationRole.ADMIN -> MaterialTheme.colorScheme.tertiary
-                  OrganizationRole.MEMBER -> MaterialTheme.colorScheme.primary
-                  OrganizationRole.STAFF -> MaterialTheme.colorScheme.secondary
+                  OrganizationRole.OWNER -> colorScheme.primary
+                  OrganizationRole.ADMIN -> colorScheme.primary
+                  OrganizationRole.MEMBER -> colorScheme.primary
+                  OrganizationRole.STAFF -> colorScheme.primary
                 }) {
               Text(
                   text = role.name,
                   style = MaterialTheme.typography.labelMedium,
-                  color = Color.White,
+                  color = colorScheme.onBackground,
                   modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
             }
 
@@ -618,13 +639,13 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
                 Icon(
                     painter = painterResource(id = android.R.drawable.ic_menu_close_clear_cancel),
                     contentDescription = "Remove",
-                    tint = TextSecondary,
+                    tint = colorScheme.primary,
                     modifier = Modifier.size(20.dp))
               }
         }
       }
 
-  HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant, thickness = 1.dp)
+  HorizontalDivider(color = colorScheme.onSurface, thickness = 1.dp)
 }
 
 @Composable
@@ -641,7 +662,7 @@ fun SkeletonStaffItem(userId: String) {
             modifier =
                 Modifier.size(40.dp)
                     .clip(CircleShape)
-                    .background(MaterialTheme.colorScheme.surfaceVariant)
+                    .background(colorScheme.onSurface)
                     .testTag("skeleton_avatar_$userId"))
 
         Spacer(modifier = Modifier.width(12.dp))
@@ -652,8 +673,7 @@ fun SkeletonStaffItem(userId: String) {
               modifier =
                   Modifier.height(16.dp)
                       .fillMaxWidth(0.5f)
-                      .background(
-                          MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+                      .background(colorScheme.onSurface, RoundedCornerShape(4.dp))
                       .testTag("skeleton_name_$userId"))
           Spacer(modifier = Modifier.height(4.dp))
           // Email Skeleton
@@ -661,8 +681,7 @@ fun SkeletonStaffItem(userId: String) {
               modifier =
                   Modifier.height(12.dp)
                       .fillMaxWidth(0.7f)
-                      .background(
-                          MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+                      .background(colorScheme.onSurface, RoundedCornerShape(4.dp))
                       .testTag("skeleton_email_$userId"))
         }
       }

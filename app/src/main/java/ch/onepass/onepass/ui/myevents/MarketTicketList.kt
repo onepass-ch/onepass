@@ -20,15 +20,14 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.theme.MarcFontFamily
 
@@ -64,7 +63,7 @@ fun MarketTicketList(
               style =
                   MaterialTheme.typography.titleMedium.copy(
                       fontFamily = MarcFontFamily, fontWeight = FontWeight.Bold),
-              color = colorResource(id = R.color.on_background),
+              color = colorScheme.onBackground,
               modifier = Modifier.testTag(MyEventsTestTags.MARKET_TICKETS_TITLE))
 
           // Sell Your Ticket button
@@ -73,8 +72,8 @@ fun MarketTicketList(
                 onClick = onSellTicket,
                 colors =
                     ButtonDefaults.buttonColors(
-                        containerColor = colorResource(id = R.color.accent_purple),
-                        contentColor = colorResource(id = R.color.white)),
+                        containerColor = colorScheme.primary,
+                        contentColor = colorScheme.onBackground),
                 shape = RoundedCornerShape(8.dp),
                 contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
                 modifier = Modifier.testTag(MyEventsTestTags.SELL_TICKET_BUTTON)) {
@@ -100,7 +99,7 @@ fun MarketTicketList(
                 Modifier.fillMaxWidth().height(200.dp).testTag(MyEventsTestTags.MARKET_LOADING),
             contentAlignment = Alignment.Center) {
               CircularProgressIndicator(
-                  color = colorResource(id = R.color.primary), modifier = Modifier.size(40.dp))
+                  color = colorScheme.primary, modifier = Modifier.size(40.dp))
             }
       }
       marketTickets.isEmpty() -> {

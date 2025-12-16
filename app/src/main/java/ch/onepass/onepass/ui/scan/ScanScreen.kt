@@ -14,11 +14,33 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -27,8 +49,26 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.outlined.Error
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -45,6 +85,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import ch.onepass.onepass.ui.theme.Success
+import ch.onepass.onepass.ui.theme.Warning
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
@@ -66,20 +108,6 @@ object ScanTestTags {
   const val STATS_CARD = "scan_stats_card"
   const val BACK_BUTTON = "scan_back_button"
   const val NETWORK_ERROR_DIALOG = "scan_network_error_dialog"
-}
-
-/** Dark palette aligned with the Profile screen aesthetics. */
-private object ScanColors {
-  val Background = Color(0xFF111111)
-  val Card = Color(0xFF1B1B1B)
-  val Accent = Color(0xFF9C6BFF)
-  val Success = Color(0xFF4CAF50)
-  val Error = Color(0xFFD33A2C)
-  val Warning = Color(0xFFFF9800)
-  val TextPrimary = Color.White
-  val TextSecondary = Color(0xFFB0B0B0)
-  val Scrim = Color(0xAA000000)
-  val ScanFrame = Color(0xFF9C6BFF)
 }
 
 /** Top-level scanner screen: wires ViewModel, permission gate, camera preview, and HUD. */
@@ -228,7 +256,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
           Icon(
               imageVector = Icons.Outlined.Error,
               contentDescription = null,
-              tint = ScanColors.Error)
+              tint = ch.onepass.onepass.ui.theme.Error)
         },
         title = {
           Text(
@@ -239,7 +267,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
           Text(
               text = "Your session has expired. Please login again to continue scanning tickets.",
               style = MaterialTheme.typography.bodyMedium,
-              color = ScanColors.TextSecondary)
+              color = colorScheme.primary)
         },
         confirmButton = {
           Button(
@@ -247,13 +275,14 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                 showSessionExpiredDialog = false
                 onNavigateBack() // Go back, auth system will handle redirect to login
               },
-              colors = ButtonDefaults.buttonColors(containerColor = ScanColors.Error)) {
+              colors =
+                  ButtonDefaults.buttonColors(containerColor = ch.onepass.onepass.ui.theme.Error)) {
                 Text("OK")
               }
         },
-        containerColor = ScanColors.Card,
-        titleContentColor = ScanColors.TextPrimary,
-        textContentColor = ScanColors.TextSecondary,
+        containerColor = colorScheme.secondaryContainer,
+        titleContentColor = colorScheme.primary,
+        textContentColor = colorScheme.primary,
         modifier = Modifier.testTag("scan_session_expired_dialog"))
   }
 
@@ -267,10 +296,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
           onNavigateBack() // Back on dismiss
         },
         icon = {
-          Icon(
-              imageVector = Icons.Outlined.Error,
-              contentDescription = null,
-              tint = ScanColors.Warning)
+          Icon(imageVector = Icons.Outlined.Error, contentDescription = null, tint = Warning)
         },
         title = {
           Text(
@@ -282,7 +308,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
               text =
                   "Please check your internet connection and try again. The scanner requires an active internet connection to validate tickets.",
               style = MaterialTheme.typography.bodyMedium,
-              color = ScanColors.TextSecondary)
+              color = colorScheme.primary)
         },
         confirmButton = {
           Button(
@@ -292,7 +318,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                 viewModel.resetToIdle()
                 lastScannedQr?.let { qr -> viewModel.onQrScanned(qr) }
               },
-              colors = ButtonDefaults.buttonColors(containerColor = ScanColors.Accent)) {
+              colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary)) {
                 Text("Retry")
               }
         },
@@ -306,9 +332,9 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                 Text("Back")
               }
         },
-        containerColor = ScanColors.Card,
-        titleContentColor = ScanColors.TextPrimary,
-        textContentColor = ScanColors.TextSecondary,
+        containerColor = colorScheme.secondaryContainer,
+        titleContentColor = colorScheme.primary,
+        textContentColor = colorScheme.primary,
         modifier = Modifier.testTag(ScanTestTags.NETWORK_ERROR_DIALOG))
   }
 
@@ -402,7 +428,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
 
   DisposableEffect(controller) { onDispose { controller.unbind() } }
 
-  Scaffold(containerColor = ScanColors.Background) { padding ->
+  Scaffold(containerColor = colorScheme.background) { padding ->
     Box(modifier = Modifier.fillMaxSize().padding(padding).testTag(ScanTestTags.SCREEN)) {
       // Camera Preview
       AndroidView(
@@ -421,7 +447,10 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
               Modifier.fillMaxSize()
                   .background(
                       Brush.verticalGradient(
-                          listOf(Color.Transparent, Color(0x33000000), ScanColors.Scrim))))
+                          listOf(
+                              Color.Transparent,
+                              Color(0x33000000),
+                              colorScheme.secondaryContainer))))
 
       // Back button (top-left)
       IconButton(
@@ -430,19 +459,19 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
               Modifier.align(Alignment.TopStart)
                   .padding(16.dp)
                   .size(48.dp)
-                  .background(ScanColors.Card.copy(alpha = 0.7f), CircleShape)
+                  .background(colorScheme.secondaryContainer.copy(alpha = 0.7f), CircleShape)
                   .testTag(ScanTestTags.BACK_BUTTON)) {
             Icon(
                 imageVector = Icons.Default.ArrowBack,
                 contentDescription = "Back",
-                tint = Color.White,
+                tint = colorScheme.onBackground,
                 modifier = Modifier.size(24.dp))
           }
 
       // Animated scanning frame
       ScanningFrame(uiState = uiState)
 
-      // Top stats card (when not idle)
+      // Top stats colorScheme.secondaryContainer (when not idle)
       AnimatedVisibility(
           visible =
               uiState.validated > 0 ||
@@ -493,10 +522,10 @@ private fun BoxScope.ScanningFrame(uiState: ScannerUiState) {
       animateColorAsState(
           targetValue =
               when (uiState.status) {
-                ScannerUiState.Status.ACCEPTED -> ScanColors.Success
-                ScannerUiState.Status.REJECTED -> ScanColors.Error
-                ScannerUiState.Status.ERROR -> ScanColors.Warning
-                else -> ScanColors.ScanFrame
+                ScannerUiState.Status.ACCEPTED -> Success
+                ScannerUiState.Status.REJECTED -> ch.onepass.onepass.ui.theme.Error
+                ScannerUiState.Status.ERROR -> Warning
+                else -> colorScheme.primary
               },
           animationSpec = tween(300),
           label = "frame_color")
@@ -620,11 +649,14 @@ private fun BoxScope.FrameCorners(color: Color) {
   }
 }
 
-/** Top stats card showing event title and validated tickets count - Internal for testing */
+/**
+ * Top stats colorScheme.secondaryContainer showing event title and validated tickets count -
+ * Internal for testing
+ */
 @Composable
 internal fun TopStatsCard(validated: Int, eventTitle: String?) {
   Surface(
-      color = ScanColors.Card.copy(alpha = 0.95f),
+      color = colorScheme.secondaryContainer.copy(alpha = 0.95f),
       shape = RoundedCornerShape(16.dp),
       tonalElevation = 4.dp,
       modifier = Modifier.padding(top = 24.dp).testTag(ScanTestTags.STATS_CARD)) {
@@ -635,7 +667,7 @@ internal fun TopStatsCard(validated: Int, eventTitle: String?) {
               if (eventTitle != null) {
                 Text(
                     text = eventTitle,
-                    color = ScanColors.TextPrimary,
+                    color = colorScheme.primary,
                     style =
                         MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     maxLines = 1,
@@ -646,12 +678,12 @@ internal fun TopStatsCard(validated: Int, eventTitle: String?) {
               // Validated count
               Text(
                   text = validated.toString(),
-                  color = ScanColors.Accent,
+                  color = colorScheme.primary,
                   style =
                       MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
               Text(
                   text = "Validated",
-                  color = ScanColors.TextSecondary,
+                  color = colorScheme.primary,
                   style = MaterialTheme.typography.bodySmall)
             }
       }
@@ -664,16 +696,17 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
       animateColorAsState(
           targetValue =
               when (uiState.status) {
-                ScannerUiState.Status.ACCEPTED -> ScanColors.Success.copy(alpha = 0.15f)
-                ScannerUiState.Status.REJECTED -> ScanColors.Error.copy(alpha = 0.15f)
-                ScannerUiState.Status.ERROR -> ScanColors.Warning.copy(alpha = 0.15f)
+                ScannerUiState.Status.ACCEPTED -> Success.copy(alpha = 0.15f)
+                ScannerUiState.Status.REJECTED ->
+                    ch.onepass.onepass.ui.theme.Error.copy(alpha = 0.15f)
+                ScannerUiState.Status.ERROR -> Warning.copy(alpha = 0.15f)
                 else -> Color.Transparent
               },
           animationSpec = tween(300),
           label = "bg_color")
 
   Surface(
-      color = ScanColors.Card.copy(alpha = 0.95f),
+      color = colorScheme.secondaryContainer.copy(alpha = 0.95f),
       tonalElevation = 0.dp,
       shadowElevation = 8.dp,
       shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
@@ -691,7 +724,7 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
                       Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = uiState.message,
-                            color = ScanColors.TextPrimary,
+                            color = colorScheme.primary,
                             style =
                                 MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold),
@@ -702,7 +735,7 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
                           Spacer(Modifier.height(4.dp))
                           Text(
                               text = uiState.lastScannedUserName,
-                              color = ScanColors.TextPrimary,
+                              color = colorScheme.primary,
                               style =
                                   MaterialTheme.typography.bodyLarge.copy(
                                       fontWeight = FontWeight.Medium))
@@ -712,7 +745,7 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
                           Spacer(Modifier.height(6.dp))
                           Text(
                               text = "Ticket ${uiState.lastTicketId}",
-                              color = ScanColors.Accent,
+                              color = colorScheme.primary,
                               style =
                                   MaterialTheme.typography.bodyMedium.copy(
                                       fontWeight = FontWeight.SemiBold))
@@ -722,7 +755,7 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
                           Spacer(Modifier.height(6.dp))
                           Text(
                               text = "Position the QR code within the frame",
-                              color = ScanColors.TextSecondary,
+                              color = colorScheme.primary,
                               style = MaterialTheme.typography.bodySmall)
                         }
                       }
@@ -731,7 +764,7 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
                         Spacer(Modifier.width(16.dp))
                         CircularProgressIndicator(
                             modifier = Modifier.size(32.dp).testTag(ScanTestTags.PROGRESS),
-                            color = ScanColors.Accent,
+                            color = colorScheme.primary,
                             strokeWidth = 3.dp)
                       }
                     }
@@ -745,7 +778,9 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
 internal fun PermissionDeniedScreen() {
   Box(
       modifier =
-          Modifier.fillMaxSize().background(ScanColors.Background).testTag(ScanTestTags.PERMISSION),
+          Modifier.fillMaxSize()
+              .background(colorScheme.background)
+              .testTag(ScanTestTags.PERMISSION),
       contentAlignment = Alignment.Center) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
@@ -753,19 +788,19 @@ internal fun PermissionDeniedScreen() {
               Icon(
                   imageVector = Icons.Filled.QrCodeScanner,
                   contentDescription = "QR code scanner required",
-                  tint = ScanColors.TextSecondary,
+                  tint = colorScheme.primary,
                   modifier = Modifier.size(80.dp))
               Spacer(Modifier.height(24.dp))
               Text(
                   text = "Camera Access Required",
-                  color = ScanColors.TextPrimary,
+                  color = colorScheme.primary,
                   style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                   textAlign = TextAlign.Center)
               Spacer(Modifier.height(12.dp))
               Text(
                   text =
                       "To scan tickets, we need access to your camera. Please grant permission to continue.",
-                  color = ScanColors.TextSecondary,
+                  color = colorScheme.primary,
                   style = MaterialTheme.typography.bodyMedium,
                   textAlign = TextAlign.Center)
             }
@@ -845,7 +880,7 @@ internal fun PreviewScanHudRejected() {
 /** Shared preview container - Internal for testing */
 @Composable
 internal fun PreviewHudContainer(state: ScannerUiState) {
-  Box(modifier = Modifier.fillMaxSize().background(ScanColors.Background)) {
+  Box(modifier = Modifier.fillMaxSize().background(colorScheme.background)) {
     Box(
         modifier =
             Modifier.fillMaxSize()
@@ -853,9 +888,7 @@ internal fun PreviewHudContainer(state: ScannerUiState) {
                     Brush.verticalGradient(colors = listOf(Color(0xFF0F0F10), Color(0xFF171718)))),
         contentAlignment = Alignment.Center) {
           Text(
-              text = "Camera Preview",
-              color = ScanColors.TextSecondary,
-              modifier = Modifier.alpha(0.5f))
+              text = "Camera Preview", color = colorScheme.primary, modifier = Modifier.alpha(0.5f))
         }
 
     Box(
@@ -866,10 +899,10 @@ internal fun PreviewHudContainer(state: ScannerUiState) {
                     width = 3.dp,
                     color =
                         when (state.status) {
-                          ScannerUiState.Status.ACCEPTED -> ScanColors.Success
-                          ScannerUiState.Status.REJECTED -> ScanColors.Error
-                          ScannerUiState.Status.ERROR -> ScanColors.Warning
-                          else -> ScanColors.ScanFrame
+                          ScannerUiState.Status.ACCEPTED -> Success
+                          ScannerUiState.Status.REJECTED -> ch.onepass.onepass.ui.theme.Error
+                          ScannerUiState.Status.ERROR -> Warning
+                          else -> colorScheme.primary
                         },
                     shape = RoundedCornerShape(24.dp)))
 

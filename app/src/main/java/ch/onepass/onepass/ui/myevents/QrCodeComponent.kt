@@ -18,6 +18,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -29,13 +30,18 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
 import ch.onepass.onepass.R
+import ch.onepass.onepass.ui.theme.QRLilac
+import ch.onepass.onepass.ui.theme.QROrange
+import ch.onepass.onepass.ui.theme.QRPink
+import ch.onepass.onepass.ui.theme.QRPurple
+import ch.onepass.onepass.ui.theme.QRRed
+import ch.onepass.onepass.ui.theme.QRYellow
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
 
@@ -89,7 +95,7 @@ fun QrCodeComponent(
                   }
               .testTag(MyEventsTestTags.QR_CODE_CARD),
       shape = RoundedCornerShape(16.dp),
-      colors = CardDefaults.cardColors(containerColor = colorResource(id = R.color.background))) {
+      colors = CardDefaults.cardColors(containerColor = colorScheme.background)) {
         // Background with gradient and QR code image
         QrCardContent(isExpanded, qrBitmap, screenHeight, qrScale)
       }
@@ -119,17 +125,17 @@ private fun QrCardContent(
                   // Background gradient colors
                   Brush.horizontalGradient(
                       listOf(
-                          colorResource(id = R.color.qr_red).copy(alpha = 0.2f),
-                          colorResource(id = R.color.qr_pink).copy(alpha = 0.2f),
-                          colorResource(id = R.color.qr_purple).copy(alpha = 0.2f),
-                          colorResource(id = R.color.qr_lilac).copy(alpha = 0.2f),
-                          colorResource(id = R.color.qr_orange).copy(alpha = 0.2f),
-                          colorResource(id = R.color.qr_yellow).copy(alpha = 0.2f)))),
+                          QRRed.copy(alpha = 0.2f),
+                          QRPink.copy(alpha = 0.2f),
+                          QRPurple.copy(alpha = 0.2f),
+                          QRLilac.copy(alpha = 0.2f),
+                          QROrange.copy(alpha = 0.2f),
+                          QRYellow.copy(alpha = 0.2f)))),
       contentAlignment = Alignment.Center) {
         when {
           qrBitmap == null -> {
             // Show loading indicator when QR data is not available yet
-            CircularProgressIndicator(color = colorResource(id = R.color.primary))
+            CircularProgressIndicator(color = colorScheme.primary)
           }
           isExpanded -> {
             // Show generated QR code when expanded

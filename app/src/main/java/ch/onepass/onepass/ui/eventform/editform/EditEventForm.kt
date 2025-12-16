@@ -1,27 +1,46 @@
 package ch.onepass.onepass.ui.eventform.editform
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.eventform.EventFormFields
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
-import ch.onepass.onepass.ui.theme.DefaultBackground
-import ch.onepass.onepass.ui.theme.EventDateColor
 
 object EditEventFormTestTags {
   const val SCREEN = "edit_event_form_screen"
@@ -64,16 +83,11 @@ fun UpdateEventButton(
               .fillMaxWidth()
               .height(48.dp)
               .padding(start = 63.dp, top = 14.dp, end = 63.dp, bottom = 14.dp)
-              .background(
-                  color = colorResource(id = R.color.edit_update_btn_bg_primary),
-                  shape = RoundedCornerShape(size = 5.dp))
-              .background(
-                  color = colorResource(id = R.color.edit_update_btn_bg_overlay),
-                  shape = RoundedCornerShape(size = 5.dp)),
+              .background(color = colorScheme.background, shape = RoundedCornerShape(size = 5.dp)),
       shape = RoundedCornerShape(5.dp),
       colors =
           ButtonDefaults.buttonColors(
-              containerColor = Color.Transparent, contentColor = colorResource(id = R.color.white)),
+              containerColor = Color.Transparent, contentColor = colorScheme.onBackground),
       contentPadding = PaddingValues(0.dp),
       elevation = ButtonDefaults.buttonElevation(0.dp),
       enabled = !isLoading) {
@@ -84,7 +98,7 @@ fun UpdateEventButton(
               if (isLoading) {
                 CircularProgressIndicator(
                     modifier = Modifier.size(16.dp),
-                    color = colorResource(id = R.color.white),
+                    color = colorScheme.onBackground,
                     strokeWidth = 2.dp)
               } else {
                 Icon(
@@ -123,7 +137,7 @@ fun EditEventForm(
   BackNavigationScaffold(
       TopBarConfig(title = "Edit Event", backButtonTestTag = EditEventFormTestTags.BACK_BUTTON),
       onBack = onNavigateBack,
-      containerColor = DefaultBackground,
+      containerColor = colorScheme.background,
       modifier = Modifier.testTag(EditEventFormTestTags.SCREEN)) { padding ->
         Box(modifier = Modifier.fillMaxSize().padding(padding)) {
           when (uiState) {
@@ -132,7 +146,7 @@ fun EditEventForm(
                   modifier =
                       Modifier.align(Alignment.Center)
                           .testTag(EditEventFormTestTags.LOADING_INDICATOR),
-                  color = EventDateColor)
+                  color = colorScheme.primary)
             }
             is EditEventUiState.LoadError -> {
               Column(
@@ -144,17 +158,18 @@ fun EditEventForm(
                     Text(
                         text = "Failed to load event",
                         style = MaterialTheme.typography.titleMedium,
-                        color = colorResource(id = R.color.white))
+                        color = colorScheme.onBackground)
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
                         text = (uiState as EditEventUiState.LoadError).message,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = colorResource(id = R.color.gray))
+                        color = colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
                         onClick = { viewModel.loadEvent(eventId) },
                         modifier = Modifier.testTag(EditEventFormTestTags.RETRY_BUTTON),
-                        colors = ButtonDefaults.buttonColors(containerColor = EventDateColor)) {
+                        colors =
+                            ButtonDefaults.buttonColors(containerColor = colorScheme.primary)) {
                           Text("Retry")
                         }
                   }
@@ -163,7 +178,7 @@ fun EditEventForm(
               Column(
                   modifier =
                       Modifier.fillMaxSize()
-                          .background(DefaultBackground)
+                          .background(colorScheme.background)
                           .verticalScroll(scrollState)
                           .padding(start = 22.dp, end = 22.dp, bottom = 48.dp)
                           .testTag(EditEventFormTestTags.FORM_COLUMN)) {

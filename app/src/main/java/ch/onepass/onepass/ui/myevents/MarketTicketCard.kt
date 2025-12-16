@@ -22,6 +22,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -29,7 +30,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -62,8 +62,7 @@ fun MarketTicketCard(
   Card(
       modifier = modifier.fillMaxWidth(),
       shape = RoundedCornerShape(16.dp),
-      colors =
-          CardDefaults.cardColors(containerColor = colorResource(id = R.color.surface_card_color)),
+      colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
       elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth().padding(12.dp),
@@ -73,7 +72,7 @@ fun MarketTicketCard(
                   modifier =
                       Modifier.size(100.dp)
                           .clip(RoundedCornerShape(12.dp))
-                          .background(colorResource(id = R.color.surface_container))) {
+                          .background(colorScheme.surface)) {
                     if (marketTicket.eventImageUrl.isNotEmpty()) {
                       AsyncImage(
                           model = marketTicket.eventImageUrl,
@@ -101,7 +100,7 @@ fun MarketTicketCard(
                         style =
                             MaterialTheme.typography.bodyLarge.copy(
                                 fontFamily = MarcFontFamily, fontWeight = FontWeight.Bold),
-                        color = colorResource(id = R.color.on_background),
+                        color = colorScheme.onBackground,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.testTag(MyEventsTestTags.MARKET_TICKET_TITLE))
@@ -110,7 +109,7 @@ fun MarketTicketCard(
                     Text(
                         text = marketTicket.eventDate,
                         style = MaterialTheme.typography.bodySmall,
-                        color = colorResource(id = R.color.gray),
+                        color = colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         modifier = Modifier.testTag(MyEventsTestTags.MARKET_TICKET_DATE))
@@ -120,13 +119,13 @@ fun MarketTicketCard(
                       Icon(
                           imageVector = Icons.Default.LocationOn,
                           contentDescription = "Location",
-                          tint = colorResource(id = R.color.gray),
+                          tint = colorScheme.onSurface,
                           modifier = Modifier.size(14.dp))
                       Spacer(modifier = Modifier.width(4.dp))
                       Text(
                           text = marketTicket.eventLocation,
                           style = MaterialTheme.typography.bodySmall,
-                          color = colorResource(id = R.color.gray),
+                          color = colorScheme.onSurface,
                           maxLines = 1,
                           overflow = TextOverflow.Ellipsis,
                           modifier = Modifier.testTag(MyEventsTestTags.MARKET_TICKET_LOCATION))
@@ -148,7 +147,7 @@ fun MarketTicketCard(
                                 style =
                                     MaterialTheme.typography.titleMedium.copy(
                                         fontWeight = FontWeight.Bold),
-                                color = colorResource(id = R.color.tab_selected),
+                                color = colorScheme.primary,
                                 modifier =
                                     Modifier.testTag(MyEventsTestTags.MARKET_TICKET_SELLER_PRICE))
 
@@ -160,7 +159,7 @@ fun MarketTicketCard(
                                   style =
                                       MaterialTheme.typography.bodySmall.copy(
                                           textDecoration = TextDecoration.LineThrough),
-                                  color = colorResource(id = R.color.gray),
+                                  color = colorScheme.onSurface,
                                   modifier =
                                       Modifier.testTag(
                                           MyEventsTestTags.MARKET_TICKET_ORIGINAL_PRICE))
@@ -174,9 +173,8 @@ fun MarketTicketCard(
                                 enabled = !isLoading,
                                 colors =
                                     ButtonDefaults.buttonColors(
-                                        containerColor =
-                                            colorResource(id = R.color.event_buy_button_bg),
-                                        contentColor = colorResource(id = R.color.white)),
+                                        containerColor = colorScheme.primary,
+                                        contentColor = colorScheme.onBackground),
                                 shape = RoundedCornerShape(8.dp),
                                 modifier =
                                     Modifier.height(36.dp)
@@ -192,14 +190,13 @@ fun MarketTicketCard(
                             Box(
                                 modifier =
                                     Modifier.background(
-                                            colorResource(id = R.color.accent_purple)
-                                                .copy(alpha = 0.2f),
+                                            colorScheme.primary.copy(alpha = 0.2f),
                                             RoundedCornerShape(8.dp))
                                         .padding(horizontal = 12.dp, vertical = 8.dp)) {
                                   Text(
                                       text = "Your listing",
                                       style = MaterialTheme.typography.bodySmall,
-                                      color = colorResource(id = R.color.accent_purple))
+                                      color = colorScheme.primary)
                                 }
                           }
                         }

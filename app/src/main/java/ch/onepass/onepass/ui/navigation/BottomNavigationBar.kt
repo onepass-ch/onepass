@@ -2,6 +2,7 @@ package ch.onepass.onepass.ui.navigation
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarDefaults
 import androidx.compose.material3.NavigationBarItem
@@ -14,9 +15,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.ui.navigation.NavigationDestinations.Screen
 import ch.onepass.onepass.ui.navigation.NavigationDestinations.tabs
-import ch.onepass.onepass.ui.theme.BackgroundDark
-import ch.onepass.onepass.ui.theme.GrayStroke
-import ch.onepass.onepass.ui.theme.PurplePrimary
 
 /**
  * Bottom navigation bar for the main screens of the app.
@@ -33,15 +31,15 @@ fun BottomNavigationBar(
 ) {
   val itemColors =
       NavigationBarItemDefaults.colors(
-          selectedIconColor = PurplePrimary,
-          selectedTextColor = PurplePrimary,
-          indicatorColor = PurplePrimary.copy(alpha = 0.12f),
-          unselectedIconColor = GrayStroke,
-          unselectedTextColor = GrayStroke)
+          selectedIconColor = colorScheme.primary,
+          selectedTextColor = colorScheme.primary,
+          indicatorColor = colorScheme.primary.copy(alpha = 0.12f),
+          unselectedIconColor = colorScheme.outline,
+          unselectedTextColor = colorScheme.outline)
 
   NavigationBar(
       modifier = modifier.fillMaxWidth(),
-      containerColor = BackgroundDark,
+      containerColor = colorScheme.secondaryContainer,
       tonalElevation = 0.dp,
       windowInsets = NavigationBarDefaults.windowInsets) {
         tabs.forEach { tab ->

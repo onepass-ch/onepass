@@ -19,7 +19,7 @@ val MarcFontFamily =
         Font(R.font.marc_bold, FontWeight.Bold),
         Font(R.font.marc_bold_italic, FontWeight.Bold, FontStyle.Italic))
 
-// Secondary font - Inter Variable
+// Primary font - Inter Variable
 val InterFontFamily =
     FontFamily(
         Font(R.font.inter_variable_font, FontWeight.Light),
@@ -96,7 +96,7 @@ val Typography =
                 fontSize = 14.sp,
                 lineHeight = 20.sp,
                 letterSpacing = 0.1.sp),
-        // Body styles - Secondary font (Inter)
+        // Body styles - Primary font (Inter)
         bodyLarge =
             TextStyle(
                 fontFamily = InterFontFamily,
@@ -118,7 +118,7 @@ val Typography =
                 fontSize = 12.sp,
                 lineHeight = 16.sp,
                 letterSpacing = 0.4.sp),
-        // Label styles - Secondary font (Inter)
+        // Label styles - Primary font (Inter)
         labelLarge =
             TextStyle(
                 fontFamily = InterFontFamily,

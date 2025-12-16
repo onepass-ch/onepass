@@ -26,6 +26,7 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -42,10 +43,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.R
 import coil.compose.AsyncImage
 
 /**
@@ -91,32 +90,27 @@ fun MarketSearchBar(
               onValueChange = onQueryChange,
               modifier =
                   Modifier.fillMaxWidth()
-                      .border(
-                          1.dp,
-                          colorResource(id = R.color.staff_search_border),
-                          RoundedCornerShape(12.dp))
+                      .border(1.dp, colorScheme.onSurface, RoundedCornerShape(12.dp))
                       .heightIn(min = 50.dp)
                       .menuAnchor(MenuAnchorType.PrimaryEditable, true)
                       .testTag(MyEventsTestTags.MARKET_SEARCH_BAR),
               placeholder = {
                 Text(
                     "Search events or organizers...",
-                    style =
-                        MaterialTheme.typography.bodyMedium.copy(
-                            color = colorResource(id = R.color.gray)))
+                    style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
               },
               leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.Search,
                     contentDescription = "Search",
-                    tint = colorResource(id = R.color.gray))
+                    tint = colorScheme.onSurface)
               },
               trailingIcon = {
                 when {
                   isSearching -> {
                     CircularProgressIndicator(
                         modifier = Modifier.size(24.dp),
-                        color = colorResource(id = R.color.primary),
+                        color = colorScheme.primary,
                         strokeWidth = 2.dp)
                   }
                   query.isNotEmpty() -> {
@@ -128,19 +122,19 @@ fun MarketSearchBar(
                           Icon(
                               imageVector = Icons.Default.Clear,
                               contentDescription = "Clear search",
-                              tint = colorResource(id = R.color.gray))
+                              tint = colorScheme.onSurface)
                         }
                   }
                 }
               },
               colors =
                   TextFieldDefaults.colors(
-                      focusedContainerColor = colorResource(id = R.color.staff_search_container),
-                      unfocusedContainerColor = colorResource(id = R.color.staff_search_container),
+                      focusedContainerColor = colorScheme.surface,
+                      unfocusedContainerColor = colorScheme.surface,
                       focusedIndicatorColor = Color.Transparent,
                       unfocusedIndicatorColor = Color.Transparent,
-                      focusedTextColor = colorResource(id = R.color.white),
-                      unfocusedTextColor = colorResource(id = R.color.white)),
+                      focusedTextColor = colorScheme.onBackground,
+                      unfocusedTextColor = colorScheme.onBackground),
               shape = RoundedCornerShape(12.dp),
               textStyle = MaterialTheme.typography.bodyMedium,
               singleLine = true)
@@ -149,9 +143,7 @@ fun MarketSearchBar(
           ExposedDropdownMenu(
               expanded = expanded,
               onDismissRequest = { expanded = false },
-              modifier =
-                  Modifier.fillMaxWidth()
-                      .background(colorResource(id = R.color.surface_container))) {
+              modifier = Modifier.fillMaxWidth().background(colorScheme.surface)) {
                 searchResults.forEach { result ->
                   DropdownMenuItem(
                       text = { SearchResultItem(result = result) },
@@ -184,7 +176,7 @@ private fun SearchResultItem(result: SearchResult) {
                 modifier =
                     Modifier.size(40.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(colorResource(id = R.color.surface_card_color)),
+                        .background(colorScheme.surface),
                 contentAlignment = Alignment.Center) {
                   if (result.event.imageUrl.isNotEmpty()) {
                     AsyncImage(
@@ -196,7 +188,7 @@ private fun SearchResultItem(result: SearchResult) {
                     Icon(
                         imageVector = Icons.Default.DateRange,
                         contentDescription = "Event",
-                        tint = colorResource(id = R.color.gray),
+                        tint = colorScheme.onSurface,
                         modifier = Modifier.size(24.dp))
                   }
                 }
@@ -207,13 +199,13 @@ private fun SearchResultItem(result: SearchResult) {
               Text(
                   text = result.event.title,
                   style = MaterialTheme.typography.bodyMedium,
-                  color = colorResource(id = R.color.white),
+                  color = colorScheme.onBackground,
                   maxLines = 1,
                   overflow = TextOverflow.Ellipsis)
               Text(
                   text = "Event • ${result.event.displayDateTime}",
                   style = MaterialTheme.typography.bodySmall,
-                  color = colorResource(id = R.color.gray),
+                  color = colorScheme.onSurface,
                   maxLines = 1,
                   overflow = TextOverflow.Ellipsis)
             }
@@ -221,10 +213,7 @@ private fun SearchResultItem(result: SearchResult) {
           is SearchResult.OrganizerResult -> {
             // Organizer profile image
             Box(
-                modifier =
-                    Modifier.size(40.dp)
-                        .clip(CircleShape)
-                        .background(colorResource(id = R.color.surface_card_color)),
+                modifier = Modifier.size(40.dp).clip(CircleShape).background(colorScheme.surface),
                 contentAlignment = Alignment.Center) {
                   if (!result.organizer.profileImageUrl.isNullOrEmpty()) {
                     AsyncImage(
@@ -236,7 +225,7 @@ private fun SearchResultItem(result: SearchResult) {
                     Icon(
                         imageVector = Icons.Default.Person,
                         contentDescription = "Organizer",
-                        tint = colorResource(id = R.color.gray),
+                        tint = colorScheme.onSurface,
                         modifier = Modifier.size(24.dp))
                   }
                 }
@@ -247,13 +236,13 @@ private fun SearchResultItem(result: SearchResult) {
               Text(
                   text = result.organizer.name,
                   style = MaterialTheme.typography.bodyMedium,
-                  color = colorResource(id = R.color.white),
+                  color = colorScheme.onBackground,
                   maxLines = 1,
                   overflow = TextOverflow.Ellipsis)
               Text(
                   text = "Organizer${if (result.organizer.verified) " • Verified" else ""}",
                   style = MaterialTheme.typography.bodySmall,
-                  color = colorResource(id = R.color.gray),
+                  color = colorScheme.onSurface,
                   maxLines = 1,
                   overflow = TextOverflow.Ellipsis)
             }

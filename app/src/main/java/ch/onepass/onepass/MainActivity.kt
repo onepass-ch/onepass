@@ -8,7 +8,7 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -143,7 +143,7 @@ class MainActivity : ComponentActivity() {
 internal fun MainActivityContent(intentToCheck: Intent? = null, enableDeepLinking: Boolean = true) {
   Surface(
       modifier = Modifier.fillMaxSize().semantics { testTag = C.Tag.main_screen_container },
-      color = MaterialTheme.colorScheme.background) {
+      color = colorScheme.background) {
         OnePassApp(
             initialIntent = intentToCheck,
             enableDeepLinking = enableDeepLinking) // Let each map screen create its own ViewModel

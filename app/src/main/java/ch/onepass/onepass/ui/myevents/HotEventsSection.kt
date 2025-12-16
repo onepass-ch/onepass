@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -26,7 +27,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -61,7 +61,7 @@ fun HotEventsSection(
         style =
             MaterialTheme.typography.titleMedium.copy(
                 fontFamily = MarcFontFamily, fontWeight = FontWeight.Bold),
-        color = colorResource(id = R.color.on_background))
+        color = colorScheme.onBackground)
 
     when {
       isLoading -> {
@@ -70,7 +70,7 @@ fun HotEventsSection(
             modifier = Modifier.fillMaxWidth().height(160.dp),
             contentAlignment = Alignment.Center) {
               CircularProgressIndicator(
-                  color = colorResource(id = R.color.primary), modifier = Modifier.size(32.dp))
+                  color = colorScheme.primary, modifier = Modifier.size(32.dp))
             }
       }
       events.isEmpty() -> {
@@ -85,7 +85,7 @@ fun HotEventsSection(
               Text(
                   text = "No hot events at the moment",
                   style = MaterialTheme.typography.bodyMedium,
-                  color = colorResource(id = R.color.gray))
+                  color = colorScheme.onSurface)
             }
       }
       else -> {
@@ -126,7 +126,7 @@ private fun HotEventCard(event: Event, onClick: () -> Unit, modifier: Modifier =
             modifier =
                 Modifier.size(140.dp)
                     .clip(RoundedCornerShape(8.dp))
-                    .background(colorResource(id = R.color.surface_card_color))) {
+                    .background(colorScheme.surface)) {
               // Event image
               if (event.imageUrl.isNotEmpty()) {
                 AsyncImage(
@@ -151,7 +151,7 @@ private fun HotEventCard(event: Event, onClick: () -> Unit, modifier: Modifier =
         Text(
             text = event.title,
             style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
-            color = colorResource(id = R.color.on_background),
+            color = colorScheme.onBackground,
             maxLines = 2,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.fillMaxWidth())
@@ -162,7 +162,7 @@ private fun HotEventCard(event: Event, onClick: () -> Unit, modifier: Modifier =
         Text(
             text = event.displayDateTime,
             style = MaterialTheme.typography.bodySmall,
-            color = colorResource(id = R.color.gray),
+            color = colorScheme.onSurface,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis,
             modifier = Modifier.fillMaxWidth())
