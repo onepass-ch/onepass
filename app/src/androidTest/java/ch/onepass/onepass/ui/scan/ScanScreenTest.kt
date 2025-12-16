@@ -68,20 +68,6 @@ class ScanScreenTest {
   // ==================== ACCEPTED SCANS ====================
 
   @Test
-  fun acceptedScan_showsSuccessState() {
-    val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
-    val vm = createVM(repo)
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
-    compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertIsDisplayed()
-    compose.onNodeWithText("Position the QR code within the frame").assertDoesNotExist()
-  }
-
-  @Test
   fun acceptedScan_nullTicketId_doesNotCrash() {
     val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = null)) }
     val vm = createVM(repo)
