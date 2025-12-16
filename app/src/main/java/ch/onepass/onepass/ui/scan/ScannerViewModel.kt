@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.pass.Pass
 import ch.onepass.onepass.model.scan.ScanDecision
 import ch.onepass.onepass.model.scan.TicketScanRepository
+import com.google.firebase.firestore.FirebaseFirestore
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration.Companion.seconds
 import kotlinx.coroutines.CoroutineScope
@@ -90,7 +91,7 @@ class ScannerViewModel(
     private val clock: () -> Long = { System.currentTimeMillis() },
     private val enableAutoCleanup: Boolean = true,
     private val cleanupPeriodMs: Long = 10_000L,
-    private val stateResetDelayMs: Long = 3_000L,
+    private val stateResetDelayMs: Long = 2_000L,
     coroutineScope: CoroutineScope? = null
 ) : ViewModel() {
 
@@ -134,7 +135,7 @@ class ScannerViewModel(
     eventListenerJob =
         scope.launch {
           try {
-            val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+            val firestore = FirebaseFirestore.getInstance()
             val eventRef = firestore.collection("events").document(eventId)
 
             eventRef.addSnapshotListener { snapshot, error ->
@@ -228,7 +229,10 @@ class ScannerViewModel(
       return
     }
 
-    _state.value = _state.value.copy(isProcessing = true, message = "Validating…")
+    // Show "Validating..." immediately with spinner
+    _state.value =
+        _state.value.copy(
+            isProcessing = true, message = "Validating…", status = ScannerUiState.Status.IDLE)
 
     repo
         .validateByPass(qr, eventId)
@@ -254,7 +258,7 @@ class ScannerViewModel(
    */
   private suspend fun fetchUserDisplayName(uid: String): String? {
     return try {
-      val firestore = com.google.firebase.firestore.FirebaseFirestore.getInstance()
+      val firestore = FirebaseFirestore.getInstance()
       val userDoc = firestore.collection("users").document(uid).get().await()
       userDoc.getString("displayName")
     } catch (e: Exception) {
@@ -279,16 +283,19 @@ class ScannerViewModel(
         // Fetch user's display name
         val userName = fetchUserDisplayName(uid)
 
+        // Update to ACCEPTED state (stops spinner, shows green bar)
         // Note: validated count is now updated via Firestore listener
         _state.value =
             _state.value.copy(
-                isProcessing = false,
+                isProcessing = false, // Stop spinner
                 status = ScannerUiState.Status.ACCEPTED,
                 message = "Access Granted",
                 lastTicketId = decision.ticketId,
                 lastScannedAt = decision.scannedAtSeconds,
                 lastScannedUserName = userName,
                 remaining = decision.remaining)
+
+        // Emit effect for sound/vibration/flash
         _effects.emit(ScannerEffect.Accepted("Access Granted"))
       }
       is ScanDecision.Rejected -> {
@@ -343,11 +350,13 @@ class ScannerViewModel(
     resetJob?.cancel()
     resetJob =
         scope.launch {
-          delay(stateResetDelayMs)
+          delay(stateResetDelayMs) // Now 2 seconds instead of 5
           if (isActive) {
-            // Reset to IDLE but preserve validated count
+            // Reset to IDLE but preserve validated count and event title
             val currentValidated = _state.value.validated
-            _state.value = ScannerUiState(validated = currentValidated)
+            val currentEventTitle = _state.value.eventTitle
+            _state.value =
+                ScannerUiState(validated = currentValidated, eventTitle = currentEventTitle)
           }
         }
   }
@@ -355,9 +364,10 @@ class ScannerViewModel(
   /** Manually reset state to IDLE (useful when dismissing error dialogs). */
   fun resetToIdle() {
     resetJob?.cancel()
-    // Reset to IDLE but preserve validated count
+    // Reset to IDLE but preserve validated count and event title
     val currentValidated = _state.value.validated
-    _state.value = ScannerUiState(validated = currentValidated)
+    val currentEventTitle = _state.value.eventTitle
+    _state.value = ScannerUiState(validated = currentValidated, eventTitle = currentEventTitle)
   }
 
   @VisibleForTesting

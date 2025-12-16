@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.MediaPlayer
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -14,65 +15,28 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.view.LifecycleCameraController
 import androidx.camera.view.PreviewView
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.BoxScope
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.outlined.Error
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme.colorScheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -85,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.Success
 import ch.onepass.onepass.ui.theme.Warning
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
@@ -93,9 +58,9 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 
-/** Test tags for instrumentation and automated UI checks. */
 object ScanTestTags {
   const val SCREEN = "scan_screen"
   const val CAMERA = "scan_camera_preview"
@@ -110,7 +75,151 @@ object ScanTestTags {
   const val NETWORK_ERROR_DIALOG = "scan_network_error_dialog"
 }
 
-/** Top-level scanner screen: wires ViewModel, permission gate, camera preview, and HUD. */
+private object ScanAlpha {
+  const val GLOW_BASE = 0.3f
+  const val GLOW_PULSE = 0.2f
+  const val RADIAL_START = 0.4f
+  const val RADIAL_MID = 0.1f
+  const val SWEEP_1 = 0.2f
+  const val SWEEP_2 = 0.5f
+  const val SWEEP_3 = 0.8f
+  const val SWEEP_4 = 0.3f
+  const val SWEEP_5 = 0.6f
+  const val DOT_MAIN = 0.8f
+  const val DOT_SECONDARY = 0.4f
+  const val CENTER_BASE = 0.8f
+  const val CENTER_PULSE = 0.2f
+  const val CARD = 0.7f
+  const val CARD_SURFACE = 0.95f
+  const val STATUS_BG = 0.2f
+  const val STATUS_SUCCESS = 0.15f
+  const val STATUS_ERROR = 0.15f
+  const val STATUS_WARNING = 0.15f
+  const val FLASH = 0.4f
+  const val PREVIEW = 0.5f
+}
+
+/** Stylish rotating gradient spinner with multiple animated layers */
+@Composable
+private fun RotatingSpinner(modifier: Modifier = Modifier, color: Color) {
+  var rotation by remember { mutableFloatStateOf(0f) }
+  var glowPulse by remember { mutableFloatStateOf(0f) }
+
+  // Main rotation animation
+  LaunchedEffect(Unit) {
+    while (true) {
+      rotation = (rotation + 10f) % 360f
+      delay(16)
+    }
+  }
+
+  // Glow pulse animation
+  LaunchedEffect(Unit) {
+    while (true) {
+      for (i in 0..100) {
+        glowPulse = i / 100f
+        delay(10)
+      }
+      for (i in 100 downTo 0) {
+        glowPulse = i / 100f
+        delay(10)
+      }
+    }
+  }
+
+  Box(modifier = modifier.size(40.dp), contentAlignment = Alignment.Center) {
+    // Outer glow ring (static, pulsing)
+    Canvas(
+        modifier =
+            Modifier.fillMaxSize().alpha(ScanAlpha.GLOW_BASE + glowPulse * ScanAlpha.GLOW_PULSE)) {
+          drawCircle(
+              brush =
+                  Brush.radialGradient(
+                      colors =
+                          listOf(
+                              color.copy(alpha = ScanAlpha.RADIAL_START),
+                              color.copy(alpha = ScanAlpha.RADIAL_MID),
+                              Color.Transparent)),
+              radius = size.minDimension / 2)
+        }
+
+    // Primary spinning arc with gradient
+    Canvas(modifier = Modifier.fillMaxSize().rotate(rotation)) {
+      val strokeWidth = 4.dp.toPx()
+
+      // Main gradient arc
+      drawArc(
+          brush =
+              Brush.sweepGradient(
+                  colors =
+                      listOf(
+                          Color.Transparent,
+                          color.copy(alpha = ScanAlpha.SWEEP_1),
+                          color.copy(alpha = ScanAlpha.SWEEP_2),
+                          color.copy(alpha = ScanAlpha.SWEEP_3),
+                          color,
+                          color,
+                          color.copy(alpha = ScanAlpha.SWEEP_3),
+                          color.copy(alpha = ScanAlpha.SWEEP_2),
+                          Color.Transparent)),
+          startAngle = 0f,
+          sweepAngle = 360f,
+          useCenter = false,
+          style =
+              androidx.compose.ui.graphics.drawscope.Stroke(
+                  width = strokeWidth, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+    }
+
+    // Secondary counter-rotating arc (faster, thinner)
+    Canvas(modifier = Modifier.size(32.dp).rotate(-rotation * 1.8f)) {
+      val strokeWidth = 2.5.dp.toPx()
+
+      drawArc(
+          brush =
+              Brush.sweepGradient(
+                  colors =
+                      listOf(
+                          Color.Transparent,
+                          color.copy(alpha = ScanAlpha.SWEEP_4),
+                          color.copy(alpha = ScanAlpha.SWEEP_5),
+                          color.copy(alpha = ScanAlpha.SWEEP_4),
+                          Color.Transparent)),
+          startAngle = 0f,
+          sweepAngle = 180f,
+          useCenter = false,
+          style =
+              androidx.compose.ui.graphics.drawscope.Stroke(
+                  width = strokeWidth, cap = androidx.compose.ui.graphics.StrokeCap.Round))
+    }
+
+    // Orbiting dots with trails
+    Canvas(modifier = Modifier.size(28.dp).rotate(rotation * 0.7f)) {
+      val orbitRadius = size.minDimension / 2.5f
+
+      for (i in 0..5) {
+        val angle = (i * 60f) * (Math.PI / 180f).toFloat()
+        val x = center.x + orbitRadius * kotlin.math.cos(angle)
+        val y = center.y + orbitRadius * kotlin.math.sin(angle)
+
+        val dotSize = if (i % 2 == 0) 2.5.dp.toPx() else 1.5.dp.toPx()
+        val alpha = if (i % 2 == 0) ScanAlpha.DOT_MAIN else ScanAlpha.DOT_SECONDARY
+
+        drawCircle(
+            color = color.copy(alpha = alpha),
+            radius = dotSize,
+            center = androidx.compose.ui.geometry.Offset(x, y))
+      }
+    }
+
+    // Center dot with pulse
+    Canvas(modifier = Modifier.size(6.dp)) {
+      drawCircle(
+          color = color.copy(alpha = ScanAlpha.CENTER_BASE + glowPulse * ScanAlpha.CENTER_PULSE),
+          radius = (2.dp.toPx() + glowPulse * 1.dp.toPx()))
+    }
+  }
+}
+
 @Composable
 fun ScanScreen(
     viewModel: ScannerViewModel,
@@ -128,116 +237,152 @@ fun ScanScreen(
       deniedContent = { PermissionDeniedScreen() })
 }
 
-/** Main content: edge-to-edge camera preview with scanning frame and bottom HUD. */
 @Composable
 fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
   val context = LocalContext.current
   val lifecycle = LocalLifecycleOwner.current
   val uiState by viewModel.state.collectAsState()
 
-  // Network error dialog state
   var showNetworkErrorDialog by remember { mutableStateOf(false) }
   var showSessionExpiredDialog by remember { mutableStateOf(false) }
   var lastScannedQr by remember { mutableStateOf<String?>(null) }
 
-  // Audio feedback with ToneGenerator
-  val toneGenerator = remember {
+  // Flash screen animation state
+  var flashColor by remember { mutableStateOf<Color?>(null) }
+  var showFlash by remember { mutableStateOf(false) }
+
+  // Custom success sound - ultra gratifying beep
+  val successPlayer = remember {
     try {
-      android.media.ToneGenerator(android.media.AudioManager.STREAM_NOTIFICATION, 80)
-    } catch (e: Exception) {
-      Log.w("ScanContent", "Failed to create ToneGenerator", e)
+      MediaPlayer.create(context, R.raw.success_beep1)
+    } catch (_: Exception) {
+      Log.w("ScanContent", "Failed to create success player")
       null
     }
   }
 
-  DisposableEffect(toneGenerator) { onDispose { toneGenerator?.release() } }
+  // Custom error sound - negative buzz
+  val errorPlayer = remember {
+    try {
+      MediaPlayer.create(context, R.raw.error_beep1)
+    } catch (_: Exception) {
+      Log.w("ScanContent", "Failed to create error player")
+      null
+    }
+  }
 
-  // Haptic feedback (safe vibration with permission check)
+  DisposableEffect(successPlayer, errorPlayer) {
+    onDispose {
+      successPlayer?.release()
+      errorPlayer?.release()
+    }
+  }
+
   val vibrator = remember {
     @Suppress("DEPRECATION")
     context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
   }
 
-  // Detect errors and show appropriate dialog + play sounds
   LaunchedEffect(viewModel) {
     viewModel.effects.collectLatest { effect ->
       when (effect) {
         is ScannerEffect.Accepted -> {
-          // Play success beep (short, pleasant tone)
-          try {
-            toneGenerator?.startTone(android.media.ToneGenerator.TONE_PROP_BEEP, 150)
-          } catch (e: Exception) {
-            Log.w("ScanContent", "Failed to play accept sound", e)
+          // Don't flash if dialogs are showing
+          if (!showNetworkErrorDialog && !showSessionExpiredDialog) {
+            flashColor = Success
+            showFlash = true
           }
 
-          // Vibration
-          if (ContextCompat.checkSelfPermission(context, Manifest.permission.VIBRATE) ==
-              PackageManager.PERMISSION_GRANTED) {
-            vibrator?.let { vib ->
-              try {
-                vibrateForEffect(vib, effect)
-              } catch (e: Exception) {
-                Log.w("ScanContent", "Vibration failed", e)
-              }
+          // Play ultra gratifying success sound
+          try {
+            successPlayer?.let { mp ->
+              mp.seekTo(0)
+              mp.start()
+            }
+                ?: run {
+                  // Fallback if sound not available
+                  context.getSystemService(Context.AUDIO_SERVICE)?.let { audioManager ->
+                    (audioManager as android.media.AudioManager).playSoundEffect(
+                        android.media.AudioManager.FX_KEY_CLICK, 1.0f)
+                  }
+                }
+          } catch (_: Exception) {
+            Log.w("ScanContent", "Failed to play accept sound")
+          }
+
+          vibrator?.let { vib ->
+            try {
+              vibrateForEffect(vib, effect)
+            } catch (_: Exception) {
+              Log.w("ScanContent", "Vibration failed")
             }
           }
         }
         is ScannerEffect.Rejected -> {
-          // Play error buzz (harsh, double beep)
-          try {
-            toneGenerator?.startTone(android.media.ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, 200)
-          } catch (e: Exception) {
-            Log.w("ScanContent", "Failed to play reject sound", e)
+          // Don't flash if dialogs are showing
+          if (!showNetworkErrorDialog && !showSessionExpiredDialog) {
+            flashColor = ch.onepass.onepass.ui.theme.Error
+            showFlash = true
           }
 
-          // Vibration
-          if (ContextCompat.checkSelfPermission(context, Manifest.permission.VIBRATE) ==
-              PackageManager.PERMISSION_GRANTED) {
-            vibrator?.let { vib ->
-              try {
-                vibrateForEffect(vib, effect)
-              } catch (e: Exception) {
-                Log.w("ScanContent", "Vibration failed", e)
-              }
+          // Play negative error buzz
+          try {
+            errorPlayer?.let { mp ->
+              mp.seekTo(0)
+              mp.start()
+            }
+                ?: run {
+                  // Fallback if sound not available
+                  context.getSystemService(Context.AUDIO_SERVICE)?.let { audioManager ->
+                    (audioManager as android.media.AudioManager).playSoundEffect(
+                        android.media.AudioManager.FX_KEYPRESS_INVALID, 1.0f)
+                  }
+                }
+          } catch (_: Exception) {
+            Log.w("ScanContent", "Failed to play reject sound")
+          }
+
+          vibrator?.let { vib ->
+            try {
+              vibrateForEffect(vib, effect)
+            } catch (_: Exception) {
+              Log.w("ScanContent", "Vibration failed")
             }
           }
         }
         is ScannerEffect.Error -> {
+          // Trigger red flash for errors too
+          flashColor = ch.onepass.onepass.ui.theme.Error
+          showFlash = true
+
           val message = effect.message.lowercase()
           when {
-            // Session expired - should navigate to login
             message.contains("session expired") || message.contains("please login") -> {
               showSessionExpiredDialog = true
             }
-            // Network errors - can retry
             message.contains("network") ||
                 message.contains("connection") ||
                 message.contains("internet") ||
                 message.contains("timeout") -> {
               showNetworkErrorDialog = true
             }
-            // Other errors - just show in HUD (dialog not needed)
-            else -> {
-              // Error is already shown in the HUD message, no dialog needed
-            }
           }
 
-          // Play warning sound (medium tone)
+          // Play same error sound as rejected
           try {
-            toneGenerator?.startTone(android.media.ToneGenerator.TONE_PROP_NACK, 300)
-          } catch (e: Exception) {
-            Log.w("ScanContent", "Failed to play error sound", e)
+            errorPlayer?.let { mp ->
+              mp.seekTo(0)
+              mp.start()
+            }
+          } catch (_: Exception) {
+            Log.w("ScanContent", "Failed to play error sound")
           }
 
-          // Vibration
-          if (ContextCompat.checkSelfPermission(context, Manifest.permission.VIBRATE) ==
-              PackageManager.PERMISSION_GRANTED) {
-            vibrator?.let { vib ->
-              try {
-                vibrateForEffect(vib, effect)
-              } catch (e: Exception) {
-                Log.w("ScanContent", "Vibration failed", e)
-              }
+          vibrator?.let { vib ->
+            try {
+              vibrateForEffect(vib, effect)
+            } catch (_: Exception) {
+              Log.w("ScanContent", "Vibration failed")
             }
           }
         }
@@ -245,7 +390,6 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
     }
   }
 
-  // Session expired dialog
   if (showSessionExpiredDialog) {
     AlertDialog(
         onDismissRequest = {
@@ -256,7 +400,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
           Icon(
               imageVector = Icons.Outlined.Error,
               contentDescription = null,
-              tint = colorScheme.error)
+              tint = ch.onepass.onepass.ui.theme.Error)
         },
         title = {
           Text(
@@ -267,32 +411,31 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
           Text(
               text = "Your session has expired. Please login again to continue scanning tickets.",
               style = MaterialTheme.typography.bodyMedium,
-              color = colorScheme.primary)
+              color = colorScheme.onBackground)
         },
         confirmButton = {
           Button(
               onClick = {
                 showSessionExpiredDialog = false
-                onNavigateBack() // Go back, auth system will handle redirect to login
+                onNavigateBack()
               },
-              colors = ButtonDefaults.buttonColors(containerColor = colorScheme.error)) {
+              colors =
+                  ButtonDefaults.buttonColors(containerColor = ch.onepass.onepass.ui.theme.Error)) {
                 Text("OK")
               }
         },
         containerColor = colorScheme.secondaryContainer,
-        titleContentColor = colorScheme.primary,
-        textContentColor = colorScheme.primary,
+        titleContentColor = colorScheme.onBackground,
+        textContentColor = colorScheme.onBackground,
         modifier = Modifier.testTag("scan_session_expired_dialog"))
   }
 
-  // Network error dialog
   if (showNetworkErrorDialog) {
     AlertDialog(
         onDismissRequest = {
           showNetworkErrorDialog = false
-          // Reset state to IDLE when dismissing to prevent error showing in HUD
           viewModel.resetToIdle()
-          onNavigateBack() // Back on dismiss
+          onNavigateBack()
         },
         icon = {
           Icon(imageVector = Icons.Outlined.Error, contentDescription = null, tint = Warning)
@@ -307,18 +450,17 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
               text =
                   "Please check your internet connection and try again. The scanner requires an active internet connection to validate tickets.",
               style = MaterialTheme.typography.bodyMedium,
-              color = colorScheme.primary)
+              color = colorScheme.onBackground)
         },
         confirmButton = {
           Button(
               onClick = {
                 showNetworkErrorDialog = false
-                // Reset state before retry
                 viewModel.resetToIdle()
                 lastScannedQr?.let { qr -> viewModel.onQrScanned(qr) }
               },
               colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary)) {
-                Text("Retry")
+                Text(text = "Retry", color = colorScheme.onBackground)
               }
         },
         dismissButton = {
@@ -332,14 +474,13 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
               }
         },
         containerColor = colorScheme.secondaryContainer,
-        titleContentColor = colorScheme.primary,
-        textContentColor = colorScheme.primary,
+        titleContentColor = colorScheme.onBackground,
+        textContentColor = colorScheme.onBackground,
         modifier = Modifier.testTag(ScanTestTags.NETWORK_ERROR_DIALOG))
   }
 
   val analysisExecutor = remember { Executors.newSingleThreadExecutor() }
 
-  // Scanner with throttling and lifecycle management
   val analyzer = remember {
     val options = BarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()
     val scanner = BarcodeScanning.getClient(options)
@@ -348,7 +489,8 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
     val minAnalysisIntervalMs = 300L
 
     fun analyzeImage(imageProxy: androidx.camera.core.ImageProxy) {
-      if (!isActive) {
+      // Block scanning if dialogs are showing
+      if (!isActive || showNetworkErrorDialog || showSessionExpiredDialog) {
         imageProxy.close()
         return
       }
@@ -370,7 +512,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
       scanner
           .process(image)
           .addOnSuccessListener { barcodes ->
-            if (isActive) {
+            if (isActive && !showNetworkErrorDialog && !showSessionExpiredDialog) {
               barcodes.firstOrNull()?.rawValue?.let { qr ->
                 lastScannedQr = qr
                 viewModel.onQrScanned(qr)
@@ -387,11 +529,11 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
 
   DisposableEffect(Unit) {
     onDispose {
-      analyzer.third.invoke() // Deactivate analyzer first
+      analyzer.third.invoke()
       try {
         analyzer.first.close()
-      } catch (e: Exception) {
-        Log.w("ScanContent", "Failed to close scanner", e)
+      } catch (_: Exception) {
+        Log.w("ScanContent", "Failed to close scanner")
       }
       analysisExecutor.shutdown()
       try {
@@ -401,7 +543,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
             Log.e("ScanContent", "Executor did not terminate")
           }
         }
-      } catch (e: InterruptedException) {
+      } catch (_: InterruptedException) {
         analysisExecutor.shutdownNow()
         Thread.currentThread().interrupt()
       }
@@ -420,8 +562,8 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
     try {
       controller.unbind()
       controller.bindToLifecycle(lifecycle)
-    } catch (e: Exception) {
-      Log.e("ScanContent", "Failed to bind camera", e)
+    } catch (_: Exception) {
+      Log.e("ScanContent", "Failed to bind camera")
     }
   }
 
@@ -429,7 +571,6 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
 
   Scaffold(containerColor = colorScheme.background) { padding ->
     Box(modifier = Modifier.fillMaxSize().padding(padding).testTag(ScanTestTags.SCREEN)) {
-      // Camera Preview
       AndroidView(
           factory = { ctx ->
             PreviewView(ctx).apply {
@@ -440,7 +581,6 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
           },
           modifier = Modifier.fillMaxSize().testTag(ScanTestTags.CAMERA))
 
-      // Dark gradient overlay
       Box(
           modifier =
               Modifier.fillMaxSize()
@@ -451,26 +591,24 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                               Color(0x33000000),
                               colorScheme.secondaryContainer))))
 
-      // Back button (top-left)
       IconButton(
           onClick = onNavigateBack,
           modifier =
               Modifier.align(Alignment.TopStart)
                   .padding(16.dp)
                   .size(48.dp)
-                  .background(colorScheme.secondaryContainer.copy(alpha = 0.7f), CircleShape)
+                  .background(
+                      colorScheme.secondaryContainer.copy(alpha = ScanAlpha.CARD), CircleShape)
                   .testTag(ScanTestTags.BACK_BUTTON)) {
             Icon(
-                imageVector = Icons.Default.ArrowBack,
+                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                 contentDescription = "Back",
                 tint = colorScheme.onBackground,
                 modifier = Modifier.size(24.dp))
           }
 
-      // Animated scanning frame
       ScanningFrame(uiState = uiState)
 
-      // Top stats colorScheme.secondaryContainer (when not idle)
       AnimatedVisibility(
           visible =
               uiState.validated > 0 ||
@@ -482,39 +620,58 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
             TopStatsCard(validated = uiState.validated, eventTitle = uiState.eventTitle)
           }
 
-      // Bottom HUD (hide when dialogs are shown to avoid redundancy)
       if (!showNetworkErrorDialog && !showSessionExpiredDialog) {
         ScanHud(uiState = uiState)
       }
+
+      // Flash screen overlay
+      FlashOverlay(
+          showFlash = showFlash, color = flashColor, onFlashComplete = { showFlash = false })
     }
   }
 }
 
-/**
- * Helper function to trigger vibration based on effect type. Permission is checked before calling
- * this function.
- */
 @SuppressLint("MissingPermission")
 private fun vibrateForEffect(vibrator: Vibrator, effect: ScannerEffect) {
   if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
     when (effect) {
       is ScannerEffect.Accepted -> vibrator.vibrate(VibrationEffect.createOneShot(100, 128))
       is ScannerEffect.Rejected ->
-          vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 50, 50, 50), -1))
-      is ScannerEffect.Error -> vibrator.vibrate(VibrationEffect.createOneShot(200, 255))
+          vibrator.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 100, 80, 100), -1))
+      is ScannerEffect.Error -> vibrator.vibrate(VibrationEffect.createOneShot(400, 255))
     }
   } else {
     @Suppress("DEPRECATION")
     vibrator.vibrate(
         when (effect) {
           is ScannerEffect.Accepted -> 100L
-          is ScannerEffect.Rejected -> 200L
-          is ScannerEffect.Error -> 200L
+          is ScannerEffect.Rejected -> 300L
+          is ScannerEffect.Error -> 400L
         })
   }
 }
 
-/** Animated scanning frame in the center */
+@Composable
+private fun FlashOverlay(showFlash: Boolean, color: Color?, onFlashComplete: () -> Unit) {
+  val alpha by
+      animateFloatAsState(
+          targetValue = if (showFlash) ScanAlpha.FLASH else 0f,
+          animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
+          finishedListener = { if (!showFlash) onFlashComplete() },
+          label = "flash_alpha")
+
+  LaunchedEffect(showFlash) {
+    if (showFlash) {
+      delay(200)
+      onFlashComplete()
+    }
+  }
+
+  if (color != null) {
+    Box(modifier = Modifier.fillMaxSize().background(color.copy(alpha = alpha)))
+  }
+}
+
 @Composable
 private fun BoxScope.ScanningFrame(uiState: ScannerUiState) {
   val frameColor by
@@ -522,7 +679,7 @@ private fun BoxScope.ScanningFrame(uiState: ScannerUiState) {
           targetValue =
               when (uiState.status) {
                 ScannerUiState.Status.ACCEPTED -> Success
-                ScannerUiState.Status.REJECTED -> colorScheme.error
+                ScannerUiState.Status.REJECTED -> ch.onepass.onepass.ui.theme.Error
                 ScannerUiState.Status.ERROR -> Warning
                 else -> colorScheme.primary
               },
@@ -555,7 +712,7 @@ private fun BoxScope.ScanningFrame(uiState: ScannerUiState) {
                   modifier =
                       Modifier.size(80.dp)
                           .clip(CircleShape)
-                          .background(frameColor.copy(alpha = 0.2f)),
+                          .background(frameColor.copy(alpha = ScanAlpha.STATUS_BG)),
                   contentAlignment = Alignment.Center) {
                     Icon(
                         imageVector =
@@ -579,13 +736,11 @@ private fun BoxScope.ScanningFrame(uiState: ScannerUiState) {
       }
 }
 
-/** Decorative corner brackets for scanning frame */
 @Composable
 private fun BoxScope.FrameCorners(color: Color) {
   val cornerSize = 40.dp
   val cornerWidth = 4.dp
 
-  // Top-left
   Box(modifier = Modifier.align(Alignment.TopStart).padding(8.dp)) {
     Box(
         modifier =
@@ -599,7 +754,6 @@ private fun BoxScope.FrameCorners(color: Color) {
                 .background(color, RoundedCornerShape(2.dp)))
   }
 
-  // Top-right
   Box(modifier = Modifier.align(Alignment.TopEnd).padding(8.dp)) {
     Box(
         modifier =
@@ -615,7 +769,6 @@ private fun BoxScope.FrameCorners(color: Color) {
                 .background(color, RoundedCornerShape(2.dp)))
   }
 
-  // Bottom-left
   Box(modifier = Modifier.align(Alignment.BottomStart).padding(8.dp)) {
     Box(
         modifier =
@@ -631,7 +784,6 @@ private fun BoxScope.FrameCorners(color: Color) {
                 .background(color, RoundedCornerShape(2.dp)))
   }
 
-  // Bottom-right
   Box(modifier = Modifier.align(Alignment.BottomEnd).padding(8.dp)) {
     Box(
         modifier =
@@ -648,25 +800,20 @@ private fun BoxScope.FrameCorners(color: Color) {
   }
 }
 
-/**
- * Top stats colorScheme.secondaryContainer showing event title and validated tickets count -
- * Internal for testing
- */
 @Composable
 internal fun TopStatsCard(validated: Int, eventTitle: String?) {
   Surface(
-      color = colorScheme.secondaryContainer.copy(alpha = 0.95f),
+      color = colorScheme.secondaryContainer.copy(alpha = ScanAlpha.CARD_SURFACE),
       shape = RoundedCornerShape(16.dp),
       tonalElevation = 4.dp,
       modifier = Modifier.padding(top = 24.dp).testTag(ScanTestTags.STATS_CARD)) {
         Column(
             modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
             horizontalAlignment = Alignment.CenterHorizontally) {
-              // Event title
               if (eventTitle != null) {
                 Text(
                     text = eventTitle,
-                    color = colorScheme.primary,
+                    color = colorScheme.onBackground,
                     style =
                         MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
                     maxLines = 1,
@@ -674,7 +821,6 @@ internal fun TopStatsCard(validated: Int, eventTitle: String?) {
                 Spacer(Modifier.height(8.dp))
               }
 
-              // Validated count
               Text(
                   text = validated.toString(),
                   color = colorScheme.primary,
@@ -682,29 +828,29 @@ internal fun TopStatsCard(validated: Int, eventTitle: String?) {
                       MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
               Text(
                   text = "Validated",
-                  color = colorScheme.primary,
+                  color = colorScheme.onBackground,
                   style = MaterialTheme.typography.bodySmall)
             }
       }
 }
 
-/** Bottom overlay showing the current status and details */
 @Composable
 private fun BoxScope.ScanHud(uiState: ScannerUiState) {
   val backgroundColor by
       animateColorAsState(
           targetValue =
               when (uiState.status) {
-                ScannerUiState.Status.ACCEPTED -> Success.copy(alpha = 0.15f)
-                ScannerUiState.Status.REJECTED -> colorScheme.error.copy(alpha = 0.15f)
-                ScannerUiState.Status.ERROR -> Warning.copy(alpha = 0.15f)
+                ScannerUiState.Status.ACCEPTED -> Success.copy(alpha = ScanAlpha.STATUS_SUCCESS)
+                ScannerUiState.Status.REJECTED ->
+                    ch.onepass.onepass.ui.theme.Error.copy(alpha = ScanAlpha.STATUS_ERROR)
+                ScannerUiState.Status.ERROR -> Warning.copy(alpha = ScanAlpha.STATUS_WARNING)
                 else -> Color.Transparent
               },
           animationSpec = tween(300),
           label = "bg_color")
 
   Surface(
-      color = colorScheme.secondaryContainer.copy(alpha = 0.95f),
+      color = colorScheme.secondaryContainer.copy(alpha = ScanAlpha.CARD_SURFACE),
       tonalElevation = 0.dp,
       shadowElevation = 8.dp,
       shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
@@ -722,7 +868,7 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
                       Column(modifier = Modifier.weight(1f)) {
                         Text(
                             text = uiState.message,
-                            color = colorScheme.primary,
+                            color = colorScheme.onBackground,
                             style =
                                 MaterialTheme.typography.titleLarge.copy(
                                     fontWeight = FontWeight.Bold),
@@ -733,45 +879,42 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
                           Spacer(Modifier.height(4.dp))
                           Text(
                               text = uiState.lastScannedUserName,
-                              color = colorScheme.primary,
+                              color = colorScheme.onBackground,
                               style =
                                   MaterialTheme.typography.bodyLarge.copy(
                                       fontWeight = FontWeight.Medium))
-                        }
-
-                        if (uiState.lastTicketId != null) {
-                          Spacer(Modifier.height(6.dp))
-                          Text(
-                              text = "Ticket ${uiState.lastTicketId}",
-                              color = colorScheme.primary,
-                              style =
-                                  MaterialTheme.typography.bodyMedium.copy(
-                                      fontWeight = FontWeight.SemiBold))
                         }
 
                         if (uiState.status == ScannerUiState.Status.IDLE) {
                           Spacer(Modifier.height(6.dp))
                           Text(
                               text = "Position the QR code within the frame",
-                              color = colorScheme.primary,
+                              color = colorScheme.onBackground,
                               style = MaterialTheme.typography.bodySmall)
                         }
                       }
 
-                      if (uiState.isProcessing) {
-                        Spacer(Modifier.width(16.dp))
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(32.dp).testTag(ScanTestTags.PROGRESS),
-                            color = colorScheme.primary,
-                            strokeWidth = 3.dp)
-                      }
+                      AnimatedVisibility(
+                          visible = uiState.isProcessing,
+                          enter =
+                              fadeIn(animationSpec = tween(150)) +
+                                  scaleIn(animationSpec = tween(150)),
+                          exit =
+                              fadeOut(animationSpec = tween(150)) +
+                                  scaleOut(animationSpec = tween(150))) {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                              Spacer(Modifier.width(16.dp))
+                              RotatingSpinner(
+                                  modifier = Modifier.testTag(ScanTestTags.PROGRESS),
+                                  color = colorScheme.primary)
+                            }
+                          }
                     }
               }
         }
       }
 }
 
-/** Permission denied screen - Internal for testing */
 @Composable
 internal fun PermissionDeniedScreen() {
   Box(
@@ -786,26 +929,25 @@ internal fun PermissionDeniedScreen() {
               Icon(
                   imageVector = Icons.Filled.QrCodeScanner,
                   contentDescription = "QR code scanner required",
-                  tint = colorScheme.primary,
+                  tint = colorScheme.onBackground,
                   modifier = Modifier.size(80.dp))
               Spacer(Modifier.height(24.dp))
               Text(
                   text = "Camera Access Required",
-                  color = colorScheme.primary,
+                  color = colorScheme.onBackground,
                   style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                   textAlign = TextAlign.Center)
               Spacer(Modifier.height(12.dp))
               Text(
                   text =
                       "To scan tickets, we need access to your camera. Please grant permission to continue.",
-                  color = colorScheme.primary,
+                  color = colorScheme.onBackground,
                   style = MaterialTheme.typography.bodyMedium,
                   textAlign = TextAlign.Center)
             }
       }
 }
 
-/** Permission gate for Camera in Compose. */
 @Composable
 private fun CameraPermissionGate(
     modifier: Modifier = Modifier,
@@ -828,8 +970,6 @@ private fun CameraPermissionGate(
 
   Box(modifier = modifier) { if (granted) grantedContent() else deniedContent() }
 }
-
-/* ---------------------------------- PREVIEWS ---------------------------------- */
 
 @Preview(name = "Scan HUD - Idle", showBackground = true, backgroundColor = 0xFF111111)
 @Composable
@@ -857,7 +997,6 @@ internal fun PreviewScanHudAccepted() {
           ScannerUiState(
               isProcessing = false,
               message = "Access Granted",
-              lastTicketId = "T-4821",
               lastScannedUserName = "John Doe",
               validated = 41,
               eventTitle = "Summer Music Festival",
@@ -875,7 +1014,6 @@ internal fun PreviewScanHudRejected() {
               status = ScannerUiState.Status.REJECTED))
 }
 
-/** Shared preview container - Internal for testing */
 @Composable
 internal fun PreviewHudContainer(state: ScannerUiState) {
   Box(modifier = Modifier.fillMaxSize().background(colorScheme.background)) {
@@ -886,7 +1024,9 @@ internal fun PreviewHudContainer(state: ScannerUiState) {
                     Brush.verticalGradient(colors = listOf(Color(0xFF0F0F10), Color(0xFF171718)))),
         contentAlignment = Alignment.Center) {
           Text(
-              text = "Camera Preview", color = colorScheme.primary, modifier = Modifier.alpha(0.5f))
+              text = "Camera Preview",
+              color = colorScheme.onBackground,
+              modifier = Modifier.alpha(ScanAlpha.PREVIEW))
         }
 
     Box(
@@ -898,7 +1038,7 @@ internal fun PreviewHudContainer(state: ScannerUiState) {
                     color =
                         when (state.status) {
                           ScannerUiState.Status.ACCEPTED -> Success
-                          ScannerUiState.Status.REJECTED -> colorScheme.error
+                          ScannerUiState.Status.REJECTED -> ch.onepass.onepass.ui.theme.Error
                           ScannerUiState.Status.ERROR -> Warning
                           else -> colorScheme.primary
                         },

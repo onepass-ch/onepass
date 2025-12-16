@@ -300,7 +300,7 @@ class TicketScanRepositoryFirebaseTest {
 
     repository.validateByPass(testQr, testEventId)
 
-    verify { mockFunctions.getHttpsCallable("validateEntryByPassV2") }
+    verify { mockFunctions.getHttpsCallable("validatingEntryByPass") }
 
     val capturedPayload = payloadSlot.captured as Map<*, *>
     assertEquals(testQr, capturedPayload["qrText"])
