@@ -65,12 +65,48 @@ class AuthComponentsTest {
           modifier = Modifier.testTag("hero_title"),
           titleTop = titleTop,
           titleBottom = titleBottom,
-          textColor = textColor)
+          config = HeroTitleConfig(textColor = textColor))
     }
 
     composeRule
         .onNodeWithTag("hero_title")
         .assertIsDisplayed()
         .assertTextEquals("$titleTop\n$titleBottom")
+  }
+
+  @Test
+  fun authScreen_whenLoading_showsLoadingIndicator() {
+    val fakeViewModel = FakeAuthViewModel()
+    fakeViewModel.setLoading(true)
+
+    composeRule.setContent { AuthScreen(authViewModel = fakeViewModel) }
+
+    composeRule.onNodeWithTag(SignInScreenTestTags.LOADING_INDICATOR).assertIsDisplayed()
+    composeRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertDoesNotExist()
+  }
+
+  @Test
+  fun authScreen_whenNotLoading_showsSignInButton() {
+    val fakeViewModel = FakeAuthViewModel()
+    fakeViewModel.setLoading(false)
+
+    composeRule.setContent { AuthScreen(authViewModel = fakeViewModel) }
+
+    composeRule.onNodeWithTag(SignInScreenTestTags.LOGIN_BUTTON).assertIsDisplayed()
+    composeRule.onNodeWithTag(SignInScreenTestTags.LOADING_INDICATOR).assertDoesNotExist()
+  }
+}
+
+// Fake ViewModel for testing
+class FakeAuthViewModel : AuthViewModel() {
+  private val _fakeUiState = kotlinx.coroutines.flow.MutableStateFlow(AuthUiState())
+  override val uiState = _fakeUiState
+
+  fun setLoading(isLoading: Boolean) {
+    _fakeUiState.value = _fakeUiState.value.copy(isLoading = isLoading)
+  }
+
+  fun setSignedIn(isSignedIn: Boolean) {
+    _fakeUiState.value = _fakeUiState.value.copy(isSignedIn = isSignedIn)
   }
 }
