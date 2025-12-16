@@ -39,7 +39,6 @@ import ch.onepass.onepass.ui.event.EventCardViewModel
 import ch.onepass.onepass.ui.eventfilters.ActiveFiltersBar
 import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
 import ch.onepass.onepass.ui.eventfilters.FilterDialog
-import ch.onepass.onepass.ui.theme.Error
 import com.mapbox.maps.MapView
 import com.mapbox.maps.extension.compose.MapEffect
 import com.mapbox.maps.extension.compose.MapboxMap
@@ -156,7 +155,7 @@ fun MapScreen(
           Box(
               modifier =
                   Modifier.size(TrackingIndicatorDimensions.SIZE)
-                      .background(Error, CircleShape)
+                      .background(colorScheme.error, CircleShape)
                       .border(
                           TrackingIndicatorDimensions.BORDER_WIDTH,
                           colorScheme.surface,

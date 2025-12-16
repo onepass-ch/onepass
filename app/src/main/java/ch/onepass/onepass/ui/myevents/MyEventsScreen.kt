@@ -65,7 +65,6 @@ import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.model.payment.StripePaymentHelper
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.payment.LocalPaymentSheet
-import ch.onepass.onepass.ui.theme.Error
 import ch.onepass.onepass.ui.theme.MarcFontFamily
 import com.google.firebase.auth.FirebaseAuth
 
@@ -246,7 +245,7 @@ fun MyEventsContent(userQrData: String, viewModel: MyEventsViewModel) {
             Snackbar(
                 snackbarData = data,
                 containerColor = colorScheme.surface,
-                contentColor = Error,
+                contentColor = colorScheme.error,
                 shape = RoundedCornerShape(12.dp))
           }
     }
@@ -604,7 +603,8 @@ private fun ListedTicketCard(
               modifier = Modifier.fillMaxWidth().height(44.dp),
               colors =
                   ButtonDefaults.buttonColors(
-                      containerColor = Error.copy(alpha = 0.1f), contentColor = Error),
+                      containerColor = colorScheme.error.copy(alpha = 0.1f),
+                      contentColor = colorScheme.error),
               shape = RoundedCornerShape(12.dp)) {
                 Text(
                     text = "Cancel Listing",
@@ -635,7 +635,7 @@ private fun ListedTicketCard(
                 showCancelDialog = false
                 onCancelListing()
               }) {
-                Text(text = "Cancel Listing", color = Error)
+                Text(text = "Cancel Listing", color = colorScheme.error)
               }
         },
         dismissButton = {

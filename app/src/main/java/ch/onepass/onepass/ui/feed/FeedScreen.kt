@@ -61,7 +61,6 @@ import ch.onepass.onepass.ui.feed.FeedScreenTestTags.getTestTagForSearchEvent
 import ch.onepass.onepass.ui.feed.FeedScreenTestTags.getTestTagForSearchOrg
 import ch.onepass.onepass.ui.feed.FeedScreenTestTags.getTestTagForSearchUser
 import ch.onepass.onepass.ui.organization.OrganizationCard
-import ch.onepass.onepass.ui.theme.Error
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 
@@ -323,7 +322,7 @@ private fun FeedContentStateSwitcher(
               item {
                 Text(
                     text = "Error: ${searchState.error}",
-                    color = Error,
+                    color = colorScheme.error,
                     modifier = Modifier.padding(16.dp).testTag(FeedScreenTestTags.ERROR_MESSAGE))
               }
             }

@@ -58,7 +58,6 @@ import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
-import ch.onepass.onepass.ui.theme.Error
 import kotlinx.coroutines.launch
 
 object StaffInvitationTestTags {
@@ -174,7 +173,7 @@ fun StaffInvitationScreen(
               uiState.errorMessage?.let { error ->
                 Text(
                     text = error,
-                    color = Error,
+                    color = colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                     modifier =
                         Modifier.fillMaxWidth()
@@ -431,7 +430,7 @@ fun InvitationResultDialog(
             Triple(
                 stringResource(R.string.staff_invitation_error_title),
                 stringResource(R.string.staff_invitation_error_message, userName),
-                Error)
+                colorScheme.error)
       }
 
   AlertDialog(

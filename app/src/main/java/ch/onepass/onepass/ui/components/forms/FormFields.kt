@@ -28,7 +28,6 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.ui.theme.Error
 
 /**
  * Reusable text field component for the form.
@@ -69,7 +68,9 @@ fun FormTextField(
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
         singleLine = maxLines == 1,
         maxLines = maxLines)
-    errorMessage?.let { Text(it, color = Error, style = MaterialTheme.typography.bodySmall) }
+    errorMessage?.let {
+      Text(it, color = colorScheme.error, style = MaterialTheme.typography.bodySmall)
+    }
     Spacer(Modifier.height(16.dp))
   }
 }
@@ -160,7 +161,9 @@ fun PrefixPhoneRow(
           keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone))
     }
 
-    prefixError?.let { Text(it, color = Error, style = MaterialTheme.typography.bodySmall) }
+    prefixError?.let {
+      Text(it, color = colorScheme.error, style = MaterialTheme.typography.bodySmall)
+    }
 
     Spacer(Modifier.height(16.dp))
   }

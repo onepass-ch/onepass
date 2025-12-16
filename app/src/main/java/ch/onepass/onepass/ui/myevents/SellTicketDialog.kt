@@ -52,7 +52,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.ui.theme.Error
 import ch.onepass.onepass.ui.theme.MarcFontFamily
 import ch.onepass.onepass.utils.FormatUtils.formatPriceCompact
 
@@ -128,12 +127,12 @@ fun SellTicketDialog(
                     modifier =
                         Modifier.fillMaxWidth()
                             .clip(RoundedCornerShape(8.dp))
-                            .background(Error)
+                            .background(colorScheme.error)
                             .padding(12.dp)) {
                       Text(
                           text = errorMessage,
                           style = MaterialTheme.typography.bodySmall,
-                          color = Error,
+                          color = colorScheme.error,
                           modifier = Modifier.testTag(MyEventsTestTags.SELL_DIALOG_ERROR))
                     }
               }
