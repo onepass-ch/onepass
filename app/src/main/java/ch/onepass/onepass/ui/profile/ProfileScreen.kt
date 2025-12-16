@@ -319,7 +319,7 @@ private fun OrganizerCard(isOrganizer: Boolean, onOrganizationButton: () -> Unit
           onClick = onOrganizationButton,
           modifier = Modifier.fillMaxWidth().testTag(ProfileTestTags.ORG_CTA),
           shape = RoundedCornerShape(10.dp),
-          colors = ButtonDefaults.buttonColors(containerColor = colorScheme.background)) {
+          colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary)) {
             if (!isOrganizer)
                 Icon(
                     imageVector = Icons.Filled.Add,
