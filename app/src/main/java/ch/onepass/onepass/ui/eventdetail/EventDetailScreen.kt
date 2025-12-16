@@ -91,7 +91,6 @@ fun EventDetailScreen(
     eventId: String,
     onBack: () -> Unit,
     onNavigateToMap: (String) -> Unit = {},
-    onBuyTicket: (String) -> Unit = {},
     onNavigateToOrganizerProfile: (String) -> Unit,
     viewModel: EventDetailViewModel =
         viewModel(
@@ -224,12 +223,9 @@ internal fun EventDetailScreenContent(
           }
           uiState.event != null -> {
             EventDetailContent(
-                event = uiState.event,
-                organization = uiState.organization,
-                isLiked = uiState.isLiked,
+                uiState = uiState,
                 onLikeToggle = onLikeToggle,
                 onNavigateToMap = onNavigateToMap,
-                onBuyTicket = onBuyTicket,
                 onNavigateToOrganizerProfile = onNavigateToOrganizerProfile,
                 onBack = onBack)
 
@@ -307,15 +303,17 @@ private fun BackSection(onBack: () -> Unit) {
 
 @Composable
 private fun EventDetailContent(
-    event: Event,
-    organization: Organization?,
-    isLiked: Boolean,
+    uiState: EventDetailUiState,
     onLikeToggle: () -> Unit,
     onNavigateToMap: () -> Unit,
-    onBuyTicket: () -> Unit,
     onNavigateToOrganizerProfile: (String) -> Unit,
     onBack: () -> Unit = {}
 ) {
+
+  val event = uiState.event!!
+  val organization = uiState.organization
+  val isLiked = uiState.isLiked
+
   Box(modifier = Modifier.fillMaxSize()) {
     Column(
         modifier =
@@ -338,10 +336,7 @@ private fun EventDetailContent(
                       .clip(RoundedCornerShape(10.dp)),
               contentAlignment = Alignment.TopEnd) {
                 AsyncImage(
-                    model =
-                        event.imageUrl.ifEmpty {
-                          null
-                        }, // TODO this will be changed once we have storage
+                    model = event.imageUrl.ifEmpty { null },
                     contentDescription = "Event image",
                     placeholder = painterResource(R.drawable.image_fallback),
                     error = painterResource(id = R.drawable.image_fallback),
@@ -384,14 +379,10 @@ private fun EventDetailContent(
             TagsSection(tags = event.tags, modifier = Modifier.padding(horizontal = 10.dp))
           }
 
-          // TODO tiers section (only show if there are multiple tiers)
-          // TODO : might add in future Quantity selector section (for paid events)
-
           // Event details (date, location, map button, buy ticket button)
           EventDetailsSection(
               event = event,
               onNavigateToMap = onNavigateToMap,
-              onBuyTicket = onBuyTicket,
               modifier = Modifier.padding(horizontal = 10.dp))
 
           // Extra spacing at the end
@@ -454,23 +445,22 @@ private fun AboutEventSection(description: String, modifier: Modifier = Modifier
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun TagsSection(tags: List<String>, modifier: Modifier = Modifier) {
-  Column(modifier = modifier.testTag(EventDetailTestTags.TAGS_SECTION), 
-         verticalArrangement = Arrangement.spacedBy(3.dp)) {
-    Text(
-        text = "TAGS",
-        style = MaterialTheme.typography.titleMedium,
-        color = colorScheme.onBackground,
-        modifier = Modifier.padding(vertical = 10.dp))
+  Column(
+      modifier = modifier.testTag(EventDetailTestTags.TAGS_SECTION),
+      verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        Text(
+            text = "TAGS",
+            style = MaterialTheme.typography.titleMedium,
+            color = colorScheme.onBackground,
+            modifier = Modifier.padding(vertical = 10.dp))
 
-    FlowRow(
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = Modifier.fillMaxWidth()) {
-          tags.forEach { tag ->
-            TagChip(tag = tag)
-          }
-        }
-  }
+        FlowRow(
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()) {
+              tags.forEach { tag -> TagChip(tag = tag) }
+            }
+      }
 }
 
 @Composable
@@ -478,12 +468,9 @@ private fun TagChip(tag: String, modifier: Modifier = Modifier) {
   Box(
       modifier =
           modifier
-              .border(
-                  width = 1.dp, 
-                  color = colorScheme.primary, 
-                  shape = RoundedCornerShape(16.dp))
+              .border(width = 1.dp, color = colorScheme.primary, shape = RoundedCornerShape(16.dp))
               .background(
-                  color = colorScheme.primary.copy(alpha = 0.15f), 
+                  color = colorScheme.primary.copy(alpha = 0.15f),
                   shape = RoundedCornerShape(16.dp))
               .padding(horizontal = 12.dp, vertical = 6.dp)
               .testTag("${EventDetailTestTags.TAG_CHIP}_$tag")) {
@@ -499,7 +486,6 @@ private fun EventDetailsSection(
     event: Event,
     onNavigateToMap: () -> Unit, // Information for navigation: This onNavigateToMap takes the event
     // geolocation and navigate to the map at this location for him to see it.
-    onBuyTicket: () -> Unit,
     modifier: Modifier = Modifier
 ) {
   Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(15.dp)) {

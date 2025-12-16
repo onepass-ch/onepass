@@ -891,8 +891,7 @@ class EventDetailScreenTest {
 
   @Test
   fun eventDetailScreen_displaysTags_whenTagsArePresent() {
-    val testEvent =
-        createTestEvent(tags = listOf("Technology", "Workshop", "Free", "In-Person"))
+    val testEvent = createTestEvent(tags = listOf("Technology", "Workshop", "Free", "In-Person"))
 
     composeTestRule.setContent {
       OnePassTheme {
