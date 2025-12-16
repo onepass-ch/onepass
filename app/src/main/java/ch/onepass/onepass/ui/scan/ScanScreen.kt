@@ -265,8 +265,8 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
   val successPlayer = remember {
     try {
       MediaPlayer.create(context, R.raw.success_beep1)
-    } catch (e: Exception) {
-      Log.w("ScanContent", "Failed to create success player", e)
+    } catch (_: Exception) {
+      Log.w("ScanContent", "Failed to create success player")
       null
     }
   }
@@ -275,8 +275,8 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
   val errorPlayer = remember {
     try {
       MediaPlayer.create(context, R.raw.error_beep1)
-    } catch (e: Exception) {
-      Log.w("ScanContent", "Failed to create error player", e)
+    } catch (_: Exception) {
+      Log.w("ScanContent", "Failed to create error player")
       null
     }
   }
@@ -316,14 +316,16 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                         android.media.AudioManager.FX_KEY_CLICK, 1.0f)
                   }
                 }
-          } catch (e: Exception) {
-            Log.w("ScanContent", "Failed to play accept sound", e)
+          } catch (_: Exception) {
+            Log.w("ScanContent", "Failed to play accept sound")
           }
 
           vibrator?.let { vib ->
             try {
               vibrateForEffect(vib, effect)
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+              Log.w("ScanContent", "Vibration failed")
+            }
           }
         }
         is ScannerEffect.Rejected -> {
@@ -346,14 +348,16 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                         android.media.AudioManager.FX_KEYPRESS_INVALID, 1.0f)
                   }
                 }
-          } catch (e: Exception) {
-            Log.w("ScanContent", "Failed to play reject sound", e)
+          } catch (_: Exception) {
+            Log.w("ScanContent", "Failed to play reject sound")
           }
 
           vibrator?.let { vib ->
             try {
               vibrateForEffect(vib, effect)
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+              Log.w("ScanContent", "Vibration failed")
+            }
           }
         }
         is ScannerEffect.Error -> {
@@ -380,14 +384,16 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
               mp.seekTo(0)
               mp.start()
             }
-          } catch (e: Exception) {
-            Log.w("ScanContent", "Failed to play error sound", e)
+          } catch (_: Exception) {
+            Log.w("ScanContent", "Failed to play error sound")
           }
 
           vibrator?.let { vib ->
             try {
               vibrateForEffect(vib, effect)
-            } catch (_: Exception) {}
+            } catch (_: Exception) {
+              Log.w("ScanContent", "Vibration failed")
+            }
           }
         }
       }
@@ -532,8 +538,8 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
       analyzer.third.invoke()
       try {
         analyzer.first.close()
-      } catch (e: Exception) {
-        Log.w("ScanContent", "Failed to close scanner", e)
+      } catch (_: Exception) {
+        Log.w("ScanContent", "Failed to close scanner")
       }
       analysisExecutor.shutdown()
       try {
@@ -543,7 +549,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
             Log.e("ScanContent", "Executor did not terminate")
           }
         }
-      } catch (e: InterruptedException) {
+      } catch (_: InterruptedException) {
         analysisExecutor.shutdownNow()
         Thread.currentThread().interrupt()
       }
@@ -562,8 +568,8 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
     try {
       controller.unbind()
       controller.bindToLifecycle(lifecycle)
-    } catch (e: Exception) {
-      Log.e("ScanContent", "Failed to bind camera", e)
+    } catch (_: Exception) {
+      Log.e("ScanContent", "Failed to bind camera")
     }
   }
 
@@ -628,7 +634,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
           }
 
       if (!showNetworkErrorDialog && !showSessionExpiredDialog) {
-        scanHud(
+        ScanHud(
             uiState = uiState,
             colorCard = colorCard,
             colorAccent = colorAccent,
@@ -863,7 +869,7 @@ internal fun TopStatsCard(
 }
 
 @Composable
-private fun BoxScope.scanHud(
+private fun BoxScope.ScanHud(
     uiState: ScannerUiState,
     colorCard: Color,
     colorAccent: Color,
@@ -1103,7 +1109,7 @@ internal fun PreviewHudContainer(state: ScannerUiState) {
           colorTextSecondary = colorTextSecondary)
     }
 
-    scanHud(
+    ScanHud(
         uiState = state,
         colorCard = colorCard,
         colorAccent = colorAccent,
