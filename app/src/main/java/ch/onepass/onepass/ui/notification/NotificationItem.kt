@@ -24,7 +24,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.model.notification.Notification
-import ch.onepass.onepass.ui.theme.Error
 import ch.onepass.onepass.utils.DateTimeUtils.formatNotificationDate
 
 /**
@@ -82,7 +81,7 @@ fun NotificationItem(notification: Notification, onClick: () -> Unit, onDelete: 
                 Icon(
                     imageVector = Icons.Default.Delete,
                     contentDescription = "Delete notification",
-                    tint = Error)
+                    tint = colorScheme.error)
               }
             }
       }

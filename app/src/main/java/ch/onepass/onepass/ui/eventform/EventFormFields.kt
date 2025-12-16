@@ -42,7 +42,6 @@ import ch.onepass.onepass.ui.components.buttons.UploadImageButton
 import ch.onepass.onepass.ui.components.forms.DatePickerField
 import ch.onepass.onepass.ui.components.forms.LocationSearchField
 import ch.onepass.onepass.ui.components.forms.TimePickerField
-import ch.onepass.onepass.ui.theme.Error
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -291,7 +290,7 @@ fun TicketsInputField(
               priceError?.let {
                 Text(
                     text = it,
-                    color = Error,
+                    color = colorScheme.error,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1)
               }
@@ -340,7 +339,7 @@ fun TicketsInputField(
               capacityError?.let {
                 Text(
                     text = it,
-                    color = Error,
+                    color = colorScheme.error,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1)
               }
@@ -438,7 +437,7 @@ fun FieldLabelWithCounter(
             style =
                 MaterialTheme.typography.bodyMedium.copy(
                     color =
-                        if (isError || currentLength >= maxLength) Error
+                        if (isError || currentLength >= maxLength) colorScheme.error
                         else colorScheme.onSurface))
       }
 }
@@ -473,7 +472,8 @@ fun CompactFieldLabel(
             style =
                 MaterialTheme.typography.labelSmall.copy(
                     color =
-                        if (isError || currentLength >= maxLength) Error else colorScheme.onSurface,
+                        if (isError || currentLength >= maxLength) colorScheme.error
+                        else colorScheme.onSurface,
                     fontSize = 10.sp))
       }
 }
@@ -498,7 +498,7 @@ fun EventFormFields(
     fieldErrors[EventFormViewModel.ValidationError.TITLE.key]?.let {
       Text(
           text = it,
-          color = Error,
+          color = colorScheme.error,
           style = MaterialTheme.typography.bodyMedium,
           modifier = Modifier.padding(start = 8.dp, top = 4.dp))
     }
@@ -512,7 +512,7 @@ fun EventFormFields(
     fieldErrors[EventFormViewModel.ValidationError.DESCRIPTION.key]?.let {
       Text(
           text = it,
-          color = Error,
+          color = colorScheme.error,
           style = MaterialTheme.typography.bodyMedium,
           modifier = Modifier.padding(start = 8.dp, top = 4.dp))
     }
@@ -530,18 +530,18 @@ fun EventFormFields(
       fieldErrors[EventFormViewModel.ValidationError.START_TIME.key]?.let {
         Text(
             text = it,
-            color = Error,
+            color = colorScheme.error,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(end = 12.dp))
       }
       fieldErrors[EventFormViewModel.ValidationError.END_TIME.key]?.let {
-        Text(text = it, color = Error, style = MaterialTheme.typography.bodyMedium)
+        Text(text = it, color = colorScheme.error, style = MaterialTheme.typography.bodyMedium)
       }
     }
     fieldErrors[EventFormViewModel.ValidationError.TIME.key]?.let {
       Text(
           text = it,
-          color = Error,
+          color = colorScheme.error,
           style = MaterialTheme.typography.bodyMedium,
           modifier = Modifier.padding(start = 8.dp, top = 4.dp))
     }
@@ -556,7 +556,7 @@ fun EventFormFields(
     fieldErrors[EventFormViewModel.ValidationError.DATE.key]?.let {
       Text(
           text = it,
-          color = Error,
+          color = colorScheme.error,
           style = MaterialTheme.typography.bodyMedium,
           modifier = Modifier.padding(start = 8.dp, top = 4.dp))
     }
@@ -571,7 +571,7 @@ fun EventFormFields(
     fieldErrors[EventFormViewModel.ValidationError.LOCATION.key]?.let {
       Text(
           text = it,
-          color = Error,
+          color = colorScheme.error,
           style = MaterialTheme.typography.bodyMedium,
           modifier = Modifier.padding(start = 8.dp, top = 4.dp))
     }

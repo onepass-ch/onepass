@@ -45,7 +45,6 @@ import ch.onepass.onepass.ui.components.common.ErrorState
 import ch.onepass.onepass.ui.components.common.LoadingState
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
-import ch.onepass.onepass.ui.theme.Error
 import kotlinx.coroutines.flow.first
 
 /**
@@ -301,7 +300,7 @@ private fun InvitationCard(
                             .testTag(MyInvitationsScreenTestTags.getRejectButtonTag(invitation.id)),
                     colors =
                         ButtonDefaults.buttonColors(
-                            containerColor = colorScheme.surface, contentColor = Error),
+                            containerColor = colorScheme.surface, contentColor = colorScheme.error),
                     shape = RoundedCornerShape(10.dp)) {
                       Text(text = "Reject", fontWeight = FontWeight.Medium)
                     }

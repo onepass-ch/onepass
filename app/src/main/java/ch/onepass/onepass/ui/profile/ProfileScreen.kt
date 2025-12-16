@@ -55,7 +55,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import ch.onepass.onepass.ui.theme.Error
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.flow.collectLatest
@@ -189,7 +188,7 @@ private fun ProfileContent(
           SettingsItem(
               icon = Icons.AutoMirrored.Outlined.ExitToApp,
               title = "Sign Out",
-              titleColor = Error,
+              titleColor = colorScheme.error,
               onClick = onSignOut,
               testTag = ProfileTestTags.SETTINGS_SIGN_OUT)
         }

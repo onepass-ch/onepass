@@ -256,7 +256,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
           Icon(
               imageVector = Icons.Outlined.Error,
               contentDescription = null,
-              tint = ch.onepass.onepass.ui.theme.Error)
+              tint = colorScheme.error)
         },
         title = {
           Text(
@@ -275,8 +275,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                 showSessionExpiredDialog = false
                 onNavigateBack() // Go back, auth system will handle redirect to login
               },
-              colors =
-                  ButtonDefaults.buttonColors(containerColor = ch.onepass.onepass.ui.theme.Error)) {
+              colors = ButtonDefaults.buttonColors(containerColor = colorScheme.error)) {
                 Text("OK")
               }
         },
@@ -523,7 +522,7 @@ private fun BoxScope.ScanningFrame(uiState: ScannerUiState) {
           targetValue =
               when (uiState.status) {
                 ScannerUiState.Status.ACCEPTED -> Success
-                ScannerUiState.Status.REJECTED -> ch.onepass.onepass.ui.theme.Error
+                ScannerUiState.Status.REJECTED -> colorScheme.error
                 ScannerUiState.Status.ERROR -> Warning
                 else -> colorScheme.primary
               },
@@ -697,8 +696,7 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
           targetValue =
               when (uiState.status) {
                 ScannerUiState.Status.ACCEPTED -> Success.copy(alpha = 0.15f)
-                ScannerUiState.Status.REJECTED ->
-                    ch.onepass.onepass.ui.theme.Error.copy(alpha = 0.15f)
+                ScannerUiState.Status.REJECTED -> colorScheme.error.copy(alpha = 0.15f)
                 ScannerUiState.Status.ERROR -> Warning.copy(alpha = 0.15f)
                 else -> Color.Transparent
               },
@@ -900,7 +898,7 @@ internal fun PreviewHudContainer(state: ScannerUiState) {
                     color =
                         when (state.status) {
                           ScannerUiState.Status.ACCEPTED -> Success
-                          ScannerUiState.Status.REJECTED -> ch.onepass.onepass.ui.theme.Error
+                          ScannerUiState.Status.REJECTED -> colorScheme.error
                           ScannerUiState.Status.ERROR -> Warning
                           else -> colorScheme.primary
                         },
