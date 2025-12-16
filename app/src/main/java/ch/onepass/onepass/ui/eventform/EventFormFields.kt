@@ -36,7 +36,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import ch.onepass.onepass.model.event.EventTag
 import ch.onepass.onepass.ui.components.buttons.UploadImageButton
 import ch.onepass.onepass.ui.components.forms.CompactFieldLabel

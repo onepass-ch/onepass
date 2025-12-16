@@ -102,7 +102,6 @@ fun CreateOrganizationScreen(
               onSubmit = { viewModel.createOrganization(ownerId) },
               submitText = "Submit",
               viewModel = viewModel,
-              isLoading = uiState.isLoading,
               modifier = Modifier.padding(padding))
         }
       }

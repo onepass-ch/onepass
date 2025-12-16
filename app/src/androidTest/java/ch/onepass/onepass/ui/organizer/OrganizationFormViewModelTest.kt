@@ -231,7 +231,7 @@ class OrganizationFormViewModelTest {
     val valid = viewModel.createOrganizationValidation()
     assertFalse(valid)
     val state = viewModel.formState.value
-    assertEquals("Invalid phone number", state.contactPhone.error)
+    assertEquals("Phone number is required", state.contactPhone.error)
   }
 
   @Test
@@ -239,6 +239,9 @@ class OrganizationFormViewModelTest {
     viewModel.updateName("Test Org")
     viewModel.updateDescription("Test Description")
     viewModel.updateContactPhone("791234567")
+    viewModel.updateContactEmail("123@example.com")
+    viewModel.updateCountryIndex(41)
+    viewModel.updateContactPhone("123456789")
 
     val valid = viewModel.createOrganizationValidation()
     assertTrue(valid)
@@ -324,6 +327,7 @@ class OrganizationFormViewModelTest {
     viewModel.updateDescription("Test Description")
     viewModel.selectProfileImage(profileUri)
     viewModel.updateContactPhone("791234567")
+    viewModel.updateContactEmail("123@yahoo.com")
 
     viewModel.createOrganization("user123")
 
@@ -342,6 +346,7 @@ class OrganizationFormViewModelTest {
     viewModel.updateDescription("Test Description")
     viewModel.selectCoverImage(coverUri)
     viewModel.updateContactPhone("791234567")
+    viewModel.updateContactEmail("123@yahoo.com")
 
     viewModel.createOrganization("user123")
 
@@ -362,6 +367,7 @@ class OrganizationFormViewModelTest {
     viewModel.selectProfileImage(profileUri)
     viewModel.selectCoverImage(coverUri)
     viewModel.updateContactPhone("791234567")
+    viewModel.updateContactEmail("123@yahoo.com")
 
     viewModel.createOrganization("user123")
 
@@ -381,6 +387,7 @@ class OrganizationFormViewModelTest {
     viewModel.updateDescription("Test Description")
     viewModel.selectProfileImage(profileUri)
     viewModel.updateContactPhone("791234567")
+    viewModel.updateContactEmail("123@yahoo.com")
 
     viewModel.createOrganization("user123")
 
@@ -400,6 +407,7 @@ class OrganizationFormViewModelTest {
     viewModel.updateDescription("Test Description")
     viewModel.selectCoverImage(coverUri)
     viewModel.updateContactPhone("791234567")
+    viewModel.updateContactEmail("123@yahoo.com")
 
     viewModel.createOrganization("user123")
 
@@ -416,6 +424,7 @@ class OrganizationFormViewModelTest {
     viewModel.updateName("Test Org")
     viewModel.updateDescription("Test Description")
     viewModel.updateContactPhone("791234567")
+    viewModel.updateContactEmail("123@yahoo.com")
 
     viewModel.createOrganization("user123")
 
@@ -431,6 +440,7 @@ class OrganizationFormViewModelTest {
     viewModel.updateName("Test")
     viewModel.updateDescription("Desc")
     viewModel.updateContactPhone("123")
+    viewModel.updateContactEmail("123@yahoo.com")
 
     viewModel.createOrganization("user1")
 
@@ -509,6 +519,7 @@ class OrganizationFormViewModelTest {
     viewModel.updateName("Test Org")
     viewModel.updateDescription("Desc")
     viewModel.updateContactPhone("791234567")
+    viewModel.updateContactEmail("123@yahoo.com")
 
     viewModel.createOrganization("user123")
 
@@ -527,6 +538,7 @@ class OrganizationFormViewModelTest {
     viewModel.updateName("Test Org")
     viewModel.updateDescription("Desc")
     viewModel.updateContactPhone("791234567")
+    viewModel.updateContactEmail("123@yahoo.com")
     viewModel.selectProfileImage(profileUri)
 
     viewModel.createOrganization("user123")
@@ -547,6 +559,7 @@ class OrganizationFormViewModelTest {
     viewModel.updateDescription("Desc")
     viewModel.updateContactPhone("791234567")
     viewModel.selectCoverImage(coverUri)
+    viewModel.updateContactEmail("123@yahoo.com")
 
     viewModel.createOrganization("user123")
 
@@ -562,6 +575,7 @@ class OrganizationFormViewModelTest {
     viewModel.updateName("Test Org")
     viewModel.updateDescription("Desc")
     viewModel.updateContactPhone("791234567")
+    viewModel.updateContactEmail("123@yahoo.com")
 
     viewModel.createOrganization("user123")
 

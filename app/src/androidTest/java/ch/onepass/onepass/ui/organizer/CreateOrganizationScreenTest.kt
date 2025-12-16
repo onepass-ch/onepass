@@ -2,7 +2,6 @@ package ch.onepass.onepass.ui.organizer
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
-import ch.onepass.onepass.ui.components.forms.SubmitButton
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import org.junit.Rule
 import org.junit.Test
@@ -296,26 +295,5 @@ class CreateOrganizationScreenTest {
         .performClick()
 
     composeTestRule.waitForIdle()
-  }
-
-  @Test
-  fun submitButton_showsLoading_whenRequested() {
-    composeTestRule.setContent {
-      OnePassTheme { SubmitButton(onClick = {}, text = "Submit", isLoading = true) }
-    }
-
-    // Assert that progress indicator exists and text does not
-    composeTestRule.onNodeWithTag("submit_loading_indicator").assertExists()
-    composeTestRule.onNodeWithText("Submit").assertDoesNotExist()
-  }
-
-  @Test
-  fun submitButton_isDisabled_whenLoading() {
-    composeTestRule.setContent {
-      OnePassTheme { SubmitButton(onClick = {}, text = "Submit", isLoading = true) }
-    }
-
-    // The button (which contains the loading indicator) should be disabled
-    composeTestRule.onNodeWithTag("submit_loading_indicator").onParent().assertIsNotEnabled()
   }
 }

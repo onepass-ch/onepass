@@ -138,7 +138,6 @@ fun EditOrganizationScreen(
                 },
                 submitText = "Update",
                 viewModel = formViewModel,
-                isLoading = uiState.isLoading,
                 modifier = Modifier.padding(padding))
           }
         }

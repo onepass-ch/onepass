@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -48,8 +49,7 @@ fun FieldLabelWithCounter(
             style =
                 MaterialTheme.typography.bodySmall.copy(
                     color =
-                        if (isError || currentLength >= maxLength)
-                            colorResource(id = R.color.error_red)
+                        if (isError || currentLength >= maxLength) colorScheme.error
                         else colorResource(id = R.color.gray)),
             modifier = Modifier.testTag(testTag ?: ""))
       }
@@ -87,8 +87,7 @@ fun CompactFieldLabel(
             style =
                 MaterialTheme.typography.labelSmall.copy(
                     color =
-                        if (isError || currentLength >= maxLength)
-                            colorResource(id = R.color.error_red)
+                        if (isError || currentLength >= maxLength) colorScheme.error
                         else colorResource(id = R.color.gray),
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Medium),

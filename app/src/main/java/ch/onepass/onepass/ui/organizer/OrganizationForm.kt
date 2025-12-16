@@ -1,6 +1,5 @@
 package ch.onepass.onepass.ui.organizer
 
-import android.R.attr.maxLines
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,17 +8,18 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.material3.OutlinedTextFieldDefaults.contentPadding
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
@@ -99,7 +99,6 @@ object OrganizationFormTestTags {
  * @param modifier Optional modifier for the root composable
  * @param viewModel ViewModel handling form state and validation logic
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OrganizerForm(
     formState: OrganizationFormState,
@@ -219,7 +218,7 @@ fun OrganizerForm(
           Spacer(modifier = Modifier.height(8.dp))
           Text(
               text = "✓ Profile image selected",
-              style = MaterialTheme.typography.bodySmall,
+              style = MaterialTheme.typography.bodyMedium,
               color = colorScheme.onBackground,
               modifier =
                   Modifier.padding(start = 8.dp)
@@ -238,9 +237,11 @@ fun OrganizerForm(
           Spacer(modifier = Modifier.height(8.dp))
           Text(
               text = "✓ Banner image selected",
-              style = MaterialTheme.typography.bodySmall,
+              style = MaterialTheme.typography.bodyMedium,
               color = colorScheme.onBackground,
-              modifier = Modifier.padding(start = 8.dp).testTag(OrganizationFormTestTags.COVER_IMAGE_STATUS)))
+              modifier =
+                  Modifier.padding(start = 8.dp)
+                      .testTag(OrganizationFormTestTags.COVER_IMAGE_STATUS))
         }
 
         Spacer(Modifier.height(24.dp))
@@ -252,13 +253,12 @@ fun OrganizerForm(
                 Modifier.fillMaxWidth()
                     .height(50.dp)
                     .testTag(OrganizationFormTestTags.SUBMIT_BUTTON),
-            colors =
-                ButtonDefaults.buttonColors(containerColor = colorResource(id = R.color.primary)),
+            colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary),
             shape = RoundedCornerShape(10.dp)) {
               Text(
                   text = submitText,
                   style = MaterialTheme.typography.bodyMedium,
-                  color = colorResource(id = R.color.white))
+                  color = colorScheme.onPrimary)
             }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -273,7 +273,6 @@ fun OrganizerForm(
  * @param onFocusChanged Callback when focus state changes
  * @param error Error message to display
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OrganizationNameField(
     value: String,
@@ -294,35 +293,31 @@ private fun OrganizationNameField(
         placeholder = {
           Text(
               "Amazing Organization",
-              style =
-                  MaterialTheme.typography.bodySmall.copy(color = colorResource(id = R.color.gray)))
+              style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
         },
         modifier =
             Modifier.fillMaxWidth()
-                .border(
-                    1.dp,
-                    colorResource(id = R.color.eventform_field_border),
-                    RoundedCornerShape(10.dp))
+                .border(1.dp, colorScheme.outline, RoundedCornerShape(10.dp))
                 .heightIn(min = 50.dp)
                 .onFocusChanged { onFocusChanged(it.isFocused) }
                 .testTag(OrganizationFormTestTags.NAME_FIELD),
         colors =
             TextFieldDefaults.colors(
-                focusedContainerColor = colorResource(id = R.color.eventform_field_bg),
-                unfocusedContainerColor = colorResource(id = R.color.eventform_field_bg),
+                focusedContainerColor = colorScheme.surface,
+                unfocusedContainerColor = colorScheme.surface,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor = colorResource(id = R.color.white),
-                unfocusedTextColor = colorResource(id = R.color.white),
+                focusedTextColor = colorScheme.onBackground,
+                unfocusedTextColor = colorScheme.onBackground,
             ),
         shape = RoundedCornerShape(10.dp),
-        textStyle = MaterialTheme.typography.bodySmall,
+        textStyle = MaterialTheme.typography.bodyMedium,
         singleLine = true,
         isError = error != null)
     error?.let {
       Text(
           text = it,
-          color = colorResource(id = R.color.error_red),
+          color = colorScheme.error,
           style = MaterialTheme.typography.bodySmall,
           modifier =
               Modifier.padding(start = 8.dp, top = 4.dp)
@@ -339,7 +334,6 @@ private fun OrganizationNameField(
  * @param onFocusChanged Callback when focus state changes
  * @param error Error message to display
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OrganizationDescriptionField(
     value: String,
@@ -358,19 +352,14 @@ private fun OrganizationDescriptionField(
         modifier =
             Modifier.fillMaxWidth()
                 .height(122.dp)
-                .border(
-                    1.dp,
-                    colorResource(id = R.color.eventform_field_border),
-                    RoundedCornerShape(10.dp))) {
+                .border(1.dp, colorScheme.outline, RoundedCornerShape(10.dp))) {
           TextField(
               value = value,
               onValueChange = onValueChange,
               placeholder = {
                 Text(
                     "Tell us about your organization...",
-                    style =
-                        MaterialTheme.typography.bodySmall.copy(
-                            color = colorResource(id = R.color.gray)))
+                    style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
               },
               modifier =
                   Modifier.fillMaxSize()
@@ -378,22 +367,22 @@ private fun OrganizationDescriptionField(
                       .testTag(OrganizationFormTestTags.DESCRIPTION_FIELD),
               colors =
                   TextFieldDefaults.colors(
-                      focusedContainerColor = colorResource(id = R.color.eventform_field_bg),
-                      unfocusedContainerColor = colorResource(id = R.color.eventform_field_bg),
+                      focusedContainerColor = colorScheme.surface,
+                      unfocusedContainerColor = colorScheme.surface,
                       focusedIndicatorColor = Color.Transparent,
                       unfocusedIndicatorColor = Color.Transparent,
-                      focusedTextColor = colorResource(id = R.color.white),
-                      unfocusedTextColor = colorResource(id = R.color.white),
+                      focusedTextColor = colorScheme.onBackground,
+                      unfocusedTextColor = colorScheme.onBackground,
                   ),
               shape = RoundedCornerShape(10.dp),
-              textStyle = MaterialTheme.typography.bodySmall,
+              textStyle = MaterialTheme.typography.bodyMedium,
               maxLines = 5,
               isError = error != null)
         }
     error?.let {
       Text(
           text = it,
-          color = colorResource(id = R.color.error_red),
+          color = colorScheme.error,
           style = MaterialTheme.typography.bodySmall,
           modifier =
               Modifier.padding(start = 8.dp, top = 4.dp)
@@ -410,7 +399,6 @@ private fun OrganizationDescriptionField(
  * @param onFocusChanged Callback when focus state changes
  * @param error Error message to display
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OrganizationEmailField(
     value: String,
@@ -431,36 +419,32 @@ private fun OrganizationEmailField(
         placeholder = {
           Text(
               "contact@organization.com",
-              style =
-                  MaterialTheme.typography.bodySmall.copy(color = colorResource(id = R.color.gray)))
+              style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
         },
         modifier =
             Modifier.fillMaxWidth()
-                .border(
-                    1.dp,
-                    colorResource(id = R.color.eventform_field_border),
-                    RoundedCornerShape(10.dp))
+                .border(1.dp, colorScheme.outline, RoundedCornerShape(10.dp))
                 .heightIn(min = 50.dp)
                 .onFocusChanged { onFocusChanged(it.isFocused) }
                 .testTag(OrganizationFormTestTags.EMAIL_FIELD),
         colors =
             TextFieldDefaults.colors(
-                focusedContainerColor = colorResource(id = R.color.eventform_field_bg),
-                unfocusedContainerColor = colorResource(id = R.color.eventform_field_bg),
+                focusedContainerColor = colorScheme.surface,
+                unfocusedContainerColor = colorScheme.surface,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor = colorResource(id = R.color.white),
-                unfocusedTextColor = colorResource(id = R.color.white),
+                focusedTextColor = colorScheme.onBackground,
+                unfocusedTextColor = colorScheme.onBackground,
             ),
         shape = RoundedCornerShape(10.dp),
-        textStyle = MaterialTheme.typography.bodySmall,
+        textStyle = MaterialTheme.typography.bodyMedium,
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
         isError = error != null)
     error?.let {
       Text(
           text = it,
-          color = colorResource(id = R.color.error_red),
+          color = colorScheme.error,
           style = MaterialTheme.typography.bodySmall,
           modifier =
               Modifier.padding(start = 8.dp, top = 4.dp)
@@ -485,7 +469,6 @@ private fun OrganizationEmailField(
  * @param onPhoneFocusChanged Callback when phone field focus changes
  * @param onPrefixClick Callback when prefix button is clicked
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OrganizationPhoneField(
     prefixDisplayText: String,
@@ -516,25 +499,22 @@ private fun OrganizationPhoneField(
               modifier =
                   Modifier.width(90.dp)
                       .height(50.dp)
-                      .border(
-                          1.dp,
-                          colorResource(id = R.color.eventform_field_border),
-                          RoundedCornerShape(10.dp))) {
+                      .border(1.dp, colorScheme.outline, RoundedCornerShape(10.dp))) {
                 OutlinedButton(
                     onClick = onPrefixClick,
                     modifier =
                         Modifier.fillMaxSize().testTag(OrganizationFormTestTags.PHONE_PREFIX),
                     colors =
                         ButtonDefaults.outlinedButtonColors(
-                            containerColor = colorResource(id = R.color.eventform_field_bg),
-                            contentColor = colorResource(id = R.color.white)),
+                            containerColor = colorScheme.surface,
+                            contentColor = colorScheme.onSurface),
                     border = BorderStroke(0.dp, Color.Transparent),
                     shape = RoundedCornerShape(10.dp),
                     contentPadding = PaddingValues(0.dp)) {
                       Text(
                           text = prefixDisplayText,
-                          style = MaterialTheme.typography.bodySmall,
-                          color = colorResource(id = R.color.white))
+                          style = MaterialTheme.typography.bodyMedium,
+                          color = colorScheme.onSurface)
                     }
 
                 DropdownMenu(
@@ -554,10 +534,7 @@ private fun OrganizationPhoneField(
               modifier =
                   Modifier.weight(1f)
                       .height(50.dp)
-                      .border(
-                          1.dp,
-                          colorResource(id = R.color.eventform_field_border),
-                          RoundedCornerShape(10.dp))) {
+                      .border(1.dp, colorScheme.outline, RoundedCornerShape(10.dp))) {
                 TextField(
                     value = phoneValue,
                     onValueChange = onPhoneChange,
@@ -565,8 +542,8 @@ private fun OrganizationPhoneField(
                       Text(
                           "123456789",
                           style =
-                              MaterialTheme.typography.bodySmall.copy(
-                                  color = colorResource(id = R.color.gray)))
+                              MaterialTheme.typography.bodyMedium.copy(
+                                  color = colorScheme.onSurface))
                     },
                     modifier =
                         Modifier.fillMaxSize()
@@ -574,16 +551,15 @@ private fun OrganizationPhoneField(
                             .testTag(OrganizationFormTestTags.PHONE_FIELD),
                     colors =
                         TextFieldDefaults.colors(
-                            focusedContainerColor = colorResource(id = R.color.eventform_field_bg),
-                            unfocusedContainerColor =
-                                colorResource(id = R.color.eventform_field_bg),
+                            focusedContainerColor = colorScheme.surface,
+                            unfocusedContainerColor = colorScheme.surface,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
-                            focusedTextColor = colorResource(id = R.color.white),
-                            unfocusedTextColor = colorResource(id = R.color.white),
+                            focusedTextColor = colorScheme.onBackground,
+                            unfocusedTextColor = colorScheme.onBackground,
                         ),
                     shape = RoundedCornerShape(10.dp),
-                    textStyle = MaterialTheme.typography.bodySmall,
+                    textStyle = MaterialTheme.typography.bodyMedium,
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                     isError = prefixError != null)
@@ -593,7 +569,7 @@ private fun OrganizationPhoneField(
     prefixError?.let {
       Text(
           text = it,
-          color = colorResource(id = R.color.error_red),
+          color = colorScheme.error,
           style = MaterialTheme.typography.bodySmall,
           modifier =
               Modifier.padding(start = 8.dp, top = 4.dp)
@@ -610,7 +586,6 @@ private fun OrganizationPhoneField(
  * @param onFocusChanged Callback when focus state changes
  * @param error Error message to display
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OrganizationWebsiteField(
     value: String,
@@ -631,36 +606,32 @@ private fun OrganizationWebsiteField(
         placeholder = {
           Text(
               "https://yourwebsite.com",
-              style =
-                  MaterialTheme.typography.bodySmall.copy(color = colorResource(id = R.color.gray)))
+              style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
         },
         modifier =
             Modifier.fillMaxWidth()
-                .border(
-                    1.dp,
-                    colorResource(id = R.color.eventform_field_border),
-                    RoundedCornerShape(10.dp))
+                .border(1.dp, colorScheme.outline, RoundedCornerShape(10.dp))
                 .heightIn(min = 50.dp)
                 .onFocusChanged { onFocusChanged(it.isFocused) }
                 .testTag(OrganizationFormTestTags.WEBSITE_FIELD),
         colors =
             TextFieldDefaults.colors(
-                focusedContainerColor = colorResource(id = R.color.eventform_field_bg),
-                unfocusedContainerColor = colorResource(id = R.color.eventform_field_bg),
+                focusedContainerColor = colorScheme.surface,
+                unfocusedContainerColor = colorScheme.surface,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor = colorResource(id = R.color.white),
-                unfocusedTextColor = colorResource(id = R.color.white),
+                focusedTextColor = colorScheme.onBackground,
+                unfocusedTextColor = colorScheme.onBackground,
             ),
         shape = RoundedCornerShape(10.dp),
-        textStyle = MaterialTheme.typography.bodySmall,
+        textStyle = MaterialTheme.typography.bodyMedium,
         singleLine = true,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
         isError = error != null)
     error?.let {
       Text(
           text = it,
-          color = colorResource(id = R.color.error_red),
+          color = colorScheme.error,
           style = MaterialTheme.typography.bodySmall,
           modifier =
               Modifier.padding(start = 8.dp, top = 4.dp)
@@ -678,7 +649,6 @@ private fun OrganizationWebsiteField(
  * @param testTag Test tag for the input field
  * @param charCountTestTag Test tag for the character counter
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OrganizationSocialField(
     label: String,
@@ -699,28 +669,24 @@ private fun OrganizationSocialField(
         placeholder = {
           Text(
               "@username",
-              style =
-                  MaterialTheme.typography.bodySmall.copy(color = colorResource(id = R.color.gray)))
+              style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
         },
         modifier =
             Modifier.fillMaxWidth()
-                .border(
-                    1.dp,
-                    colorResource(id = R.color.eventform_field_border),
-                    RoundedCornerShape(10.dp))
+                .border(1.dp, colorScheme.outline, RoundedCornerShape(10.dp))
                 .heightIn(min = 50.dp)
                 .testTag(testTag),
         colors =
             TextFieldDefaults.colors(
-                focusedContainerColor = colorResource(id = R.color.eventform_field_bg),
-                unfocusedContainerColor = colorResource(id = R.color.eventform_field_bg),
+                focusedContainerColor = colorScheme.surface,
+                unfocusedContainerColor = colorScheme.surface,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor = colorResource(id = R.color.white),
-                unfocusedTextColor = colorResource(id = R.color.white),
+                focusedTextColor = colorScheme.onBackground,
+                unfocusedTextColor = colorScheme.onBackground,
             ),
         shape = RoundedCornerShape(10.dp),
-        textStyle = MaterialTheme.typography.bodySmall,
+        textStyle = MaterialTheme.typography.bodyMedium,
         singleLine = true)
   }
 }
@@ -731,7 +697,6 @@ private fun OrganizationSocialField(
  * @param value Current address value
  * @param onValueChange Callback when address changes
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun OrganizationAddressField(
     value: String,
@@ -749,28 +714,24 @@ private fun OrganizationAddressField(
         placeholder = {
           Text(
               "123 Main Street, City",
-              style =
-                  MaterialTheme.typography.bodySmall.copy(color = colorResource(id = R.color.gray)))
+              style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
         },
         modifier =
             Modifier.fillMaxWidth()
-                .border(
-                    1.dp,
-                    colorResource(id = R.color.eventform_field_border),
-                    RoundedCornerShape(10.dp))
+                .border(1.dp, colorScheme.outline, RoundedCornerShape(10.dp))
                 .heightIn(min = 50.dp)
                 .testTag(OrganizationFormTestTags.ADDRESS_FIELD),
         colors =
             TextFieldDefaults.colors(
-                focusedContainerColor = colorResource(id = R.color.eventform_field_bg),
-                unfocusedContainerColor = colorResource(id = R.color.eventform_field_bg),
+                focusedContainerColor = colorScheme.surface,
+                unfocusedContainerColor = colorScheme.surface,
                 focusedIndicatorColor = Color.Transparent,
                 unfocusedIndicatorColor = Color.Transparent,
-                focusedTextColor = colorResource(id = R.color.white),
-                unfocusedTextColor = colorResource(id = R.color.white),
+                focusedTextColor = colorScheme.onBackground,
+                unfocusedTextColor = colorScheme.onBackground,
             ),
         shape = RoundedCornerShape(10.dp),
-        textStyle = MaterialTheme.typography.bodySmall,
+        textStyle = MaterialTheme.typography.bodyMedium,
         singleLine = true)
   }
 }
