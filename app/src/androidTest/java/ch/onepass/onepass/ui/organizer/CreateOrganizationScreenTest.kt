@@ -199,7 +199,9 @@ class CreateOrganizationScreenTest {
         .performTextInput("Test")
 
     // Character counter should show "4/50 characters" or similar
-    composeTestRule.onNodeWithTag(OrganizationFormTestTags.NAME_CHAR_COUNT).assertTextContains("/", substring = true)
+    composeTestRule
+        .onNodeWithTag(OrganizationFormTestTags.NAME_CHAR_COUNT)
+        .assertTextContains("/", substring = true)
   }
 
   @Test
@@ -213,10 +215,7 @@ class CreateOrganizationScreenTest {
         .performClick()
     composeTestRule.waitForIdle()
 
-    composeTestRule
-        .onNode(hasText("Switzerland +41"))
-        .performScrollTo()
-        .performClick()
+    composeTestRule.onNode(hasText("Switzerland +41")).performScrollTo().performClick()
     composeTestRule.waitForIdle()
 
     // Enter phone number

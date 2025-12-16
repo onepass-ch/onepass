@@ -212,18 +212,18 @@ class OrganizationEditorViewModelTest {
     editorViewModel.loadOrganizationById("org1")
     advanceUntilIdle()
 
-      formViewModel.initializeFrom(org)
+    formViewModel.initializeFrom(org)
 
-      formViewModel.updateName("New Name")
-      formViewModel.updateDescription("New Description")
-      formViewModel.updateContactEmail("email@test.com")
-      formViewModel.updateContactPhone("987654")
-      formViewModel.formState.value.contactPhonePrefix.value = "1"
-      formViewModel.updateWebsite("newsite.com")
-      formViewModel.updateInstagram("insta")
-      formViewModel.updateFacebook("fb")
-      formViewModel.updateTiktok("tt")
-      formViewModel.updateAddress("address")
+    formViewModel.updateName("New Name")
+    formViewModel.updateDescription("New Description")
+    formViewModel.updateContactEmail("email@test.com")
+    formViewModel.updateContactPhone("987654")
+    formViewModel.formState.value.contactPhonePrefix.value = "1"
+    formViewModel.updateWebsite("newsite.com")
+    formViewModel.updateInstagram("insta")
+    formViewModel.updateFacebook("fb")
+    formViewModel.updateTiktok("tt")
+    formViewModel.updateAddress("address")
 
     val data =
         OrganizationEditorData(
@@ -320,21 +320,21 @@ class OrganizationEditorViewModelTest {
     editorViewModel.loadOrganizationById("org1")
     advanceUntilIdle()
 
-      formViewModel.initializeFrom(org)
+    formViewModel.initializeFrom(org)
 
-      val profileUri = android.net.Uri.parse("content://media/image/profile123")
+    val profileUri = android.net.Uri.parse("content://media/image/profile123")
 
-      formViewModel.updateName("Updated Name")
-      formViewModel.updateDescription("Updated Description")
-      formViewModel.updateContactEmail("email@test.com")
-      formViewModel.updateContactPhone("987654")
-      formViewModel.formState.value.contactPhonePrefix.value = "1"
-      formViewModel.updateWebsite("website.com")
-      formViewModel.updateInstagram("insta")
-      formViewModel.updateFacebook("fb")
-      formViewModel.updateTiktok("tt")
-      formViewModel.updateAddress("address")
-      formViewModel.selectProfileImage(profileUri)
+    formViewModel.updateName("Updated Name")
+    formViewModel.updateDescription("Updated Description")
+    formViewModel.updateContactEmail("email@test.com")
+    formViewModel.updateContactPhone("987654")
+    formViewModel.formState.value.contactPhonePrefix.value = "1"
+    formViewModel.updateWebsite("website.com")
+    formViewModel.updateInstagram("insta")
+    formViewModel.updateFacebook("fb")
+    formViewModel.updateTiktok("tt")
+    formViewModel.updateAddress("address")
+    formViewModel.selectProfileImage(profileUri)
 
     val data =
         OrganizationEditorData(
@@ -368,7 +368,7 @@ class OrganizationEditorViewModelTest {
     editorViewModel.loadOrganizationById("org1")
     advanceUntilIdle()
 
-      formViewModel.initializeFrom(org)
+    formViewModel.initializeFrom(org)
 
     val coverUri = android.net.Uri.parse("content://media/image/cover456")
     val data =
@@ -403,23 +403,23 @@ class OrganizationEditorViewModelTest {
     editorViewModel.loadOrganizationById("org1")
     advanceUntilIdle()
 
-      formViewModel.initializeFrom(org)
+    formViewModel.initializeFrom(org)
 
     val profileUri = android.net.Uri.parse("content://media/image/profile123")
     val coverUri = android.net.Uri.parse("content://media/image/cover456")
 
-      formViewModel.updateName("Updated Name")
-      formViewModel.updateDescription("Updated Description")
-      formViewModel.updateContactEmail("email@test.com")
-      formViewModel.updateContactPhone("987654")
-      formViewModel.formState.value.contactPhonePrefix.value = "1"
-      formViewModel.updateWebsite("website.com")
-      formViewModel.updateInstagram("insta")
-      formViewModel.updateFacebook("fb")
-      formViewModel.updateTiktok("tt")
-      formViewModel.updateAddress("address")
-      formViewModel.selectProfileImage(profileUri)
-      formViewModel.selectCoverImage(coverUri)
+    formViewModel.updateName("Updated Name")
+    formViewModel.updateDescription("Updated Description")
+    formViewModel.updateContactEmail("email@test.com")
+    formViewModel.updateContactPhone("987654")
+    formViewModel.formState.value.contactPhonePrefix.value = "1"
+    formViewModel.updateWebsite("website.com")
+    formViewModel.updateInstagram("insta")
+    formViewModel.updateFacebook("fb")
+    formViewModel.updateTiktok("tt")
+    formViewModel.updateAddress("address")
+    formViewModel.selectProfileImage(profileUri)
+    formViewModel.selectCoverImage(coverUri)
 
     val data =
         OrganizationEditorData(
@@ -453,18 +453,18 @@ class OrganizationEditorViewModelTest {
     editorViewModel.loadOrganizationById("org1")
     advanceUntilIdle()
 
-      formViewModel.initializeFrom(org)
+    formViewModel.initializeFrom(org)
 
-      formViewModel.updateName("New Name")
-      formViewModel.updateDescription("New Description")
-      formViewModel.updateContactEmail("email@test.com")
-      formViewModel.updateContactPhone("987654")
-      formViewModel.formState.value.contactPhonePrefix.value = "1"
-      formViewModel.updateWebsite("newsite.com")
-      formViewModel.updateInstagram("insta")
-      formViewModel.updateFacebook("fb")
-      formViewModel.updateTiktok("tt")
-      formViewModel.updateAddress("address")
+    formViewModel.updateName("New Name")
+    formViewModel.updateDescription("New Description")
+    formViewModel.updateContactEmail("email@test.com")
+    formViewModel.updateContactPhone("987654")
+    formViewModel.formState.value.contactPhonePrefix.value = "1"
+    formViewModel.updateWebsite("newsite.com")
+    formViewModel.updateInstagram("insta")
+    formViewModel.updateFacebook("fb")
+    formViewModel.updateTiktok("tt")
+    formViewModel.updateAddress("address")
 
     val data =
         OrganizationEditorData(
@@ -681,33 +681,33 @@ class OrganizationEditorViewModelTest {
     assertNull(data.coverImageUri)
   }
 
-    private fun testOrganization(
-        id: String,
-        name: String = "Test Org",
-        description: String = "Description",
-        contactEmail: String = "test@example.com",
-        contactPhone: String = "1234567890"
-    ) =
-        Organization(
-            id = id,
-            name = name,
-            description = description,
-            ownerId = "owner1",
-            status = OrganizationStatus.ACTIVE,
-            verified = false,
-            profileImageUrl = null,
-            website = null,
-            instagram = null,
-            tiktok = null,
-            facebook = null,
-            contactEmail = contactEmail,
-            contactPhone = contactPhone,
-            address = null,
-            eventIds = emptyList(),
-            followerCount = 0,
-            averageRating = 0.0f,
-            createdAt = Timestamp.now(),
-            updatedAt = null)
+  private fun testOrganization(
+      id: String,
+      name: String = "Test Org",
+      description: String = "Description",
+      contactEmail: String = "test@example.com",
+      contactPhone: String = "1234567890"
+  ) =
+      Organization(
+          id = id,
+          name = name,
+          description = description,
+          ownerId = "owner1",
+          status = OrganizationStatus.ACTIVE,
+          verified = false,
+          profileImageUrl = null,
+          website = null,
+          instagram = null,
+          tiktok = null,
+          facebook = null,
+          contactEmail = contactEmail,
+          contactPhone = contactPhone,
+          address = null,
+          eventIds = emptyList(),
+          followerCount = 0,
+          averageRating = 0.0f,
+          createdAt = Timestamp.now(),
+          updatedAt = null)
 }
 
 class FakeEditOrganizationRepository : OrganizationRepository {

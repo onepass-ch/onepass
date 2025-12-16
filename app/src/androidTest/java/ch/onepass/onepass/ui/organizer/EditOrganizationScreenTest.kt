@@ -227,7 +227,9 @@ class EditOrganizationScreenTest {
         .performTextInput("Test")
 
     // Character counter should show "X/50 characters" or similar
-    composeTestRule.onNodeWithTag(OrganizationFormTestTags.NAME_CHAR_COUNT).assertTextContains("/", substring = true)
+    composeTestRule
+        .onNodeWithTag(OrganizationFormTestTags.NAME_CHAR_COUNT)
+        .assertTextContains("/", substring = true)
   }
 
   @Test
