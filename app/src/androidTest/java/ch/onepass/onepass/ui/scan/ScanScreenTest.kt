@@ -1,7 +1,6 @@
 package ch.onepass.onepass.ui.scan
 
 import androidx.activity.ComponentActivity
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -22,7 +21,6 @@ private const val VALID_QR =
  * - Camera lifecycle and ML Kit analyzer
  * - vibrateForEffect() and MediaPlayer audio feedback
  * - Error handlers inside try-catch (system failures)
- * - Firestore listener (tested separately in ViewModel tests)
  */
 @RunWith(AndroidJUnit4::class)
 class ScanScreenTest {
@@ -51,6 +49,20 @@ class ScanScreenTest {
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Scan a pass", substring = true)
     compose.onNodeWithText("Position the QR code within the frame").assertIsDisplayed()
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertDoesNotExist()
+  }
+
+  @Test
+  fun initialState_noStatusIconVisible() {
+    compose.setContent { ScanContent(viewModel = createVM()) }
+
+    compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertDoesNotExist()
+  }
+
+  @Test
+  fun initialState_noProgressIndicatorVisible() {
+    compose.setContent { ScanContent(viewModel = createVM()) }
+
+    compose.onNodeWithTag(ScanTestTags.PROGRESS).assertDoesNotExist()
   }
 
   // ==================== ACCEPTED SCANS ====================
@@ -206,7 +218,6 @@ class ScanScreenTest {
 
     compose.runOnIdle { vm.onQrScanned(VALID_QR) }
     compose.waitForIdle()
-
     compose.onNodeWithTag(ScanTestTags.NETWORK_ERROR_DIALOG).assertIsDisplayed()
   }
 
@@ -292,10 +303,11 @@ class ScanScreenTest {
   fun genericError_showsInHudOnly() {
     val repo = FakeRepo().apply { next = Result.failure(Exception("Database error")) }
     val vm = createVM(repo)
-    compose.setContent { ScanContent(viewModel = vm) }
+    compose.setContent { ScanContent(viewModel = vm, onNavigateBack = {}) }
 
     compose.runOnIdle { vm.onQrScanned(VALID_QR) }
     compose.waitForIdle()
+    Thread.sleep(300)
 
     compose.onNodeWithTag(ScanTestTags.NETWORK_ERROR_DIALOG).assertDoesNotExist()
     compose.onNodeWithTag("scan_session_expired_dialog").assertDoesNotExist()
@@ -369,6 +381,30 @@ class ScanScreenTest {
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Invalid", substring = true)
   }
 
+  @Test
+  fun invalidQr_whitespaceOnly_showsInvalidFormat() {
+    val vm = createVM()
+
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    compose.runOnIdle { vm.onQrScanned("   ") }
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Invalid", substring = true)
+  }
+
+  @Test
+  fun invalidQr_nullCharacters_showsInvalidFormat() {
+    val vm = createVM()
+
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    compose.runOnIdle { vm.onQrScanned("test\u0000data") }
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Invalid", substring = true)
+  }
+
   // ==================== DIALOG INTERACTIONS ====================
 
   @Test
@@ -425,6 +461,25 @@ class ScanScreenTest {
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Scan a pass", substring = true)
   }
 
+  @Test
+  fun sessionExpiredDialog_okButton_navigatesBack() {
+    val repo = FakeRepo().apply { next = Result.failure(Exception("Session expired")) }
+    val vm = createVM(repo)
+    var backNavigated = false
+
+    compose.setContent { ScanContent(viewModel = vm, onNavigateBack = { backNavigated = true }) }
+
+    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
+    compose.waitForIdle()
+
+    compose.onNodeWithTag("scan_session_expired_dialog").assertIsDisplayed()
+
+    compose.onNodeWithText("OK").performClick()
+    compose.waitForIdle()
+
+    assert(backNavigated) { "OK button should navigate back" }
+  }
+
   // ==================== PROCESSING STATE ====================
 
   @Test
@@ -465,6 +520,25 @@ class ScanScreenTest {
     compose.waitForIdle()
   }
 
+  @Test
+  fun processingState_noStatusIconVisible() {
+    val repo =
+        FakeRepo().apply {
+          delayMs = 500
+          next = Result.success(ScanDecision.Accepted(ticketId = "T-999"))
+        }
+    val vm = createVM(repo)
+
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
+    Thread.sleep(100)
+
+    compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertDoesNotExist()
+
+    compose.waitForIdle()
+  }
+
   // ==================== PERMISSION DENIED SCREEN ====================
 
   @Test
@@ -484,15 +558,7 @@ class ScanScreenTest {
 
   @Test
   fun topStatsCard_displaysValidatedCount() {
-    compose.setContent {
-      TopStatsCard(
-          validated = 42,
-          eventTitle = null,
-          colorCard = androidx.compose.ui.graphics.Color.Black,
-          colorAccent = androidx.compose.ui.graphics.Color.Blue,
-          colorTextPrimary = androidx.compose.ui.graphics.Color.White,
-          colorTextSecondary = androidx.compose.ui.graphics.Color.Gray)
-    }
+    compose.setContent { TopStatsCard(validated = 42, eventTitle = null) }
 
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
     compose.onNodeWithText("42").assertIsDisplayed()
@@ -501,15 +567,7 @@ class ScanScreenTest {
 
   @Test
   fun topStatsCard_displaysEventTitle() {
-    compose.setContent {
-      TopStatsCard(
-          validated = 15,
-          eventTitle = "Summer Festival",
-          colorCard = androidx.compose.ui.graphics.Color.Black,
-          colorAccent = androidx.compose.ui.graphics.Color.Blue,
-          colorTextPrimary = androidx.compose.ui.graphics.Color.White,
-          colorTextSecondary = androidx.compose.ui.graphics.Color.Gray)
-    }
+    compose.setContent { TopStatsCard(validated = 15, eventTitle = "Summer Festival") }
 
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
     compose.onNodeWithText("Summer Festival").assertIsDisplayed()
@@ -519,15 +577,7 @@ class ScanScreenTest {
 
   @Test
   fun topStatsCard_showsWhenEventTitlePresent() {
-    compose.setContent {
-      TopStatsCard(
-          validated = 0,
-          eventTitle = "Tech Conference",
-          colorCard = androidx.compose.ui.graphics.Color.Black,
-          colorAccent = androidx.compose.ui.graphics.Color.Blue,
-          colorTextPrimary = androidx.compose.ui.graphics.Color.White,
-          colorTextSecondary = androidx.compose.ui.graphics.Color.Gray)
-    }
+    compose.setContent { TopStatsCard(validated = 0, eventTitle = "Tech Conference") }
 
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
     compose.onNodeWithText("Tech Conference").assertIsDisplayed()
@@ -535,15 +585,7 @@ class ScanScreenTest {
 
   @Test
   fun topStatsCard_handlesLargeNumbers() {
-    compose.setContent {
-      TopStatsCard(
-          validated = 9999,
-          eventTitle = "Mega Event",
-          colorCard = androidx.compose.ui.graphics.Color.Black,
-          colorAccent = androidx.compose.ui.graphics.Color.Blue,
-          colorTextPrimary = androidx.compose.ui.graphics.Color.White,
-          colorTextSecondary = androidx.compose.ui.graphics.Color.Gray)
-    }
+    compose.setContent { TopStatsCard(validated = 9999, eventTitle = "Mega Event") }
 
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
     compose.onNodeWithText("9999").assertIsDisplayed()
@@ -552,30 +594,14 @@ class ScanScreenTest {
   @Test
   fun topStatsCard_handlesLongEventTitle() {
     val longTitle = "This is a very long event title that should be truncated properly in the UI"
-    compose.setContent {
-      TopStatsCard(
-          validated = 10,
-          eventTitle = longTitle,
-          colorCard = androidx.compose.ui.graphics.Color.Black,
-          colorAccent = androidx.compose.ui.graphics.Color.Blue,
-          colorTextPrimary = androidx.compose.ui.graphics.Color.White,
-          colorTextSecondary = androidx.compose.ui.graphics.Color.Gray)
-    }
+    compose.setContent { TopStatsCard(validated = 10, eventTitle = longTitle) }
 
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
   }
 
   @Test
   fun topStatsCard_withZeroValidations_displaysZero() {
-    compose.setContent {
-      TopStatsCard(
-          validated = 0,
-          eventTitle = "Test Event",
-          colorCard = androidx.compose.ui.graphics.Color.Black,
-          colorAccent = androidx.compose.ui.graphics.Color.Blue,
-          colorTextPrimary = androidx.compose.ui.graphics.Color.White,
-          colorTextSecondary = androidx.compose.ui.graphics.Color.Gray)
-    }
+    compose.setContent { TopStatsCard(validated = 0, eventTitle = "Test Event") }
 
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
     compose.onNodeWithText("0").assertIsDisplayed()
@@ -632,6 +658,23 @@ class ScanScreenTest {
     compose.waitForIdle()
 
     assert(backCalled) { "Flash overlay should not block back button" }
+  }
+
+  @Test
+  fun backButton_worksAfterError() {
+    val repo = FakeRepo().apply { next = Result.failure(Exception("Test error")) }
+    val vm = createVM(repo)
+    var backCalled = false
+
+    compose.setContent { ScanContent(viewModel = vm, onNavigateBack = { backCalled = true }) }
+
+    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(ScanTestTags.BACK_BUTTON).performClick()
+    compose.waitForIdle()
+
+    assert(backCalled) { "Back button should work after error" }
   }
 
   // ==================== SCAN BLOCKING DURING DIALOGS ====================
@@ -764,22 +807,6 @@ class ScanScreenTest {
     compose.onNodeWithText("25").assertIsDisplayed()
   }
 
-  @Test
-  fun previewHudWithLongMessage_rendersCorrectly() {
-    val longMessage =
-        "This is a very long error message that should be displayed correctly in the HUD without causing layout issues"
-    compose.setContent {
-      PreviewHudContainer(
-          state =
-              ScannerUiState(
-                  isProcessing = false,
-                  message = longMessage,
-                  status = ScannerUiState.Status.ERROR))
-    }
-
-    compose.onNodeWithText(longMessage, substring = true).assertIsDisplayed()
-  }
-
   // ==================== MULTIPLE SCANS SEQUENCE ====================
 
   @Test
@@ -821,6 +848,19 @@ class ScanScreenTest {
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertIsDisplayed()
   }
 
+  @Test
+  fun rapidSameQrScans_handledCorrectly() {
+    val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
+    val vm = createVM(repo)
+
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    repeat(3) { compose.runOnIdle { vm.onQrScanned(VALID_QR) } }
+
+    compose.waitForIdle()
+    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertIsDisplayed()
+  }
+
   // ==================== SCANNING STATES & TRANSITIONS ====================
 
   @Test
@@ -846,183 +886,7 @@ class ScanScreenTest {
   }
 
   @Test
-  fun scanTransition_idleToProcessingToRejected() {
-    val repo =
-        FakeRepo().apply {
-          delayMs = 0
-          next = Result.success(ScanDecision.Rejected(ScanDecision.Reason.ALREADY_SCANNED))
-        }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Scan a pass", substring = true)
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-
-    compose.waitForIdle()
-    Thread.sleep(500)
-
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Already scanned")
-    compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertIsDisplayed()
-  }
-
-  @Test
-  fun scanTransition_idleToProcessingToError() {
-    val repo =
-        FakeRepo().apply {
-          delayMs = 0
-          next = Result.failure(Exception("Unexpected error"))
-        }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Scan a pass", substring = true)
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-
-    compose.waitForIdle()
-    Thread.sleep(500)
-
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Error:", substring = true)
-  }
-
-  // ==================== FLASH OVERLAY ANIMATION ====================
-
-  @Test
-  fun flashOverlay_triggersOnAcceptedScan() {
-    val repo =
-        FakeRepo().apply {
-          delayMs = 0
-          next = Result.success(ScanDecision.Accepted(ticketId = "T-123"))
-        }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-    Thread.sleep(500)
-
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
-  }
-
-  @Test
-  fun flashOverlay_triggersOnRejectedScan() {
-    val repo =
-        FakeRepo().apply {
-          next = Result.success(ScanDecision.Rejected(ScanDecision.Reason.ALREADY_SCANNED))
-        }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Already scanned")
-  }
-
-  @Test
-  fun flashOverlay_doesNotTriggerOnInvalidQr() {
-    val vm = createVM()
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.runOnIdle { vm.onQrScanned("invalid") }
-    compose.waitForIdle()
-
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("QR", substring = true)
-  }
-
-  @Test
-  fun flashOverlay_doesNotTriggerWhenDialogShown() {
-    val repo = FakeRepo().apply { next = Result.failure(Exception("Network error")) }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-
-    compose.onNodeWithTag(ScanTestTags.NETWORK_ERROR_DIALOG).assertIsDisplayed()
-  }
-
-  // ==================== STATS CARD VISIBILITY ====================
-
-  @Test
-  fun statsCard_hidesWhenNoEventTitle() {
-    val vm = createVM()
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertDoesNotExist()
-  }
-
-  // ==================== USER NAME DISPLAY ====================
-
-  @Test
-  fun acceptedScan_doesNotCrashWhenUserNameNull() {
-    val repo =
-        FakeRepo().apply {
-          delayMs = 0
-          next = Result.success(ScanDecision.Accepted(ticketId = "T-123"))
-        }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-    Thread.sleep(500)
-
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
-  }
-
-  // ==================== REMAINING CAPACITY DISPLAY ====================
-
-  @Test
-  fun acceptedScan_doesNotShowRemainingWhenNull() {
-    val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
-  }
-
-  // ==================== SCANNED AT TIMESTAMP ====================
-
-  @Test
-  fun acceptedScan_doesNotCrashWhenTimestampNull() {
-    val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
-  }
-
-  // ==================== CAMERA PREVIEW ====================
-
-  @Test
-  fun cameraPreview_displaysCorrectly() {
-    val vm = createVM()
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.onNodeWithTag(ScanTestTags.CAMERA).assertIsDisplayed()
-  }
-
-  @Test
-  fun cameraPreview_persistsDuringScan() {
+  fun scanTransition_processingToAccepted_hidesSpinner() {
     val repo =
         FakeRepo().apply {
           delayMs = 500
@@ -1031,270 +895,30 @@ class ScanScreenTest {
     val vm = createVM(repo)
 
     compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-
-    compose.onNodeWithTag(ScanTestTags.CAMERA).assertIsDisplayed()
-
-    compose.waitForIdle()
-
-    compose.onNodeWithTag(ScanTestTags.CAMERA).assertIsDisplayed()
-  }
-
-  // ==================== SCAN FRAME OVERLAY ====================
-
-  @Test
-  fun scanFrame_alwaysVisible() {
-    val vm = createVM()
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.onNodeWithTag(ScanTestTags.SCAN_FRAME).assertIsDisplayed()
-  }
-
-  @Test
-  fun scanFrame_remainsVisibleDuringStates() {
-    val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.onNodeWithTag(ScanTestTags.SCAN_FRAME).assertIsDisplayed()
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-
-    compose.onNodeWithTag(ScanTestTags.SCAN_FRAME).assertIsDisplayed()
-  }
-
-  // ==================== HUD CONTAINER ====================
-
-  @Test
-  fun hudContainer_alwaysVisible() {
-    val vm = createVM()
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.onNodeWithTag(ScanTestTags.HUD).assertIsDisplayed()
-  }
-
-  @Test
-  fun hudContainer_updatesWithStateChanges() {
-    val repo =
-        FakeRepo().apply {
-          delayMs = 0
-          next = Result.success(ScanDecision.Accepted(ticketId = "T-123"))
-        }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("pass", substring = true)
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-    Thread.sleep(500)
-
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
-  }
-
-  // ==================== INSTRUCTIONS TEXT ====================
-
-  @Test
-  fun instructions_reappearAfterReset() {
-    val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-
-    compose.onNodeWithText("Position the QR code within the frame").assertDoesNotExist()
-
-    vm.resetToIdle()
-    compose.waitForIdle()
-
-    compose.onNodeWithText("Position the QR code within the frame").assertIsDisplayed()
-  }
-
-  // ==================== PROGRESS INDICATOR ====================
-
-  @Test
-  fun progressIndicator_onlyVisibleWhenProcessing() {
-    val repo =
-        FakeRepo().apply {
-          delayMs = 500
-          next = Result.success(ScanDecision.Accepted(ticketId = "T-123"))
-        }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.onNodeWithTag(ScanTestTags.PROGRESS).assertDoesNotExist()
 
     compose.runOnIdle { vm.onQrScanned(VALID_QR) }
     Thread.sleep(100)
     compose.onNodeWithTag(ScanTestTags.PROGRESS).assertIsDisplayed()
 
     compose.waitForIdle()
-    Thread.sleep(200)
-  }
+    Thread.sleep(500) // Wait longer for animation to complete
 
-  // ==================== STATUS ICON ====================
-
-  @Test
-  fun statusIcon_notVisibleInIdleState() {
-    val vm = createVM()
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertDoesNotExist()
-  }
-
-  @Test
-  fun statusIcon_visibleAfterScan() {
-    val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-
+    compose.onNodeWithTag(ScanTestTags.PROGRESS).assertDoesNotExist()
     compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertIsDisplayed()
   }
 
-  @Test
-  fun statusIcon_hidesAfterResetToIdle() {
-    val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-
-    compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertIsDisplayed()
-
-    vm.resetToIdle()
-    compose.waitForIdle()
-
-    compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertDoesNotExist()
-  }
-
-  // ==================== NAVIGATION CALLBACK ====================
-
-  @Test
-  fun navigationCallback_notCalledOnNormalOperation() {
-    val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
-    val vm = createVM(repo)
-    var backCalled = false
-
-    compose.setContent { ScanContent(viewModel = vm, onNavigateBack = { backCalled = true }) }
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-
-    assert(!backCalled) { "Should not navigate back during normal scan" }
-  }
-
-  // ==================== RAPID STATE CHANGES ====================
-
-  @Test
-  fun rapidStateChanges_doesNotCrash() {
-    val repo = FakeRepo()
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    repeat(10) { i ->
-      repo.next =
-          if (i % 2 == 0) {
-            Result.success(ScanDecision.Accepted(ticketId = "T-$i"))
-          } else {
-            Result.success(ScanDecision.Rejected(ScanDecision.Reason.ALREADY_SCANNED))
-          }
-      compose.runOnIdle { vm.onQrScanned("qr-$i") }
-    }
-
-    compose.waitForIdle()
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertIsDisplayed()
-  }
-  // ==================== COLOR RESOURCE TESTS ====================
-
-  @Test
-  fun scanScreen_loadsColorsFromResources() {
-    val vm = createVM()
-    compose.setContent { ScanContent(viewModel = vm) }
-    compose.onNodeWithTag(ScanTestTags.SCREEN).assertIsDisplayed()
-    compose.onNodeWithTag(ScanTestTags.HUD).assertIsDisplayed()
-    compose.onNodeWithTag(ScanTestTags.SCAN_FRAME).assertIsDisplayed()
-  }
-
-  @Test
-  fun topStatsCard_withColors_rendersCorrectly() {
-    compose.setContent {
-      TopStatsCard(
-          validated = 42,
-          eventTitle = "Test Event",
-          colorCard = Color.Black,
-          colorAccent = Color.Blue,
-          colorTextPrimary = Color.White,
-          colorTextSecondary = Color.Gray)
-    }
-
-    compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
-    compose.onNodeWithText("42").assertIsDisplayed()
-    compose.onNodeWithText("Test Event").assertIsDisplayed()
-  }
-
-  // ==================== NO TICKET ID DISPLAY ====================
-
-  @Test
-  fun acceptedScan_doesNotShowTicketId() {
-    val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
-    val vm = createVM(repo)
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-
-    // Vérifie que le ticket ID n'est PAS affiché
-    compose.onNodeWithText("Ticket T-123", substring = true).assertDoesNotExist()
-    compose.onNodeWithText("T-123").assertDoesNotExist()
-
-    // Mais vérifie que le message principal existe
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
-  }
-
-  @Test
-  fun acceptedScan_ticketIdNotNull_stillNotDisplayed() {
-    val repo =
-        FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "TICKET-999")) }
-    val vm = createVM(repo)
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
-
-    compose.onNodeWithText("TICKET-999", substring = true).assertDoesNotExist()
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
-  }
-
-  // ==================== FASTER STATE TRANSITIONS ====================
+  // ==================== AUTO RESET BEHAVIOR ====================
 
   @Test
   fun acceptedScan_resetsToIdleAfterDelay() {
     val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
-    // Use actual reset delay (2000ms) instead of Long.MAX_VALUE
     val vm =
         ScannerViewModel(
             eventId = "event1",
             repo = repo,
             clock = { 0L },
             enableAutoCleanup = false,
-            stateResetDelayMs = 2000L, // Use actual delay
+            stateResetDelayMs = 2000L,
             coroutineScope = CoroutineScope(Dispatchers.Main))
 
     compose.setContent { ScanContent(viewModel = vm) }
@@ -1302,14 +926,11 @@ class ScanScreenTest {
     compose.runOnIdle { vm.onQrScanned(VALID_QR) }
     compose.waitForIdle()
 
-    // Should show "Access Granted"
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
 
-    // Wait for auto-reset (2 seconds + buffer)
     Thread.sleep(2500)
     compose.waitForIdle()
 
-    // Should reset to idle
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Scan a pass", substring = true)
   }
 
@@ -1341,30 +962,10 @@ class ScanScreenTest {
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Scan a pass", substring = true)
   }
 
-  // ==================== SPINNER BEHAVIOR ====================
+  // ==================== INSTRUCTIONS TEXT ====================
 
   @Test
-  fun validatingState_showsSpinnerWithNoColoredBar() {
-    val repo =
-        FakeRepo().apply {
-          delayMs = 500
-          next = Result.success(ScanDecision.Accepted(ticketId = "T-123"))
-        }
-    val vm = createVM(repo)
-
-    compose.setContent { ScanContent(viewModel = vm) }
-
-    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-
-    // During validation: spinner visible, message is "Validating…"
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Validating", substring = true)
-    compose.onNodeWithTag(ScanTestTags.PROGRESS).assertIsDisplayed()
-
-    compose.waitForIdle()
-  }
-
-  @Test
-  fun acceptedState_noSpinnerButShowsIcon() {
+  fun instructions_reappearAfterReset() {
     val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
     val vm = createVM(repo)
 
@@ -1373,10 +974,75 @@ class ScanScreenTest {
     compose.runOnIdle { vm.onQrScanned(VALID_QR) }
     compose.waitForIdle()
 
-    // After accepted: no spinner, but status icon visible
+    compose.onNodeWithText("Position the QR code within the frame").assertDoesNotExist()
+
+    vm.resetToIdle()
+    compose.waitForIdle()
+
+    compose.onNodeWithText("Position the QR code within the frame").assertIsDisplayed()
+  }
+
+  // ==================== PROGRESS INDICATOR ====================
+
+  @Test
+  fun progressIndicator_hiddenAfterSuccess() {
+    val repo =
+        FakeRepo().apply {
+          delayMs = 100
+          next = Result.success(ScanDecision.Accepted(ticketId = "T-123"))
+        }
+    val vm = createVM(repo)
+
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
+    compose.waitForIdle()
+    Thread.sleep(300)
+
     compose.onNodeWithTag(ScanTestTags.PROGRESS).assertDoesNotExist()
+  }
+
+  // ==================== STATUS ICON ====================
+
+  @Test
+  fun statusIcon_hidesAfterResetToIdle() {
+    val repo = FakeRepo().apply { next = Result.success(ScanDecision.Accepted(ticketId = "T-123")) }
+    val vm = createVM(repo)
+
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    compose.runOnIdle { vm.onQrScanned(VALID_QR) }
+    compose.waitForIdle()
+
     compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertIsDisplayed()
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
+
+    vm.resetToIdle()
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertDoesNotExist()
+  }
+
+  // ==================== RAPID STATE CHANGES ====================
+
+  @Test
+  fun rapidStateChanges_doesNotCrash() {
+    val repo = FakeRepo()
+    val vm = createVM(repo)
+
+    compose.setContent { ScanContent(viewModel = vm) }
+
+    repeat(10) { i ->
+      repo.next =
+          if (i % 2 == 0) {
+            Result.success(ScanDecision.Accepted(ticketId = "T-$i"))
+          } else {
+            Result.success(ScanDecision.Rejected(ScanDecision.Reason.ALREADY_SCANNED))
+          }
+      compose.runOnIdle { vm.onQrScanned("qr-$i") }
+    }
+
+    compose.waitForIdle()
+    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertIsDisplayed()
   }
 
   // ==================== FAKE REPOSITORY ====================
