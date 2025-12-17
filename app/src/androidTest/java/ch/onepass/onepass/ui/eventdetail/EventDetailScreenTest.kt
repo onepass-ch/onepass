@@ -219,9 +219,9 @@ class EventDetailScreenTest {
         .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
         .assertIsDisplayed()
 
-    // Loading message should be displayed
+    // Loading message should be displayed (with ellipsis character '…')
     composeTestRule
-        .onNodeWithText("Preparing payment...", substring = true, useUnmergedTree = true)
+        .onNodeWithText("Preparing payment…", substring = true, useUnmergedTree = true)
         .assertIsDisplayed()
   }
 
@@ -247,9 +247,9 @@ class EventDetailScreenTest {
         .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
         .assertIsDisplayed()
 
-    // Processing message should be displayed
+    // Processing message should be displayed (with ellipsis character '…')
     composeTestRule
-        .onNodeWithText("Processing payment...", substring = true, useUnmergedTree = true)
+        .onNodeWithText("Processing payment…", substring = true, useUnmergedTree = true)
         .assertIsDisplayed()
   }
 

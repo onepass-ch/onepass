@@ -52,7 +52,7 @@ class MarketSearchBarTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.MARKET_SEARCH_BAR).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Search events or organizers...").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Search events or organizers…").assertIsDisplayed()
   }
 
   @Test
@@ -217,7 +217,7 @@ class MarketSearchBarTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.MARKET_SEARCH_BAR).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Search events or organizers...").assertIsDisplayed()
+    composeTestRule.onNodeWithText("Search events or organizers…").assertIsDisplayed()
   }
 
   @Test
