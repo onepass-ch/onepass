@@ -349,7 +349,7 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
   }
 
   @Test
-  fun getOrCreateSignedPass_treatsIncompleteAsMissing_thenFails() = runBlocking {
+  fun getOrCreateSignedPass_treatsIncompleteAsMissing_thenRegenerates() = runBlocking {
     firestore
         .collection("users")
         .document(uid)
@@ -365,7 +365,10 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
                         "signature" to "A_-0")))
         .await()
     val res = repository.getOrCreateSignedPass(uid)
-    Assert.assertTrue(res.isFailure)
+    Assert.assertTrue(res.isSuccess)
+    val p = res.getOrThrow()
+    Assert.assertNotEquals("", p.kid)
+    Assert.assertTrue(p.isValidNow)
   }
 
   @Test

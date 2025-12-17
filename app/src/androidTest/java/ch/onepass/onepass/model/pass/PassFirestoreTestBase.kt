@@ -40,8 +40,9 @@ open class PassFirestoreTestBase {
   @Before
   open fun setUp() {
     val ctx = ApplicationProvider.getApplicationContext<Context>()
-    FirebaseApp.getApps(ctx).forEach { it.delete() }
-    FirebaseApp.initializeApp(ctx)
+    if (FirebaseApp.getApps(ctx).isEmpty()) {
+      FirebaseApp.initializeApp(ctx)
+    }
 
     check(FirebaseEmulator.isRunning) {
       "Firebase emulators not reachable. Run: firebase emulators:start --only firestore,auth,functions,ui"
@@ -51,13 +52,32 @@ open class PassFirestoreTestBase {
     functions = FirebaseFunctions.getInstance()
 
     val host = FirebaseEmulator.HOST
-    auth.useEmulator(host, 9099)
-    firestore.useEmulator(host, 8080)
-    firestore.firestoreSettings =
-        FirebaseFirestoreSettings.Builder()
-            .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
-            .build()
-    functions.useEmulator(host, 5001)
+    try {
+      auth.useEmulator(host, 9099)
+    } catch (e: IllegalStateException) {
+      // Already configured
+    }
+
+    try {
+      firestore.useEmulator(host, 8080)
+    } catch (e: IllegalStateException) {
+      // Already configured
+    }
+
+    try {
+      firestore.firestoreSettings =
+          FirebaseFirestoreSettings.Builder()
+              .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+              .build()
+    } catch (e: IllegalStateException) {
+      // Already configured
+    }
+
+    try {
+      functions.useEmulator(host, 5001)
+    } catch (e: IllegalStateException) {
+      // Already configured
+    }
 
     repository = PassRepositoryFirebase(db = firestore, functions = functions)
 
