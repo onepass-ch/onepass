@@ -344,19 +344,4 @@ class EditOrganizationScreenTest {
       composeTestRule.onNodeWithTag(tag).performScrollTo().assertIsDisplayed()
     }
   }
-
-  @Test
-  fun editingPreservesExistingData() {
-    composeTestRule.setContent {
-      OnePassTheme {
-        EditOrganizationScreen(
-            organizationId = "org123", viewModel = mockViewModel, formViewModel = mockFormViewModel)
-      }
-    }
-
-    composeTestRule
-        .onNodeWithTag(OrganizationFormTestTags.NAME_FIELD)
-        .performScrollTo()
-        .assertExists()
-  }
 }

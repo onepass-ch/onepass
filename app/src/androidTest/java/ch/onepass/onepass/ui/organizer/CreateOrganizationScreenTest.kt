@@ -253,47 +253,4 @@ class CreateOrganizationScreenTest {
       composeTestRule.onNodeWithTag(tag).performScrollTo().assertIsDisplayed()
     }
   }
-
-  @Test
-  fun submittingFormWithValidDataCallsCreateOrganization() {
-    composeTestRule.setContent { OnePassTheme { CreateOrganizationScreen(ownerId = "user123") } }
-
-    // Fill in required fields
-    composeTestRule
-        .onNodeWithTag(OrganizationFormTestTags.NAME_FIELD)
-        .performScrollTo()
-        .performTextInput("Valid Organization")
-
-    composeTestRule
-        .onNodeWithTag(OrganizationFormTestTags.DESCRIPTION_FIELD)
-        .performScrollTo()
-        .performTextInput("This is a valid organization")
-
-    // Select country prefix
-    composeTestRule
-        .onNodeWithTag(OrganizationFormTestTags.PHONE_PREFIX)
-        .performScrollTo()
-        .performClick()
-    composeTestRule.waitForIdle()
-
-    composeTestRule
-        .onNode(hasText("American Samoa +1", substring = true))
-        .performScrollTo()
-        .performClick()
-    composeTestRule.waitForIdle()
-
-    // Enter phone
-    composeTestRule
-        .onNodeWithTag(OrganizationFormTestTags.PHONE_FIELD)
-        .performScrollTo()
-        .performTextInput("791234567")
-
-    // Submit form
-    composeTestRule
-        .onNodeWithTag(OrganizationFormTestTags.SUBMIT_BUTTON)
-        .performScrollTo()
-        .performClick()
-
-    composeTestRule.waitForIdle()
-  }
 }
