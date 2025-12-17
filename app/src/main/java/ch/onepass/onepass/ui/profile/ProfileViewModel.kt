@@ -92,23 +92,17 @@ open class ProfileViewModel(
       } catch (_: Exception) {}
     }
   }
-  /** Watches "Saved" (favorites) and Tickets (upcoming/events) in real-time. */
+
   private fun observeRealTimeStats() {
-    // MOVE EVERYTHING INSIDE viewModelScope.launch
     viewModelScope.launch {
-      // NOW you can call suspend functions safely
       val userId = userRepository.getCurrentUser()?.uid ?: return@launch
 
-      // 1. Observe Favorites for "Saved" count
-      // We launch a NEW child coroutine so this flow runs in parallel
       launch {
         userRepository.getFavoriteEvents(userId).collect { favorites ->
           _state.value = _state.value.copy(stats = _state.value.stats.copy(saved = favorites.size))
         }
       }
 
-      // 2. Observe Tickets for "Events" (Past) and "Upcoming"
-      // Another parallel coroutine
       launch {
         ticketRepository.getTicketsByUser(userId).collect { tickets ->
           var upcomingCount = 0
