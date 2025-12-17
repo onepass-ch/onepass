@@ -333,6 +333,20 @@ class AppE2E {
     compose.onNodeWithTag(ProfileTestTags.SCREEN).assertIsDisplayed()
   }
 
+  /**
+   * This test uses try/catch blocks at various points because the workflow depends on the state of
+   * the Firebase repositories.
+   *
+   * For example, whether tickets exist in the repository or not can change the behavior of the app.
+   * To test all possible workflows, one could modify the Firebase data and rerun the test. This
+   * approach is optimal because we cannot add tickets directly through the app:
+   * - Stripe integration requires a logged-in user, which cannot be bypassed in the app.
+   * - In these tests, login is bypassed to avoid using real Gmail accounts (our login system only
+   *   supports Gmail).
+   *
+   * Therefore, try/catch ensures the test can proceed even if certain data (like tickets or hot
+   * events) is absent, allowing us to cover all flows without failing due to Firebase state.
+   */
   @Test
   fun fullEndToEndNavigationTestM3First() {
     setApp()
