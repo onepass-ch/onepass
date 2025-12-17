@@ -11,11 +11,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import ch.onepass.onepass.R
 
 /**
  * Displays a form field label with a character counter (for full-width fields).
@@ -43,14 +41,14 @@ fun FieldLabelWithCounter(
         Text(
             text = label,
             style =
-                MaterialTheme.typography.bodyMedium.copy(color = colorResource(id = R.color.white)))
+                MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onBackground))
         Text(
             text = "$currentLength/$maxLength characters",
             style =
                 MaterialTheme.typography.bodySmall.copy(
                     color =
                         if (isError || currentLength >= maxLength) colorScheme.error
-                        else colorResource(id = R.color.gray)),
+                        else colorScheme.onSurfaceVariant),
             modifier = Modifier.testTag(testTag ?: ""))
       }
 }
@@ -81,14 +79,14 @@ fun CompactFieldLabel(
         Text(
             text = label,
             style =
-                MaterialTheme.typography.bodySmall.copy(color = colorResource(id = R.color.white)))
+                MaterialTheme.typography.bodySmall.copy(color = colorScheme.onBackground))
         Text(
             text = "$currentLength/$maxLength",
             style =
                 MaterialTheme.typography.labelSmall.copy(
                     color =
                         if (isError || currentLength >= maxLength) colorScheme.error
-                        else colorResource(id = R.color.gray),
+                        else colorScheme.onSurfaceVariant,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Medium),
             modifier = Modifier.testTag(testTag ?: ""))
