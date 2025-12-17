@@ -75,43 +75,57 @@ fun AuthScreen(onSignedIn: () -> Unit = {}, authViewModel: AuthViewModel = AuthV
               BlurCircle(
                   modifier =
                       Modifier.testTag(SignInScreenTestTags.BLUR_CIRCLE_TOP)
-                          .offset(x = (-190).dp, y = (-380).dp),
-                  size = 481.dp,
-                  blurRadius = 40.dp,
+                          .offset(
+                              x = AuthScreenDefaults.BlurCircleTopOffsetX,
+                              y = AuthScreenDefaults.BlurCircleTopOffsetY),
+                  size = AuthScreenDefaults.BlurCircleTopSize,
+                  blurRadius = AuthScreenDefaults.BlurRadius,
                   color = BlurCircleTop)
 
               BlurCircle(
                   modifier =
                       Modifier.testTag(SignInScreenTestTags.BLUR_CIRCLE_BOTTOM)
-                          .offset(x = (200).dp, y = (130).dp),
-                  size = 200.dp,
-                  blurRadius = 40.dp,
+                          .offset(
+                              x = AuthScreenDefaults.BlurCircleBottomOffsetX,
+                              y = AuthScreenDefaults.BlurCircleBottomOffsetY),
+                  size = AuthScreenDefaults.BlurCircleBottomSize,
+                  blurRadius = AuthScreenDefaults.BlurRadius,
                   color = BlurCircleBottom)
 
               Logo(
                   modifier =
-                      Modifier.offset(y = (-125).dp, x = 54.dp)
+                      Modifier.offset(
+                              y = AuthScreenDefaults.LogoOffsetY,
+                              x = AuthScreenDefaults.LogoOffsetX)
                           .testTag(SignInScreenTestTags.APP_LOGO),
-                  iconSize = 100.dp,
-                  gap = 12.dp,
-                  fontSize = 48,
+                  iconSize = AuthScreenDefaults.LogoIconSize,
+                  gap = AuthScreenDefaults.LogoGap,
+                  fontSize = AuthScreenDefaults.LogoFontSize,
               )
               HeroTitle(
                   modifier =
-                      Modifier.offset(y = 105.dp, x = (-75).dp)
+                      Modifier.offset(
+                              y = AuthScreenDefaults.HeroTitleOffsetY,
+                              x = AuthScreenDefaults.HeroTitleOffsetX)
                           .testTag(SignInScreenTestTags.HERO_TITLE),
-                  titleTop = "BUY, SELL",
-                  titleBottom = "DISCOVER",
-                  fontSize = 48,
-                  lineHeight = 56)
+                  titleTop = androidx.compose.ui.res.stringResource(R.string.auth_hero_title_top),
+                  titleBottom =
+                      androidx.compose.ui.res.stringResource(R.string.auth_hero_title_bottom),
+                  config =
+                      HeroTitleConfig(
+                          fontSize = AuthScreenDefaults.HeroTitleFontSize,
+                          lineHeight = AuthScreenDefaults.HeroTitleLineHeight))
 
               Box(
-                  modifier = Modifier.fillMaxWidth().offset(x = 0.dp, y = 290.dp),
+                  modifier =
+                      Modifier.fillMaxWidth()
+                          .offset(x = 0.dp, y = AuthScreenDefaults.SignInButtonOffsetY),
                   contentAlignment = Alignment.Center) {
                     if (isLoading) {
                       CircularProgressIndicator(
                           modifier =
-                              Modifier.size(48.dp).testTag(SignInScreenTestTags.LOADING_INDICATOR))
+                              Modifier.size(AuthScreenDefaults.LoadingIndicatorSize)
+                                  .testTag(SignInScreenTestTags.LOADING_INDICATOR))
                     } else {
                       GoogleSignInButton(
                           onSignInClick = { authViewModel.signIn(context, credentialManager) })
@@ -142,17 +156,17 @@ fun Logo(
   Row(modifier = modifier, verticalAlignment = Alignment.CenterVertically) {
     Image(
         painter = painterResource(id = R.drawable.ticket_logo),
-        contentDescription = "App Logo Icon",
+        contentDescription = androidx.compose.ui.res.stringResource(R.string.content_desc_app_logo),
         modifier = Modifier.size(iconSize).testTag("logo_icon"))
     Spacer(Modifier.width(gap))
     Column {
       Text(
-          text = "ONE",
+          text = androidx.compose.ui.res.stringResource(R.string.app_name_part_one),
           style =
               MaterialTheme.typography.titleLarge.copy(
                   color = textColor, fontSize = fontSize.sp, fontWeight = FontWeight.ExtraBold))
       Text(
-          text = "PASS.",
+          text = androidx.compose.ui.res.stringResource(R.string.app_name_part_two),
           style =
               MaterialTheme.typography.titleLarge.copy(
                   color = textColor, fontSize = fontSize.sp, fontWeight = FontWeight.ExtraBold))
@@ -160,27 +174,32 @@ fun Logo(
   }
 }
 
+data class HeroTitleConfig(
+    val fontSize: Int = 42,
+    val lineHeight: Int = 44,
+    val fontWeight: FontWeight = FontWeight.ExtraBold,
+    val letterSpacing: Int = 0,
+    val textAlign: TextAlign = TextAlign.Start,
+    val textColor: Color? = null
+)
+
 @Composable
 fun HeroTitle(
     modifier: Modifier = Modifier,
     titleTop: String,
     titleBottom: String,
-    textColor: Color = colorScheme.onBackground,
-    fontSize: Int = 42,
-    lineHeight: Int = 44,
-    fontWeight: FontWeight = FontWeight.ExtraBold,
-    letterSpacing: Int = 0,
-    textAlign: TextAlign = TextAlign.Start
+    config: HeroTitleConfig = HeroTitleConfig()
 ) {
+  val textColor = config.textColor ?: colorScheme.onBackground
   Text(
       modifier = modifier,
       text = "$titleTop\n$titleBottom",
-      lineHeight = lineHeight.sp,
-      letterSpacing = letterSpacing.sp,
-      textAlign = textAlign,
+      lineHeight = config.lineHeight.sp,
+      letterSpacing = config.letterSpacing.sp,
+      textAlign = config.textAlign,
       style =
           MaterialTheme.typography.titleLarge.copy(
-              color = textColor, fontSize = fontSize.sp, fontWeight = fontWeight))
+              color = textColor, fontSize = config.fontSize.sp, fontWeight = config.fontWeight))
 }
 
 @Composable
@@ -203,18 +222,44 @@ fun GoogleSignInButton(onSignInClick: () -> Unit) {
               Image(
                   painter =
                       painterResource(id = R.drawable.google_logo), // Ensure this drawable exists
-                  contentDescription = "Google Logo",
+                  contentDescription =
+                      androidx.compose.ui.res.stringResource(R.string.content_desc_google_logo),
                   modifier =
                       Modifier.size(30.dp) // Size of the Google logo
                           .padding(end = 8.dp))
 
               // Text for the button
               Text(
-                  text = "Sign in with Google",
+                  text = androidx.compose.ui.res.stringResource(R.string.auth_sign_in_google),
                   color = colorScheme.onBackground, // Text color
                   fontSize = 16.sp, // Font size
                   fontWeight = FontWeight.Medium,
                   style = MaterialTheme.typography.bodyMedium)
             }
       }
+}
+
+private object AuthScreenDefaults {
+  val BlurCircleTopOffsetX = (-190).dp
+  val BlurCircleTopOffsetY = (-380).dp
+  val BlurCircleTopSize = 481.dp
+  val BlurRadius = 40.dp
+
+  val BlurCircleBottomOffsetX = 200.dp
+  val BlurCircleBottomOffsetY = 130.dp
+  val BlurCircleBottomSize = 200.dp
+
+  val LogoOffsetX = 54.dp
+  val LogoOffsetY = (-125).dp
+  val LogoIconSize = 100.dp
+  val LogoGap = 12.dp
+  const val LogoFontSize = 48
+
+  val HeroTitleOffsetX = (-54).dp
+  val HeroTitleOffsetY = 105.dp
+  const val HeroTitleFontSize = 48
+  const val HeroTitleLineHeight = 56
+
+  val SignInButtonOffsetY = 290.dp
+  val LoadingIndicatorSize = 48.dp
 }
