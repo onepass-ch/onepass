@@ -167,7 +167,7 @@ class CreateEventFormComposeTest {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Image selection indicator should not be shown initially
-    composeTestRule.onNodeWithText("image(s) selected", substring = true).assertDoesNotExist()
+    composeTestRule.onNodeWithText("image selected", substring = true).assertDoesNotExist()
   }
 
   @Test
@@ -180,8 +180,8 @@ class CreateEventFormComposeTest {
 
     composeTestRule.waitForIdle()
 
-    // Image selection indicator should now be shown
-    composeTestRule.onNodeWithText("1 image(s) selected").performScrollTo().assertIsDisplayed()
+    // Image selection indicator should now be shown (singular form)
+    composeTestRule.onNodeWithText("1 image selected").performScrollTo().assertIsDisplayed()
   }
 
   @Test
@@ -198,8 +198,8 @@ class CreateEventFormComposeTest {
 
     composeTestRule.waitForIdle()
 
-    // Image selection indicator should show correct count
-    composeTestRule.onNodeWithText("3 image(s) selected").performScrollTo().assertIsDisplayed()
+    // Image selection indicator should show correct count (plural form)
+    composeTestRule.onNodeWithText("3 images selected").performScrollTo().assertIsDisplayed()
   }
 
   @Test
@@ -211,15 +211,15 @@ class CreateEventFormComposeTest {
     viewModel.selectImage(testUri)
     composeTestRule.waitForIdle()
 
-    // Image indicator should be visible
-    composeTestRule.onNodeWithText("1 image(s) selected").performScrollTo().assertIsDisplayed()
+    // Image indicator should be visible (singular form)
+    composeTestRule.onNodeWithText("1 image selected").performScrollTo().assertIsDisplayed()
 
     // Remove the image
     viewModel.removeImage(testUri)
     composeTestRule.waitForIdle()
 
     // Image indicator should no longer be visible
-    composeTestRule.onNodeWithText("image(s) selected", substring = true).assertDoesNotExist()
+    composeTestRule.onNodeWithText("image selected", substring = true).assertDoesNotExist()
   }
 
   @Test
