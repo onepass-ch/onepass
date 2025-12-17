@@ -16,6 +16,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -101,14 +102,14 @@ fun ActiveFiltersBar(
         }
         // Show count chip if more than ActiveFiltersConfig.MAX_VISIBLE_TAGS tags
         if (filters.selectedTags.size > ActiveFiltersConfig.MAX_VISIBLE_TAGS) {
+          val remainingCount = filters.selectedTags.size - ActiveFiltersConfig.MAX_VISIBLE_TAGS
           FilterChip(
               selected = true,
               onClick = { /* Could add individual removal later */},
               label = {
                 Text(
-                    stringResource(
-                        R.string.filters_more_tags,
-                        filters.selectedTags.size - ActiveFiltersConfig.MAX_VISIBLE_TAGS),
+                    pluralStringResource(
+                        R.plurals.filters_more_tags, remainingCount, remainingCount),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium,
                 )
