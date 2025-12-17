@@ -1,11 +1,14 @@
 package ch.onepass.onepass.utils
 
+import android.util.Log
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
 import com.google.firebase.storage.ktx.storage
 import com.google.firebase.storage.storage
+import kotlinx.coroutines.tasks.await
 import okhttp3.OkHttpClient
 import okhttp3.Request
 
@@ -40,6 +43,8 @@ object FirebaseEmulator {
   }
 
   private val emulatorsEndpoint = "http://$HOST:$EMULATORS_PORT/emulators"
+
+  private var keySeeded = false
 
   private fun areEmulatorsRunning(): Boolean =
       runCatching {
@@ -76,5 +81,39 @@ object FirebaseEmulator {
 
   fun clearFirestoreEmulator() {
     clearEmulator(firestoreEndpoint)
+  }
+
+  /**
+   * Ensures that at least one active signing key exists in Firestore. Prevents "No active signing
+   * key found" errors in tests that generate user passes. This is called automatically by test base
+   * classes.
+   */
+  suspend fun ensureSigningKeyExists() {
+    if (!isRunning || keySeeded) return
+
+    val existingKeys = firestore.collection("keys").whereEqualTo("active", true).get().await()
+
+    if (!existingKeys.isEmpty) {
+      Log.d("FirebaseEmulator", "Test signing key already exists")
+      keySeeded = true
+      return
+    }
+
+    Log.d("FirebaseEmulator", "Seeding test signing key")
+    firestore
+        .collection("keys")
+        .document("test-key-01")
+        .set(
+            mapOf(
+                "kid" to "test-key-01",
+                "publicKey" to "sMJlPpZyv1oNbluv+zOHhzFKpeVbAWsqKEMgyySbhDO=",
+                "privateKey" to
+                    "mXR5sz6O8sRFXASEQjeWKo9yySD36yxXOhi3iaeNO7qwwkg+InK/Wg1+X8DsHQtwgZtYQNx0fA==",
+                "active" to true,
+                "createdAt" to FieldValue.serverTimestamp()))
+        .await()
+
+    keySeeded = true
+    Log.d("FirebaseEmulator", "Test signing key created successfully")
   }
 }

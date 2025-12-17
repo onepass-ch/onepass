@@ -121,6 +121,9 @@ open class FirestoreTestBase {
   open fun setUp() {
     repository = EventRepositoryFirebase()
     runTest {
+      // Ensure signing keys exist for pass generation tests
+      FirebaseEmulator.ensureSigningKeyExists()
+
       val eventsCount = getEventsCount()
       if (eventsCount > 0) {
         Log.w(
