@@ -96,17 +96,3 @@ class AuthComponentsTest {
     composeRule.onNodeWithTag(SignInScreenTestTags.LOADING_INDICATOR).assertDoesNotExist()
   }
 }
-
-// Fake ViewModel for testing
-class FakeAuthViewModel : AuthViewModel() {
-  private val _fakeUiState = kotlinx.coroutines.flow.MutableStateFlow(AuthUiState())
-  override val uiState = _fakeUiState
-
-  fun setLoading(isLoading: Boolean) {
-    _fakeUiState.value = _fakeUiState.value.copy(isLoading = isLoading)
-  }
-
-  fun setSignedIn(isSignedIn: Boolean) {
-    _fakeUiState.value = _fakeUiState.value.copy(isSignedIn = isSignedIn)
-  }
-}

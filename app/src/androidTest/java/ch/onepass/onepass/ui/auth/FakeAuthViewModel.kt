@@ -22,4 +22,8 @@ class FakeAuthViewModel : AuthViewModel() {
   fun setLoading(isLoading: Boolean) {
     _fakeUiState.value = AuthUiState(isLoading = isLoading)
   }
+
+  fun setSignedIn(isSignedIn: Boolean) {
+    _fakeUiState.value = _fakeUiState.value.copy(isSignedIn = isSignedIn)
+  }
 }
