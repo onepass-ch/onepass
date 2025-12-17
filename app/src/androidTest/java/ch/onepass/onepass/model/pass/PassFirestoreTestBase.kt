@@ -62,6 +62,9 @@ open class PassFirestoreTestBase {
     repository = PassRepositoryFirebase(db = firestore, functions = functions)
 
     runBlocking(testDispatcher) {
+      // Ensure signing key exists before tests
+      ensureSigningKeyExists()
+
       auth.currentUser?.let { user ->
         if (hasUserPass(user.uid)) {
           Log.w("PassFirestoreTestBase", "Cleaning existing pass for user ${user.uid}")
@@ -75,6 +78,28 @@ open class PassFirestoreTestBase {
   open fun tearDown() {
     runBlocking(testDispatcher) { auth.currentUser?.let { clearUserPass(it.uid) } }
     FirebaseEmulator.clearFirestoreEmulator()
+  }
+
+  protected suspend fun ensureSigningKeyExists() {
+    val existingKeys = firestore.collection("keys").whereEqualTo("active", true).get().await()
+
+    if (!existingKeys.isEmpty) {
+      return // Key already exists
+    }
+
+    // Create test signing key
+    firestore
+        .collection("keys")
+        .document("test-key-01")
+        .set(
+            mapOf(
+                "kid" to "test-key-01",
+                "publicKey" to "sMJlPpZyv1oNbluv+zOHhzFKpeVbAWsqKEMgyySbhDO=",
+                "privateKey" to
+                    "mXR5sz6O8sRFXASEQjeWKo9yySD36yxXOhi3iaeNO7qwwkg+InK/Wg1+X8DsHQtwgZtYQNx0fA==",
+                "active" to true,
+                "createdAt" to FieldValue.serverTimestamp()))
+        .await()
   }
 
   protected suspend fun hasUserPass(uid: String): Boolean {

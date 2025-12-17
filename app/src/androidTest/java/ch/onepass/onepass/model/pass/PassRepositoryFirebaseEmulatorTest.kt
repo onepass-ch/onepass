@@ -15,7 +15,6 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Test
 import org.junit.runner.RunWith
 
@@ -51,6 +50,9 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
       auth.signInAnonymously().await()
       uid = getTestUserId("test")
       clearUserPass(uid)
+
+      // Seed signing key for tests
+      ensureSigningKeyExists()
     }
     strictRepo = PassRepositoryFirebase(firestore, functions)
     strictMethod =
@@ -59,8 +61,6 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
             .getDeclaredMethod("dataToPassStrict", Any::class.java)
             .apply { isAccessible = true }
   }
-
-  // ---- HELPERS ------------------------------------------------------
 
   private suspend fun writeValidPassAsNumbers(
       uid: String = this.uid,
@@ -219,7 +219,6 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
     Assert.assertNull(result)
   }
 
-  @Ignore("Requires mocked Cloud Function - will fail with real emulator")
   @Test
   fun getOrCreateSignedPass_failsWhenFunctionNeverWrites() = runBlocking {
     clearUserPass(uid)
