@@ -4,18 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -25,6 +18,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 
 /**
  * Composable screen for users to fill out a form to create a new organization.
@@ -68,41 +63,39 @@ fun CreateOrganizationScreen(
     }
   }
 
-  // Main content
-  Scaffold(
-      topBar = {
-        TopAppBar(
-            title = { Text("Create Organization", color = colorScheme.onBackground) },
-            navigationIcon = {
-              IconButton(onClick = onNavigateBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = colorScheme.onBackground)
-              }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = colorScheme.background))
-      },
+  BackNavigationScaffold(
+      TopBarConfig(
+          title = "Create Organization",
+      ),
+      onBack = onNavigateBack,
       containerColor = colorScheme.background,
-      snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
-        Box(modifier = Modifier.fillMaxSize().background(colorScheme.background).padding(padding)) {
-          OrganizerForm(
-              formState = formState,
-              countryList = countryList,
-              prefixDisplayText = selectedCountryCode,
-              prefixError = formState.contactPhone.error,
-              dropdownExpanded = prefixDropdownExpanded,
-              onCountrySelected = {
-                // Update country code in ViewModel when a country is selected
-                viewModel.updateCountryIndex(it)
-                prefixDropdownExpanded = false
-              },
-              onPrefixClick = { prefixDropdownExpanded = true },
-              onDropdownDismiss = { prefixDropdownExpanded = false },
-              onSubmit = { viewModel.createOrganization(ownerId) },
-              submitText = "Submit",
-              viewModel = viewModel,
-              modifier = Modifier.padding(padding))
+  ) { padding ->
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        containerColor = colorScheme.background) { scaffoldPadding ->
+          Box(
+              modifier =
+                  Modifier.fillMaxSize()
+                      .background(colorScheme.background)
+                      .padding(scaffoldPadding)
+                      .padding(padding)) {
+                OrganizerForm(
+                    formState = formState,
+                    countryList = countryList,
+                    prefixDisplayText = selectedCountryCode,
+                    prefixError = formState.contactPhone.error,
+                    dropdownExpanded = prefixDropdownExpanded,
+                    onCountrySelected = {
+                      viewModel.updateCountryIndex(it)
+                      prefixDropdownExpanded = false
+                    },
+                    onPrefixClick = { prefixDropdownExpanded = true },
+                    onDropdownDismiss = { prefixDropdownExpanded = false },
+                    onSubmit = { viewModel.createOrganization(ownerId) },
+                    submitText = "Submit",
+                    viewModel = viewModel,
+                    modifier = Modifier.fillMaxSize())
+              }
         }
-      }
+  }
 }
