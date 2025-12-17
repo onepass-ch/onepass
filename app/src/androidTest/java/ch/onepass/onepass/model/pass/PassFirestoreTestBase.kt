@@ -20,6 +20,7 @@ import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.After
 import org.junit.Before
+import org.junit.BeforeClass
 
 open class PassFirestoreTestBase {
 
@@ -35,6 +36,50 @@ open class PassFirestoreTestBase {
 
   protected fun getTestUserId(suffix: String = "default"): String {
     return "test_${testRunId}_$suffix"
+  }
+
+  companion object {
+    @JvmStatic
+    @BeforeClass
+    fun setUpEmulator() {
+      val ctx = ApplicationProvider.getApplicationContext<Context>()
+
+      check(FirebaseEmulator.isRunning) {
+        "Firebase emulators not reachable. Run: firebase emulators:start --only firestore,auth,functions,ui"
+      }
+
+      val firestore = FirebaseFirestore.getInstance()
+      val host = FirebaseEmulator.HOST
+      firestore.useEmulator(host, 8080)
+      firestore.firestoreSettings =
+          FirebaseFirestoreSettings.Builder()
+              .setLocalCacheSettings(MemoryCacheSettings.newBuilder().build())
+              .build()
+
+      // Seed signing key once for all tests
+      runBlocking {
+        val existingKeys = firestore.collection("keys").whereEqualTo("active", true).get().await()
+
+        if (existingKeys.isEmpty) {
+          Log.d("PassFirestoreTestBase", "Seeding test signing key")
+          firestore
+              .collection("keys")
+              .document("test-key-01")
+              .set(
+                  mapOf(
+                      "kid" to "test-key-01",
+                      "publicKey" to "sMJlPpZyv1oNbluv+zOHhzFKpeVbAWsqKEMgyySbhDO=",
+                      "privateKey" to
+                          "mXR5sz6O8sRFXASEQjeWKo9yySD36yxXOhi3iaeNO7qwwkg+InK/Wg1+X8DsHQtwgZtYQNx0fA==",
+                      "active" to true,
+                      "createdAt" to FieldValue.serverTimestamp()))
+              .await()
+          Log.d("PassFirestoreTestBase", "Test signing key created successfully")
+        } else {
+          Log.d("PassFirestoreTestBase", "Test signing key already exists")
+        }
+      }
+    }
   }
 
   @Before
@@ -62,9 +107,6 @@ open class PassFirestoreTestBase {
     repository = PassRepositoryFirebase(db = firestore, functions = functions)
 
     runBlocking(testDispatcher) {
-      // Ensure signing key exists before tests
-      ensureSigningKeyExists()
-
       auth.currentUser?.let { user ->
         if (hasUserPass(user.uid)) {
           Log.w("PassFirestoreTestBase", "Cleaning existing pass for user ${user.uid}")
@@ -78,28 +120,6 @@ open class PassFirestoreTestBase {
   open fun tearDown() {
     runBlocking(testDispatcher) { auth.currentUser?.let { clearUserPass(it.uid) } }
     FirebaseEmulator.clearFirestoreEmulator()
-  }
-
-  protected suspend fun ensureSigningKeyExists() {
-    val existingKeys = firestore.collection("keys").whereEqualTo("active", true).get().await()
-
-    if (!existingKeys.isEmpty) {
-      return // Key already exists
-    }
-
-    // Create test signing key
-    firestore
-        .collection("keys")
-        .document("test-key-01")
-        .set(
-            mapOf(
-                "kid" to "test-key-01",
-                "publicKey" to "sMJlPpZyv1oNbluv+zOHhzFKpeVbAWsqKEMgyySbhDO=",
-                "privateKey" to
-                    "mXR5sz6O8sRFXASEQjeWKo9yySD36yxXOhi3iaeNO7qwwkg+InK/Wg1+X8DsHQtwgZtYQNx0fA==",
-                "active" to true,
-                "createdAt" to FieldValue.serverTimestamp()))
-        .await()
   }
 
   protected suspend fun hasUserPass(uid: String): Boolean {

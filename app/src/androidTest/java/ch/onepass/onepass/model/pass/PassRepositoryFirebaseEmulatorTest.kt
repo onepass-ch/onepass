@@ -50,9 +50,6 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
       auth.signInAnonymously().await()
       uid = getTestUserId("test")
       clearUserPass(uid)
-
-      // Seed signing key for tests
-      ensureSigningKeyExists()
     }
     strictRepo = PassRepositoryFirebase(firestore, functions)
     strictMethod =

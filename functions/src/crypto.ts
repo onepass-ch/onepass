@@ -1,6 +1,5 @@
 import * as admin from "firebase-admin";
 import * as functions from "firebase-functions";
-import * as logger from "firebase-functions/logger";
 import * as nacl from "tweetnacl";
 import * as util from "tweetnacl-util";
 
@@ -16,12 +15,12 @@ export interface SigningKey {
 /**
  * Retrieves the most recent active signing key from Firestore.
  * Uses orderBy to ensure deterministic key selection for rotation.
- * Auto-generates a key if none exists to prevent crashes.
  *
  * @returns The active signing key
+ * @throws HttpsError if no active key is found
  */
 export async function getActiveKey(): Promise<SigningKey> {
-  let snapshot = await db
+  const snapshot = await db
     .collection("keys")
     .where("active", "==", true)
     .orderBy("createdAt", "desc")
@@ -29,29 +28,7 @@ export async function getActiveKey(): Promise<SigningKey> {
     .get();
 
   if (snapshot.empty) {
-    logger.warn("No active signing key found, generating one automatically");
-
-    const keyPair = nacl.sign.keyPair();
-    const kid = `key-${Date.now()}`;
-
-    const keyData = {
-      kid: kid,
-      publicKey: util.encodeBase64(keyPair.publicKey),
-      privateKey: util.encodeBase64(keyPair.secretKey),
-      active: true,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    };
-
-    await db.collection("keys").doc(kid).set(keyData);
-
-    logger.info(`Auto-generated signing key: ${kid}`);
-
-    return {
-      kid: keyData.kid,
-      publicKey: keyData.publicKey,
-      privateKey: keyData.privateKey,
-      active: true
-    };
+    throw new functions.https.HttpsError("internal", "No active signing key found");
   }
 
   const doc = snapshot.docs[0];
