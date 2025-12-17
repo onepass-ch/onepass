@@ -200,7 +200,7 @@ class CreateOrganizationScreenTest {
     // Character counter should show "4/50 characters" or similar
     composeTestRule
         .onNodeWithTag(OrganizationFormTestTags.NAME_CHAR_COUNT)
-        .assertTextContains("/", substring = true)
+        .assertTextContains("4/50", substring = true)
   }
 
   @Test
