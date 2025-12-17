@@ -31,11 +31,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.EventTag
 import ch.onepass.onepass.ui.components.buttons.UploadImageButton
 import ch.onepass.onepass.ui.components.forms.CompactFieldLabel
@@ -52,7 +55,7 @@ fun TitleInputField(value: String, onValueChange: (String) -> Unit, modifier: Mo
       horizontalAlignment = Alignment.Start,
       modifier = modifier.fillMaxWidth()) {
         FieldLabelWithCounter(
-            label = "Title*",
+            label = stringResource(R.string.event_form_title_label),
             currentLength = value.length,
             maxLength = EventFormViewModel.MAX_TITLE_LENGTH,
             testTag = "title_char_count")
@@ -61,7 +64,7 @@ fun TitleInputField(value: String, onValueChange: (String) -> Unit, modifier: Mo
             onValueChange = onValueChange,
             placeholder = {
               Text(
-                  "Amazing event",
+                  stringResource(R.string.event_form_title_placeholder),
                   style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
             },
             modifier =
@@ -97,7 +100,7 @@ fun DescriptionInputField(
       horizontalAlignment = Alignment.Start,
   ) {
     FieldLabelWithCounter(
-        label = "Description*",
+        label = stringResource(R.string.event_form_description_label),
         currentLength = value.length,
         maxLength = EventFormViewModel.MAX_DESCRIPTION_LENGTH,
         testTag = "description_char_count")
@@ -111,7 +114,7 @@ fun DescriptionInputField(
               onValueChange = onValueChange,
               placeholder = {
                 Text(
-                    "This is amazing..",
+                    stringResource(R.string.event_form_description_placeholder),
                     style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
               },
               modifier = Modifier.fillMaxSize().testTag("description_input_field"),
@@ -144,7 +147,7 @@ fun TimeInputField(
       verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
       horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = "Date & time*",
+            text = stringResource(R.string.event_form_date_time_label),
             style =
                 MaterialTheme.typography.bodyMedium.copy(
                     color = colorScheme.onBackground, textAlign = TextAlign.Center),
@@ -163,7 +166,7 @@ fun TimeInputField(
                   verticalAlignment = Alignment.Top) {
                     Column(horizontalAlignment = Alignment.Start) {
                       Text(
-                          text = "Start time",
+                          text = stringResource(R.string.event_form_start_time_label),
                           style =
                               MaterialTheme.typography.bodyMedium.copy(
                                   color = colorScheme.onSurface))
@@ -175,7 +178,7 @@ fun TimeInputField(
                     }
                     Column(horizontalAlignment = Alignment.Start) {
                       Text(
-                          text = "End time",
+                          text = stringResource(R.string.event_form_end_time_label),
                           style =
                               MaterialTheme.typography.bodyMedium.copy(
                                   color = colorScheme.onSurface))
@@ -238,7 +241,7 @@ fun TicketsInputField(
       horizontalAlignment = Alignment.CenterHorizontally,
   ) {
     Text(
-        text = "Tickets*",
+        text = stringResource(R.string.event_form_tickets_label),
         style =
             MaterialTheme.typography.bodyMedium.copy(
                 color = colorScheme.onBackground, textAlign = TextAlign.Center),
@@ -251,7 +254,7 @@ fun TicketsInputField(
           // Price Input
           Column(modifier = Modifier.weight(1f)) {
             CompactFieldLabel(
-                label = "Price",
+                label = stringResource(R.string.event_form_price_label),
                 currentLength = priceValue.length,
                 maxLength = EventFormViewModel.MAX_PRICE_LENGTH,
                 isError = priceError != null,
@@ -267,7 +270,7 @@ fun TicketsInputField(
                       onValueChange = onPriceChange,
                       placeholder = {
                         Text(
-                            "ex: 12",
+                            stringResource(R.string.event_form_price_placeholder),
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
                                     color = colorScheme.onSurface))
@@ -301,7 +304,7 @@ fun TicketsInputField(
           // Capacity Input
           Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
             CompactFieldLabel(
-                label = "Capacity",
+                label = stringResource(R.string.event_form_capacity_label),
                 currentLength = capacityValue.length,
                 maxLength = EventFormViewModel.MAX_CAPACITY_LENGTH,
                 isError = capacityError != null,
@@ -317,7 +320,7 @@ fun TicketsInputField(
                       onValueChange = onCapacityChange,
                       placeholder = {
                         Text(
-                            "ex: 100",
+                            stringResource(R.string.event_form_capacity_placeholder),
                             style =
                                 MaterialTheme.typography.bodyMedium.copy(
                                     color = colorScheme.onSurface))
@@ -360,12 +363,17 @@ fun TagsSelectionSection(
 ) {
   Column(modifier = modifier.fillMaxWidth()) {
     Text(
-        text = "Tags",
+        text = stringResource(R.string.event_form_tags_label),
         style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onBackground),
         modifier = Modifier.padding(bottom = 8.dp))
     Text(
         text =
-            "Select up to ${EventFormViewModel.MAX_TAG_COUNT} tags (${selectedTags.size}/${EventFormViewModel.MAX_TAG_COUNT} selected).",
+            pluralStringResource(
+                R.plurals.event_form_tags_instruction,
+                EventFormViewModel.MAX_TAG_COUNT,
+                EventFormViewModel.MAX_TAG_COUNT,
+                selectedTags.size,
+                EventFormViewModel.MAX_TAG_COUNT),
         style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface),
         modifier = Modifier.padding(bottom = 16.dp))
 
@@ -382,15 +390,17 @@ fun TagsSelectionSection(
           modifier = Modifier.fillMaxWidth()) {
             tags.forEach { tag ->
               val isSelected = selectedTags.contains(tag)
+              val tagContentDescription =
+                  if (isSelected) {
+                    stringResource(R.string.event_form_tag_selected, tag.displayValue)
+                  } else {
+                    stringResource(R.string.event_form_tag_not_selected, tag.displayValue)
+                  }
               FilterChip(
                   selected = isSelected,
                   onClick = { onTagToggle(tag) },
                   label = { Text(tag.displayValue) },
-                  modifier =
-                      Modifier.semantics {
-                        contentDescription =
-                            "${tag.displayValue} tag ${if(isSelected) "selected" else "not selected"}"
-                      },
+                  modifier = Modifier.semantics { contentDescription = tagContentDescription },
                   colors =
                       FilterChipDefaults.filterChipColors(
                           selectedContainerColor = colorScheme.primary,
@@ -532,14 +542,18 @@ fun EventFormFields(
     UploadImageButton(
         onImageSelected = { uri -> viewModel.selectImage(uri) },
         enabled = true,
-        imageDescription = "Event Image*",
+        imageDescription = stringResource(R.string.event_form_image_label),
         modifier = Modifier.testTag(fieldTestTags["image_upload"] ?: ""))
 
     // Display selected images count
     if (formState.selectedImageUris.isNotEmpty()) {
       Spacer(modifier = Modifier.height(8.dp))
       Text(
-          text = "${formState.selectedImageUris.size} image(s) selected",
+          text =
+              pluralStringResource(
+                  R.plurals.event_form_images_selected,
+                  formState.selectedImageUris.size,
+                  formState.selectedImageUris.size),
           style = MaterialTheme.typography.bodyMedium,
           color = colorScheme.onBackground,
           modifier = Modifier.padding(start = 8.dp))

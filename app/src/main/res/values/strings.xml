@@ -432,4 +432,13 @@
     <string name="app_name_part_two">PASS.</string>
     <string name="content_desc_app_logo">App Logo Icon</string>
     <string name="content_desc_google_logo">Google Logo</string>
+
+    <!-- Organization Form Placeholders -->
+    <string name="org_form_name_placeholder">Amazing Organization</string>
+    <string name="org_form_description_placeholder">Tell us about your organization…</string>
+    <string name="org_form_email_placeholder">contact@organization.com</string>
+    <string name="org_form_phone_placeholder">123456789</string>
+    <string name="org_form_website_placeholder">https://yourwebsite.com</string>
+    <string name="org_form_social_placeholder">\@username</string>
+    <string name="org_form_address_placeholder">123 Main Street, City</string>
 </resources>

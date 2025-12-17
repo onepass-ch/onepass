@@ -25,8 +25,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.components.buttons.UploadImageButton
 import ch.onepass.onepass.ui.components.forms.FieldLabelWithCounter
 
@@ -178,7 +180,7 @@ fun OrganizerForm(
 
         // Social Media Section
         OrganizationSocialField(
-            label = "Instagram",
+            label = stringResource(R.string.org_form_instagram_label),
             value = formState.instagram.value,
             onValueChange = viewModel::updateInstagram,
             testTag = OrganizationFormTestTags.INSTAGRAM_FIELD,
@@ -186,7 +188,7 @@ fun OrganizerForm(
         Spacer(modifier = Modifier.height(12.dp))
 
         OrganizationSocialField(
-            label = "Facebook",
+            label = stringResource(R.string.org_form_facebook_label),
             value = formState.facebook.value,
             onValueChange = viewModel::updateFacebook,
             testTag = OrganizationFormTestTags.FACEBOOK_FIELD,
@@ -194,7 +196,7 @@ fun OrganizerForm(
         Spacer(modifier = Modifier.height(12.dp))
 
         OrganizationSocialField(
-            label = "TikTok",
+            label = stringResource(R.string.org_form_tiktok_label),
             value = formState.tiktok.value,
             onValueChange = viewModel::updateTiktok,
             testTag = OrganizationFormTestTags.TIKTOK_FIELD,
@@ -210,14 +212,14 @@ fun OrganizerForm(
 
         // Upload Profile Image
         UploadImageButton(
-            imageDescription = "Profile image",
+            imageDescription = stringResource(R.string.org_form_profile_image_desc),
             onImageSelected = { uri -> viewModel.selectProfileImage(uri) },
             testTag = OrganizationFormTestTags.PROFILE_IMAGE_BUTTON)
 
         if (formState.profileImageUri != null) {
           Spacer(modifier = Modifier.height(8.dp))
           Text(
-              text = "✓ Profile image selected",
+              text = stringResource(R.string.org_form_profile_image_selected),
               style = MaterialTheme.typography.bodyMedium,
               color = colorScheme.onBackground,
               modifier =
@@ -229,14 +231,14 @@ fun OrganizerForm(
 
         // Upload banner image
         UploadImageButton(
-            imageDescription = "Banner image",
+            imageDescription = stringResource(R.string.org_form_banner_image_desc),
             onImageSelected = { uri -> viewModel.selectCoverImage(uri) },
             testTag = OrganizationFormTestTags.COVER_IMAGE_BUTTON)
 
         if (formState.coverImageUri != null) {
           Spacer(modifier = Modifier.height(8.dp))
           Text(
-              text = "✓ Banner image selected",
+              text = stringResource(R.string.org_form_banner_image_selected),
               style = MaterialTheme.typography.bodyMedium,
               color = colorScheme.onBackground,
               modifier =
@@ -282,7 +284,7 @@ private fun OrganizationNameField(
 ) {
   Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
     FieldLabelWithCounter(
-        label = "Organization Name*",
+        label = stringResource(R.string.org_form_name_label),
         currentLength = value.length,
         maxLength = OrganizationFormViewModel.MAX_NAME_LENGTH,
         isError = error != null,
@@ -292,7 +294,7 @@ private fun OrganizationNameField(
         onValueChange = onValueChange,
         placeholder = {
           Text(
-              "Amazing Organization",
+              stringResource(R.string.org_form_name_placeholder),
               style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
         },
         modifier =
@@ -343,7 +345,7 @@ private fun OrganizationDescriptionField(
 ) {
   Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
     FieldLabelWithCounter(
-        label = "Description*",
+        label = stringResource(R.string.org_form_description_label),
         currentLength = value.length,
         maxLength = OrganizationFormViewModel.MAX_DESCRIPTION_LENGTH,
         isError = error != null,
@@ -358,7 +360,7 @@ private fun OrganizationDescriptionField(
               onValueChange = onValueChange,
               placeholder = {
                 Text(
-                    "Tell us about your organization...",
+                    stringResource(R.string.org_form_description_placeholder),
                     style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
               },
               modifier =
@@ -408,7 +410,7 @@ private fun OrganizationEmailField(
 ) {
   Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
     FieldLabelWithCounter(
-        label = "Contact Email*",
+        label = stringResource(R.string.org_form_email_label),
         currentLength = value.length,
         maxLength = OrganizationFormViewModel.MAX_EMAIL_LENGTH,
         isError = error != null,
@@ -418,7 +420,7 @@ private fun OrganizationEmailField(
         onValueChange = onValueChange,
         placeholder = {
           Text(
-              "contact@organization.com",
+              stringResource(R.string.org_form_email_placeholder),
               style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
         },
         modifier =
@@ -484,7 +486,7 @@ private fun OrganizationPhoneField(
 ) {
   Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
     FieldLabelWithCounter(
-        label = "Contact Phone*",
+        label = stringResource(R.string.org_form_phone_label),
         currentLength = phoneValue.length,
         maxLength = OrganizationFormViewModel.MAX_PHONE_LENGTH,
         isError = prefixError != null,
@@ -540,7 +542,7 @@ private fun OrganizationPhoneField(
                     onValueChange = onPhoneChange,
                     placeholder = {
                       Text(
-                          "123456789",
+                          stringResource(R.string.org_form_phone_placeholder),
                           style =
                               MaterialTheme.typography.bodyMedium.copy(
                                   color = colorScheme.onSurface))
@@ -595,7 +597,7 @@ private fun OrganizationWebsiteField(
 ) {
   Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
     FieldLabelWithCounter(
-        label = "Website",
+        label = stringResource(R.string.org_form_website_label),
         currentLength = value.length,
         maxLength = OrganizationFormViewModel.MAX_WEBSITE_LENGTH,
         isError = error != null,
@@ -605,7 +607,7 @@ private fun OrganizationWebsiteField(
         onValueChange = onValueChange,
         placeholder = {
           Text(
-              "https://yourwebsite.com",
+              stringResource(R.string.org_form_website_placeholder),
               style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
         },
         modifier =
@@ -668,7 +670,7 @@ private fun OrganizationSocialField(
         onValueChange = onValueChange,
         placeholder = {
           Text(
-              "@username",
+              stringResource(R.string.org_form_social_placeholder),
               style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
         },
         modifier =
@@ -704,7 +706,7 @@ private fun OrganizationAddressField(
 ) {
   Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
     FieldLabelWithCounter(
-        label = "Address",
+        label = stringResource(R.string.org_form_address_label),
         currentLength = value.length,
         maxLength = OrganizationFormViewModel.MAX_ADDRESS_LENGTH,
         testTag = OrganizationFormTestTags.ADDRESS_CHAR_COUNT)
@@ -713,7 +715,7 @@ private fun OrganizationAddressField(
         onValueChange = onValueChange,
         placeholder = {
           Text(
-              "123 Main Street, City",
+              stringResource(R.string.org_form_address_placeholder),
               style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
         },
         modifier =
