@@ -34,7 +34,7 @@ class ServerSyncedTimeProvider @Inject constructor(private val functions: Fireba
     TimeProvider {
 
   // The difference in milliseconds: ServerTime - DeviceTime
-  private var clockOffset: Long = 0
+  @Volatile private var clockOffset: Long = 0
   private var isSynced: Boolean = false
 
   override fun now(): Timestamp {
@@ -56,10 +56,18 @@ class ServerSyncedTimeProvider @Inject constructor(private val functions: Fireba
       val endTime = SystemClock.elapsedRealtime()
       val latency = (endTime - startTime) / 2 // Approximate one-way latency
 
-      val data = result.data as? Map<String, Any>
-      val serverTimeMillis =
-          (data?.get("timestamp") as? Number)?.toLong()
-              ?: throw IllegalStateException("Invalid server response")
+      val data = result.data
+      if (data !is Map<*, *>) {
+        android.util.Log.e("TimeProvider", "Invalid response format: not a map")
+        return
+      }
+
+      val timestamp = data["timestamp"]
+      if (timestamp !is Number) {
+        android.util.Log.e("TimeProvider", "Missing or invalid timestamp field")
+        return
+      }
+      val serverTimeMillis = timestamp.toLong()
 
       // Calculate offset: (Server Time + Latency) - Device Time at request start
       // We use the time right now to set the offset for future calls
