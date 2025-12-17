@@ -74,7 +74,13 @@ class ScanScreenTest {
     compose.setContent { ScanContent(viewModel = vm) }
 
     compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
+
+    compose.waitUntil(timeoutMillis = 2000) {
+      runCatching {
+            compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
+          }
+          .isSuccess
+    }
 
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
   }
@@ -865,7 +871,12 @@ class ScanScreenTest {
     compose.runOnIdle { vm.onQrScanned(VALID_QR) }
 
     compose.waitForIdle()
-    Thread.sleep(500)
+    compose.waitUntil(timeoutMillis = 1000) {
+      runCatching {
+            compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
+          }
+          .isSuccess
+    }
 
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
     compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertIsDisplayed()
@@ -883,11 +894,17 @@ class ScanScreenTest {
     compose.setContent { ScanContent(viewModel = vm) }
 
     compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    Thread.sleep(100)
+
+    compose.waitUntil(timeoutMillis = 1000) {
+      compose.onAllNodesWithTag(ScanTestTags.PROGRESS).fetchSemanticsNodes().isNotEmpty()
+    }
     compose.onNodeWithTag(ScanTestTags.PROGRESS).assertIsDisplayed()
 
     compose.waitForIdle()
-    Thread.sleep(500) // Wait longer for animation to complete
+
+    compose.waitUntil(timeoutMillis = 1000) {
+      compose.onAllNodesWithTag(ScanTestTags.PROGRESS).fetchSemanticsNodes().isEmpty()
+    }
 
     compose.onNodeWithTag(ScanTestTags.PROGRESS).assertDoesNotExist()
     compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertIsDisplayed()
@@ -910,11 +927,24 @@ class ScanScreenTest {
     compose.setContent { ScanContent(viewModel = vm) }
 
     compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
 
-    compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
+    // Wait for Access Granted (handling async Firestore call)
+    compose.waitUntil(timeoutMillis = 3000) {
+      runCatching {
+            compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
+          }
+          .isSuccess
+    }
 
-    Thread.sleep(2500)
+    // Wait for auto-reset
+    compose.waitUntil(timeoutMillis = 4000) {
+      runCatching {
+            compose
+                .onNodeWithTag(ScanTestTags.MESSAGE)
+                .assertTextContains("Scan a pass", substring = true)
+          }
+          .isSuccess
+    }
     compose.waitForIdle()
 
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Scan a pass", substring = true)
@@ -942,7 +972,14 @@ class ScanScreenTest {
 
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Already scanned")
 
-    Thread.sleep(2500)
+    compose.waitUntil(timeoutMillis = 3000) {
+      runCatching {
+            compose
+                .onNodeWithTag(ScanTestTags.MESSAGE)
+                .assertTextContains("Scan a pass", substring = true)
+          }
+          .isSuccess
+    }
     compose.waitForIdle()
 
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Scan a pass", substring = true)
@@ -958,7 +995,14 @@ class ScanScreenTest {
     compose.setContent { ScanContent(viewModel = vm) }
 
     compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
+
+    // Wait for the scan to fully complete (including async Firestore calls)
+    compose.waitUntil(timeoutMillis = 2000) {
+      runCatching {
+            compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Access Granted")
+          }
+          .isSuccess
+    }
 
     compose.onNodeWithText("Position the QR code within the frame").assertDoesNotExist()
 
@@ -983,7 +1027,10 @@ class ScanScreenTest {
 
     compose.runOnIdle { vm.onQrScanned(VALID_QR) }
     compose.waitForIdle()
-    Thread.sleep(300)
+
+    compose.waitUntil(timeoutMillis = 1000) {
+      compose.onAllNodesWithTag(ScanTestTags.PROGRESS).fetchSemanticsNodes().isEmpty()
+    }
 
     compose.onNodeWithTag(ScanTestTags.PROGRESS).assertDoesNotExist()
   }
@@ -998,7 +1045,10 @@ class ScanScreenTest {
     compose.setContent { ScanContent(viewModel = vm) }
 
     compose.runOnIdle { vm.onQrScanned(VALID_QR) }
-    compose.waitForIdle()
+
+    compose.waitUntil(timeoutMillis = 2000) {
+      compose.onAllNodesWithTag(ScanTestTags.STATUS_ICON).fetchSemanticsNodes().isNotEmpty()
+    }
 
     compose.onNodeWithTag(ScanTestTags.STATUS_ICON).assertIsDisplayed()
 
