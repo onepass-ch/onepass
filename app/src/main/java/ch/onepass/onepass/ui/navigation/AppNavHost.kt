@@ -68,6 +68,8 @@ import ch.onepass.onepass.ui.organizer.OrganizationFormViewModel
 import ch.onepass.onepass.ui.profile.ProfileEffect
 import ch.onepass.onepass.ui.profile.ProfileScreen
 import ch.onepass.onepass.ui.profile.ProfileViewModel
+import ch.onepass.onepass.ui.profile.editprofile.EditProfileScreen
+import ch.onepass.onepass.ui.profile.editprofile.EditProfileViewModel
 import ch.onepass.onepass.ui.scan.ScanScreen
 import ch.onepass.onepass.ui.scan.ScannerViewModel
 import ch.onepass.onepass.ui.staff.StaffInvitationScreen
@@ -269,6 +271,8 @@ fun AppNavHost(
                         navController.navigate(Screen.ComingSoon.route)
                     ProfileEffect.NavigateToPaymentMethods ->
                         navController.navigate(Screen.ComingSoon.route)
+                    ProfileEffect.NavigateToEditProfile ->
+                        navController.navigate(Screen.EditProfile.route)
                     ProfileEffect.NavigateToHelp -> navController.navigate(Screen.ComingSoon.route)
                     ProfileEffect.SignOut -> {
                       authViewModel.signOut()
@@ -454,6 +458,18 @@ fun AppNavHost(
       }
     }
 
+    // ------------------ Edit Profile ------------------
+    composable(Screen.EditProfile.route) {
+      val context = LocalContext.current
+      val editVm: EditProfileViewModel =
+          viewModel(
+              factory =
+                  viewModelFactory {
+                    initializer { EditProfileViewModel(context = context.applicationContext) }
+                  })
+
+      EditProfileScreen(viewModel = editVm, onNavigateBack = { navController.popBackStack() })
+    }
     // ------------------ Placeholders ------------------
     composable(Screen.ComingSoon.route) {
       SwipeBackWrapper(onSwipeBack = { navController.popBackStack() }) {

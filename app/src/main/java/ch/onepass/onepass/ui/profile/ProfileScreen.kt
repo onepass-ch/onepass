@@ -23,6 +23,7 @@ import androidx.compose.material.icons.automirrored.outlined.ExitToApp
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.Diversity3
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Button
@@ -30,6 +31,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Scaffold
@@ -57,6 +59,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import ch.onepass.onepass.R
+import ch.onepass.onepass.ui.profile.editprofile.getFlagFromCountryName
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.flow.collectLatest
@@ -69,6 +72,7 @@ object ProfileTestTags {
   const val HEADER_AVATAR = "profile_header_avatar"
   const val HEADER_NAME = "profile_header_name"
   const val HEADER_EMAIL = "profile_header_email"
+  const val HEADER_EDIT_BUTTON = "profile_header_edit_button"
   const val STATS_ROW = "profile_stats_row"
   const val STAT_EVENTS = "profile_stat_events"
   const val STAT_UPCOMING = "profile_stat_upcoming"
@@ -99,7 +103,8 @@ fun ProfileScreen(viewModel: ProfileViewModel, onEffect: (ProfileEffect) -> Unit
       onAccountSettings = viewModel::onAccountSettings,
       onPaymentMethods = viewModel::onPaymentMethods,
       onHelp = viewModel::onHelp,
-      onSignOut = viewModel::onSignOut)
+      onSignOut = viewModel::onSignOut,
+      onEditProfile = viewModel::onEditProfile)
 }
 
 @Composable
@@ -110,7 +115,8 @@ private fun ProfileContent(
     onInvitations: () -> Unit = {},
     onPaymentMethods: () -> Unit,
     onHelp: () -> Unit,
-    onSignOut: () -> Unit
+    onSignOut: () -> Unit,
+    onEditProfile: () -> Unit
 ) {
   if (state.loading) {
     Box(
@@ -119,7 +125,7 @@ private fun ProfileContent(
                 .background(colorScheme.background)
                 .testTag(ProfileTestTags.LOADING),
         contentAlignment = Alignment.Center) {
-          CircularProgressIndicator(color = colorScheme.surface)
+          CircularProgressIndicator(color = colorScheme.primary)
         }
     return
   }
@@ -136,7 +142,9 @@ private fun ProfileContent(
               initials = state.initials,
               name = state.displayName,
               email = state.email,
-              avatarUrl = state.avatarUrl)
+              avatarUrl = state.avatarUrl,
+              country = state.country,
+              onEditProfile = onEditProfile)
 
           Spacer(Modifier.height(12.dp))
 
@@ -158,7 +166,7 @@ private fun ProfileContent(
           Spacer(Modifier.height(12.dp))
 
           HorizontalDivider(
-              modifier = Modifier.alpha(0.2f), thickness = 1.dp, color = colorScheme.surface)
+              modifier = Modifier.alpha(0.2f), thickness = 1.dp, color = colorScheme.onSurface)
 
           Spacer(Modifier.height(8.dp))
 
@@ -218,9 +226,16 @@ private fun StatsRow(stats: ProfileStats) {
       }
 }
 
-/** Header with avatar placeholder, name, and email. */
+/** Header with avatar placeholder, name, email, and edit button. */
 @Composable
-private fun HeaderBlock(initials: String, name: String, email: String, avatarUrl: String?) {
+private fun HeaderBlock(
+    initials: String,
+    name: String,
+    email: String,
+    avatarUrl: String?,
+    country: String?,
+    onEditProfile: () -> Unit
+) {
   Row(
       verticalAlignment = Alignment.CenterVertically,
       modifier = Modifier.testTag(ProfileTestTags.HEADER)) {
@@ -265,10 +280,33 @@ private fun HeaderBlock(initials: String, name: String, email: String, avatarUrl
               modifier = Modifier.testTag(ProfileTestTags.HEADER_NAME))
           Text(
               text = email,
-              color = colorScheme.onBackground,
+              color = colorScheme.onSurface,
               style = MaterialTheme.typography.bodyMedium,
               modifier = Modifier.testTag(ProfileTestTags.HEADER_EMAIL))
+          if (!country.isNullOrBlank()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(top = 2.dp)) {
+                  Text(
+                      text = getFlagFromCountryName(country),
+                      style = MaterialTheme.typography.bodyMedium)
+                  Spacer(Modifier.width(4.dp))
+                  Text(
+                      text = country,
+                      color = colorScheme.onSurface.copy(alpha = 0.7f),
+                      style = MaterialTheme.typography.bodySmall)
+                }
+          }
         }
+
+        IconButton(
+            onClick = onEditProfile,
+            modifier = Modifier.testTag(ProfileTestTags.HEADER_EDIT_BUTTON)) {
+              Icon(
+                  imageVector = Icons.Outlined.Edit,
+                  contentDescription = "Edit Profile",
+                  tint = colorScheme.onBackground)
+            }
       }
 }
 
@@ -285,12 +323,10 @@ private fun StatCard(value: Int, label: String, modifier: Modifier = Modifier) {
             horizontalAlignment = Alignment.CenterHorizontally) {
               Text(
                   value.toString(),
-                  color = colorScheme.onBackground,
+                  color = colorScheme.primary,
                   style = MaterialTheme.typography.headlineSmall)
               Text(
-                  label,
-                  color = colorScheme.onBackground,
-                  style = MaterialTheme.typography.bodyMedium)
+                  label, color = colorScheme.onSurface, style = MaterialTheme.typography.bodyMedium)
             }
       }
 }
@@ -326,10 +362,7 @@ private fun OrganizerCard(isOrganizer: Boolean, onOrganizationButton: () -> Unit
           shape = RoundedCornerShape(10.dp),
           colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary)) {
             if (!isOrganizer)
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = null,
-                    tint = colorScheme.onBackground)
+                Icon(imageVector = Icons.Filled.Add, contentDescription = null, tint = Color.White)
             Spacer(Modifier.width(8.dp))
             Text(
                 text =
@@ -382,7 +415,7 @@ private fun SettingsItem(
               .padding(horizontal = 6.dp)
               .testTag(testTag),
       verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = colorScheme.onBackground)
+        Icon(icon, contentDescription = null, tint = colorScheme.onSurface)
         Spacer(Modifier.width(16.dp))
         Text(
             title,
