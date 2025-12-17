@@ -441,4 +441,5 @@
     <string name="org_form_website_placeholder">https://yourwebsite.com</string>
     <string name="org_form_social_placeholder">\@username</string>
     <string name="org_form_address_placeholder">123 Main Street, City</string>
+    <string name="org_form_phone_label">Contact Phone*</string>
 </resources>
