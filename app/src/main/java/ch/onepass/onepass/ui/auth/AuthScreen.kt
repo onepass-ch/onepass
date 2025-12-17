@@ -58,7 +58,7 @@ object SignInScreenTestTags {
 }
 
 @Composable
-fun AuthScreen(onSignedIn: () -> Unit = {}, authViewModel: AuthViewModel) {
+fun AuthScreen(onSignedIn: () -> Unit = {}, authViewModel: AuthViewModel = AuthViewModel()) {
   val context = LocalContext.current
   val credentialManager = remember { CredentialManager.create(context) }
   val uiState by authViewModel.uiState.collectAsState()
