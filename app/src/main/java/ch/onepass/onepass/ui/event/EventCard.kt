@@ -34,6 +34,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -136,7 +137,7 @@ fun EventCard(
       if (event.imageUrl.isNotEmpty()) {
         AsyncImage(
             model = event.imageUrl,
-            contentDescription = "Event image for ${event.title}",
+            contentDescription = stringResource(R.string.event_card_image_description, event.title),
             modifier = Modifier.fillMaxSize().testTag(C.Tag.event_card_image),
             contentScale = ContentScale.Crop,
             placeholder = painterResource(id = R.drawable.image_fallback),
@@ -146,7 +147,7 @@ fun EventCard(
         Image(
             modifier = Modifier.fillMaxSize().testTag(C.Tag.event_card_image),
             painter = painterResource(id = R.drawable.image_fallback),
-            contentDescription = "Default event image",
+            contentDescription = stringResource(R.string.event_card_default_image_description),
             contentScale = ContentScale.Crop,
         )
       }

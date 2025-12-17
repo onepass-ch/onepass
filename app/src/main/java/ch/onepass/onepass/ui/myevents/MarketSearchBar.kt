@@ -43,8 +43,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import coil.compose.AsyncImage
 
 /**
@@ -96,13 +98,13 @@ fun MarketSearchBar(
                       .testTag(MyEventsTestTags.MARKET_SEARCH_BAR),
               placeholder = {
                 Text(
-                    "Search events or organizers...",
+                    stringResource(R.string.market_search_placeholder),
                     style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
               },
               leadingIcon = {
                 Icon(
                     imageVector = Icons.Default.Search,
-                    contentDescription = "Search",
+                    contentDescription = stringResource(R.string.market_search_icon_description),
                     tint = colorScheme.onSurface)
               },
               trailingIcon = {
@@ -121,7 +123,8 @@ fun MarketSearchBar(
                         }) {
                           Icon(
                               imageVector = Icons.Default.Clear,
-                              contentDescription = "Clear search",
+                              contentDescription =
+                                  stringResource(R.string.market_search_clear_description),
                               tint = colorScheme.onSurface)
                         }
                   }
@@ -181,13 +184,15 @@ private fun SearchResultItem(result: SearchResult) {
                   if (result.event.imageUrl.isNotEmpty()) {
                     AsyncImage(
                         model = result.event.imageUrl,
-                        contentDescription = "Event image",
+                        contentDescription =
+                            stringResource(R.string.market_search_event_image_description),
                         modifier = Modifier.size(40.dp),
                         contentScale = ContentScale.Crop)
                   } else {
                     Icon(
                         imageVector = Icons.Default.DateRange,
-                        contentDescription = "Event",
+                        contentDescription =
+                            stringResource(R.string.market_search_event_icon_description),
                         tint = colorScheme.onSurface,
                         modifier = Modifier.size(24.dp))
                   }
@@ -203,7 +208,9 @@ private fun SearchResultItem(result: SearchResult) {
                   maxLines = 1,
                   overflow = TextOverflow.Ellipsis)
               Text(
-                  text = "Event • ${result.event.displayDateTime}",
+                  text =
+                      stringResource(
+                          R.string.market_search_event_label, result.event.displayDateTime),
                   style = MaterialTheme.typography.bodySmall,
                   color = colorScheme.onSurface,
                   maxLines = 1,
@@ -218,13 +225,15 @@ private fun SearchResultItem(result: SearchResult) {
                   if (!result.organizer.profileImageUrl.isNullOrEmpty()) {
                     AsyncImage(
                         model = result.organizer.profileImageUrl,
-                        contentDescription = "Organizer image",
+                        contentDescription =
+                            stringResource(R.string.market_search_organizer_image_description),
                         modifier = Modifier.size(40.dp).clip(CircleShape),
                         contentScale = ContentScale.Crop)
                   } else {
                     Icon(
                         imageVector = Icons.Default.Person,
-                        contentDescription = "Organizer",
+                        contentDescription =
+                            stringResource(R.string.market_search_organizer_icon_description),
                         tint = colorScheme.onSurface,
                         modifier = Modifier.size(24.dp))
                   }
@@ -240,7 +249,10 @@ private fun SearchResultItem(result: SearchResult) {
                   maxLines = 1,
                   overflow = TextOverflow.Ellipsis)
               Text(
-                  text = "Organizer${if (result.organizer.verified) " • Verified" else ""}",
+                  text =
+                      if (result.organizer.verified)
+                          stringResource(R.string.market_search_organizer_verified)
+                      else stringResource(R.string.market_search_organizer_label),
                   style = MaterialTheme.typography.bodySmall,
                   color = colorScheme.onSurface,
                   maxLines = 1,

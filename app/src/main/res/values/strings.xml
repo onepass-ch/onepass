@@ -27,6 +27,395 @@
     <string name="staff_invitation_error_message">Failed to send invitation: %1$s</string>
     <string name="staff_invitation_result_ok">OK</string>
 
+
+    <!-- Buttons -->
+    <string name="button_close_description">Close</string>
+    <string name="button_like_description">Like</string>
+    <string name="button_unlike_description">Unlike</string>
+    <string name="button_upload_image_label">Image*</string>
+    <string name="button_upload_image_icon_description">Upload image icon</string>
+    <string name="button_upload_image_text">Upload Image</string>
+
+    <!-- Common State Components -->
+    <string name="error_state_title">Oops!</string>
+    <string name="error_state_retry_button">Try Again</string>
+
+    <!-- Date and Time Pickers -->
+    <string name="time_picker_title">Select Time</string>
+    <string name="date_picker_placeholder">Select date</string>
+    <string name="date_picker_icon_description">Select date</string>
+    <string name="dialog_ok">OK</string>
+    <string name="dialog_cancel">Cancel</string>
+
+    <!-- Form Fields -->
+    <string name="form_country_placeholder">Country</string>
+    <string name="form_phone_placeholder">Phone</string>
+    <string name="form_location_label">Location*</string>
+    <string name="form_location_placeholder">Type to search location</string>
+
+    <!-- Event Card -->
+    <string name="event_card_image_description">Event image for %1$s</string>
+    <string name="event_card_default_image_description">Default event image</string>
+
+    <!-- Event Detail Screen -->
+    <string name="event_detail_payment_success">Payment successful! Your ticket is ready.</string>
+    <string name="event_detail_payment_cancelled">Payment cancelled</string>
+    <string name="event_detail_payment_failed">Payment failed: %1$s</string>
+    <string name="event_detail_payment_not_initialized">Payment system not initialized. Please ensure Stripe is configured.</string>
+    <string name="event_detail_go_back">Go Back</string>
+    <string name="event_detail_back_description">Back</string>
+    <string name="event_detail_image_description">Event image</string>
+    <string name="event_detail_title_placeholder">Event Title</string>
+    <string name="event_detail_organizer_title">ORGANIZER</string>
+    <string name="event_detail_about_title">ABOUT EVENT</string>
+    <string name="event_detail_no_description">No description available.</string>
+    <string name="event_detail_see_on_map">See event on map</string>
+    <string name="event_detail_price_free">FREE</string>
+    <string name="event_detail_price_buy">Buy ticket for %1$s%2$s</string>
+    <string name="event_detail_preparing_payment">Preparing payment...</string>
+    <string name="event_detail_processing_payment">Processing payment...</string>
+
+    <!-- Event Filters -->
+    <string name="filters_more_tags">+%1$d more</string>
+    <string name="filters_available_only">Available Only</string>
+    <string name="filters_clear_all">Clear All</string>
+    <string name="filters_date_today">Today</string>
+    <string name="filters_date_next_7_days">Next 7 Days</string>
+    <string name="filters_date_next_weekend">Next Weekend</string>
+    <string name="filters_date_not_set">Not set</string>
+
+    <!-- Filter Dialog -->
+    <string name="filter_dialog_title">Filter Events</string>
+    <string name="filter_dialog_reset_all">Reset All</string>
+    <string name="filter_dialog_apply">Apply Filters</string>
+    <string name="filter_dialog_region_title">Region</string>
+    <string name="filter_dialog_region_select_description">Select region</string>
+    <string name="filter_dialog_date_range_title">Date Range</string>
+    <string name="filter_dialog_date_today">Today</string>
+    <string name="filter_dialog_date_next_weekend">Next Weekend</string>
+    <string name="filter_dialog_date_next_7_days">Next 7 Days</string>
+    <string name="filter_dialog_custom_range_label">Custom range</string>
+    <string name="filter_dialog_not_set">Not set</string>
+    <string name="filter_dialog_pick_dates">Pick dates</string>
+    <string name="filter_dialog_availability_title">Availability</string>
+    <string name="filter_dialog_hide_sold_out">Hide sold out events</string>
+    <string name="filter_dialog_date_picker_title">When ?</string>
+    <string name="filter_dialog_select_start_date">Select start date</string>
+    <string name="filter_dialog_select_end_date">Select end date</string>
+    <string name="filter_dialog_confirm">Confirm</string>
+    <string name="filter_dialog_cancel">Cancel</string>
+
+    <!-- Create Event Form -->
+    <string name="create_event_title">Create your Event</string>
+    <string name="create_event_button">Create event</string>
+
+    <!-- Edit Event Form -->
+    <string name="edit_event_title">Edit Event</string>
+    <string name="edit_event_updating">Updating...</string>
+    <string name="edit_event_button">Update event</string>
+    <string name="edit_event_load_error_title">Failed to load event</string>
+    <string name="edit_event_retry">Retry</string>
+    <string name="edit_event_error_dialog_title">Update Failed</string>
+    <string name="edit_event_ok">OK</string>
+
+    <!-- Event Form Fields -->
+    <string name="event_form_title_label">Title*</string>
+    <string name="event_form_title_placeholder">Amazing event</string>
+    <string name="event_form_description_label">Description*</string>
+    <string name="event_form_description_placeholder">This is amazing..</string>
+    <string name="event_form_date_time_label">Date &amp; time*</string>
+    <string name="event_form_start_time_label">Start time</string>
+    <string name="event_form_end_time_label">End time</string>
+    <string name="event_form_tickets_label">Tickets*</string>
+    <string name="event_form_price_label">Price</string>
+    <string name="event_form_price_placeholder">ex: 12</string>
+    <string name="event_form_capacity_label">Capacity</string>
+    <string name="event_form_capacity_placeholder">ex: 100</string>
+    <string name="event_form_tags_label">Tags</string>
+    <string name="event_form_tags_instruction">Select up to %1$d tags (%2$d/%3$d selected).</string>
+    <string name="event_form_tag_selected">%1$s tag selected</string>
+    <string name="event_form_tag_not_selected">%1$s tag not selected</string>
+    <string name="event_form_image_label">Event Image*</string>
+    <string name="event_form_images_selected">%1$d image(s) selected</string>
+    <string name="event_form_character_counter">%1$d/%2$d characters</string>
+
+    <!-- Events Screen -->
+    <string name="events_screen_title">Events Screen</string>
+
+    <!-- Feed Screen -->
+    <string name="feed_search_error">Error: %1$s</string>
+    <string name="feed_no_results">No results found</string>
+    <string name="feed_empty_title">No Events Found</string>
+    <string name="feed_empty_message">Check back later for new events in your area!</string>
+    <string name="feed_search_placeholder">Search...</string>
+    <string name="feed_favorites_description">Favorites</string>
+    <string name="feed_notifications_description">Notifications</string>
+    <string name="feed_filter_description">Filter events</string>
+
+    <!-- Map Screen -->
+    <string name="map_recenter_description">Recenter</string>
+    <string name="map_filter_description">Filter events</string>
+
+    <!-- My Events / Hot Events -->
+    <string name="hot_events_title">Hot Events</string>
+    <string name="hot_events_empty">No hot events at the moment</string>
+    <string name="hot_events_image_description">Event image for %1$s</string>
+    <string name="hot_events_default_image_description">Default event image</string>
+
+    <!-- Market Search Bar -->
+    <string name="market_search_placeholder">Search events or organizers...</string>
+    <string name="market_search_icon_description">Search</string>
+    <string name="market_search_clear_description">Clear search</string>
+    <string name="market_search_event_image_description">Event image</string>
+    <string name="market_search_event_icon_description">Event</string>
+    <string name="market_search_event_label">Event • %1$s</string>
+    <string name="market_search_organizer_image_description">Organizer image</string>
+    <string name="market_search_organizer_icon_description">Organizer</string>
+    <string name="market_search_organizer_label">Organizer</string>
+    <string name="market_search_organizer_verified">Organizer • Verified</string>
+
+    <!-- Market Ticket Card -->
+    <string name="market_ticket_event_image_description">Event image</string>
+    <string name="market_ticket_default_image_description">Default event image</string>
+    <string name="market_ticket_location_icon_description">Location</string>
+    <string name="market_ticket_original_price_label">Original: %1$s %2$s</string>
+    <string name="market_ticket_loading">...</string>
+    <string name="market_ticket_buy_button">Buy</string>
+    <string name="market_ticket_your_listing">Your listing</string>
+
+    <!-- Market Ticket List -->
+    <string name="market_tickets_title">Available Tickets</string>
+    <string name="market_tickets_sell_icon_description">Sell</string>
+    <string name="market_tickets_sell_button">Sell Ticket</string>
+    <string name="market_tickets_empty_title">No Tickets Available</string>
+    <string name="market_tickets_empty_message">There are no tickets listed for sale at the moment. Check back later or list your own tickets!</string>
+
+    <!-- MyEvents Screen - Empty States -->
+    <string name="myevents_empty_current_title">No Current Tickets</string>
+    <string name="myevents_empty_current_message">You don\'t have any active tickets. Browse events to get started!</string>
+    <string name="myevents_empty_expired_title">No Expired Tickets</string>
+    <string name="myevents_empty_expired_message">You don\'t have any expired tickets yet.</string>
+    <string name="myevents_empty_listed_title">No Listed Tickets</string>
+    <string name="myevents_empty_listed_message">You haven\'t listed any tickets for sale. Go to the Market tab to sell your tickets!</string>
+
+    <!-- MyEvents Screen - Listed Ticket Card -->
+    <string name="myevents_listed_badge">On Sale</string>
+    <string name="myevents_listed_asking_price">Asking Price</string>
+    <string name="myevents_listed_original_price">Original Price</string>
+    <string name="myevents_listed_at_label">Listed on %1$s</string>
+    <string name="myevents_cancel_listing_button">Cancel Listing</string>
+    <string name="myevents_cancel_dialog_title">Cancel Listing?</string>
+    <string name="myevents_cancel_dialog_message">Are you sure you want to remove this ticket from the marketplace? You can list it again later.</string>
+    <string name="myevents_cancel_dialog_confirm">Cancel Listing</string>
+    <string name="myevents_cancel_dialog_dismiss">Keep Listed</string>
+
+    <!-- MyEvents Screen - Market Section (Inline) -->
+    <string name="myevents_market_no_tickets_title">No Tickets Available</string>
+    <string name="myevents_market_no_tickets_message">There are no tickets listed for sale at the moment.</string>
+
+    <!-- Sell Ticket Dialog -->
+    <string name="sell_dialog_title">Sell Your Ticket</string>
+    <string name="sell_dialog_close_description">Close</string>
+    <string name="sell_dialog_select_ticket">Select a ticket to sell</string>
+    <string name="sell_dialog_no_tickets">No tickets available to sell</string>
+    <string name="sell_dialog_set_price">Set your asking price</string>
+    <string name="sell_dialog_price_placeholder">0.00</string>
+    <string name="sell_dialog_currency">CHF</string>
+    <string name="sell_dialog_original_price">Original price: CHF %1$s</string>
+    <string name="sell_dialog_list_button">List for Sale</string>
+    <string name="sell_dialog_cancel_button">Cancel</string>
+    <string name="sell_dialog_choose_ticket">Choose a ticket...</string>
+    <string name="sell_dialog_collapse_description">Collapse</string>
+    <string name="sell_dialog_expand_description">Expand</string>
+    <string name="sell_dialog_ticket_details">%1$s • %2$s</string>
+    <string name="sell_dialog_original_label">Original</string>
+    <string name="sell_dialog_currency_price">CHF %1$s</string>
+
+    <!-- Your Tickets Section -->
+    <string name="your_tickets_tab_current">Current</string>
+    <string name="your_tickets_tab_expired">Expired</string>
+    <string name="your_tickets_tab_listed">Listed</string>
+    <string name="your_tickets_empty_current_title">No Current Tickets</string>
+    <string name="your_tickets_empty_current_message">You don\'t have any active tickets. Browse events to get started!</string>
+    <string name="your_tickets_empty_expired_title">No Expired Tickets</string>
+    <string name="your_tickets_empty_expired_message">You don\'t have any expired tickets yet.</string>
+    <string name="your_tickets_empty_listed_title">No Listed Tickets</string>
+    <string name="your_tickets_empty_listed_message">You haven\'t listed any tickets for sale.</string>
+
+    <!-- My Invitations Screen -->
+    <string name="invitations_screen_title">My Invitations</string>
+    <string name="invitations_empty_title">No Invitations</string>
+    <string name="invitations_empty_message">You don\'t have any pending invitations at the moment.</string>
+    <string name="invitations_role_label">Role: %1$s</string>
+    <string name="invitations_reject_button">Reject</string>
+    <string name="invitations_accept_button">Accept</string>
+
+    <!-- Navigation -->
+    <string name="navigation_back_description">Back</string>
+
+    <!-- Bottom Navigation -->
+    <string name="bottom_nav_events_description">Events</string>
+    <string name="bottom_nav_tickets_description">Tickets</string>
+    <string name="bottom_nav_map_description">Map</string>
+    <string name="bottom_nav_profile_description">Profile</string>
+
+    <!-- Coming Soon Screen -->
+    <string name="coming_soon_title">Coming Soon</string>
+    <string name="coming_soon_message">This feature isn\'t ready yet.\nStay tuned for updates!</string>
+    <string name="coming_soon_button">Go Back</string>
+
+    <!-- Notifications Screen -->
+    <string name="notifications_screen_title">Notifications</string>
+    <string name="notifications_back_description">Back</string>
+    <string name="notifications_mark_all_read">Mark all as read</string>
+    <string name="notifications_empty_title">No notifications yet</string>
+    <string name="notifications_empty_message">We\'ll let you know when something updates!</string>
+    <string name="notifications_delete_description">Delete notification</string>
+
+    <!-- Organization Card -->
+    <string name="organization_card_profile_description">Organization profile</string>
+    <string name="organization_card_verified_badge">Verified</string>
+    <string name="organization_card_followers_description">Followers</string>
+    <string name="organization_card_rating_description">Rating</string>
+    <string name="organization_card_since_label">since %1$s</string>
+
+    <!-- Organization Dashboard Screen -->
+    <string name="org_dashboard_title">DASHBOARD</string>
+    <string name="org_dashboard_back_description">Back</string>
+    <string name="org_dashboard_manage_events_title">MANAGE EVENTS</string>
+    <string name="org_dashboard_create_event_button">Create new event</string>
+    <string name="org_dashboard_create_icon_description">Create</string>
+    <string name="org_dashboard_your_events_title">Your events</string>
+    <string name="org_dashboard_expand_description">Expand</string>
+    <string name="org_dashboard_collapse_description">Collapse</string>
+    <string name="org_dashboard_no_events">No events created yet.</string>
+    <string name="org_dashboard_scan_icon_description">Scan</string>
+    <string name="org_dashboard_edit_event_button">Edit event</string>
+    <string name="org_dashboard_manage_staff_title">MANAGE STAFF</string>
+    <string name="org_dashboard_add_staff_button">Add new staff</string>
+    <string name="org_dashboard_add_icon_description">Add</string>
+    <string name="org_dashboard_staff_list_title">Staff list</string>
+    <string name="org_dashboard_no_staff">No staff members added yet.</string>
+    <string name="org_dashboard_avatar_description">Avatar</string>
+    <string name="org_dashboard_unknown_user">Unknown User</string>
+    <string name="org_dashboard_remove_icon_description">Remove</string>
+
+    <!-- Organization Feed Screen -->
+    <string name="org_feed_title">MY ORGANIZATIONS</string>
+    <string name="org_feed_empty_title">No Organizations</string>
+    <string name="org_feed_empty_message">You haven\'t joined any organizations yet.</string>
+    <string name="org_feed_create_description">Create a new organization</string>
+
+    <!-- Organizer Profile Screen -->
+    <string name="organizer_profile_title">Organizer Profile</string>
+    <string name="organizer_banner_description">Organizer Banner</string>
+    <string name="organizer_profile_picture_description">Profile Picture</string>
+    <string name="organizer_website_icon_description">Website icon</string>
+    <string name="organizer_website_text">Website</string>
+    <string name="organizer_external_link_description">External link</string>
+    <string name="organizer_instagram_description">Instagram</string>
+    <string name="organizer_tiktok_description">TikTok</string>
+    <string name="organizer_facebook_description">Facebook</string>
+    <string name="organizer_following_button">FOLLOWING</string>
+    <string name="organizer_follow_button">FOLLOW</string>
+    <string name="organizer_join_community">join %1$s community</string>
+    <string name="organizer_edit_button">EDIT ORGANIZATION</string>
+    <string name="organizer_tab_posts">Posts</string>
+    <string name="organizer_tab_upcoming">UPCOMING</string>
+    <string name="organizer_tab_past">PAST</string>
+    <string name="organizer_no_title">No Title</string>
+    <string name="organizer_default_description">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vitae nisi nec magna consequat tincidunt. Curabitur suscipit sem vel.</string>
+    <string name="organizer_posts_empty">No posts yet</string>
+    <string name="organizer_upcoming_empty">No upcoming events</string>
+    <string name="organizer_past_empty">No past events</string>
+
+    <!-- Create Organization Screen -->
+    <string name="create_org_screen_title">Create Organization</string>
+    <string name="create_org_back_description">Back</string>
+    <string name="create_org_form_title">Create an Organization</string>
+    <string name="create_org_submit_button">Submit</string>
+
+    <!-- Edit Organization Screen -->
+    <string name="edit_org_screen_title">Edit Organization</string>
+    <string name="edit_org_back_description">Back</string>
+    <string name="edit_org_form_title">Edit Organization</string>
+    <string name="edit_org_submit_button">Update</string>
+
+    <!-- Organization Form -->
+    <string name="org_form_name_label">Organization Name*</string>
+    <string name="org_form_description_label">Description*</string>
+    <string name="org_form_email_label">Contact Email</string>
+    <string name="org_form_website_label">Website</string>
+    <string name="org_form_instagram_label">Instagram</string>
+    <string name="org_form_facebook_label">Facebook</string>
+    <string name="org_form_tiktok_label">TikTok</string>
+    <string name="org_form_address_label">Address</string>
+    <string name="org_form_profile_image_desc">Profile image</string>
+    <string name="org_form_profile_image_selected">✓ Profile image selected</string>
+    <string name="org_form_banner_image_desc">Banner image</string>
+    <string name="org_form_banner_image_selected">✓ Banner image selected</string>
+
+    <!-- Profile Screen -->
+    <string name="profile_organizer_section_title">ORGANIZER SETTINGS</string>
+    <string name="profile_stat_events">Events</string>
+    <string name="profile_stat_upcoming">Upcoming</string>
+    <string name="profile_stat_saved">Saved</string>
+    <string name="profile_org_title_has_org">Organization Management</string>
+    <string name="profile_org_title_no_org">Start Your Journey</string>
+    <string name="profile_org_desc_has_org">Create and manage your organizations.</string>
+    <string name="profile_org_desc_no_org">Create epic events, build your community, and grow your audience.</string>
+    <string name="profile_org_button_has_org">My Organizations</string>
+    <string name="profile_org_button_no_org">Become an organizer</string>
+    <string name="profile_settings_invitations">My Invitations</string>
+    <string name="profile_settings_account">Account Settings</string>
+    <string name="profile_settings_payments">Payment Methods</string>
+    <string name="profile_settings_help">Help &amp; Support</string>
+    <string name="profile_settings_sign_out">Sign Out</string>
+    <string name="profile_avatar_desc">Avatar</string>
+
+    <!-- Staff List Item Preview -->
+    <string name="preview_staff_email_alice">alice@onepass.ch</string>
+    <string name="preview_staff_name_alice">Alice Keller</string>
+    <string name="preview_staff_email_unknown">unknown@email.address</string>
+    <string name="preview_staff_name_unknown">Unknown user</string>
+    <string name="preview_staff_email_bruce">bruce@onepass.ch</string>
+    <string name="preview_staff_name_bruce">Bruce Dai</string>
+    <string name="preview_staff_last_click">Last click: %1$s &lt;%2$s&gt;</string>
+    <string name="preview_staff_last_click_none">Last click: —</string>
+
+    <!-- Scan Screen -->
+    <string name="scan_session_expired_title">Session Expired</string>
+    <string name="scan_session_expired_message">Your session has expired. Please login again to continue scanning tickets.</string>
+    <string name="scan_ok_button">OK</string>
+    <string name="scan_network_error_title">No Internet Connection</string>
+    <string name="scan_network_error_message">Please check your internet connection and try again. The scanner requires an active internet connection to validate tickets.</string>
+    <string name="scan_retry_button">Retry</string>
+    <string name="scan_back_button">Back</string>
+    <string name="scan_back_desc">Back</string>
+    <string name="scan_status_granted">Access granted</string>
+    <string name="scan_status_denied">Access denied</string>
+    <string name="scan_status_error">Validation error</string>
+    <string name="scan_status_waiting">Waiting for scan</string>
+    <string name="scan_validated_label">Validated</string>
+    <string name="scan_instruction">Position the QR code within the frame</string>
+    <string name="scan_permission_icon_desc">QR code scanner required</string>
+    <string name="scan_permission_title">Camera Access Required</string>
+    <string name="scan_permission_message">To scan tickets, we need access to your camera. Please grant permission to continue.</string>
+    <string name="scan_preview_camera">Camera Preview</string>
+
+    <!-- MyEvents Screen - Tabs -->
+    <string name="myevents_tab_my_tickets">My Tickets</string>
+    <string name="myevents_tab_market">Market</string>
+
+    <!-- MyEvents Screen - Subtabs -->
+    <string name="myevents_subtab_current">Current</string>
+    <string name="myevents_subtab_expired">Expired</string>
+    <string name="myevents_subtab_listed">Listed</string>
+    <string name="myevents_subtab_listed_with_count">Listed (%1$d)</string>
+
+
+
+
     <!-- Auth Screen -->
     <string name="auth_hero_title_top">BUY, SELL</string>
     <string name="auth_hero_title_bottom">DISCOVER</string>

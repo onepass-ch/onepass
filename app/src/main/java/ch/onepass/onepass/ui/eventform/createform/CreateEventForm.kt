@@ -38,8 +38,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.eventform.EventFormFields
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
@@ -51,7 +53,7 @@ fun EventFormScaffold(
     content: @Composable ColumnScope.() -> Unit
 ) {
   BackNavigationScaffold(
-      topBarConfig = TopBarConfig(title = "Create your Event"),
+      topBarConfig = TopBarConfig(title = stringResource(R.string.create_event_title)),
       onBack = onNavigateBack,
       containerColor = colorScheme.background) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
@@ -97,7 +99,9 @@ fun CreateEventButton(modifier: Modifier = Modifier, onClick: () -> Unit, enable
                   contentDescription = null,
                   modifier = Modifier.size(16.dp))
               Spacer(Modifier.width(8.dp))
-              Text(text = "Create event", style = MaterialTheme.typography.labelLarge)
+              Text(
+                  text = stringResource(R.string.create_event_button),
+                  style = MaterialTheme.typography.labelLarge)
             }
       }
 }

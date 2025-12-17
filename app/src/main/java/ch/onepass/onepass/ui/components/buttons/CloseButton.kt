@@ -16,7 +16,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 
 /**
  * A customizable close button with a semi-transparent background.
@@ -46,7 +48,7 @@ fun CloseButton(onDismiss: () -> Unit, modifier: Modifier = Modifier) {
   ) {
     Icon(
         imageVector = Icons.Default.Close,
-        contentDescription = "Close",
+        contentDescription = stringResource(R.string.button_close_description),
         tint = colorScheme.onBackground,
         modifier = Modifier.size(24.dp),
     )

@@ -26,12 +26,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import ch.onepass.onepass.R
 
 /**
  * Upload image button with full-width design.
@@ -44,7 +46,7 @@ import androidx.compose.ui.unit.sp
 @Composable
 fun UploadImageButton(
     modifier: Modifier = Modifier,
-    imageDescription: String = "Image*",
+    imageDescription: String = stringResource(R.string.button_upload_image_label),
     onImageSelected: (Uri) -> Unit,
     enabled: Boolean = true,
     testTag: String = "uploadImageButton"
@@ -92,12 +94,13 @@ fun UploadImageButton(
                   modifier = Modifier.fillMaxSize()) {
                     Icon(
                         imageVector = Icons.Default.CloudUpload,
-                        contentDescription = "Upload image icon",
+                        contentDescription =
+                            stringResource(R.string.button_upload_image_icon_description),
                         modifier = Modifier.size(32.dp),
                         tint = colorScheme.onSurface)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Upload Image",
+                        text = stringResource(R.string.button_upload_image_text),
                         fontSize = 10.sp,
                         style =
                             TextStyle(

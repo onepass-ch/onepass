@@ -28,9 +28,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.map.Location
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,7 +61,7 @@ fun LocationSearchField(
       verticalArrangement = Arrangement.spacedBy(8.dp, Alignment.Top),
       horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = "Location*",
+            text = stringResource(R.string.form_location_label),
             style =
                 MaterialTheme.typography.bodyMedium.copy(
                     color = colorScheme.onBackground, textAlign = TextAlign.Center),
@@ -83,7 +85,7 @@ fun LocationSearchField(
                         onValueChange = onQueryChange,
                         placeholder = {
                           Text(
-                              "Type to search location",
+                              stringResource(R.string.form_location_placeholder),
                               style =
                                   MaterialTheme.typography.bodySmall.copy(
                                       color = colorScheme.onSurface))

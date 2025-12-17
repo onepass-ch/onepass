@@ -36,8 +36,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.eventform.EventFormFields
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
@@ -108,7 +110,9 @@ fun UpdateEventButton(
               }
               Spacer(Modifier.width(8.dp))
               Text(
-                  text = if (isLoading) "Updating..." else "Update event",
+                  text =
+                      if (isLoading) stringResource(R.string.edit_event_updating)
+                      else stringResource(R.string.edit_event_button),
                   style = MaterialTheme.typography.labelLarge)
             }
       }
@@ -135,7 +139,9 @@ fun EditEventForm(
   }
 
   BackNavigationScaffold(
-      TopBarConfig(title = "Edit Event", backButtonTestTag = EditEventFormTestTags.BACK_BUTTON),
+      TopBarConfig(
+          title = stringResource(R.string.edit_event_title),
+          backButtonTestTag = EditEventFormTestTags.BACK_BUTTON),
       onBack = onNavigateBack,
       containerColor = colorScheme.background,
       modifier = Modifier.testTag(EditEventFormTestTags.SCREEN)) { padding ->
@@ -156,7 +162,7 @@ fun EditEventForm(
                           .testTag(EditEventFormTestTags.LOAD_ERROR_SECTION),
                   horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "Failed to load event",
+                        text = stringResource(R.string.edit_event_load_error_title),
                         style = MaterialTheme.typography.titleMedium,
                         color = colorScheme.onBackground)
                     Spacer(modifier = Modifier.height(16.dp))
@@ -170,7 +176,7 @@ fun EditEventForm(
                         modifier = Modifier.testTag(EditEventFormTestTags.RETRY_BUTTON),
                         colors =
                             ButtonDefaults.buttonColors(containerColor = colorScheme.primary)) {
-                          Text("Retry")
+                          Text(stringResource(R.string.edit_event_retry))
                         }
                   }
             }
@@ -200,13 +206,13 @@ fun EditEventForm(
   if (uiState is EditEventUiState.Error) {
     AlertDialog(
         onDismissRequest = { viewModel.clearError() },
-        title = { Text("Update Failed") },
+        title = { Text(stringResource(R.string.edit_event_error_dialog_title)) },
         text = { Text((uiState as EditEventUiState.Error).message) },
         confirmButton = {
           TextButton(
               onClick = { viewModel.clearError() },
               modifier = Modifier.testTag(EditEventFormTestTags.ERROR_DIALOG_OK_BUTTON)) {
-                Text("OK")
+                Text(stringResource(R.string.edit_event_ok))
               }
         },
         modifier = Modifier.testTag(EditEventFormTestTags.ERROR_DIALOG))

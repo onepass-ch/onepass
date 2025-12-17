@@ -48,10 +48,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.MarcFontFamily
 import ch.onepass.onepass.utils.FormatUtils.formatPriceCompact
 
@@ -106,7 +108,7 @@ fun SellTicketDialog(
                   horizontalArrangement = Arrangement.SpaceBetween,
                   verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "Sell Your Ticket",
+                        text = stringResource(R.string.sell_dialog_title),
                         style =
                             MaterialTheme.typography.titleLarge.copy(
                                 fontFamily = MarcFontFamily, fontWeight = FontWeight.Bold),
@@ -116,7 +118,8 @@ fun SellTicketDialog(
                     IconButton(onClick = onDismiss) {
                       Icon(
                           imageVector = Icons.Default.Close,
-                          contentDescription = "Close",
+                          contentDescription =
+                              stringResource(R.string.sell_dialog_close_description),
                           tint = colorScheme.onSurface)
                     }
                   }
@@ -139,7 +142,7 @@ fun SellTicketDialog(
 
               // Ticket Selection Dropdown
               Text(
-                  text = "Select a ticket to sell",
+                  text = stringResource(R.string.sell_dialog_select_ticket),
                   style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                   color = colorScheme.onBackground)
 
@@ -160,7 +163,7 @@ fun SellTicketDialog(
                             modifier = Modifier.size(32.dp))
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "No tickets available to sell",
+                            text = stringResource(R.string.sell_dialog_no_tickets),
                             style = MaterialTheme.typography.bodyMedium,
                             color = colorScheme.onSurface)
                       }
@@ -205,7 +208,7 @@ fun SellTicketDialog(
 
                 // Price input
                 Text(
-                    text = "Set your asking price",
+                    text = stringResource(R.string.sell_dialog_set_price),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Medium),
                     color = colorScheme.onBackground)
@@ -220,10 +223,10 @@ fun SellTicketDialog(
                     },
                     modifier =
                         Modifier.fillMaxWidth().testTag(MyEventsTestTags.SELL_DIALOG_PRICE_INPUT),
-                    placeholder = { Text("0.00") },
+                    placeholder = { Text(stringResource(R.string.sell_dialog_price_placeholder)) },
                     leadingIcon = {
                       Text(
-                          text = "CHF",
+                          text = stringResource(R.string.sell_dialog_currency),
                           style =
                               MaterialTheme.typography.bodyLarge.copy(
                                   fontWeight = FontWeight.SemiBold),
@@ -247,7 +250,9 @@ fun SellTicketDialog(
                 // Original price hint
                 Text(
                     text =
-                        "Original price: CHF ${formatPriceCompact(selectedTicket.originalPrice)}",
+                        stringResource(
+                            R.string.sell_dialog_original_price,
+                            formatPriceCompact(selectedTicket.originalPrice)),
                     style = MaterialTheme.typography.bodySmall,
                     color = colorScheme.onSurface)
               }
@@ -280,7 +285,7 @@ fun SellTicketDialog(
                           strokeWidth = 2.dp)
                     } else {
                       Text(
-                          text = "List for Sale",
+                          text = stringResource(R.string.sell_dialog_list_button),
                           style =
                               MaterialTheme.typography.bodyLarge.copy(
                                   fontWeight = FontWeight.SemiBold))
@@ -300,7 +305,7 @@ fun SellTicketDialog(
                           containerColor = Color.Transparent, contentColor = colorScheme.onSurface),
                   shape = RoundedCornerShape(12.dp)) {
                     Text(
-                        text = "Cancel",
+                        text = stringResource(R.string.sell_dialog_cancel_button),
                         style =
                             MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium))
                   }
@@ -374,7 +379,7 @@ private fun TicketDropdownSelector(
                     }
               } else {
                 Text(
-                    text = "Choose a ticket...",
+                    text = stringResource(R.string.sell_dialog_choose_ticket),
                     style = MaterialTheme.typography.bodyMedium,
                     color = colorScheme.onSurface,
                     modifier = Modifier.weight(1f))
@@ -384,7 +389,9 @@ private fun TicketDropdownSelector(
                   imageVector =
                       if (isExpanded) Icons.Default.KeyboardArrowUp
                       else Icons.Default.KeyboardArrowDown,
-                  contentDescription = if (isExpanded) "Collapse" else "Expand",
+                  contentDescription =
+                      if (isExpanded) stringResource(R.string.sell_dialog_collapse_description)
+                      else stringResource(R.string.sell_dialog_expand_description),
                   tint = colorScheme.onSurface)
             }
       }
@@ -424,7 +431,9 @@ private fun TicketDropdownItem(ticket: SellableTicket, isSelected: Boolean) {
               maxLines = 1,
               overflow = TextOverflow.Ellipsis)
           Text(
-              text = "${ticket.eventDate} • ${ticket.eventLocation}",
+              text =
+                  stringResource(
+                      R.string.sell_dialog_ticket_details, ticket.eventDate, ticket.eventLocation),
               style = MaterialTheme.typography.bodySmall,
               color = colorScheme.onSurface,
               maxLines = 1,
@@ -492,11 +501,14 @@ private fun SelectedTicketPreview(ticket: SellableTicket) {
 
               Column(horizontalAlignment = Alignment.End) {
                 Text(
-                    text = "Original",
+                    text = stringResource(R.string.sell_dialog_original_label),
                     style = MaterialTheme.typography.labelSmall,
                     color = colorScheme.onSurface)
                 Text(
-                    text = "CHF ${formatPriceCompact(ticket.originalPrice)}",
+                    text =
+                        stringResource(
+                            R.string.sell_dialog_currency_price,
+                            formatPriceCompact(ticket.originalPrice)),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = colorScheme.onBackground)

@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
@@ -55,6 +56,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 import kotlinx.coroutines.flow.collectLatest
@@ -143,7 +145,7 @@ private fun ProfileContent(
           Spacer(Modifier.height(12.dp))
 
           Text(
-              text = "ORGANIZER SETTINGS",
+              text = stringResource(R.string.profile_organizer_section_title),
               color = colorScheme.onBackground,
               style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
               modifier = Modifier.testTag(ProfileTestTags.ORG_SECTION_TITLE))
@@ -162,32 +164,32 @@ private fun ProfileContent(
 
           SettingsItem(
               icon = Icons.Outlined.Diversity3,
-              title = "My Invitations",
+              title = stringResource(R.string.profile_settings_invitations),
               titleColor = colorScheme.onBackground,
               onClick = onInvitations,
               testTag = ProfileTestTags.SETTINGS_INVITATIONS,
               badgeCount = state.pendingInvitations)
           SettingsItem(
               icon = Icons.Outlined.AccountCircle,
-              title = "Account Settings",
+              title = stringResource(R.string.profile_settings_account),
               titleColor = colorScheme.onBackground,
               onClick = onAccountSettings,
               testTag = ProfileTestTags.SETTINGS_ACCOUNT)
           SettingsItem(
               icon = Icons.Outlined.Settings,
-              title = "Payment Methods",
+              title = stringResource(R.string.profile_settings_payments),
               titleColor = colorScheme.onBackground,
               onClick = onPaymentMethods,
               testTag = ProfileTestTags.SETTINGS_PAYMENTS)
           SettingsItem(
               icon = Icons.Outlined.Info,
-              title = "Help & Support",
+              title = stringResource(R.string.profile_settings_help),
               titleColor = colorScheme.onBackground,
               onClick = onHelp,
               testTag = ProfileTestTags.SETTINGS_HELP)
           SettingsItem(
               icon = Icons.AutoMirrored.Outlined.ExitToApp,
-              title = "Sign Out",
+              title = stringResource(R.string.profile_settings_sign_out),
               titleColor = colorScheme.error,
               onClick = onSignOut,
               testTag = ProfileTestTags.SETTINGS_SIGN_OUT)
@@ -203,15 +205,15 @@ private fun StatsRow(stats: ProfileStats) {
       horizontalArrangement = Arrangement.spacedBy(12.dp)) {
         StatCard(
             value = stats.events,
-            label = "Events",
+            label = stringResource(R.string.profile_stat_events),
             modifier = Modifier.weight(1f).testTag(ProfileTestTags.STAT_EVENTS))
         StatCard(
             value = stats.upcoming,
-            label = "Upcoming",
+            label = stringResource(R.string.profile_stat_upcoming),
             modifier = Modifier.weight(1f).testTag(ProfileTestTags.STAT_UPCOMING))
         StatCard(
             value = stats.saved,
-            label = "Saved",
+            label = stringResource(R.string.profile_stat_saved),
             modifier = Modifier.weight(1f).testTag(ProfileTestTags.STAT_SAVED))
       }
 }
@@ -238,7 +240,7 @@ private fun HeaderBlock(initials: String, name: String, email: String, avatarUrl
                             .data(avatarUrl)
                             .crossfade(true)
                             .build(),
-                    contentDescription = "Avatar",
+                    contentDescription = stringResource(R.string.profile_avatar_desc),
                     contentScale = ContentScale.Crop,
                     modifier =
                         Modifier.fillMaxSize()
@@ -299,7 +301,10 @@ private fun OrganizerCard(isOrganizer: Boolean, onOrganizationButton: () -> Unit
   Surface(color = colorScheme.surface, shape = RoundedCornerShape(16.dp)) {
     Column(Modifier.padding(16.dp).testTag(ProfileTestTags.ORG_CARD)) {
       Text(
-          text = if (isOrganizer) "Organization Management" else "Start Your Journey",
+          text =
+              stringResource(
+                  if (isOrganizer) R.string.profile_org_title_has_org
+                  else R.string.profile_org_title_no_org),
           color = colorScheme.onBackground,
           style = MaterialTheme.typography.titleMedium)
 
@@ -307,8 +312,9 @@ private fun OrganizerCard(isOrganizer: Boolean, onOrganizationButton: () -> Unit
 
       Text(
           text =
-              if (isOrganizer) "Create and manage your organizations."
-              else "Create epic events, build your community, and grow your audience.",
+              stringResource(
+                  if (isOrganizer) R.string.profile_org_desc_has_org
+                  else R.string.profile_org_desc_no_org),
           color = colorScheme.onBackground,
           style = MaterialTheme.typography.bodyMedium)
 
@@ -326,7 +332,10 @@ private fun OrganizerCard(isOrganizer: Boolean, onOrganizationButton: () -> Unit
                     tint = colorScheme.onBackground)
             Spacer(Modifier.width(8.dp))
             Text(
-                text = if (isOrganizer) "My Organizations" else "Become an organizer",
+                text =
+                    stringResource(
+                        if (isOrganizer) R.string.profile_org_button_has_org
+                        else R.string.profile_org_button_no_org),
                 color = colorScheme.onBackground)
           }
     }

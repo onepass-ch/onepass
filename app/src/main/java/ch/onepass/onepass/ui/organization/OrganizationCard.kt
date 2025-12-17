@@ -28,9 +28,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.ui.organization.OrganizationCardTestTags.getTestTagForOrganizationCard
 import ch.onepass.onepass.utils.DateTimeUtils
@@ -55,7 +57,7 @@ object OrganizationCardTestTags {
 private fun OrganizationProfileImage(imageUrl: String?, modifier: Modifier = Modifier) {
   AsyncImage(
       model = imageUrl,
-      contentDescription = "Organization profile",
+      contentDescription = stringResource(R.string.organization_card_profile_description),
       placeholder = rememberVectorPainter(Icons.Default.Business),
       modifier =
           modifier
@@ -86,7 +88,7 @@ private fun OrganizationNameRow(name: String, verified: Boolean, modifier: Modif
         if (verified) {
           Icon(
               imageVector = Icons.Default.CheckCircle,
-              contentDescription = "Verified",
+              contentDescription = stringResource(R.string.organization_card_verified_badge),
               tint = colorScheme.onBackground,
               modifier =
                   Modifier.size(18.dp)
@@ -130,7 +132,8 @@ private fun OrganizationStatsRow(
                     .testTag(OrganizationCardTestTags.ORGANIZER_FOLLOWER_COUNT)) {
               Icon(
                   imageVector = Icons.Default.Group,
-                  contentDescription = null,
+                  contentDescription =
+                      stringResource(R.string.organization_card_followers_description),
                   modifier = Modifier.size(16.dp))
               Text(
                   text = FormatUtils.formatCompactNumber(followerCount),
@@ -148,7 +151,8 @@ private fun OrganizationStatsRow(
                       .testTag(OrganizationCardTestTags.ORGANIZER_RATING)) {
                 Icon(
                     imageVector = Icons.Default.Star,
-                    contentDescription = null,
+                    contentDescription =
+                        stringResource(R.string.organization_card_rating_description),
                     modifier = Modifier.size(16.dp),
                     tint = colorScheme.onBackground)
                 Text(
@@ -165,7 +169,10 @@ private fun OrganizationStatsRow(
               verticalAlignment = Alignment.CenterVertically,
               modifier = Modifier.testTag(OrganizationCardTestTags.ORGANIZER_CREATED_DATE)) {
                 Text(
-                    text = "since " + DateTimeUtils.formatMemberSince(timestamp),
+                    text =
+                        stringResource(
+                            R.string.organization_card_since_label,
+                            DateTimeUtils.formatMemberSince(timestamp)),
                     style = MaterialTheme.typography.bodyLarge,
                     color = colorScheme.onBackground)
               }

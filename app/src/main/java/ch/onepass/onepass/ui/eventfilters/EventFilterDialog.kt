@@ -38,10 +38,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.eventfilters.DateRangePresets
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.eventfilters.SwissRegions
@@ -94,7 +96,7 @@ fun FilterDialog(
     ) {
       Column(Modifier.padding(24.dp)) {
         Text(
-            text = "Filter Events",
+            text = stringResource(R.string.filter_dialog_title),
             style = MaterialTheme.typography.headlineSmall,
             modifier = Modifier.padding(bottom = 16.dp),
         )
@@ -132,7 +134,7 @@ fun FilterDialog(
               enabled = uiState.localFilters.hasActiveFilters,
               modifier = Modifier.testTag(EventFilterDialogTestTags.RESET_FILTERS_BUTTON),
           ) {
-            Text("Reset All", color = colorScheme.onBackground)
+            Text(stringResource(R.string.filter_dialog_reset_all), color = colorScheme.onBackground)
           }
           Button(
               onClick = { onApply(uiState.localFilters) },
@@ -142,7 +144,7 @@ fun FilterDialog(
                   ButtonDefaults.buttonColors(
                       containerColor = colorScheme.primary,
                       contentColor = colorScheme.onBackground)) {
-                Text("Apply Filters")
+                Text(stringResource(R.string.filter_dialog_apply))
               }
         }
       }
@@ -163,7 +165,7 @@ private fun RegionFilter(
     onFiltersChanged: (EventFilters) -> Unit = {},
     onExpandedChange: (Boolean) -> Unit = {},
 ) {
-  FilterSection("Region") {
+  FilterSection(stringResource(R.string.filter_dialog_region_title)) {
     Box(Modifier.fillMaxWidth()) {
       OutlinedButton(
           onClick = { onExpandedChange(true) },
@@ -175,7 +177,7 @@ private fun RegionFilter(
             color = colorScheme.onBackground)
         Icon(
             imageVector = Icons.Default.ArrowDropDown,
-            contentDescription = "Select region",
+            contentDescription = stringResource(R.string.filter_dialog_region_select_description),
             tint = colorScheme.onBackground)
       }
       DropdownMenu(
@@ -220,11 +222,13 @@ private fun DateRangeFilter(
 ) {
   val datePresets =
       listOf(
-          "Today" to DateRangePresets.getTodayRange(),
-          "Next Weekend" to DateRangePresets.getNextWeekendRange(),
-          "Next 7 Days" to DateRangePresets.getNext7DaysRange(),
+          stringResource(R.string.filter_dialog_date_today) to DateRangePresets.getTodayRange(),
+          stringResource(R.string.filter_dialog_date_next_weekend) to
+              DateRangePresets.getNextWeekendRange(),
+          stringResource(R.string.filter_dialog_date_next_7_days) to
+              DateRangePresets.getNext7DaysRange(),
       )
-  FilterSection("Date Range") {
+  FilterSection(stringResource(R.string.filter_dialog_date_range_title)) {
     Column(Modifier.testTag(EventFilterDialogTestTags.DATE_RANGE_PRESETS)) {
       Row(
           horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -253,9 +257,12 @@ private fun DateRangeFilter(
           modifier = Modifier.fillMaxWidth(),
       ) {
         Column {
-          Text("Custom range", style = MaterialTheme.typography.labelMedium)
           Text(
-              formatDateRange(uiState.localFilters.dateRange) ?: "Not set",
+              stringResource(R.string.filter_dialog_custom_range_label),
+              style = MaterialTheme.typography.labelMedium)
+          Text(
+              formatDateRange(uiState.localFilters.dateRange)
+                  ?: stringResource(R.string.filter_dialog_not_set),
               style = MaterialTheme.typography.bodySmall,
               color = colorScheme.onBackground,
               modifier = Modifier.testTag(EventFilterDialogTestTags.CUSTOM_RANGE_TEXT))
@@ -267,7 +274,9 @@ private fun DateRangeFilter(
                 ButtonDefaults.buttonColors(
                     containerColor = colorScheme.primary,
                     contentColor = colorScheme.onBackground)) {
-              Text(text = "Pick dates", color = colorScheme.onBackground)
+              Text(
+                  text = stringResource(R.string.filter_dialog_pick_dates),
+                  color = colorScheme.onBackground)
             }
       }
       if (uiState.showDatePicker) {
@@ -291,7 +300,7 @@ private fun DateRangeFilter(
  */
 @Composable
 private fun AvailabilityFilter(filters: EventFilters, onFiltersChanged: (EventFilters) -> Unit) {
-  FilterSection("Availability") {
+  FilterSection(stringResource(R.string.filter_dialog_availability_title)) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier.fillMaxWidth(),
@@ -301,7 +310,7 @@ private fun AvailabilityFilter(filters: EventFilters, onFiltersChanged: (EventFi
           onCheckedChange = { onFiltersChanged(filters.copy(hideSoldOut = it)) },
           modifier = Modifier.testTag(EventFilterDialogTestTags.HIDE_SOLD_OUT_CHECKBOX),
       )
-      Text("Hide sold out events", Modifier.padding(start = 8.dp))
+      Text(stringResource(R.string.filter_dialog_hide_sold_out), Modifier.padding(start = 8.dp))
     }
   }
 }
@@ -343,7 +352,7 @@ fun DateRangePickerDialog(
   AlertDialog(
       onDismissRequest = onDismiss,
       properties = DialogProperties(usePlatformDefaultWidth = false),
-      title = { Text("When ?") },
+      title = { Text(stringResource(R.string.filter_dialog_date_picker_title)) },
       text = {
         Column {
           DateRangePicker(
@@ -354,8 +363,8 @@ fun DateRangePickerDialog(
 
                 val headlineText =
                     when {
-                      start == null -> "Select start date"
-                      end == null -> "Select end date"
+                      start == null -> stringResource(R.string.filter_dialog_select_start_date)
+                      end == null -> stringResource(R.string.filter_dialog_select_end_date)
                       else -> formatDateRange(start..end)
                     }
 
@@ -401,12 +410,16 @@ fun DateRangePickerDialog(
                   ButtonDefaults.buttonColors(
                       containerColor = colorScheme.primary,
                       contentColor = colorScheme.onBackground)) {
-                Text("Confirm", color = colorScheme.onBackground)
+                Text(
+                    stringResource(R.string.filter_dialog_confirm),
+                    color = colorScheme.onBackground)
               }
         }
       },
       dismissButton = {
-        TextButton(onClick = onDismiss) { Text("Cancel", color = colorScheme.onBackground) }
+        TextButton(onClick = onDismiss) {
+          Text(stringResource(R.string.filter_dialog_cancel), color = colorScheme.onBackground)
+        }
       })
 }
 

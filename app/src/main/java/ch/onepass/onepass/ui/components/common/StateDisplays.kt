@@ -16,9 +16,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 
 /** Generic loading state indicator. */
 @Composable
@@ -43,7 +45,7 @@ fun ErrorState(
       verticalArrangement = Arrangement.Center,
   ) {
     Text(
-        text = "Oops!",
+        text = stringResource(R.string.error_state_title),
         style = MaterialTheme.typography.headlineMedium,
         fontWeight = FontWeight.Bold,
         color = colorScheme.onBackground,
@@ -63,7 +65,7 @@ fun ErrorState(
             ButtonDefaults.buttonColors(
                 containerColor = colorScheme.primary, contentColor = colorScheme.onBackground),
     ) {
-      Text(text = "Try Again", fontWeight = FontWeight.Medium)
+      Text(text = stringResource(R.string.error_state_retry_button), fontWeight = FontWeight.Medium)
     }
   }
 }

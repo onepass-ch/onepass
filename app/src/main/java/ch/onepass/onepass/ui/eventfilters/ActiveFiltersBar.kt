@@ -16,8 +16,10 @@ import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.eventfilters.DateRangePresets
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import java.time.Instant
@@ -104,7 +106,9 @@ fun ActiveFiltersBar(
               onClick = { /* Could add individual removal later */},
               label = {
                 Text(
-                    "+${filters.selectedTags.size - ActiveFiltersConfig.MAX_VISIBLE_TAGS} more",
+                    stringResource(
+                        R.string.filters_more_tags,
+                        filters.selectedTags.size - ActiveFiltersConfig.MAX_VISIBLE_TAGS),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium,
                 )
@@ -117,7 +121,7 @@ fun ActiveFiltersBar(
               onClick = { /* Could add individual removal later */},
               label = {
                 Text(
-                    "Available Only",
+                    stringResource(R.string.filters_available_only),
                     style = MaterialTheme.typography.labelMedium,
                     fontWeight = FontWeight.Medium,
                 )
@@ -130,7 +134,7 @@ fun ActiveFiltersBar(
           colors = ButtonDefaults.textButtonColors(contentColor = colorScheme.primary),
       ) {
         Text(
-            "Clear All",
+            stringResource(R.string.filters_clear_all),
             style = MaterialTheme.typography.labelMedium,
             fontWeight = FontWeight.Medium,
         )
@@ -154,15 +158,16 @@ internal fun formatDateRange(dateRange: ClosedRange<Long>?): String? {
 }
 
 /** Returns a display text for common date ranges like "Today" or "Next 7 Days". */
+@Composable
 private fun getDateRangeDisplayText(dateRange: ClosedRange<Long>): String {
   val todayRange = DateRangePresets.getTodayRange()
   val next7Days = DateRangePresets.getNext7DaysRange()
   val weekend = DateRangePresets.getNextWeekendRange()
 
   return when (dateRange) {
-    todayRange -> "Today"
-    next7Days -> "Next 7 Days"
-    weekend -> "Next Weekend"
-    else -> formatDateRange(dateRange) ?: "Not set"
+    todayRange -> stringResource(R.string.filters_date_today)
+    next7Days -> stringResource(R.string.filters_date_next_7_days)
+    weekend -> stringResource(R.string.filters_date_next_weekend)
+    else -> formatDateRange(dateRange) ?: stringResource(R.string.filters_date_not_set)
   }
 }

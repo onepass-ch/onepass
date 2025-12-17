@@ -48,6 +48,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -127,20 +128,31 @@ fun EventDetailScreen(
               onError = { errorMessage -> viewModel.onPaymentFailed(errorMessage) })
         } else {
           viewModel.onPaymentFailed(
-              "Payment system not initialized. Please ensure Stripe is configured.")
+              context.getString(R.string.event_detail_payment_not_initialized))
         }
       }
       is PaymentState.PaymentSucceeded -> {
-        Toast.makeText(context, "Payment successful! Your ticket is ready.", Toast.LENGTH_LONG)
+        Toast.makeText(
+                context,
+                context.getString(R.string.event_detail_payment_success),
+                Toast.LENGTH_LONG)
             .show()
         viewModel.resetPaymentState()
       }
       is PaymentState.PaymentCancelled -> {
-        Toast.makeText(context, "Payment cancelled", Toast.LENGTH_SHORT).show()
+        Toast.makeText(
+                context,
+                context.getString(R.string.event_detail_payment_cancelled),
+                Toast.LENGTH_SHORT)
+            .show()
         viewModel.resetPaymentState()
       }
       is PaymentState.PaymentFailed -> {
-        Toast.makeText(context, "Payment failed: ${state.errorMessage}", Toast.LENGTH_LONG).show()
+        Toast.makeText(
+                context,
+                context.getString(R.string.event_detail_payment_failed, state.errorMessage),
+                Toast.LENGTH_LONG)
+            .show()
         viewModel.resetPaymentState()
       }
       else -> {
@@ -218,7 +230,7 @@ internal fun EventDetailScreenContent(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(16.dp)) {
                   Text(text = uiState.errorMessage, color = colorScheme.onBackground)
-                  Button(onClick = onBack) { Text("Go Back") }
+                  Button(onClick = onBack) { Text(stringResource(R.string.event_detail_go_back)) }
                 }
           }
           uiState.event != null -> {
@@ -295,7 +307,7 @@ private fun BackSection(onBack: () -> Unit) {
         IconButton(onClick = onBack) {
           Icon(
               imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-              contentDescription = "Back",
+              contentDescription = stringResource(R.string.event_detail_back_description),
               tint = colorScheme.onBackground)
         }
       }
@@ -337,7 +349,7 @@ private fun EventDetailContent(
               contentAlignment = Alignment.TopEnd) {
                 AsyncImage(
                     model = event.imageUrl.ifEmpty { null },
-                    contentDescription = "Event image",
+                    contentDescription = stringResource(R.string.event_detail_image_description),
                     placeholder = painterResource(R.drawable.image_fallback),
                     error = painterResource(id = R.drawable.image_fallback),
                     modifier = Modifier.fillMaxSize().testTag(EventDetailTestTags.EVENT_IMAGE),
@@ -354,7 +366,8 @@ private fun EventDetailContent(
 
           // Event title
           Text(
-              text = event.title.ifEmpty { "Event Title" },
+              text =
+                  event.title.ifEmpty { stringResource(R.string.event_detail_title_placeholder) },
               style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
               color = colorScheme.onBackground,
               textAlign = TextAlign.Center,
@@ -405,7 +418,7 @@ private fun OrganizerSection(
       modifier = modifier.testTag(EventDetailTestTags.ORGANIZER_SECTION),
       verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Text(
-            text = "ORGANIZER",
+            text = stringResource(R.string.event_detail_organizer_title),
             style = MaterialTheme.typography.titleMedium,
             color = colorScheme.onBackground,
             modifier = Modifier.padding(vertical = 10.dp))
@@ -429,13 +442,13 @@ private fun OrganizerSection(
 private fun AboutEventSection(description: String, modifier: Modifier = Modifier) {
   Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(3.dp)) {
     Text(
-        text = "ABOUT EVENT",
+        text = stringResource(R.string.event_detail_about_title),
         style = MaterialTheme.typography.titleMedium,
         color = colorScheme.onBackground,
         modifier = Modifier.padding(vertical = 10.dp))
 
     Text(
-        text = description.ifEmpty { "No description available." },
+        text = description.ifEmpty { stringResource(R.string.event_detail_no_description) },
         style = MaterialTheme.typography.bodyMedium,
         color = colorScheme.onBackground,
         modifier = Modifier.testTag(EventDetailTestTags.ABOUT_EVENT))
@@ -539,7 +552,7 @@ private fun EventDetailsSection(
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically) {
           Text(
-              text = "See event on map",
+              text = stringResource(R.string.event_detail_see_on_map),
               style = MaterialTheme.typography.titleMedium,
               color = colorScheme.onBackground,
               modifier = Modifier.padding(end = 30.dp))
@@ -553,12 +566,14 @@ private fun EventDetailsSection(
   }
 }
 
+@Composable
 internal fun formatPrice(event: Event): String {
   val lowestPrice = event.lowestPrice
   return if (lowestPrice == 0u) {
-    "FREE"
+    stringResource(R.string.event_detail_price_free)
   } else {
-    "Buy ticket for ${lowestPrice}${event.currency.lowercase()}"
+    stringResource(
+        R.string.event_detail_price_buy, lowestPrice.toString(), event.currency.lowercase())
   }
 }
 
@@ -577,8 +592,8 @@ private fun LoadingOverlay(uiState: EventDetailUiState) {
               Text(
                   text =
                       if (uiState.paymentState is PaymentState.CreatingPaymentIntent)
-                          "Preparing payment..."
-                      else "Processing payment...",
+                          stringResource(R.string.event_detail_preparing_payment)
+                      else stringResource(R.string.event_detail_processing_payment),
                   color = colorScheme.onBackground,
                   style = MaterialTheme.typography.bodyLarge)
             }

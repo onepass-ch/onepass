@@ -26,8 +26,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.theme.MarcFontFamily
 
@@ -59,7 +61,7 @@ fun MarketTicketList(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically) {
           Text(
-              text = "Available Tickets",
+              text = stringResource(R.string.market_tickets_title),
               style =
                   MaterialTheme.typography.titleMedium.copy(
                       fontFamily = MarcFontFamily, fontWeight = FontWeight.Bold),
@@ -79,11 +81,12 @@ fun MarketTicketList(
                 modifier = Modifier.testTag(MyEventsTestTags.SELL_TICKET_BUTTON)) {
                   Icon(
                       imageVector = Icons.Default.Add,
-                      contentDescription = "Sell",
+                      contentDescription =
+                          stringResource(R.string.market_tickets_sell_icon_description),
                       modifier = Modifier.size(18.dp))
                   Spacer(modifier = Modifier.size(4.dp))
                   Text(
-                      text = "Sell Ticket",
+                      text = stringResource(R.string.market_tickets_sell_button),
                       style =
                           MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold))
                 }
@@ -105,9 +108,8 @@ fun MarketTicketList(
       marketTickets.isEmpty() -> {
         // Empty state
         EmptyState(
-            title = "No Tickets Available",
-            message =
-                "There are no tickets listed for sale at the moment. Check back later or list your own tickets!",
+            title = stringResource(R.string.market_tickets_empty_title),
+            message = stringResource(R.string.market_tickets_empty_message),
             modifier = Modifier.padding(top = 32.dp),
             testTag = MyEventsTestTags.MARKET_EMPTY_STATE)
       }
