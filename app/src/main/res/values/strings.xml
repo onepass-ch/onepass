@@ -72,11 +72,14 @@
     <string name="event_detail_see_on_map">See event on map</string>
     <string name="event_detail_price_free">FREE</string>
     <string name="event_detail_price_buy">Buy ticket for %1$s%2$s</string>
-    <string name="event_detail_preparing_payment">Preparing payment...</string>
-    <string name="event_detail_processing_payment">Processing payment...</string>
+    <string name="event_detail_preparing_payment">Preparing payment&#8230;</string>
+    <string name="event_detail_processing_payment">Processing payment&#8230;</string>
 
     <!-- Event Filters -->
-    <string name="filters_more_tags">+%1$d more</string>
+    <plurals name="filters_more_tags">
+        <item quantity="one">+%d more</item>
+        <item quantity="other">+%d more</item>
+    </plurals>
     <string name="filters_available_only">Available Only</string>
     <string name="filters_clear_all">Clear All</string>
     <string name="filters_date_today">Today</string>
@@ -111,7 +114,7 @@
 
     <!-- Edit Event Form -->
     <string name="edit_event_title">Edit Event</string>
-    <string name="edit_event_updating">Updating...</string>
+    <string name="edit_event_updating">Updating&#8230;</string>
     <string name="edit_event_button">Update event</string>
     <string name="edit_event_load_error_title">Failed to load event</string>
     <string name="edit_event_retry">Retry</string>
@@ -122,7 +125,7 @@
     <string name="event_form_title_label">Title*</string>
     <string name="event_form_title_placeholder">Amazing event</string>
     <string name="event_form_description_label">Description*</string>
-    <string name="event_form_description_placeholder">This is amazing..</string>
+    <string name="event_form_description_placeholder">This is amazing&#8230;</string>
     <string name="event_form_date_time_label">Date &amp; time*</string>
     <string name="event_form_start_time_label">Start time</string>
     <string name="event_form_end_time_label">End time</string>
@@ -132,12 +135,21 @@
     <string name="event_form_capacity_label">Capacity</string>
     <string name="event_form_capacity_placeholder">ex: 100</string>
     <string name="event_form_tags_label">Tags</string>
-    <string name="event_form_tags_instruction">Select up to %1$d tags (%2$d/%3$d selected).</string>
+    <plurals name="event_form_tags_instruction">
+        <item quantity="one">Select up to %1$d tag (%2$d/%3$d selected).</item>
+        <item quantity="other">Select up to %1$d tags (%2$d/%3$d selected).</item>
+    </plurals>
     <string name="event_form_tag_selected">%1$s tag selected</string>
     <string name="event_form_tag_not_selected">%1$s tag not selected</string>
     <string name="event_form_image_label">Event Image*</string>
-    <string name="event_form_images_selected">%1$d image(s) selected</string>
-    <string name="event_form_character_counter">%1$d/%2$d characters</string>
+    <plurals name="event_form_images_selected">
+        <item quantity="one">%d image selected</item>
+        <item quantity="other">%d images selected</item>
+    </plurals>
+    <plurals name="event_form_character_counter">
+        <item quantity="one">%1$d/%2$d character</item>
+        <item quantity="other">%1$d/%2$d characters</item>
+    </plurals>
 
     <!-- Events Screen -->
     <string name="events_screen_title">Events Screen</string>
@@ -147,7 +159,7 @@
     <string name="feed_no_results">No results found</string>
     <string name="feed_empty_title">No Events Found</string>
     <string name="feed_empty_message">Check back later for new events in your area!</string>
-    <string name="feed_search_placeholder">Search...</string>
+    <string name="feed_search_placeholder">Search&#8230;</string>
     <string name="feed_favorites_description">Favorites</string>
     <string name="feed_notifications_description">Notifications</string>
     <string name="feed_filter_description">Filter events</string>
@@ -163,7 +175,7 @@
     <string name="hot_events_default_image_description">Default event image</string>
 
     <!-- Market Search Bar -->
-    <string name="market_search_placeholder">Search events or organizers...</string>
+    <string name="market_search_placeholder">Search events or organizers&#8230;</string>
     <string name="market_search_icon_description">Search</string>
     <string name="market_search_clear_description">Clear search</string>
     <string name="market_search_event_image_description">Event image</string>
@@ -179,7 +191,7 @@
     <string name="market_ticket_default_image_description">Default event image</string>
     <string name="market_ticket_location_icon_description">Location</string>
     <string name="market_ticket_original_price_label">Original: %1$s %2$s</string>
-    <string name="market_ticket_loading">...</string>
+    <string name="market_ticket_loading">&#8230;</string>
     <string name="market_ticket_buy_button">Buy</string>
     <string name="market_ticket_your_listing">Your listing</string>
 
@@ -224,7 +236,7 @@
     <string name="sell_dialog_original_price">Original price: CHF %1$s</string>
     <string name="sell_dialog_list_button">List for Sale</string>
     <string name="sell_dialog_cancel_button">Cancel</string>
-    <string name="sell_dialog_choose_ticket">Choose a ticket...</string>
+    <string name="sell_dialog_choose_ticket">Choose a ticket&#8230;</string>
     <string name="sell_dialog_collapse_description">Collapse</string>
     <string name="sell_dialog_expand_description">Expand</string>
     <string name="sell_dialog_ticket_details">%1$s • %2$s</string>
@@ -281,7 +293,6 @@
 
     <!-- Organization Dashboard Screen -->
     <string name="org_dashboard_title">DASHBOARD</string>
-    <string name="org_dashboard_back_description">Back</string>
     <string name="org_dashboard_manage_events_title">MANAGE EVENTS</string>
     <string name="org_dashboard_create_event_button">Create new event</string>
     <string name="org_dashboard_create_icon_description">Create</string>
@@ -323,8 +334,6 @@
     <string name="organizer_tab_posts">Posts</string>
     <string name="organizer_tab_upcoming">UPCOMING</string>
     <string name="organizer_tab_past">PAST</string>
-    <string name="organizer_no_title">No Title</string>
-    <string name="organizer_default_description">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed vitae nisi nec magna consequat tincidunt. Curabitur suscipit sem vel.</string>
     <string name="organizer_posts_empty">No posts yet</string>
     <string name="organizer_upcoming_empty">No upcoming events</string>
     <string name="organizer_past_empty">No past events</string>
