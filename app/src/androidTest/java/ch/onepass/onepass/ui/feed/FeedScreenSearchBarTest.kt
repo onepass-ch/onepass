@@ -559,7 +559,7 @@ class FeedScreenSearchBarTest {
     // Scroll to bottom to see loading indicator
     composeTestRule
         .onNodeWithTag(FeedScreenTestTags.EVENT_LIST)
-        .performScrollToIndex(2) // Scroll past the events to the loading indicator
+        .performScrollToIndex(feedState.events.size) // Loading indicator is after all events
 
     composeTestRule.waitForIdle()
 
