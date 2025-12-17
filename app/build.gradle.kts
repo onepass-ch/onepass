@@ -285,6 +285,11 @@ dependencies {
     globalTestImplementation(libs.androidx.espresso.core)
     testImplementation(kotlin("test"))
 
+    implementation("com.vanniktech:android-image-cropper:4.6.0")
+    implementation("com.github.SmartToolFactory:Compose-Cropper:0.4.0")
+
+    implementation("com.google.firebase:firebase-analytics")
+
     // --------- OneSignal -------
     implementation(libs.onesignal)
 }
