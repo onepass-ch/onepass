@@ -40,8 +40,7 @@ fun FieldLabelWithCounter(
       verticalAlignment = Alignment.CenterVertically) {
         Text(
             text = label,
-            style =
-                MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onBackground))
+            style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onBackground))
         Text(
             text = "$currentLength/$maxLength characters",
             style =
@@ -78,8 +77,7 @@ fun CompactFieldLabel(
       horizontalAlignment = Alignment.Start) {
         Text(
             text = label,
-            style =
-                MaterialTheme.typography.bodySmall.copy(color = colorScheme.onBackground))
+            style = MaterialTheme.typography.bodySmall.copy(color = colorScheme.onBackground))
         Text(
             text = "$currentLength/$maxLength",
             style =
