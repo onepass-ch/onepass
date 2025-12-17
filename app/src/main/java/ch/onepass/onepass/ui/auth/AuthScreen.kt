@@ -255,7 +255,7 @@ private object AuthScreenDefaults {
   val LogoGap = 12.dp
   const val LogoFontSize = 48
 
-  val HeroTitleOffsetX = (-50).dp
+  val HeroTitleOffsetX = (-54).dp
   val HeroTitleOffsetY = 105.dp
   const val HeroTitleFontSize = 48
   const val HeroTitleLineHeight = 56
