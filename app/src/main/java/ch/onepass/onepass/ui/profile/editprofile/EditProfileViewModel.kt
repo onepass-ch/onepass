@@ -41,164 +41,165 @@ class EditProfileViewModel(
     private val context: Context? = null
 ) : ViewModel() {
 
-    private val _formState = MutableStateFlow(EditProfileFormState())
-    val formState: StateFlow<EditProfileFormState> = _formState.asStateFlow()
+  private val _formState = MutableStateFlow(EditProfileFormState())
+  val formState: StateFlow<EditProfileFormState> = _formState.asStateFlow()
 
-    private val _uiState = MutableStateFlow(EditProfileUiState())
-    val uiState: StateFlow<EditProfileUiState> = _uiState.asStateFlow()
+  private val _uiState = MutableStateFlow(EditProfileUiState())
+  val uiState: StateFlow<EditProfileUiState> = _uiState.asStateFlow()
 
-    private val phoneUtil: PhoneNumberUtil = PhoneNumberUtil.getInstance()
-    private val _selectedCountryCode = MutableStateFlow("+41")
-    val selectedCountryCode: StateFlow<String> = _selectedCountryCode.asStateFlow()
+  private val phoneUtil: PhoneNumberUtil = PhoneNumberUtil.getInstance()
+  private val _selectedCountryCode = MutableStateFlow("+41")
+  val selectedCountryCode: StateFlow<String> = _selectedCountryCode.asStateFlow()
 
-    private val _countryList = MutableStateFlow<List<Pair<String, Int>>>(emptyList())
-    val countryList: StateFlow<List<Pair<String, Int>>> = _countryList.asStateFlow()
+  private val _countryList = MutableStateFlow<List<Pair<String, String>>>(emptyList())
+  val countryList: StateFlow<List<Pair<String, String>>> = _countryList.asStateFlow()
 
-    private val _selectedCountryIndex = MutableStateFlow<Int?>(null)
-    private val INITIAL_REGION_CODE = 41
+  private val _selectedCountryIndex = MutableStateFlow<Int?>(null)
 
-    var avatarCameraUri: Uri? = null
-        private set
+  private val INITIAL_REGION_CODE = "41"
 
-    init {
-        // Initialize country list
-        val regions = phoneUtil.supportedRegions
-        val countries =
-            regions
-                .map { region ->
-                    val code = phoneUtil.getCountryCodeForRegion(region)
-                    val name = Locale("", region).displayCountry
-                    name to code
-                }
-                .sortedBy { it.first }
-        _countryList.value = countries
+  var avatarCameraUri: Uri? = null
+    private set
 
-        val initialIndex = countries.indexOfFirst { it.second == INITIAL_REGION_CODE }
-        if (initialIndex != -1) {
-            _selectedCountryIndex.value = initialIndex
-            _selectedCountryCode.value = "+${countries[initialIndex].second}"
-        }
-    }
-
-    fun loadProfile() {
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            try {
-                val user = userRepository.getCurrentUser()
-                if (user != null) {
-                    // Extract phone without prefix
-                    val phoneWithoutPrefix = user.phoneE164?.removePrefix(_selectedCountryCode.value) ?: ""
-
-                    val initials =
-                        user.displayName
-                            .split(" ")
-                            .filter { it.isNotBlank() }
-                            .take(2)
-                            .joinToString("") { it.first().uppercase() }
-
-                    _formState.value =
-                        EditProfileFormState(
-                            displayName = user.displayName,
-                            phone = phoneWithoutPrefix,
-                            country = user.country ?: "",
-                            avatarUrl = user.avatarUrl,
-                            initials = initials.ifEmpty { "?" })
-                }
-                _uiState.value = _uiState.value.copy(isLoading = false)
-            } catch (e: Exception) {
-                _uiState.value =
-                    _uiState.value.copy(
-                        isLoading = false, errorMessage = e.message ?: "Failed to load profile")
+  init {
+    // Initialize country list
+    val regions = phoneUtil.supportedRegions
+    val countries =
+        regions
+            .map { region ->
+              val code = phoneUtil.getCountryCodeForRegion(region)
+              val name = Locale("", region).displayCountry
+              name to code.toString()
             }
+            .sortedBy { it.first }
+    _countryList.value = countries
+
+    val initialIndex = countries.indexOfFirst { it.second == INITIAL_REGION_CODE }
+    if (initialIndex != -1) {
+      _selectedCountryIndex.value = initialIndex
+      _selectedCountryCode.value = "+${countries[initialIndex].second}"
+    }
+  }
+
+  fun loadProfile() {
+    viewModelScope.launch {
+      _uiState.value = _uiState.value.copy(isLoading = true)
+      try {
+        val user = userRepository.getCurrentUser()
+        if (user != null) {
+          // Extract phone without prefix
+          val phoneWithoutPrefix = user.phoneE164?.removePrefix(_selectedCountryCode.value) ?: ""
+
+          val initials =
+              user.displayName
+                  .split(" ")
+                  .filter { it.isNotBlank() }
+                  .take(2)
+                  .joinToString("") { it.first().uppercase() }
+
+          _formState.value =
+              EditProfileFormState(
+                  displayName = user.displayName,
+                  phone = phoneWithoutPrefix,
+                  country = user.country ?: "",
+                  avatarUrl = user.avatarUrl,
+                  initials = initials.ifEmpty { "?" })
         }
+        _uiState.value = _uiState.value.copy(isLoading = false)
+      } catch (e: Exception) {
+        _uiState.value =
+            _uiState.value.copy(
+                isLoading = false, errorMessage = e.message ?: "Failed to load profile")
+      }
+    }
+  }
+
+  fun saveProfile() {
+    if (_formState.value.displayName.isBlank()) {
+      _uiState.value = _uiState.value.copy(errorMessage = "Name is required")
+      return
     }
 
-    fun saveProfile() {
-        if (_formState.value.displayName.isBlank()) {
-            _uiState.value = _uiState.value.copy(errorMessage = "Name is required")
-            return
-        }
+    viewModelScope.launch {
+      _uiState.value = _uiState.value.copy(isLoading = true)
+      try {
+        val currentUser = userRepository.getCurrentUser() ?: throw Exception("User not found")
 
-        viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
-            try {
-                val currentUser = userRepository.getCurrentUser() ?: throw Exception("User not found")
-
-                // Upload avatar if changed
-                val finalAvatarUrl =
-                    if (_formState.value.avatarUri != null) {
-                        uploadAvatar(currentUser.uid) ?: _formState.value.avatarUrl
-                    } else {
-                        _formState.value.avatarUrl
-                    }
-
-                // Build phone with prefix
-                val fullPhone =
-                    if (_formState.value.phone.isNotBlank()) {
-                        "${_selectedCountryCode.value}${_formState.value.phone}"
-                    } else null
-
-                // Update Firestore directly
-                val updates =
-                    mutableMapOf<String, Any?>(
-                        "displayName" to _formState.value.displayName,
-                        "phoneE164" to fullPhone,
-                        "country" to _formState.value.country.ifBlank { null },
-                        "avatarUrl" to finalAvatarUrl)
-
-                firestore.collection("users").document(currentUser.uid).update(updates).await()
-
-                _uiState.value = _uiState.value.copy(isLoading = false, success = true)
-            } catch (e: Exception) {
-                _uiState.value =
-                    _uiState.value.copy(
-                        isLoading = false, errorMessage = e.message ?: "Failed to save profile")
+        // Upload avatar if changed
+        val finalAvatarUrl =
+            if (_formState.value.avatarUri != null) {
+              uploadAvatar(currentUser.uid) ?: _formState.value.avatarUrl
+            } else {
+              _formState.value.avatarUrl
             }
-        }
-    }
 
-    private suspend fun uploadAvatar(userId: String): String? {
-        val imageUri = _formState.value.avatarUri ?: return null
-        val extension = storageRepository.getImageExtension(imageUri)
-        val storagePath = "users/$userId/avatar.$extension"
+        // Build phone with prefix
+        val fullPhone =
+            if (_formState.value.phone.isNotBlank()) {
+              "${_selectedCountryCode.value}${_formState.value.phone}"
+            } else null
 
-        return storageRepository.uploadImage(imageUri, storagePath).getOrNull()
-    }
+        // Update Firestore directly
+        val updates =
+            mutableMapOf<String, Any?>(
+                "displayName" to _formState.value.displayName,
+                "phoneE164" to fullPhone,
+                "country" to _formState.value.country.ifBlank { null },
+                "avatarUrl" to finalAvatarUrl)
 
-    fun selectAvatarImage(uri: Uri) {
-        _formState.value = _formState.value.copy(avatarUri = uri)
-    }
+        firestore.collection("users").document(currentUser.uid).update(updates).await()
 
-    fun removeAvatar() {
-        _formState.value = _formState.value.copy(avatarUrl = null, avatarUri = null)
+        _uiState.value = _uiState.value.copy(isLoading = false, success = true)
+      } catch (e: Exception) {
+        _uiState.value =
+            _uiState.value.copy(
+                isLoading = false, errorMessage = e.message ?: "Failed to save profile")
+      }
     }
+  }
 
-    fun createCameraUri(): Uri? {
-        context ?: return null
-        val file = File(context.cacheDir, "avatar_${System.currentTimeMillis()}.jpg")
-        return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file).also {
-            avatarCameraUri = it
-        }
-    }
+  private suspend fun uploadAvatar(userId: String): String? {
+    val imageUri = _formState.value.avatarUri ?: return null
+    val extension = storageRepository.getImageExtension(imageUri)
+    val storagePath = "users/$userId/avatar.$extension"
 
-    fun updateCountryIndex(index: Int) {
-        _selectedCountryIndex.value = index
-        _selectedCountryCode.value = "+${_countryList.value.getOrNull(index)?.second ?: 41}"
-    }
+    return storageRepository.uploadImage(imageUri, storagePath).getOrNull()
+  }
 
-    fun updateDisplayName(value: String) {
-        _formState.value = _formState.value.copy(displayName = value)
-    }
+  fun selectAvatarImage(uri: Uri) {
+    _formState.value = _formState.value.copy(avatarUri = uri)
+  }
 
-    fun updatePhone(value: String) {
-        _formState.value = _formState.value.copy(phone = value)
-    }
+  fun removeAvatar() {
+    _formState.value = _formState.value.copy(avatarUrl = null, avatarUri = null)
+  }
 
-    fun updateCountry(value: String) {
-        _formState.value = _formState.value.copy(country = value)
+  fun createCameraUri(): Uri? {
+    context ?: return null
+    val file = File(context.cacheDir, "avatar_${System.currentTimeMillis()}.jpg")
+    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file).also {
+      avatarCameraUri = it
     }
+  }
 
-    fun clearError() {
-        _uiState.value = _uiState.value.copy(errorMessage = null)
-    }
+  fun updateCountryIndex(index: Int) {
+    _selectedCountryIndex.value = index
+    _selectedCountryCode.value = "+${_countryList.value.getOrNull(index)?.second ?: "41"}"
+  }
+
+  fun updateDisplayName(value: String) {
+    _formState.value = _formState.value.copy(displayName = value)
+  }
+
+  fun updatePhone(value: String) {
+    _formState.value = _formState.value.copy(phone = value)
+  }
+
+  fun updateCountry(value: String) {
+    _formState.value = _formState.value.copy(country = value)
+  }
+
+  fun clearError() {
+    _uiState.value = _uiState.value.copy(errorMessage = null)
+  }
 }
