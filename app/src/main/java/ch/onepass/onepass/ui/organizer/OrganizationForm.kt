@@ -497,7 +497,7 @@ private fun OrganizationPhoneField(
           // Prefix Dropdown
           Box(
               modifier =
-                  Modifier.widthIn(90.dp)
+                  Modifier.weight(0.25f)
                       .height(50.dp)
                       .border(1.dp, colorScheme.outline, RoundedCornerShape(10.dp))) {
                 OutlinedButton(
