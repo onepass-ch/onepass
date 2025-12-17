@@ -156,6 +156,8 @@
 
     <!-- Feed Screen -->
     <string name="feed_search_error">Error: %1$s</string>
+    <string name="feed_empty_favorites_title">No Favorites</string>
+    <string name="feed_empty_favorites_message">You haven\'t liked any events yet.</string>
     <string name="feed_no_results">No results found</string>
     <string name="feed_empty_title">No Events Found</string>
     <string name="feed_empty_message">Check back later for new events in your area!</string>
@@ -421,9 +423,6 @@
     <string name="myevents_subtab_expired">Expired</string>
     <string name="myevents_subtab_listed">Listed</string>
     <string name="myevents_subtab_listed_with_count">Listed (%1$d)</string>
-
-
-
 
     <!-- Auth Screen -->
     <string name="auth_hero_title_top">BUY, SELL</string>

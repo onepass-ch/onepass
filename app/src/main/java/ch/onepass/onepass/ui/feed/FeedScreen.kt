@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -50,29 +51,29 @@ import kotlinx.coroutines.launch
  * empty states.
  */
 object FeedScreenTestTags {
-  const val FEED_SCREEN = "feedScreen"
-  const val FEED_TOP_BAR = "feedTopBar"
-  const val SEARCH_TEXT_FIELD = "feedSearchTextField"
-  const val FILTER_BUTTON = "filterButton"
-  const val NOTIFICATION_BUTTON = "notificationButton"
-  const val FAVORITES_BUTTON = "favoritesButton"
-  const val EVENT_LIST = "eventList"
-  const val LOADING_INDICATOR = "loadingIndicator"
-  const val ERROR_MESSAGE = "errorMessage"
-  const val EMPTY_STATE = "emptyState"
-  const val ACTIVE_FILTERS_BAR = "activeFiltersBar"
+    const val FEED_SCREEN = "feedScreen"
+    const val FEED_TOP_BAR = "feedTopBar"
+    const val SEARCH_TEXT_FIELD = "feedSearchTextField"
+    const val FILTER_BUTTON = "filterButton"
+    const val NOTIFICATION_BUTTON = "notificationButton"
+    const val FAVORITES_BUTTON = "favoritesButton"
+    const val EVENT_LIST = "eventList"
+    const val LOADING_INDICATOR = "loadingIndicator"
+    const val ERROR_MESSAGE = "errorMessage"
+    const val EMPTY_STATE = "emptyState"
+    const val ACTIVE_FILTERS_BAR = "activeFiltersBar"
 
-  /** Returns a unique test tag for a user search result with the given [userId]. */
-  fun getTestTagForSearchUser(userId: String) = "searchUser_$userId"
+    /** Returns a unique test tag for a user search result with the given [userId]. */
+    fun getTestTagForSearchUser(userId: String) = "searchUser_$userId"
 
-  /** Returns a unique test tag for an event search result with the given [eventId]. */
-  fun getTestTagForSearchEvent(eventId: String) = "searchEvent_$eventId"
+    /** Returns a unique test tag for an event search result with the given [eventId]. */
+    fun getTestTagForSearchEvent(eventId: String) = "searchEvent_$eventId"
 
-  /** Returns a unique test tag for an organization search result with the given [orgId]. */
-  fun getTestTagForSearchOrg(orgId: String) = "searchOrg_$orgId"
+    /** Returns a unique test tag for an organization search result with the given [orgId]. */
+    fun getTestTagForSearchOrg(orgId: String) = "searchOrg_$orgId"
 
-  /** Returns a unique test tag for an event item in the feed with the given [eventId]. */
-  fun getTestTagForEventItem(eventId: String) = "eventItem_$eventId"
+    /** Returns a unique test tag for an event item in the feed with the given [eventId]. */
+    fun getTestTagForEventItem(eventId: String) = "eventItem_$eventId"
 }
 
 /**
@@ -82,11 +83,11 @@ object FeedScreenTestTags {
  * search list, allowing callers to handle each item type explicitly using `when` expressions.
  */
 sealed class GlobalSearchItemClick {
-  data class UserClick(val userId: String) : GlobalSearchItemClick()
+    data class UserClick(val userId: String) : GlobalSearchItemClick()
 
-  data class EventClick(val eventId: String) : GlobalSearchItemClick()
+    data class EventClick(val eventId: String) : GlobalSearchItemClick()
 
-  data class OrganizationClick(val organizationId: String) : GlobalSearchItemClick()
+    data class OrganizationClick(val organizationId: String) : GlobalSearchItemClick()
 }
 
 /**
@@ -96,12 +97,12 @@ sealed class GlobalSearchItemClick {
  * describing which item was clicked.
  */
 fun interface GlobalSearchItemClickListener {
-  /**
-   * Called when a global search item is clicked.
-   *
-   * @param click The click event describing the clicked item.
-   */
-  fun onItemClick(click: GlobalSearchItemClick)
+    /**
+     * Called when a global search item is clicked.
+     *
+     * @param click The click event describing the clicked item.
+     */
+    fun onItemClick(click: GlobalSearchItemClick)
 }
 
 /**
@@ -125,76 +126,76 @@ fun FeedScreen(
     eventCardViewModel: EventCardViewModel = viewModel(),
     globalSearchViewModel: GlobalSearchViewModel? = null
 ) {
-  // 1. State Collection
-  val uiState by viewModel.uiState.collectAsState()
-  val currentFilters by filterViewModel.currentFilters.collectAsState()
-  val likedEvents by eventCardViewModel.likedEvents.collectAsState(emptySet())
-  val searchState = globalSearchViewModel?.uiState?.collectAsState()?.value
-  var searchQuery by remember { mutableStateOf("") }
+    // 1. State Collection
+    val uiState by viewModel.uiState.collectAsState()
+    val currentFilters by filterViewModel.currentFilters.collectAsState()
+    val likedEvents by eventCardViewModel.likedEvents.collectAsState(emptySet())
+    val searchState = globalSearchViewModel?.uiState?.collectAsState()?.value
+    var searchQuery by remember { mutableStateOf("") }
 
-  // LazyList state for controlling scroll position
-  val listState = rememberLazyListState()
-  val coroutineScope = rememberCoroutineScope()
-  val pullState = rememberPullToRefreshState()
+    // LazyList state for controlling scroll position
+    val listState = rememberLazyListState()
+    val coroutineScope = rememberCoroutineScope()
+    val pullState = rememberPullToRefreshState()
 
-  // 2. Side effects
-  RememberFeedScreenSideEffects(
-      uiState = uiState,
-      currentFilters = currentFilters,
-      viewModel = viewModel,
-      listState = listState,
-      coroutineScope = coroutineScope)
-
-  // 3. UI Structure
-  Scaffold(
-      modifier = modifier.fillMaxSize().testTag(FeedScreenTestTags.FEED_SCREEN),
-      topBar = {
-        FeedScreenTopBar(
-            uiState = uiState,
-            currentFilters = currentFilters,
-            searchQuery = searchQuery,
-            onSearchChanged = { newQuery ->
-              searchQuery = newQuery
-              globalSearchViewModel?.onQueryChanged(newQuery)
-            },
-            globalSearchViewModel = globalSearchViewModel,
-            onFilterClick = { viewModel.setShowFilterDialog(true) },
-            onNotificationClick = onNavigateToNotifications,
-            onFavoritesClick = { viewModel.toggleFavoritesMode() },
-            onClearFilters = { filterViewModel.clearFilters() })
-      },
-      containerColor = colorScheme.background,
-  ) { paddingValues ->
-    PullToRefreshBox(
-        isRefreshing = uiState.isRefreshing,
-        onRefresh = viewModel::refreshEvents,
-        state = pullState,
-        modifier = Modifier.fillMaxSize().padding(paddingValues),
-    ) {
-      FeedContentStateSwitcher(
-          uiState = uiState,
-          onNavigateToEvent = onNavigateToEvent,
-          onRetry = { viewModel.refreshEvents() },
-          eventCardViewModel = eventCardViewModel,
-          listState = listState,
-          searchQuery = searchQuery,
-          searchState = searchState,
-          globalSearchViewModel = globalSearchViewModel,
-          globalSearchItemClickListener = globalSearchItemClickListener,
-          likedEvents = likedEvents)
-    }
-
-    // 4. Dialog Display
-    FeedFilterDialog(
-        showDialog = uiState.showFilterDialog,
+    // 2. Side effects
+    RememberFeedScreenSideEffects(
+        uiState = uiState,
         currentFilters = currentFilters,
-        filterViewModel = filterViewModel,
-        onApply = { newFilters ->
-          filterViewModel.applyFilters(newFilters)
-          viewModel.setShowFilterDialog(false)
+        viewModel = viewModel,
+        listState = listState,
+        coroutineScope = coroutineScope)
+
+    // 3. UI Structure
+    Scaffold(
+        modifier = modifier.fillMaxSize().testTag(FeedScreenTestTags.FEED_SCREEN),
+        topBar = {
+            FeedScreenTopBar(
+                uiState = uiState,
+                currentFilters = currentFilters,
+                searchQuery = searchQuery,
+                onSearchChanged = { newQuery ->
+                    searchQuery = newQuery
+                    globalSearchViewModel?.onQueryChanged(newQuery)
+                },
+                globalSearchViewModel = globalSearchViewModel,
+                onFilterClick = { viewModel.setShowFilterDialog(true) },
+                onNotificationClick = onNavigateToNotifications,
+                onFavoritesClick = { viewModel.toggleFavoritesMode() },
+                onClearFilters = { filterViewModel.clearFilters() })
         },
-        onDismiss = { viewModel.setShowFilterDialog(false) })
-  }
+        containerColor = colorScheme.background,
+    ) { paddingValues ->
+        PullToRefreshBox(
+            isRefreshing = uiState.isRefreshing,
+            onRefresh = viewModel::refreshEvents,
+            state = pullState,
+            modifier = Modifier.fillMaxSize().padding(paddingValues),
+        ) {
+            FeedContentStateSwitcher(
+                uiState = uiState,
+                onNavigateToEvent = onNavigateToEvent,
+                onRetry = { viewModel.refreshEvents() },
+                eventCardViewModel = eventCardViewModel,
+                listState = listState,
+                searchQuery = searchQuery,
+                searchState = searchState,
+                globalSearchViewModel = globalSearchViewModel,
+                globalSearchItemClickListener = globalSearchItemClickListener,
+                likedEvents = likedEvents)
+        }
+
+        // 4. Dialog Display
+        FeedFilterDialog(
+            showDialog = uiState.showFilterDialog,
+            currentFilters = currentFilters,
+            filterViewModel = filterViewModel,
+            onApply = { newFilters ->
+                filterViewModel.applyFilters(newFilters)
+                viewModel.setShowFilterDialog(false)
+            },
+            onDismiss = { viewModel.setShowFilterDialog(false) })
+    }
 }
 
 /**
@@ -211,27 +212,27 @@ private fun RememberFeedScreenSideEffects(
     listState: LazyListState,
     coroutineScope: CoroutineScope
 ) {
-  // Track previous refresh state to detect when refresh completes
-  var wasRefreshing by remember { mutableStateOf(false) }
+    // Track previous refresh state to detect when refresh completes
+    var wasRefreshing by remember { mutableStateOf(false) }
 
-  // Load events when screen is first displayed
-  LaunchedEffect(Unit) { viewModel.loadEvents() }
+    // Load events when screen is first displayed
+    LaunchedEffect(Unit) { viewModel.loadEvents() }
 
-  // Apply filters when they change OR when events are loaded
-  LaunchedEffect(currentFilters, uiState.isLoading) {
-    if (!uiState.isLoading) { // Only apply filters after events are loaded
-      viewModel.applyFiltersToCurrentEvents(currentFilters)
+    // Apply filters when they change OR when events are loaded
+    LaunchedEffect(currentFilters, uiState.isLoading) {
+        if (!uiState.isLoading) { // Only apply filters after events are loaded
+            viewModel.applyFiltersToCurrentEvents(currentFilters)
+        }
     }
-  }
 
-  // Scroll to top when refresh completes
-  LaunchedEffect(uiState.isRefreshing) {
-    if (wasRefreshing && !uiState.isRefreshing) {
-      // Refresh just completed, scroll to top smoothly
-      coroutineScope.launch { listState.animateScrollToItem(0) }
+    // Scroll to top when refresh completes
+    LaunchedEffect(uiState.isRefreshing) {
+        if (wasRefreshing && !uiState.isRefreshing) {
+            // Refresh just completed, scroll to top smoothly
+            coroutineScope.launch { listState.animateScrollToItem(0) }
+        }
+        wasRefreshing = uiState.isRefreshing
     }
-    wasRefreshing = uiState.isRefreshing
-  }
 }
 
 /** Top bar content including the title, location, action buttons, and active filters bar. */
@@ -247,29 +248,29 @@ private fun FeedScreenTopBar(
     onFavoritesClick: () -> Unit,
     onClearFilters: () -> Unit
 ) {
-  Column {
-    FeedTopBar(
-        searchQuery = searchQuery,
-        onSearchChanged = { newQuery ->
-          onSearchChanged(newQuery)
-          globalSearchViewModel?.onQueryChanged(newQuery)
-        },
-        isShowingFavorites = uiState.isShowingFavorites,
-        onFilterClick = onFilterClick,
-        onNotificationClick = onNotificationClick,
-        onFavoritesClick = onFavoritesClick,
-    )
+    Column {
+        FeedTopBar(
+            searchQuery = searchQuery,
+            onSearchChanged = { newQuery ->
+                onSearchChanged(newQuery)
+                globalSearchViewModel?.onQueryChanged(newQuery)
+            },
+            isShowingFavorites = uiState.isShowingFavorites,
+            onFilterClick = onFilterClick,
+            onNotificationClick = onNotificationClick,
+            onFavoritesClick = onFavoritesClick,
+        )
 
-    if (currentFilters.hasActiveFilters) {
-      ActiveFiltersBar(
-          filters = currentFilters,
-          onClearFilters = onClearFilters,
-          modifier =
-              Modifier.fillMaxWidth()
-                  .padding(horizontal = 16.dp, vertical = 8.dp)
-                  .testTag(FeedScreenTestTags.ACTIVE_FILTERS_BAR))
+        if (currentFilters.hasActiveFilters) {
+            ActiveFiltersBar(
+                filters = currentFilters,
+                onClearFilters = onClearFilters,
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                        .testTag(FeedScreenTestTags.ACTIVE_FILTERS_BAR))
+        }
     }
-  }
 }
 
 /** Handles the conditional display of Loading, Error, Empty, and Content states. */
@@ -286,28 +287,28 @@ private fun FeedContentStateSwitcher(
     globalSearchItemClickListener: GlobalSearchItemClickListener?,
     likedEvents: Set<String>
 ) {
-  LazyColumn(
-      modifier = Modifier.fillMaxSize().testTag(FeedScreenTestTags.EVENT_LIST),
-      state = listState,
-      verticalArrangement = Arrangement.spacedBy(16.dp)) {
+    LazyColumn(
+        modifier = Modifier.fillMaxSize().testTag(FeedScreenTestTags.EVENT_LIST),
+        state = listState,
+        verticalArrangement = Arrangement.spacedBy(16.dp)) {
         // Branch: Search mode is active (non-blank query with search viewmodel)
         if (globalSearchViewModel != null && searchQuery.isNotBlank()) {
-          SearchContent(
-              searchState = searchState,
-              globalSearchItemClickListener = globalSearchItemClickListener,
-              eventCardViewModel = eventCardViewModel,
-              likedEvents = likedEvents,
-              onNavigateToEvent = onNavigateToEvent)
+            SearchContent(
+                searchState = searchState,
+                globalSearchItemClickListener = globalSearchItemClickListener,
+                eventCardViewModel = eventCardViewModel,
+                likedEvents = likedEvents,
+                onNavigateToEvent = onNavigateToEvent)
         } else {
-          // Branch: Normal feed mode
-          FeedContent(
-              uiState = uiState,
-              onRetry = onRetry,
-              eventCardViewModel = eventCardViewModel,
-              likedEvents = likedEvents,
-              onNavigateToEvent = onNavigateToEvent)
+            // Branch: Normal feed mode
+            FeedContent(
+                uiState = uiState,
+                onRetry = onRetry,
+                eventCardViewModel = eventCardViewModel,
+                likedEvents = likedEvents,
+                onNavigateToEvent = onNavigateToEvent)
         }
-      }
+    }
 }
 
 /** Displays search results including users, events, and organizations. */
@@ -318,27 +319,27 @@ private fun LazyListScope.SearchContent(
     likedEvents: Set<String>,
     onNavigateToEvent: (String) -> Unit
 ) {
-  when {
-    searchState?.isLoading == true -> {
-      item { CenteredLoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR) }
+    when {
+        searchState?.isLoading == true -> {
+            item { CenteredLoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR) }
+        }
+        searchState?.error != null -> {
+            item {
+                Text(
+                    text = stringResource(R.string.feed_search_error, searchState.error),
+                    color = colorScheme.error,
+                    modifier = Modifier.padding(16.dp).testTag(FeedScreenTestTags.ERROR_MESSAGE))
+            }
+        }
+        else -> {
+            SearchResultsContent(
+                searchState = searchState,
+                globalSearchItemClickListener = globalSearchItemClickListener,
+                eventCardViewModel = eventCardViewModel,
+                likedEvents = likedEvents,
+                onNavigateToEvent = onNavigateToEvent)
+        }
     }
-    searchState?.error != null -> {
-      item {
-        Text(
-            text = "Error: ${searchState.error}",
-            color = colorScheme.error,
-            modifier = Modifier.padding(16.dp).testTag(FeedScreenTestTags.ERROR_MESSAGE))
-      }
-    }
-    else -> {
-      SearchResultsContent(
-          searchState = searchState,
-          globalSearchItemClickListener = globalSearchItemClickListener,
-          eventCardViewModel = eventCardViewModel,
-          likedEvents = likedEvents,
-          onNavigateToEvent = onNavigateToEvent)
-    }
-  }
 }
 
 /** Displays the actual search results (users, events, organizations). */
@@ -349,53 +350,53 @@ private fun LazyListScope.SearchResultsContent(
     likedEvents: Set<String>,
     onNavigateToEvent: (String) -> Unit
 ) {
-  // User search results
-  searchState?.users?.let { users ->
-    if (users.isNotEmpty()) {
-      items(users) { user ->
-        UserSearchItem(
-            user,
-            globalSearchItemClickListener,
-            modifier = Modifier.testTag(getTestTagForSearchUser(user.id)))
-      }
+    // User search results
+    searchState?.users?.let { users ->
+        if (users.isNotEmpty()) {
+            items(users) { user ->
+                UserSearchItem(
+                    user,
+                    globalSearchItemClickListener,
+                    modifier = Modifier.testTag(getTestTagForSearchUser(user.id)))
+            }
+        }
     }
-  }
 
-  // Event search results
-  searchState?.events?.let { events ->
-    if (events.isNotEmpty()) {
-      items(events) { event ->
-        EventCard(
-            event = event,
-            isLiked = likedEvents.contains(event.eventId),
-            onLikeToggle = { eventCardViewModel.toggleLike(event.eventId) },
-            onCardClick = { onNavigateToEvent(event.eventId) },
-            modifier = Modifier.testTag(getTestTagForSearchEvent(event.eventId)))
-      }
+    // Event search results
+    searchState?.events?.let { events ->
+        if (events.isNotEmpty()) {
+            items(events) { event ->
+                EventCard(
+                    event = event,
+                    isLiked = likedEvents.contains(event.eventId),
+                    onLikeToggle = { eventCardViewModel.toggleLike(event.eventId) },
+                    onCardClick = { onNavigateToEvent(event.eventId) },
+                    modifier = Modifier.testTag(getTestTagForSearchEvent(event.eventId)))
+            }
+        }
     }
-  }
 
-  // Organisation search results
-  searchState?.organizations?.let { orgs ->
-    if (orgs.isNotEmpty()) {
-      items(orgs) { org ->
-        OrganizationCard(
-            organization = org,
-            onClick = {
-              globalSearchItemClickListener?.onItemClick(
-                  GlobalSearchItemClick.OrganizationClick(org.id))
-            },
-            modifier = Modifier.testTag(getTestTagForSearchOrg(org.id)))
-      }
+    // Organisation search results
+    searchState?.organizations?.let { orgs ->
+        if (orgs.isNotEmpty()) {
+            items(orgs) { org ->
+                OrganizationCard(
+                    organization = org,
+                    onClick = {
+                        globalSearchItemClickListener?.onItemClick(
+                            GlobalSearchItemClick.OrganizationClick(org.id))
+                    },
+                    modifier = Modifier.testTag(getTestTagForSearchOrg(org.id)))
+            }
+        }
     }
-  }
 
-  // Text when no result is found
-  if (searchState?.users.isNullOrEmpty() &&
-      searchState?.events.isNullOrEmpty() &&
-      searchState?.organizations.isNullOrEmpty()) {
-    item { Text("No results found", modifier = Modifier.padding(16.dp)) }
-  }
+    // Text when no result is found
+    if (searchState?.users.isNullOrEmpty() &&
+        searchState?.events.isNullOrEmpty() &&
+        searchState?.organizations.isNullOrEmpty()) {
+        item { Text(stringResource(R.string.feed_no_results), modifier = Modifier.padding(16.dp)) }
+    }
 }
 
 /** Displays normal feed content with loading, error, empty, and event list states. */
@@ -406,39 +407,43 @@ private fun LazyListScope.FeedContent(
     likedEvents: Set<String>,
     onNavigateToEvent: (String) -> Unit
 ) {
-  when {
-    // Initial loading state (only show when not refreshing to avoid duplicate indicators)
-    uiState.isLoading && uiState.events.isEmpty() && !uiState.isRefreshing -> {
-      item { CenteredLoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR) }
+    when {
+        // Initial loading state (only show when not refreshing to avoid duplicate indicators)
+        uiState.isLoading && uiState.events.isEmpty() && !uiState.isRefreshing -> {
+            item { CenteredLoadingState(testTag = FeedScreenTestTags.LOADING_INDICATOR) }
+        }
+        // Error state (only show when we have no events to display)
+        uiState.error != null && uiState.events.isEmpty() -> {
+            item {
+                ErrorState(
+                    error = uiState.error, onRetry = onRetry, testTag = FeedScreenTestTags.ERROR_MESSAGE)
+            }
+        }
+        // Empty state (only when not loading/refreshing and truly empty)
+        !uiState.isLoading && !uiState.isRefreshing && uiState.events.isEmpty() -> {
+            item {
+                EmptyState(
+                    title =
+                        stringResource(
+                            if (uiState.isShowingFavorites) R.string.feed_empty_favorites_title
+                            else R.string.feed_empty_title),
+                    message =
+                        stringResource(
+                            if (uiState.isShowingFavorites) R.string.feed_empty_favorites_message
+                            else R.string.feed_empty_message),
+                    testTag = FeedScreenTestTags.EMPTY_STATE)
+            }
+        }
+        // Normal content display (handles both initial load and refresh scenarios)
+        uiState.events.isNotEmpty() -> {
+            EventListContent(
+                events = uiState.events,
+                isLoadingMore = uiState.isLoading && !uiState.isRefreshing,
+                eventCardViewModel = eventCardViewModel,
+                likedEvents = likedEvents,
+                onNavigateToEvent = onNavigateToEvent)
+        }
     }
-    // Error state (only show when we have no events to display)
-    uiState.error != null && uiState.events.isEmpty() -> {
-      item {
-        ErrorState(
-            error = uiState.error, onRetry = onRetry, testTag = FeedScreenTestTags.ERROR_MESSAGE)
-      }
-    }
-    // Empty state (only when not loading/refreshing and truly empty)
-    !uiState.isLoading && !uiState.isRefreshing && uiState.events.isEmpty() -> {
-      item {
-        EmptyState(
-            title = if (uiState.isShowingFavorites) "No Favorites" else "No Events Found",
-            message =
-                if (uiState.isShowingFavorites) "You haven't liked any events yet."
-                else "Check back later for new events in your area!",
-            testTag = FeedScreenTestTags.EMPTY_STATE)
-      }
-    }
-    // Normal content display (handles both initial load and refresh scenarios)
-    uiState.events.isNotEmpty() -> {
-      EventListContent(
-          events = uiState.events,
-          isLoadingMore = uiState.isLoading && !uiState.isRefreshing,
-          eventCardViewModel = eventCardViewModel,
-          likedEvents = likedEvents,
-          onNavigateToEvent = onNavigateToEvent)
-    }
-  }
 }
 
 /** Displays the list of events with optional loading indicator at the bottom. */
@@ -449,31 +454,31 @@ private fun LazyListScope.EventListContent(
     likedEvents: Set<String>,
     onNavigateToEvent: (String) -> Unit
 ) {
-  items(events) { event ->
-    EventCard(
-        event = event,
-        isLiked = likedEvents.contains(event.eventId),
-        onLikeToggle = { eventCardViewModel.toggleLike(event.eventId) },
-        onCardClick = { onNavigateToEvent(event.eventId) },
-        modifier = Modifier.testTag(getTestTagForEventItem(event.eventId)))
-  }
-
-  // Show loading indicator at bottom when loading more (not during refresh)
-  if (isLoadingMore) {
-    item {
-      Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-        LoadingState()
-      }
+    items(events) { event ->
+        EventCard(
+            event = event,
+            isLiked = likedEvents.contains(event.eventId),
+            onLikeToggle = { eventCardViewModel.toggleLike(event.eventId) },
+            onCardClick = { onNavigateToEvent(event.eventId) },
+            modifier = Modifier.testTag(getTestTagForEventItem(event.eventId)))
     }
-  }
+
+    // Show loading indicator at bottom when loading more (not during refresh)
+    if (isLoadingMore) {
+        item {
+            Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                LoadingState()
+            }
+        }
+    }
 }
 
 /** Helper composable to show a centered loading indicator. */
 @Composable
 private fun CenteredLoadingState(testTag: String) {
-  Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(), contentAlignment = Alignment.Center) {
-    LoadingState(modifier = Modifier.testTag(testTag))
-  }
+    Box(modifier = Modifier.fillMaxWidth().fillMaxHeight(), contentAlignment = Alignment.Center) {
+        LoadingState(modifier = Modifier.testTag(testTag))
+    }
 }
 
 /** Logic and display for the filter dialog. */
@@ -485,16 +490,16 @@ private fun FeedFilterDialog(
     onApply: (EventFilters) -> Unit,
     onDismiss: () -> Unit,
 ) {
-  if (showDialog) {
-    // Sync localFilters to current global filters on dialog open
-    LaunchedEffect(Unit) { filterViewModel.updateLocalFilters(currentFilters) }
+    if (showDialog) {
+        // Sync localFilters to current global filters on dialog open
+        LaunchedEffect(Unit) { filterViewModel.updateLocalFilters(currentFilters) }
 
-    FilterDialog(
-        viewModel = filterViewModel,
-        onApply = onApply,
-        onDismiss = onDismiss,
-    )
-  }
+        FilterDialog(
+            viewModel = filterViewModel,
+            onApply = onApply,
+            onDismiss = onDismiss,
+        )
+    }
 }
 
 /**
@@ -510,12 +515,12 @@ private fun UserSearchItem(
     globalSearchItemClickListener: GlobalSearchItemClickListener?,
     modifier: Modifier = Modifier
 ) {
-  Text(
-      text = user.displayName,
-      modifier =
-          modifier.fillMaxWidth().padding(8.dp).clickable {
-            globalSearchItemClickListener?.onItemClick(GlobalSearchItemClick.UserClick(user.id))
-          })
+    Text(
+        text = user.displayName,
+        modifier =
+            modifier.fillMaxWidth().padding(8.dp).clickable {
+                globalSearchItemClickListener?.onItemClick(GlobalSearchItemClick.UserClick(user.id))
+            })
 }
 
 /**
@@ -539,67 +544,68 @@ private fun FeedTopBar(
     onFavoritesClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-  Surface(
-      modifier = modifier.fillMaxWidth().testTag(FeedScreenTestTags.FEED_TOP_BAR),
-      color = colorScheme.background,
-      tonalElevation = 0.dp,
-  ) {
-    Row(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically) {
-          OutlinedTextField(
-              value = searchQuery,
-              onValueChange = onSearchChanged,
-              placeholder = { Text("Search...") },
-              singleLine = true,
-              modifier = Modifier.weight(1f).testTag(FeedScreenTestTags.SEARCH_TEXT_FIELD),
-              shape = RoundedCornerShape(10.dp),
-              keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
-              colors =
-                  OutlinedTextFieldDefaults.colors(
-                      focusedBorderColor = colorScheme.primary,
-                      unfocusedBorderColor = colorScheme.onBackground,
-                      cursorColor = colorScheme.onBackground,
-                      disabledBorderColor = colorScheme.primary),
-          )
+    Surface(
+        modifier = modifier.fillMaxWidth().testTag(FeedScreenTestTags.FEED_TOP_BAR),
+        color = colorScheme.background,
+        tonalElevation = 0.dp,
+    ) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchChanged,
+                placeholder = { Text(stringResource(R.string.feed_search_placeholder)) },
+                singleLine = true,
+                modifier = Modifier.weight(1f).testTag(FeedScreenTestTags.SEARCH_TEXT_FIELD),
+                shape = RoundedCornerShape(10.dp),
+                keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Search),
+                colors =
+                    OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = colorScheme.primary,
+                        unfocusedBorderColor = colorScheme.onBackground,
+                        cursorColor = colorScheme.onBackground,
+                        disabledBorderColor = colorScheme.primary),
+            )
 
-          Row(
-              horizontalArrangement = Arrangement.spacedBy(4.dp),
-              verticalAlignment = Alignment.CenterVertically) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically) {
                 IconButton(
                     onClick = onFavoritesClick,
                     modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.FAVORITES_BUTTON)) {
-                      Icon(
-                          imageVector =
-                              if (isShowingFavorites) Icons.Filled.Favorite
-                              else Icons.Outlined.FavoriteBorder,
-                          contentDescription = "Favorites",
-                          tint = colorScheme.onBackground,
-                          modifier = Modifier.size(24.dp))
-                    }
+                    Icon(
+                        imageVector =
+                            if (isShowingFavorites) Icons.Filled.Favorite
+                            else Icons.Outlined.FavoriteBorder,
+                        contentDescription = stringResource(R.string.feed_favorites_description),
+                        tint = colorScheme.onBackground,
+                        modifier = Modifier.size(24.dp))
+                }
 
                 IconButton(
                     onClick = onNotificationClick,
                     modifier =
                         Modifier.size(48.dp).testTag(FeedScreenTestTags.NOTIFICATION_BUTTON)) {
-                      Icon(
-                          imageVector = Icons.Default.Notifications,
-                          contentDescription = "Notifications",
-                          tint = colorScheme.onBackground,
-                          modifier = Modifier.size(24.dp))
-                    }
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription =
+                            stringResource(R.string.feed_notifications_description),
+                        tint = colorScheme.onBackground,
+                        modifier = Modifier.size(24.dp))
+                }
 
                 IconButton(
                     onClick = onFilterClick,
                     modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.FILTER_BUTTON)) {
-                      Icon(
-                          painter = painterResource(id = R.drawable.filter_icon),
-                          contentDescription = "Filter events",
-                          tint = colorScheme.onBackground,
-                          modifier = Modifier.size(24.dp))
-                    }
-              }
+                    Icon(
+                        painter = painterResource(id = R.drawable.filter_icon),
+                        contentDescription = stringResource(R.string.feed_filter_description),
+                        tint = colorScheme.onBackground,
+                        modifier = Modifier.size(24.dp))
+                }
+            }
         }
-  }
+    }
 }
