@@ -292,6 +292,320 @@ class FeedScreenSearchBarTest {
     assertTrue(orgItems.size <= 2)
   }
 
+  @Test
+  fun searchResults_displayMixedResults_usersEventsAndOrganizations() {
+    // This test covers SearchResultsContent with ALL three result types present
+    val searchState =
+        GlobalSearchUiState(
+            query = "mixed",
+            users =
+                listOf(
+                    StaffSearchResult(
+                        id = "user1", email = "user1@test.com", displayName = "User One"),
+                    StaffSearchResult(
+                        id = "user2", email = "user2@test.com", displayName = "User Two")),
+            events =
+                listOf(
+                    Event(eventId = "event1", title = "Event One", status = EventStatus.PUBLISHED),
+                    Event(eventId = "event2", title = "Event Two", status = EventStatus.PUBLISHED)),
+            organizations =
+                listOf(
+                    Organization(id = "org1", name = "Org One"),
+                    Organization(id = "org2", name = "Org Two")))
+
+    setContent(searchUiState = searchState)
+
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.SEARCH_TEXT_FIELD, useUnmergedTree = true)
+        .performClick()
+        .performTextInput("mixed")
+
+    composeTestRule.waitForIdle()
+
+    // Verify all users are displayed
+    composeTestRule.onNodeWithTag(getTestTagForSearchUser("user1")).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(getTestTagForSearchUser("user2")).assertIsDisplayed()
+
+    // Verify all events are displayed
+    composeTestRule.onNodeWithTag(getTestTagForSearchEvent("event1")).assertIsDisplayed()
+    composeTestRule.onNodeWithTag(getTestTagForSearchEvent("event2")).assertIsDisplayed()
+
+    // Scroll to organizations and verify they are displayed
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.EVENT_LIST)
+        .performScrollToNode(hasTestTag(getTestTagForSearchOrg("org1")))
+    composeTestRule.onNodeWithTag(getTestTagForSearchOrg("org1")).assertIsDisplayed()
+
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.EVENT_LIST)
+        .performScrollToNode(hasTestTag(getTestTagForSearchOrg("org2")))
+    composeTestRule.onNodeWithTag(getTestTagForSearchOrg("org2")).assertIsDisplayed()
+  }
+
+  @Test
+  fun searchResults_displayMixedResults_andAllAreClickable() {
+    // This test verifies that all items in mixed results are clickable
+    val searchState =
+        GlobalSearchUiState(
+            query = "clickable",
+            users =
+                listOf(
+                    StaffSearchResult(
+                        id = "user1", email = "user1@test.com", displayName = "User One")),
+            events =
+                listOf(
+                    Event(eventId = "event1", title = "Event One", status = EventStatus.PUBLISHED)),
+            organizations = listOf(Organization(id = "org1", name = "Org One")))
+
+    setContent(searchUiState = searchState)
+
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.SEARCH_TEXT_FIELD, useUnmergedTree = true)
+        .performClick()
+        .performTextInput("clickable")
+
+    composeTestRule.waitForIdle()
+
+    // Click user
+    composeTestRule.onNodeWithTag(getTestTagForSearchUser("user1")).performClick()
+    assertTrue(lastClick is GlobalSearchItemClick.UserClick)
+    assertEquals("user1", (lastClick as GlobalSearchItemClick.UserClick).userId)
+
+    // Click event
+    composeTestRule.onNodeWithTag(getTestTagForSearchEvent("event1")).performClick()
+    assertEquals("event1", lastNavigatedEventId)
+
+    // Click organization
+    lastClick = null
+    composeTestRule.onNodeWithTag(getTestTagForSearchOrg("org1")).performClick()
+    assertTrue(lastClick is GlobalSearchItemClick.OrganizationClick)
+    assertEquals("org1", (lastClick as GlobalSearchItemClick.OrganizationClick).organizationId)
+  }
+
+  @Test
+  fun searchResults_onlyUsers_noEventsOrOrganizations() {
+    // Tests the branch where only users exist (events and organizations are null/empty)
+    val searchState =
+        GlobalSearchUiState(
+            query = "users",
+            users =
+                listOf(
+                    StaffSearchResult(
+                        id = "user1", email = "user1@test.com", displayName = "User One")),
+            events = emptyList(),
+            organizations = emptyList())
+
+    setContent(searchUiState = searchState)
+
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.SEARCH_TEXT_FIELD, useUnmergedTree = true)
+        .performClick()
+        .performTextInput("users")
+
+    composeTestRule.waitForIdle()
+
+    // User should be displayed
+    composeTestRule
+        .onNodeWithTag(getTestTagForSearchUser("user1"))
+        .performScrollTo()
+        .assertIsDisplayed()
+
+    // No events or organizations should be displayed
+    composeTestRule.onNodeWithTag(getTestTagForSearchEvent("event1")).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(getTestTagForSearchOrg("org1")).assertDoesNotExist()
+  }
+
+  @Test
+  fun searchResults_onlyEvents_noUsersOrOrganizations() {
+    // Tests the branch where only events exist (users and organizations are null/empty)
+    val searchState =
+        GlobalSearchUiState(
+            query = "events",
+            users = emptyList(),
+            events =
+                listOf(
+                    Event(eventId = "event1", title = "Event One", status = EventStatus.PUBLISHED)),
+            organizations = emptyList())
+
+    setContent(searchUiState = searchState)
+
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.SEARCH_TEXT_FIELD, useUnmergedTree = true)
+        .performClick()
+        .performTextInput("events")
+
+    composeTestRule.waitForIdle()
+
+    // Event should be displayed
+    composeTestRule
+        .onNodeWithTag(getTestTagForSearchEvent("event1"))
+        .performScrollTo()
+        .assertIsDisplayed()
+
+    // No users or organizations should be displayed
+    composeTestRule.onNodeWithTag(getTestTagForSearchUser("user1")).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(getTestTagForSearchOrg("org1")).assertDoesNotExist()
+  }
+
+  @Test
+  fun searchResults_onlyOrganizations_noUsersOrEvents() {
+    // Tests the branch where only organizations exist (users and events are null/empty)
+    val searchState =
+        GlobalSearchUiState(
+            query = "orgs",
+            users = emptyList(),
+            events = emptyList(),
+            organizations = listOf(Organization(id = "org1", name = "Org One")))
+
+    setContent(searchUiState = searchState)
+
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.SEARCH_TEXT_FIELD, useUnmergedTree = true)
+        .performClick()
+        .performTextInput("orgs")
+
+    composeTestRule.waitForIdle()
+
+    // Organization should be displayed
+    composeTestRule
+        .onNodeWithTag(getTestTagForSearchOrg("org1"))
+        .performScrollTo()
+        .assertIsDisplayed()
+
+    // No users or events should be displayed
+    composeTestRule.onNodeWithTag(getTestTagForSearchUser("user1")).assertDoesNotExist()
+    composeTestRule.onNodeWithTag(getTestTagForSearchEvent("event1")).assertDoesNotExist()
+  }
+
+  @Test
+  fun searchResults_nullLists_showsNoResults() {
+    // Tests the branch where all result lists are explicitly null
+    val searchState =
+        GlobalSearchUiState(
+            query = "null", users = listOf(), events = listOf(), organizations = listOf())
+
+    setContent(searchUiState = searchState)
+
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.SEARCH_TEXT_FIELD, useUnmergedTree = true)
+        .performClick()
+        .performTextInput("null")
+
+    composeTestRule.waitForIdle()
+
+    // Should show "No results found"
+    composeTestRule.onNode(hasText("No results found")).performScrollTo().assertIsDisplayed()
+  }
+
+  @Test
+  fun centeredLoadingState_displaysCorrectly_inSearchMode() {
+    // Tests CenteredLoadingState helper function in search context
+    val searchState = GlobalSearchUiState(query = "loading", isLoading = true)
+
+    setContent(searchUiState = searchState)
+
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.SEARCH_TEXT_FIELD, useUnmergedTree = true)
+        .performClick()
+        .performTextInput("loading")
+
+    composeTestRule.waitForIdle()
+
+    // Verify loading indicator is displayed with correct test tag
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.LOADING_INDICATOR)
+        .performScrollTo()
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun centeredLoadingState_displaysCorrectly_inFeedMode() {
+    // Tests CenteredLoadingState helper function in feed context
+    val feedState = FeedUIState(isLoading = true, events = emptyList(), isRefreshing = false)
+
+    setContent(feedUiState = feedState, withGlobalSearch = false)
+
+    composeTestRule.waitForIdle()
+
+    // Verify loading indicator is displayed with correct test tag
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.LOADING_INDICATOR)
+        .performScrollTo()
+        .assertIsDisplayed()
+  }
+
+  @Test
+  fun eventListContent_withLoadingMore_displaysBottomLoadingIndicator() {
+    // Tests EventListContent with isLoadingMore = true
+    val feedState =
+        FeedUIState(
+            isLoading = true, // isLoadingMore will be true (loading && !refreshing)
+            isRefreshing = false,
+            events =
+                listOf(
+                    Event(eventId = "event1", title = "Event 1", status = EventStatus.PUBLISHED),
+                    Event(eventId = "event2", title = "Event 2", status = EventStatus.PUBLISHED)))
+
+    setContent(feedUiState = feedState, withGlobalSearch = false)
+
+    composeTestRule.waitForIdle()
+
+    // Events should be displayed
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem("event1"))
+        .performScrollTo()
+        .assertIsDisplayed()
+
+    // Scroll to bottom to see loading indicator
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.EVENT_LIST)
+        .performScrollToIndex(feedState.events.size) // Loading indicator is after all events
+
+    composeTestRule.waitForIdle()
+
+    // Bottom loading indicator should exist
+    composeTestRule.onAllNodesWithTag("loading_indicator").assertCountEquals(1)
+  }
+
+  @Test
+  fun eventListContent_withoutLoadingMore_noBottomLoadingIndicator() {
+    // Tests EventListContent with isLoadingMore = false
+    val feedState =
+        FeedUIState(
+            isLoading = false,
+            isRefreshing = false,
+            events =
+                listOf(
+                    Event(eventId = "event1", title = "Event 1", status = EventStatus.PUBLISHED),
+                    Event(eventId = "event2", title = "Event 2", status = EventStatus.PUBLISHED)))
+
+    setContent(feedUiState = feedState, withGlobalSearch = false)
+
+    composeTestRule.waitForIdle()
+
+    // Events should be displayed
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem("event1"))
+        .performScrollTo()
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithTag(FeedScreenTestTags.getTestTagForEventItem("event2"))
+        .performScrollTo()
+        .assertIsDisplayed()
+
+    // No loading indicator at the bottom
+    composeTestRule.onAllNodesWithTag("loading_indicator").assertCountEquals(0)
+  }
+
+  private fun hasText(text: String): SemanticsMatcher {
+    return SemanticsMatcher("Has text '$text'") { node ->
+      val textList =
+          node.config.getOrNull(androidx.compose.ui.semantics.SemanticsProperties.Text)
+              ?: emptyList()
+      textList.any { annotatedString -> annotatedString.text == text }
+    }
+  }
+
   private fun hasTestTagStartingWith(prefix: String): SemanticsMatcher =
       SemanticsMatcher("Has test tag starting with \"$prefix\"") { node ->
         val tag = node.config.getOrNull(SemanticsProperties.TestTag)
