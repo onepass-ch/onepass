@@ -16,6 +16,7 @@ import ch.onepass.onepass.model.storage.StorageRepository
 import ch.onepass.onepass.model.storage.StorageRepositoryFirebase
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
+import ch.onepass.onepass.utils.InputSanitizer
 import ch.onepass.onepass.utils.ValidationUtils
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import java.util.Locale
@@ -98,6 +99,16 @@ class OrganizationFormViewModel(
     private val membershipRepository: MembershipRepository = MembershipRepositoryFirebase()
 ) : ViewModel() {
 
+  companion object {
+    const val MAX_NAME_LENGTH = 50
+    const val MAX_DESCRIPTION_LENGTH = 200
+    const val MAX_EMAIL_LENGTH = 50
+    const val MAX_PHONE_LENGTH = 15
+    const val MAX_WEBSITE_LENGTH = 50
+    const val MAX_SOCIAL_LENGTH = 50
+    const val MAX_ADDRESS_LENGTH = 150
+  }
+
   /** Private form state */
   private val _formState = MutableStateFlow(OrganizationFormState())
   /** Public form state */
@@ -121,10 +132,6 @@ class OrganizationFormViewModel(
   /** Selected country index state */
   private val _selectedCountryIndex = MutableStateFlow<Int?>(null)
 
-  /** Regex pattern for validating website URLs */
-  private val REGEX_WEBSITE_URL = """^https?://[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}.*$""".toRegex()
-  /** Regex pattern for validating phone numbers */
-  private val REGEX_PHONE = """^\+\d{1,4}\d{4,14}$""".toRegex()
   /** Initial region code for default country selection */
   private val INITIAL_REGION_CODE = 41
 
@@ -173,7 +180,7 @@ class OrganizationFormViewModel(
    * @return An error message if invalid, null otherwise
    */
   private fun validateEmail(value: String): String? {
-    if (value.isBlank()) return null
+    if (value.isBlank()) return "Email is required"
     return if (!ValidationUtils.isValidEmail(value)) {
       "Invalid email"
     } else null
@@ -189,11 +196,12 @@ class OrganizationFormViewModel(
     val countryCode = _selectedCountryIndex.value?.let { _countryList.value.getOrNull(it)?.second }
     val fullNumber = if (countryCode != null) "+$countryCode$value" else value
 
-    return if (countryCode == null ||
-        value.isBlank() ||
-        !ValidationUtils.isValidPhone(fullNumber)) {
-      "Invalid phone number"
-    } else null
+    return when {
+      countryCode == null -> "Phone country code is required"
+      value.isBlank() -> "Phone number is required"
+      !ValidationUtils.isValidPhone(fullNumber) -> "Invalid phone number"
+      else -> null
+    }
   }
 
   /**
@@ -257,10 +265,18 @@ class OrganizationFormViewModel(
    * @param value The new name value
    */
   fun updateName(value: String) {
-    val field = _formState.value.name
-    _formState.value =
-        _formState.value.copy(
-            name = updateField(field, value, ::validateName, field.touched, field.focused))
+    try {
+      val sanitized = InputSanitizer.sanitizeTitle(value).take(MAX_NAME_LENGTH)
+      val field = _formState.value.name
+      _formState.value =
+          _formState.value.copy(
+              name = updateField(field, sanitized, ::validateName, field.touched, field.focused))
+    } catch (_: IllegalArgumentException) {
+      val field = _formState.value.name
+      _formState.value =
+          _formState.value.copy(
+              name = field.copy(error = "Name contains invalid characters or dangerous patterns"))
+    }
   }
 
   /**
@@ -269,11 +285,22 @@ class OrganizationFormViewModel(
    * @param value The new description value
    */
   fun updateDescription(value: String) {
-    val field = _formState.value.description
-    _formState.value =
-        _formState.value.copy(
-            description =
-                updateField(field, value, ::validateDescription, field.touched, field.focused))
+    try {
+      val sanitized = InputSanitizer.sanitizeDescription(value).take(MAX_DESCRIPTION_LENGTH)
+      val field = _formState.value.description
+      _formState.value =
+          _formState.value.copy(
+              description =
+                  updateField(
+                      field, sanitized, ::validateDescription, field.touched, field.focused))
+    } catch (_: IllegalArgumentException) {
+      val field = _formState.value.description
+      _formState.value =
+          _formState.value.copy(
+              description =
+                  field.copy(
+                      error = "Description contains invalid characters or dangerous patterns"))
+    }
   }
 
   /**
@@ -282,10 +309,12 @@ class OrganizationFormViewModel(
    * @param value The new contact email value
    */
   fun updateContactEmail(value: String) {
+    val sanitized = value.take(MAX_EMAIL_LENGTH).trim()
     val field = _formState.value.contactEmail
     _formState.value =
         _formState.value.copy(
-            contactEmail = updateField(field, value, ::validateEmail, field.touched, field.focused))
+            contactEmail =
+                updateField(field, sanitized, ::validateEmail, field.touched, field.focused))
   }
 
   /**
@@ -294,10 +323,12 @@ class OrganizationFormViewModel(
    * @param value The new contact phone value
    */
   fun updateContactPhone(value: String) {
+    val sanitized = InputSanitizer.sanitizeCapacity(value).take(MAX_PHONE_LENGTH)
     val field = _formState.value.contactPhone
     _formState.value =
         _formState.value.copy(
-            contactPhone = updateField(field, value, ::validatePhone, field.touched, field.focused))
+            contactPhone =
+                updateField(field, sanitized, ::validatePhone, field.touched, field.focused))
   }
 
   /**
@@ -306,10 +337,12 @@ class OrganizationFormViewModel(
    * @param value The new website value
    */
   fun updateWebsite(value: String) {
+    val sanitized = value.take(MAX_WEBSITE_LENGTH).trim()
     val field = _formState.value.website
     _formState.value =
         _formState.value.copy(
-            website = updateField(field, value, ::validateWebsite, field.touched, field.focused))
+            website =
+                updateField(field, sanitized, ::validateWebsite, field.touched, field.focused))
   }
 
   /**
@@ -318,8 +351,9 @@ class OrganizationFormViewModel(
    * @param value The new instagram value
    */
   fun updateInstagram(value: String) {
+    val sanitized = value.take(MAX_SOCIAL_LENGTH).trim()
     _formState.value =
-        _formState.value.copy(instagram = _formState.value.instagram.copy(value = value))
+        _formState.value.copy(instagram = _formState.value.instagram.copy(value = sanitized))
   }
 
   /**
@@ -328,8 +362,9 @@ class OrganizationFormViewModel(
    * @param value The new facebook value
    */
   fun updateFacebook(value: String) {
+    val sanitized = value.take(MAX_SOCIAL_LENGTH).trim()
     _formState.value =
-        _formState.value.copy(facebook = _formState.value.facebook.copy(value = value))
+        _formState.value.copy(facebook = _formState.value.facebook.copy(value = sanitized))
   }
 
   /**
@@ -338,16 +373,19 @@ class OrganizationFormViewModel(
    * @param value The new tiktok value
    */
   fun updateTiktok(value: String) {
-    _formState.value = _formState.value.copy(tiktok = _formState.value.tiktok.copy(value = value))
+    val sanitized = value.take(MAX_SOCIAL_LENGTH).trim()
+    _formState.value =
+        _formState.value.copy(tiktok = _formState.value.tiktok.copy(value = sanitized))
   }
-
   /**
    * Updates the address field
    *
    * @param value The new address value
    */
   fun updateAddress(value: String) {
-    _formState.value = _formState.value.copy(address = _formState.value.address.copy(value = value))
+    val sanitized = value.take(MAX_ADDRESS_LENGTH).trim()
+    _formState.value =
+        _formState.value.copy(address = _formState.value.address.copy(value = sanitized))
   }
 
   /**

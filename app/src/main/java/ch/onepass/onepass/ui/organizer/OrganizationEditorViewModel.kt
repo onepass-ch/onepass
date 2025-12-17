@@ -74,8 +74,8 @@ data class OrganizationEditorData(
           id = id,
           name = formState.name.value,
           description = formState.description.value,
-          contactEmail = formState.contactEmail.value.ifBlank { null },
-          contactPhone = formState.contactPhone.value.ifBlank { null },
+          contactEmail = formState.contactEmail.value,
+          contactPhone = formState.contactPhone.value,
           phonePrefix = formState.contactPhonePrefix.value.ifBlank { null },
           website = formState.website.value.ifBlank { null },
           instagram = formState.instagram.value.ifBlank { null },
@@ -185,11 +185,17 @@ class OrganizationEditorViewModel(
    *
    * @param data The [OrganizationEditorData] containing updated fields.
    */
-  fun updateOrganization(data: OrganizationEditorData) {
+  fun updateOrganization(data: OrganizationEditorData, formViewModel: OrganizationFormViewModel) {
     val currentOrg = _uiState.value.organization
     if (currentOrg == null) {
       // Cannot update if organization is not loaded
       _uiState.value = _uiState.value.copy(errorMessage = "Cannot update: organization not loaded")
+      return
+    }
+
+    // Validate form before proceeding
+    if (!formViewModel.validateForm()) {
+      _uiState.value = _uiState.value.copy(errorMessage = "Please fix all errors before submitting")
       return
     }
 

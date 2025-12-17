@@ -16,18 +16,19 @@ class OrganizationEditorViewModelTest {
 
   private lateinit var repository: FakeEditOrganizationRepository
   private lateinit var storageRepository: FakeStorageRepository
-  private lateinit var viewModel: OrganizationEditorViewModel
+  private lateinit var formViewModel: OrganizationFormViewModel
+  private lateinit var editorViewModel: OrganizationEditorViewModel
 
   private val testDispatcher = StandardTestDispatcher()
 
   @Before
   fun setup() {
-    // Override Dispatchers.Main with test dispatcher
     Dispatchers.setMain(testDispatcher)
 
     repository = FakeEditOrganizationRepository()
     storageRepository = FakeStorageRepository()
-    viewModel = OrganizationEditorViewModel(repository, storageRepository)
+    formViewModel = OrganizationFormViewModel()
+    editorViewModel = OrganizationEditorViewModel(repository, storageRepository)
   }
 
   @After
@@ -40,10 +41,10 @@ class OrganizationEditorViewModelTest {
     val org = testOrganization("org1")
     repository.organizationToReturn = org
 
-    viewModel.loadOrganizationById("org1")
-    advanceUntilIdle() // make coroutine complete
+    editorViewModel.loadOrganizationById("org1")
+    advanceUntilIdle()
 
-    val state = viewModel.uiState.value
+    val state = editorViewModel.uiState.value
     assertFalse(state.isLoading)
     assertEquals(org, state.organization)
     assertNull(state.errorMessage)
@@ -53,13 +54,154 @@ class OrganizationEditorViewModelTest {
   fun loadOrganizationById_notFound() = runTest {
     repository.organizationToReturn = null
 
-    viewModel.loadOrganizationById("org2")
+    editorViewModel.loadOrganizationById("org2")
     advanceUntilIdle()
 
-    val state = viewModel.uiState.value
+    val state = editorViewModel.uiState.value
     assertFalse(state.isLoading)
     assertNull(state.organization)
     assertEquals("Organization not found", state.errorMessage)
+  }
+
+  @Test
+  fun updateNameSanitizesInput() = runTest {
+    val org = testOrganization("org1")
+    repository.organizationToReturn = org
+
+    editorViewModel.loadOrganizationById("org1")
+    advanceUntilIdle()
+
+    formViewModel.updateName("Test <script>alert('xss')</script> Org")
+    val state = formViewModel.formState.value
+    assertFalse("Should not contain script tags", state.name.value.contains("<script>"))
+  }
+
+  @Test
+  fun updateNameTruncatesToMaxLength() = runTest {
+    val org = testOrganization("org1")
+    repository.organizationToReturn = org
+
+    editorViewModel.loadOrganizationById("org1")
+    advanceUntilIdle()
+
+    val longName = "A".repeat(100)
+    formViewModel.updateName(longName)
+    val state = formViewModel.formState.value
+    assertEquals("Should truncate to MAX_NAME_LENGTH", 50, state.name.value.length)
+  }
+
+  @Test
+  fun updateDescriptionSanitizesInput() = runTest {
+    val org = testOrganization("org1")
+    repository.organizationToReturn = org
+
+    editorViewModel.loadOrganizationById("org1")
+    advanceUntilIdle()
+
+    formViewModel.updateDescription("Test'; DROP TABLE users; -- Description")
+    val state = formViewModel.formState.value
+    assertNotNull("Description should be set", state.description.value)
+    assertTrue("Description length should be within limits", state.description.value.length <= 200)
+  }
+
+  @Test
+  fun updateContactEmailTruncatesToMaxLength() = runTest {
+    val org = testOrganization("org1")
+    repository.organizationToReturn = org
+
+    editorViewModel.loadOrganizationById("org1")
+    advanceUntilIdle()
+
+    val longEmail = "a".repeat(50) + "@test.com"
+    formViewModel.updateContactEmail(longEmail)
+    val state = formViewModel.formState.value
+    assertTrue("Email should not exceed MAX_EMAIL_LENGTH", state.contactEmail.value.length <= 100)
+  }
+
+  @Test
+  fun updateContactPhoneSanitizesInput() = runTest {
+    val org = testOrganization("org1")
+    repository.organizationToReturn = org
+
+    editorViewModel.loadOrganizationById("org1")
+    advanceUntilIdle()
+
+    formViewModel.updateContactPhone("79-123-456<script>")
+    val state = formViewModel.formState.value
+    assertFalse("Should remove dangerous characters", state.contactPhone.value.contains("<"))
+  }
+
+  @Test
+  fun updateWebsiteTruncatesToMaxLength() = runTest {
+    val org = testOrganization("org1")
+    repository.organizationToReturn = org
+
+    editorViewModel.loadOrganizationById("org1")
+    advanceUntilIdle()
+
+    val longUrl = "https://" + "a".repeat(200) + ".com"
+    formViewModel.updateWebsite(longUrl)
+    val state = formViewModel.formState.value
+    assertTrue("Website should not exceed MAX_WEBSITE_LENGTH", state.website.value.length <= 200)
+  }
+
+  @Test
+  fun updateInstagramTruncatesToMaxLength() = runTest {
+    val org = testOrganization("org1")
+    repository.organizationToReturn = org
+
+    editorViewModel.loadOrganizationById("org1")
+    advanceUntilIdle()
+
+    val longHandle = "@" + "a".repeat(100)
+    formViewModel.updateInstagram(longHandle)
+    val state = formViewModel.formState.value
+    assertTrue(
+        "Instagram handle should not exceed MAX_SOCIAL_LENGTH", state.instagram.value.length <= 100)
+  }
+
+  @Test
+  fun updateFacebookTruncatesToMaxLength() = runTest {
+    val org = testOrganization("org1")
+    repository.organizationToReturn = org
+
+    editorViewModel.loadOrganizationById("org1")
+    advanceUntilIdle()
+
+    val longHandle = "a".repeat(120)
+    formViewModel.updateFacebook(longHandle)
+    val state = formViewModel.formState.value
+    assertTrue(
+        "Facebook handle should not exceed MAX_SOCIAL_LENGTH", state.facebook.value.length <= 100)
+  }
+
+  @Test
+  fun updateTiktokTruncatesToMaxLength() = runTest {
+    val org = testOrganization("org1")
+    repository.organizationToReturn = org
+
+    editorViewModel.loadOrganizationById("org1")
+    advanceUntilIdle()
+
+    val longHandle = "a".repeat(120)
+    formViewModel.updateTiktok(longHandle)
+    val state = formViewModel.formState.value
+    assertTrue(
+        "TikTok handle should not exceed MAX_SOCIAL_LENGTH", state.tiktok.value.length <= 100)
+  }
+
+  @Test
+  fun updateAddressTruncatesToMaxLength() = runTest {
+    val org = testOrganization("org1")
+    repository.organizationToReturn = org
+
+    editorViewModel.loadOrganizationById("org1")
+    advanceUntilIdle()
+
+    val longAddress = "a".repeat(300)
+    formViewModel.updateAddress(longAddress)
+    val state = formViewModel.formState.value
+    assertTrue("Address should not exceed MAX_ADDRESS_LENGTH", state.address.value.length <= 200)
   }
 
   @Test
@@ -67,8 +209,21 @@ class OrganizationEditorViewModelTest {
     val org = testOrganization("org1", "Old Name", "Old Description")
     repository.organizationToReturn = org
 
-    viewModel.loadOrganizationById("org1")
+    editorViewModel.loadOrganizationById("org1")
     advanceUntilIdle()
+
+    formViewModel.initializeFrom(org)
+
+    formViewModel.updateName("New Name")
+    formViewModel.updateDescription("New Description")
+    formViewModel.updateContactEmail("email@test.com")
+    formViewModel.updateContactPhone("987654")
+    formViewModel.formState.value.contactPhonePrefix.value = "1"
+    formViewModel.updateWebsite("newsite.com")
+    formViewModel.updateInstagram("insta")
+    formViewModel.updateFacebook("fb")
+    formViewModel.updateTiktok("tt")
+    formViewModel.updateAddress("address")
 
     val data =
         OrganizationEditorData(
@@ -86,10 +241,10 @@ class OrganizationEditorViewModelTest {
             profileImageUri = null,
             coverImageUri = null)
 
-    viewModel.updateOrganization(data)
+    editorViewModel.updateOrganization(data, formViewModel)
     advanceUntilIdle()
 
-    val state = viewModel.uiState.value
+    val state = editorViewModel.uiState.value
     assertFalse(state.isLoading)
     assertTrue(state.success)
     assertEquals("New Name", state.organization?.name)
@@ -103,7 +258,7 @@ class OrganizationEditorViewModelTest {
     val org = testOrganization("org1")
     repository.organizationToReturn = org
 
-    viewModel.loadOrganizationById("org1")
+    editorViewModel.loadOrganizationById("org1")
     advanceUntilIdle()
 
     val data =
@@ -122,13 +277,13 @@ class OrganizationEditorViewModelTest {
             profileImageUri = null,
             coverImageUri = null)
 
-    viewModel.updateOrganization(data)
+    editorViewModel.updateOrganization(data, formViewModel)
     advanceUntilIdle()
 
-    val state = viewModel.uiState.value
+    val state = editorViewModel.uiState.value
     assertFalse(state.isLoading)
     assertFalse(state.success)
-    assertEquals("Update failed", state.errorMessage)
+    assertEquals("Please fix all errors before submitting", state.errorMessage)
   }
 
   @Test
@@ -149,25 +304,38 @@ class OrganizationEditorViewModelTest {
             profileImageUri = null,
             coverImageUri = null)
 
-    viewModel.updateOrganization(data)
+    editorViewModel.updateOrganization(data, formViewModel)
     advanceUntilIdle()
 
-    val state = viewModel.uiState.value
+    val state = editorViewModel.uiState.value
     assertEquals("Cannot update: organization not loaded", state.errorMessage)
     assertFalse(state.success)
   }
-
-  // ===== NEW TESTS FOR IMAGE FUNCTIONALITY =====
 
   @Test
   fun updateOrganizationWithProfileImage() = runTest {
     val org = testOrganization("org1")
     repository.organizationToReturn = org
 
-    viewModel.loadOrganizationById("org1")
+    editorViewModel.loadOrganizationById("org1")
     advanceUntilIdle()
 
+    formViewModel.initializeFrom(org)
+
     val profileUri = android.net.Uri.parse("content://media/image/profile123")
+
+    formViewModel.updateName("Updated Name")
+    formViewModel.updateDescription("Updated Description")
+    formViewModel.updateContactEmail("email@test.com")
+    formViewModel.updateContactPhone("987654")
+    formViewModel.formState.value.contactPhonePrefix.value = "1"
+    formViewModel.updateWebsite("website.com")
+    formViewModel.updateInstagram("insta")
+    formViewModel.updateFacebook("fb")
+    formViewModel.updateTiktok("tt")
+    formViewModel.updateAddress("address")
+    formViewModel.selectProfileImage(profileUri)
+
     val data =
         OrganizationEditorData(
             id = "org1",
@@ -184,10 +352,10 @@ class OrganizationEditorViewModelTest {
             profileImageUri = profileUri,
             coverImageUri = null)
 
-    viewModel.updateOrganization(data)
+    editorViewModel.updateOrganization(data, formViewModel)
     advanceUntilIdle()
 
-    val state = viewModel.uiState.value
+    val state = editorViewModel.uiState.value
     assertFalse(state.isLoading)
     assertTrue(state.success)
   }
@@ -197,8 +365,10 @@ class OrganizationEditorViewModelTest {
     val org = testOrganization("org1")
     repository.organizationToReturn = org
 
-    viewModel.loadOrganizationById("org1")
+    editorViewModel.loadOrganizationById("org1")
     advanceUntilIdle()
+
+    formViewModel.initializeFrom(org)
 
     val coverUri = android.net.Uri.parse("content://media/image/cover456")
     val data =
@@ -217,10 +387,10 @@ class OrganizationEditorViewModelTest {
             profileImageUri = null,
             coverImageUri = coverUri)
 
-    viewModel.updateOrganization(data)
+    editorViewModel.updateOrganization(data, formViewModel)
     advanceUntilIdle()
 
-    val state = viewModel.uiState.value
+    val state = editorViewModel.uiState.value
     assertFalse(state.isLoading)
     assertTrue(state.success)
   }
@@ -230,11 +400,27 @@ class OrganizationEditorViewModelTest {
     val org = testOrganization("org1")
     repository.organizationToReturn = org
 
-    viewModel.loadOrganizationById("org1")
+    editorViewModel.loadOrganizationById("org1")
     advanceUntilIdle()
+
+    formViewModel.initializeFrom(org)
 
     val profileUri = android.net.Uri.parse("content://media/image/profile123")
     val coverUri = android.net.Uri.parse("content://media/image/cover456")
+
+    formViewModel.updateName("Updated Name")
+    formViewModel.updateDescription("Updated Description")
+    formViewModel.updateContactEmail("email@test.com")
+    formViewModel.updateContactPhone("987654")
+    formViewModel.formState.value.contactPhonePrefix.value = "1"
+    formViewModel.updateWebsite("website.com")
+    formViewModel.updateInstagram("insta")
+    formViewModel.updateFacebook("fb")
+    formViewModel.updateTiktok("tt")
+    formViewModel.updateAddress("address")
+    formViewModel.selectProfileImage(profileUri)
+    formViewModel.selectCoverImage(coverUri)
+
     val data =
         OrganizationEditorData(
             id = "org1",
@@ -251,10 +437,10 @@ class OrganizationEditorViewModelTest {
             profileImageUri = profileUri,
             coverImageUri = coverUri)
 
-    viewModel.updateOrganization(data)
+    editorViewModel.updateOrganization(data, formViewModel)
     advanceUntilIdle()
 
-    val state = viewModel.uiState.value
+    val state = editorViewModel.uiState.value
     assertFalse(state.isLoading)
     assertTrue(state.success)
   }
@@ -264,8 +450,21 @@ class OrganizationEditorViewModelTest {
     val org = testOrganization("org1", "Old Name", "Old Description")
     repository.organizationToReturn = org
 
-    viewModel.loadOrganizationById("org1")
+    editorViewModel.loadOrganizationById("org1")
     advanceUntilIdle()
+
+    formViewModel.initializeFrom(org)
+
+    formViewModel.updateName("New Name")
+    formViewModel.updateDescription("New Description")
+    formViewModel.updateContactEmail("email@test.com")
+    formViewModel.updateContactPhone("987654")
+    formViewModel.formState.value.contactPhonePrefix.value = "1"
+    formViewModel.updateWebsite("newsite.com")
+    formViewModel.updateInstagram("insta")
+    formViewModel.updateFacebook("fb")
+    formViewModel.updateTiktok("tt")
+    formViewModel.updateAddress("address")
 
     val data =
         OrganizationEditorData(
@@ -283,31 +482,28 @@ class OrganizationEditorViewModelTest {
             profileImageUri = null,
             coverImageUri = null)
 
-    viewModel.updateOrganization(data)
+    editorViewModel.updateOrganization(data, formViewModel)
     advanceUntilIdle()
 
-    val state = viewModel.uiState.value
+    val state = editorViewModel.uiState.value
     assertFalse(state.isLoading)
     assertTrue(state.success)
-    // Existing images should be preserved (not replaced with null)
     assertEquals("New Name", state.organization?.name)
   }
 
   @Test
   fun clearSuccessFlag_works() = runTest {
-    viewModel.clearSuccessFlag()
-    val state = viewModel.uiState.value
+    editorViewModel.clearSuccessFlag()
+    val state = editorViewModel.uiState.value
     assertFalse(state.success)
   }
 
   @Test
   fun clearError_works() = runTest {
-    viewModel.clearError()
-    val state = viewModel.uiState.value
+    editorViewModel.clearError()
+    val state = editorViewModel.uiState.value
     assertNull(state.errorMessage)
   }
-
-  // ===== TESTS FOR OrganizationEditorData.fromForm METHOD =====
 
   @Test
   fun fromFormCreatesDataWithAllFields() = runTest {
@@ -349,9 +545,9 @@ class OrganizationEditorViewModelTest {
         OrganizationFormState(
             name = FieldState(value = "Test Org"),
             description = FieldState(value = "Test Description"),
-            contactEmail = FieldState(value = ""),
-            contactPhone = FieldState(value = ""),
-            contactPhonePrefix = androidx.compose.runtime.mutableStateOf(""),
+            contactEmail = FieldState(value = "123@gmail.com"),
+            contactPhone = FieldState(value = "1234567890"),
+            contactPhonePrefix = androidx.compose.runtime.mutableStateOf("+41"),
             website = FieldState(value = ""),
             instagram = FieldState(value = ""),
             facebook = FieldState(value = ""),
@@ -365,9 +561,9 @@ class OrganizationEditorViewModelTest {
     assertEquals("org123", data.id)
     assertEquals("Test Org", data.name)
     assertEquals("Test Description", data.description)
-    assertNull(data.contactEmail)
-    assertNull(data.contactPhone)
-    assertNull(data.phonePrefix)
+    assertEquals("123@gmail.com", data.contactEmail)
+    assertEquals("1234567890", data.contactPhone)
+    assertEquals("+41", data.phonePrefix)
     assertNull(data.website)
     assertNull(data.instagram)
     assertNull(data.facebook)
@@ -457,9 +653,9 @@ class OrganizationEditorViewModelTest {
         OrganizationFormState(
             name = FieldState(value = "Minimal Org"),
             description = FieldState(value = "Minimal Description"),
-            contactEmail = FieldState(value = ""),
-            contactPhone = FieldState(value = ""),
-            contactPhonePrefix = androidx.compose.runtime.mutableStateOf(""),
+            contactEmail = FieldState(value = "123@gmail.com"),
+            contactPhone = FieldState(value = "1234567890"),
+            contactPhonePrefix = androidx.compose.runtime.mutableStateOf("+41"),
             website = FieldState(value = ""),
             instagram = FieldState(value = ""),
             facebook = FieldState(value = ""),
@@ -473,9 +669,9 @@ class OrganizationEditorViewModelTest {
     assertEquals("org456", data.id)
     assertEquals("Minimal Org", data.name)
     assertEquals("Minimal Description", data.description)
-    assertNull(data.contactEmail)
-    assertNull(data.contactPhone)
-    assertNull(data.phonePrefix)
+    assertEquals("123@gmail.com", data.contactEmail)
+    assertEquals("1234567890", data.contactPhone)
+    assertEquals("+41", data.phonePrefix)
     assertNull(data.website)
     assertNull(data.instagram)
     assertNull(data.facebook)
@@ -488,7 +684,9 @@ class OrganizationEditorViewModelTest {
   private fun testOrganization(
       id: String,
       name: String = "Test Org",
-      description: String = "Description"
+      description: String = "Description",
+      contactEmail: String = "test@example.com",
+      contactPhone: String = "1234567890"
   ) =
       Organization(
           id = id,
@@ -502,8 +700,8 @@ class OrganizationEditorViewModelTest {
           instagram = null,
           tiktok = null,
           facebook = null,
-          contactEmail = null,
-          contactPhone = null,
+          contactEmail = contactEmail,
+          contactPhone = contactPhone,
           address = null,
           eventIds = emptyList(),
           followerCount = 0,
@@ -523,7 +721,6 @@ class FakeEditOrganizationRepository : OrganizationRepository {
   override suspend fun updateOrganization(organization: Organization) =
       if (shouldFailUpdate) Result.failure(Exception("Update failed")) else Result.success(Unit)
 
-  // Other methods not needed for tests
   override suspend fun createOrganization(organization: Organization): Result<String> = TODO()
 
   override suspend fun deleteOrganization(organizationId: String) = TODO()

@@ -27,7 +27,7 @@ import ch.onepass.onepass.ui.map.MapScreenTestTags
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.myevents.MyEventsTestTags
 import ch.onepass.onepass.ui.navigation.NavigationDestinations
-import ch.onepass.onepass.ui.organizer.OrganizationTestTags
+import ch.onepass.onepass.ui.organizer.OrganizationFormTestTags
 import ch.onepass.onepass.ui.profile.ProfileTestTags
 import com.mapbox.common.MapboxOptions
 import org.junit.Before
@@ -327,16 +327,32 @@ class AppE2E {
     orgButton.performClick()
     compose.waitForIdle()
 
+    // Organization Form Screen
+    compose.onNodeWithTag(OrganizationFormTestTags.SCROLL_COLUMN).assertIsDisplayed()
+
     // Fill out Create Organization Form
-    compose.onNodeWithTag(OrganizationTestTags.NAME_FIELD).performTextInput("Test Organization")
+    compose.onNodeWithTag(OrganizationFormTestTags.NAME_FIELD).performTextInput("Test Organization")
+    compose.waitForIdle()
+
     compose
-        .onNodeWithTag(OrganizationTestTags.DESCRIPTION_FIELD)
+        .onNodeWithTag(OrganizationFormTestTags.DESCRIPTION_FIELD)
         .performTextInput("This is a test organization for Compose E2E test.")
-    compose.onNodeWithTag(OrganizationTestTags.PHONE_FIELD).performTextInput("791234567")
+    compose.waitForIdle()
+
+    compose
+        .onNodeWithTag(OrganizationFormTestTags.EMAIL_FIELD)
+        .performTextInput("test@organization.com")
+    compose.waitForIdle()
+
+    compose.onNodeWithTag(OrganizationFormTestTags.PHONE_FIELD).performTextInput("791234567")
     compose.waitForIdle()
 
     // Submit the form
-    compose.onNodeWithTag(OrganizationTestTags.SUBMIT_BUTTON).performScrollTo().performClick()
+    compose.onNodeWithTag(OrganizationFormTestTags.SUBMIT_BUTTON).performScrollTo().performClick()
+    compose.waitForIdle()
+
+    // Verify form submission success (back to profile or success screen)
+    compose.onNodeWithTag(ProfileTestTags.SCREEN).assertIsDisplayed()
   }
 
   private fun hasTestTagStartingWith(prefix: String) =

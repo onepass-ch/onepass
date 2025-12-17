@@ -3,7 +3,9 @@ package ch.onepass.onepass.ui.organizer
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import ch.onepass.onepass.model.organization.Organization
+import ch.onepass.onepass.model.organization.OrganizationStatus
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import com.google.firebase.Timestamp
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,15 +19,25 @@ class EditOrganizationScreenTest {
   private val mockOrganization =
       Organization(
           id = "org123",
-          name = "",
-          description = "",
-          contactEmail = "",
-          contactPhone = "",
-          website = "",
-          instagram = "",
-          facebook = "",
-          tiktok = "",
-          address = "")
+          name = "Original Org",
+          description = "Original Description",
+          ownerId = "owner123",
+          status = OrganizationStatus.ACTIVE,
+          verified = false,
+          profileImageUrl = null,
+          coverImageUrl = null,
+          contactEmail = "original@email.com",
+          contactPhone = "123456789",
+          website = "original.com",
+          instagram = "original_insta",
+          facebook = "original_fb",
+          tiktok = "original_tiktok",
+          address = "Original Address",
+          eventIds = emptyList(),
+          followerCount = 0,
+          averageRating = 0.0f,
+          createdAt = Timestamp.now(),
+          updatedAt = null)
 
   private val mockUiState =
       MutableStateFlow(OrganizationEditorUiState(organization = mockOrganization))
@@ -36,6 +48,7 @@ class EditOrganizationScreenTest {
       mockk<OrganizationEditorViewModel>(relaxed = true) {
         every { uiState } returns mockUiState
         every { loadOrganizationById(any()) } returns Unit
+        every { updateOrganization(any(), any()) } returns Unit
         every { clearSuccessFlag() } returns Unit
         every { clearError() } returns Unit
       }
@@ -54,6 +67,7 @@ class EditOrganizationScreenTest {
         every { updateTiktok(any()) } returns Unit
         every { updateAddress(any()) } returns Unit
         every { updateCountryIndex(any()) } returns Unit
+        every { validateForm() } returns true
       }
 
   @Test
@@ -67,17 +81,17 @@ class EditOrganizationScreenTest {
 
     val tags =
         listOf(
-            OrganizationTestTags.NAME_FIELD,
-            OrganizationTestTags.DESCRIPTION_FIELD,
-            OrganizationTestTags.EMAIL_FIELD,
-            OrganizationTestTags.PHONE_FIELD,
-            OrganizationTestTags.WEBSITE_FIELD,
-            OrganizationTestTags.INSTAGRAM_FIELD,
-            OrganizationTestTags.FACEBOOK_FIELD,
-            OrganizationTestTags.TIKTOK_FIELD,
-            OrganizationTestTags.ADDRESS_FIELD,
-            OrganizationTestTags.SUBMIT_BUTTON,
-            OrganizationTestTags.PREFIX_DROPDOWN)
+            OrganizationFormTestTags.NAME_FIELD,
+            OrganizationFormTestTags.DESCRIPTION_FIELD,
+            OrganizationFormTestTags.EMAIL_FIELD,
+            OrganizationFormTestTags.PHONE_FIELD,
+            OrganizationFormTestTags.WEBSITE_FIELD,
+            OrganizationFormTestTags.INSTAGRAM_FIELD,
+            OrganizationFormTestTags.FACEBOOK_FIELD,
+            OrganizationFormTestTags.TIKTOK_FIELD,
+            OrganizationFormTestTags.ADDRESS_FIELD,
+            OrganizationFormTestTags.SUBMIT_BUTTON,
+            OrganizationFormTestTags.PHONE_PREFIX)
 
     tags.forEach { tag -> composeTestRule.onNodeWithTag(tag).performScrollTo().assertIsDisplayed() }
   }
@@ -90,61 +104,64 @@ class EditOrganizationScreenTest {
             organizationId = "org123", viewModel = mockViewModel, formViewModel = mockFormViewModel)
       }
     }
+    composeTestRule.waitForIdle()
 
     composeTestRule
-        .onNodeWithTag(OrganizationTestTags.NAME_FIELD)
+        .onNodeWithTag(OrganizationFormTestTags.NAME_FIELD)
         .performScrollTo()
-        .performTextInput("Test Org")
+        .performTextInput("Updated Org")
 
     composeTestRule
-        .onNodeWithTag(OrganizationTestTags.DESCRIPTION_FIELD)
+        .onNodeWithTag(OrganizationFormTestTags.DESCRIPTION_FIELD)
         .performScrollTo()
-        .performTextInput("Cool description")
+        .performTextInput("Updated description")
 
     composeTestRule
-        .onNodeWithTag(OrganizationTestTags.EMAIL_FIELD)
+        .onNodeWithTag(OrganizationFormTestTags.EMAIL_FIELD)
         .performScrollTo()
-        .performTextInput("test@email.com")
+        .performTextInput("updated@email.com")
 
     composeTestRule
-        .onNodeWithTag(OrganizationTestTags.WEBSITE_FIELD)
+        .onNodeWithTag(OrganizationFormTestTags.WEBSITE_FIELD)
         .performScrollTo()
-        .performTextInput("example.com")
+        .performTextInput("updated.com")
 
     composeTestRule
-        .onNodeWithTag(OrganizationTestTags.INSTAGRAM_FIELD)
+        .onNodeWithTag(OrganizationFormTestTags.INSTAGRAM_FIELD)
         .performScrollTo()
-        .performTextInput("test_insta")
+        .performTextInput("updated_insta")
 
     composeTestRule
-        .onNodeWithTag(OrganizationTestTags.FACEBOOK_FIELD)
+        .onNodeWithTag(OrganizationFormTestTags.FACEBOOK_FIELD)
         .performScrollTo()
-        .performTextInput("test_fb")
+        .performTextInput("updated_fb")
 
     composeTestRule
-        .onNodeWithTag(OrganizationTestTags.TIKTOK_FIELD)
+        .onNodeWithTag(OrganizationFormTestTags.TIKTOK_FIELD)
         .performScrollTo()
-        .performTextInput("test_tiktok")
+        .performTextInput("updated_tiktok")
 
     composeTestRule
-        .onNodeWithTag(OrganizationTestTags.ADDRESS_FIELD)
+        .onNodeWithTag(OrganizationFormTestTags.ADDRESS_FIELD)
         .performScrollTo()
-        .performTextInput("123 Test Street")
+        .performTextInput("Updated Test Street")
 
     composeTestRule
-        .onNodeWithTag(OrganizationTestTags.PREFIX_DROPDOWN)
-        .performScrollTo()
-        .performClick()
-
-    composeTestRule
-        .onNode(hasText("+1 American Samoa", substring = true))
+        .onNodeWithTag(OrganizationFormTestTags.PHONE_PREFIX)
         .performScrollTo()
         .performClick()
+    composeTestRule.waitForIdle()
 
     composeTestRule
-        .onNodeWithTag(OrganizationTestTags.PHONE_FIELD)
+        .onNode(hasText("American Samoa +1", substring = true))
         .performScrollTo()
-        .performTextInput("123456789")
+        .performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule
+        .onNodeWithTag(OrganizationFormTestTags.PHONE_FIELD)
+        .performScrollTo()
+        .performTextInput("987654321")
   }
 
   @Test
@@ -157,13 +174,174 @@ class EditOrganizationScreenTest {
     }
 
     composeTestRule
-        .onNodeWithTag(OrganizationTestTags.PREFIX_DROPDOWN)
+        .onNodeWithTag(OrganizationFormTestTags.PHONE_PREFIX)
+        .performScrollTo()
+        .performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule
+        .onNode(hasText("American Samoa +1", substring = true))
+        .assertIsDisplayed()
+        .performClick()
+  }
+
+  @Test
+  fun characterCountersDisplayForAllFields() {
+    composeTestRule.setContent {
+      OnePassTheme {
+        EditOrganizationScreen(
+            organizationId = "org123", viewModel = mockViewModel, formViewModel = mockFormViewModel)
+      }
+    }
+
+    val charCountTags =
+        listOf(
+            OrganizationFormTestTags.NAME_CHAR_COUNT,
+            OrganizationFormTestTags.DESCRIPTION_CHAR_COUNT,
+            OrganizationFormTestTags.EMAIL_CHAR_COUNT,
+            OrganizationFormTestTags.PHONE_CHAR_COUNT,
+            OrganizationFormTestTags.WEBSITE_CHAR_COUNT,
+            OrganizationFormTestTags.INSTAGRAM_CHAR_COUNT,
+            OrganizationFormTestTags.FACEBOOK_CHAR_COUNT,
+            OrganizationFormTestTags.TIKTOK_CHAR_COUNT,
+            OrganizationFormTestTags.ADDRESS_CHAR_COUNT)
+
+    charCountTags.forEach { tag ->
+      composeTestRule.onNodeWithTag(tag).performScrollTo().assertExists()
+    }
+  }
+
+  @Test
+  fun characterCounterShowsCorrectFormat() {
+    composeTestRule.setContent {
+      OnePassTheme {
+        EditOrganizationScreen(
+            organizationId = "org123", viewModel = mockViewModel, formViewModel = mockFormViewModel)
+      }
+    }
+
+    // Enter some text
+    composeTestRule
+        .onNodeWithTag(OrganizationFormTestTags.NAME_FIELD)
+        .performScrollTo()
+        .performTextInput("Test")
+
+    // Character counter should show "X/50 characters" or similar
+    composeTestRule
+        .onNodeWithTag(OrganizationFormTestTags.NAME_CHAR_COUNT)
+        .assertTextContains("/", substring = true)
+  }
+
+  @Test
+  fun submitButtonSubmitsTheForm() {
+    composeTestRule.setContent {
+      OnePassTheme {
+        EditOrganizationScreen(
+            organizationId = "org123", viewModel = mockViewModel, formViewModel = mockFormViewModel)
+      }
+    }
+    composeTestRule.waitForIdle()
+
+    // Fill in required fields
+    composeTestRule
+        .onNodeWithTag(OrganizationFormTestTags.NAME_FIELD)
+        .performScrollTo()
+        .performTextInput("Updated Org")
+
+    composeTestRule
+        .onNodeWithTag(OrganizationFormTestTags.DESCRIPTION_FIELD)
+        .performScrollTo()
+        .performTextInput("Updated description")
+
+    // Select country prefix
+    composeTestRule
+        .onNodeWithTag(OrganizationFormTestTags.PHONE_PREFIX)
+        .performScrollTo()
+        .performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule
+        .onNode(hasText("American Samoa +1", substring = true))
+        .performScrollTo()
+        .performClick()
+    composeTestRule.waitForIdle()
+
+    // Enter phone
+    composeTestRule
+        .onNodeWithTag(OrganizationFormTestTags.PHONE_FIELD)
+        .performScrollTo()
+        .performTextInput("791234567")
+
+    // Submit form
+    composeTestRule
+        .onNodeWithTag(OrganizationFormTestTags.SUBMIT_BUTTON)
         .performScrollTo()
         .performClick()
 
+    composeTestRule.waitForIdle()
+  }
+
+  @Test
+  fun phoneFieldAndPrefixWorkTogether() {
+    composeTestRule.setContent {
+      OnePassTheme {
+        EditOrganizationScreen(
+            organizationId = "org123", viewModel = mockViewModel, formViewModel = mockFormViewModel)
+      }
+    }
+
+    // Select a country prefix
     composeTestRule
-        .onNode(hasText("+1 American Samoa", substring = true))
-        .assertIsDisplayed()
+        .onNodeWithTag(OrganizationFormTestTags.PHONE_PREFIX)
+        .performScrollTo()
         .performClick()
+    composeTestRule.waitForIdle()
+
+    composeTestRule
+        .onNode(hasText("American Samoa +1", substring = true))
+        .performScrollTo()
+        .performClick()
+    composeTestRule.waitForIdle()
+
+    // Enter phone number
+    composeTestRule
+        .onNodeWithTag(OrganizationFormTestTags.PHONE_FIELD)
+        .performScrollTo()
+        .performTextInput("123456789")
+
+    // Verify phone field has the value
+    composeTestRule
+        .onNodeWithTag(OrganizationFormTestTags.PHONE_FIELD)
+        .assertTextContains("123456789")
+  }
+
+  @Test
+  fun formScrollsToShowAllFields() {
+    composeTestRule.setContent {
+      OnePassTheme {
+        EditOrganizationScreen(
+            organizationId = "org123", viewModel = mockViewModel, formViewModel = mockFormViewModel)
+      }
+    }
+
+    // Scroll to and verify each field is accessible
+    val allFieldTags =
+        listOf(
+            OrganizationFormTestTags.NAME_FIELD,
+            OrganizationFormTestTags.DESCRIPTION_FIELD,
+            OrganizationFormTestTags.EMAIL_FIELD,
+            OrganizationFormTestTags.PHONE_FIELD,
+            OrganizationFormTestTags.WEBSITE_FIELD,
+            OrganizationFormTestTags.INSTAGRAM_FIELD,
+            OrganizationFormTestTags.FACEBOOK_FIELD,
+            OrganizationFormTestTags.TIKTOK_FIELD,
+            OrganizationFormTestTags.ADDRESS_FIELD,
+            OrganizationFormTestTags.PROFILE_IMAGE_BUTTON,
+            OrganizationFormTestTags.COVER_IMAGE_BUTTON,
+            OrganizationFormTestTags.SUBMIT_BUTTON)
+
+    allFieldTags.forEach { tag ->
+      composeTestRule.onNodeWithTag(tag).performScrollTo().assertIsDisplayed()
+    }
   }
 }

@@ -4,19 +4,11 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme.colorScheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -25,9 +17,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
+import ch.onepass.onepass.ui.navigation.TopBarConfig
 import kotlinx.coroutines.launch
 
 /**
@@ -94,54 +88,41 @@ fun EditOrganizationScreen(
     }
   }
 
-  // Main content
-  Scaffold(
-      topBar = {
-        TopAppBar(
-            title = { Text("Edit Organization", color = colorScheme.onBackground) },
-            navigationIcon = {
-              IconButton(onClick = onNavigateBack) {
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
-                    tint = colorScheme.onBackground)
-              }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(containerColor = colorScheme.background))
-      },
+  BackNavigationScaffold(
+      TopBarConfig(
+          title = "Edit Organization",
+      ),
+      onBack = onNavigateBack,
       containerColor = colorScheme.background,
-      snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
-        Box(modifier = Modifier.fillMaxSize().background(colorScheme.background).padding(padding)) {
-          if (uiState.isLoading && uiState.organization == null) {
-            // Show loading indicator while fetching organization data
-            Box(Modifier.fillMaxSize().padding(padding)) {
-              CircularProgressIndicator(Modifier.padding(32.dp))
-            }
-          } else if (uiState.organization != null) {
-            // Show the organization edit form
-            OrganizerForm(
-                title = "Edit Organization",
-                formState = formState,
-                countryList = countryList,
-                prefixDisplayText = formState.contactPhonePrefix.value,
-                prefixError = formState.contactPhone.error,
-                dropdownExpanded = prefixDropdownExpanded,
-                onCountrySelected = {
-                  formViewModel.updateCountryIndex(it)
-                  formState.contactPhonePrefix.value = "+${countryList[it].second}"
-                  prefixDropdownExpanded = false
-                },
-                onPrefixClick = { prefixDropdownExpanded = true },
-                onDropdownDismiss = { prefixDropdownExpanded = false },
-                onSubmit = {
-                  val data = OrganizationEditorData.fromForm(organizationId, formState)
-                  viewModel.updateOrganization(data)
-                },
-                submitText = "Update",
-                viewModel = formViewModel,
-                isLoading = uiState.isLoading,
-                modifier = Modifier.padding(padding))
-          }
-        }
+  ) { padding ->
+    Box(modifier = Modifier.fillMaxSize().background(colorScheme.background).padding(padding)) {
+      if (uiState.isLoading && uiState.organization == null) {
+        // Show loading indicator while fetching organization data
+        Box(Modifier.fillMaxSize()) { CircularProgressIndicator(Modifier.align(Alignment.Center)) }
+      } else if (uiState.organization != null) {
+        // Show the organization edit form
+        OrganizerForm(
+            formState = formState,
+            countryList = countryList,
+            prefixDisplayText = formState.contactPhonePrefix.value,
+            prefixError = formState.contactPhone.error,
+            dropdownExpanded = prefixDropdownExpanded,
+            onCountrySelected = {
+              formViewModel.updateCountryIndex(it)
+              formState.contactPhonePrefix.value = "+${countryList[it].second}"
+              prefixDropdownExpanded = false
+            },
+            onPrefixClick = { prefixDropdownExpanded = true },
+            onDropdownDismiss = { prefixDropdownExpanded = false },
+            onSubmit = {
+              val data = OrganizationEditorData.fromForm(organizationId, formState)
+              viewModel.updateOrganization(data, formViewModel)
+            },
+            submitText = "Update",
+            viewModel = formViewModel,
+            modifier = Modifier.fillMaxSize())
       }
+      SnackbarHost(hostState = snackbarHostState, modifier = Modifier.align(Alignment.BottomCenter))
+    }
+  }
 }

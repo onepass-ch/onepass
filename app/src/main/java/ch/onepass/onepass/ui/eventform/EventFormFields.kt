@@ -36,10 +36,11 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import ch.onepass.onepass.model.event.EventTag
 import ch.onepass.onepass.ui.components.buttons.UploadImageButton
+import ch.onepass.onepass.ui.components.forms.CompactFieldLabel
 import ch.onepass.onepass.ui.components.forms.DatePickerField
+import ch.onepass.onepass.ui.components.forms.FieldLabelWithCounter
 import ch.onepass.onepass.ui.components.forms.LocationSearchField
 import ch.onepass.onepass.ui.components.forms.TimePickerField
 
@@ -54,7 +55,7 @@ fun TitleInputField(value: String, onValueChange: (String) -> Unit, modifier: Mo
             label = "Title*",
             currentLength = value.length,
             maxLength = EventFormViewModel.MAX_TITLE_LENGTH,
-            isError = value.length >= EventFormViewModel.MAX_TITLE_LENGTH)
+            testTag = "title_char_count")
         TextField(
             value = value,
             onValueChange = onValueChange,
@@ -99,8 +100,7 @@ fun DescriptionInputField(
         label = "Description*",
         currentLength = value.length,
         maxLength = EventFormViewModel.MAX_DESCRIPTION_LENGTH,
-        isError = value.length >= EventFormViewModel.MAX_DESCRIPTION_LENGTH)
-
+        testTag = "description_char_count")
     Box(
         modifier =
             Modifier.fillMaxWidth()
@@ -254,7 +254,8 @@ fun TicketsInputField(
                 label = "Price",
                 currentLength = priceValue.length,
                 maxLength = EventFormViewModel.MAX_PRICE_LENGTH,
-                isError = priceError != null)
+                isError = priceError != null,
+                testTag = "price_char_count")
             Spacer(modifier = Modifier.height(4.dp))
             Box(
                 modifier =
@@ -303,7 +304,8 @@ fun TicketsInputField(
                 label = "Capacity",
                 currentLength = capacityValue.length,
                 maxLength = EventFormViewModel.MAX_CAPACITY_LENGTH,
-                isError = capacityError != null)
+                isError = capacityError != null,
+                testTag = "capacity_char_count")
             Spacer(modifier = Modifier.height(4.dp))
             Box(
                 modifier =
@@ -406,76 +408,6 @@ fun TagsSelectionSection(
       Spacer(modifier = Modifier.height(16.dp))
     }
   }
-}
-
-/**
- * Displays a form field label with a character counter.
- *
- * @param label The label text to display (e.g., "Title*", "Description*")
- * @param currentLength The current number of characters in the associated field
- * @param maxLength The maximum allowed number of characters
- * @param modifier The modifier to be applied to the root Row composable
- * @param isError Whether the field is in an error state, overriding length-based error display
- */
-@Composable
-fun FieldLabelWithCounter(
-    label: String,
-    currentLength: Int,
-    maxLength: Int,
-    modifier: Modifier = Modifier,
-    isError: Boolean = false
-) {
-  Row(
-      modifier = modifier.fillMaxWidth(),
-      horizontalArrangement = Arrangement.SpaceBetween,
-      verticalAlignment = Alignment.CenterVertically) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onBackground))
-        Text(
-            text = "$currentLength/$maxLength characters",
-            style =
-                MaterialTheme.typography.bodyMedium.copy(
-                    color =
-                        if (isError || currentLength >= maxLength) colorScheme.error
-                        else colorScheme.onSurface))
-      }
-}
-
-/**
- * Compact character counter for fields with limited width. Displays counter above the field in a
- * stacked layout.
- *
- * @param label The field label (e.g., "Price", "Capacity")
- * @param currentLength Current character count
- * @param maxLength Maximum allowed characters
- * @param modifier Modifier to apply
- * @param isError Whether the field is in error state
- */
-@Composable
-fun CompactFieldLabel(
-    label: String,
-    currentLength: Int,
-    maxLength: Int,
-    modifier: Modifier = Modifier,
-    isError: Boolean = false
-) {
-  Column(
-      modifier = modifier,
-      verticalArrangement = Arrangement.spacedBy(2.dp),
-      horizontalAlignment = Alignment.Start) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onBackground))
-        Text(
-            text = "$currentLength/$maxLength characters",
-            style =
-                MaterialTheme.typography.labelSmall.copy(
-                    color =
-                        if (isError || currentLength >= maxLength) colorScheme.error
-                        else colorScheme.onSurface,
-                    fontSize = 10.sp))
-      }
 }
 
 @Composable
