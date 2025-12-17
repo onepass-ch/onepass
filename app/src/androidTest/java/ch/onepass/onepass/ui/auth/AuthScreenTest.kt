@@ -7,6 +7,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.onepass.onepass.R
 import junit.framework.TestCase.assertTrue
 import org.junit.Assume
 import org.junit.Rule
@@ -17,6 +18,9 @@ import org.junit.runner.RunWith
 class AuthScreenTest {
 
   @get:Rule val composeRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   @Test
   fun authScreen_initialState_displaysAllElements() {
@@ -44,15 +48,11 @@ class AuthScreenTest {
 
   @Test
   fun google_sign_in_is_configured() {
-    val context = ApplicationProvider.getApplicationContext<Context>()
+    val clientId = context.getString(R.string.default_web_client_id)
 
-    val resourceId =
-        context.resources.getIdentifier("default_web_client_id", "string", context.packageName)
+    // Skip test if resource is empty (useful for CI environments)
+    Assume.assumeTrue("Google Sign-In not configured - skipping test", clientId.isNotEmpty())
 
-    // Skip test if resource doesn't exist (useful for CI environments)
-    Assume.assumeTrue("Google Sign-In not configured - skipping test", resourceId != 0)
-
-    val clientId = context.getString(resourceId)
     assertTrue(
         "Invalid Google client ID format: $clientId", clientId.endsWith(".googleusercontent.com"))
   }

@@ -1,9 +1,12 @@
 package ch.onepass.onepass.ui.scan
 
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.scan.ScanDecision
 import ch.onepass.onepass.model.scan.TicketScanRepository
 import kotlinx.coroutines.CoroutineScope
@@ -27,6 +30,9 @@ class ScanScreenTest {
 
   @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
+
   private fun createVM(repo: FakeRepo = FakeRepo()) =
       ScannerViewModel(
           eventId = "event1",
@@ -47,7 +53,7 @@ class ScanScreenTest {
     compose.onNodeWithTag(ScanTestTags.CAMERA).assertIsDisplayed()
     compose.onNodeWithTag(ScanTestTags.BACK_BUTTON).assertIsDisplayed()
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Scan a pass", substring = true)
-    compose.onNodeWithText("Position the QR code within the frame").assertIsDisplayed()
+    compose.onNodeWithText(context.getString(R.string.scan_instruction)).assertIsDisplayed()
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertDoesNotExist()
   }
 
@@ -196,9 +202,9 @@ class ScanScreenTest {
     compose.waitForIdle()
 
     compose.onNodeWithTag(ScanTestTags.NETWORK_ERROR_DIALOG).assertIsDisplayed()
-    compose.onNodeWithText("No Internet Connection").assertIsDisplayed()
-    compose.onNodeWithText("Retry").assertIsDisplayed()
-    compose.onNodeWithText("Back").assertIsDisplayed()
+    compose.onNodeWithText(context.getString(R.string.scan_network_error_title)).assertIsDisplayed()
+    compose.onNodeWithText(context.getString(R.string.scan_retry_button)).assertIsDisplayed()
+    compose.onNodeWithText(context.getString(R.string.scan_back_button)).assertIsDisplayed()
   }
 
   @Test
@@ -252,14 +258,14 @@ class ScanScreenTest {
     compose.waitForIdle()
 
     compose.onNodeWithTag("scan_session_expired_dialog").assertIsDisplayed()
-    compose.onNodeWithText("Session Expired").assertIsDisplayed()
     compose
-        .onNodeWithText(
-            "Your session has expired. Please login again to continue scanning tickets.",
-            substring = true)
+        .onNodeWithText(context.getString(R.string.scan_session_expired_title))
+        .assertIsDisplayed()
+    compose
+        .onNodeWithText(context.getString(R.string.scan_session_expired_message), substring = true)
         .assertIsDisplayed()
 
-    compose.onNodeWithText("OK").performClick()
+    compose.onNodeWithText(context.getString(R.string.scan_ok_button)).performClick()
     compose.waitForIdle()
 
     assert(backNavigated) { "Should have navigated back after session expired" }
@@ -412,7 +418,7 @@ class ScanScreenTest {
     compose.onNodeWithTag(ScanTestTags.NETWORK_ERROR_DIALOG).assertIsDisplayed()
 
     repo.next = Result.success(ScanDecision.Accepted(ticketId = "T-RETRY"))
-    compose.onNodeWithText("Retry").performClick()
+    compose.onNodeWithText(context.getString(R.string.scan_retry_button)).performClick()
     compose.waitForIdle()
 
     compose.onNodeWithTag(ScanTestTags.NETWORK_ERROR_DIALOG).assertDoesNotExist()
@@ -431,7 +437,7 @@ class ScanScreenTest {
 
     compose.onNodeWithTag(ScanTestTags.NETWORK_ERROR_DIALOG).assertIsDisplayed()
 
-    compose.onNodeWithText("Back").performClick()
+    compose.onNodeWithText(context.getString(R.string.scan_back_button)).performClick()
     compose.waitForIdle()
 
     assert(backNavigated) { "Back button should navigate back" }
@@ -447,7 +453,7 @@ class ScanScreenTest {
     compose.runOnIdle { vm.onQrScanned(VALID_QR) }
     compose.waitForIdle()
 
-    compose.onNodeWithText("Back").performClick()
+    compose.onNodeWithText(context.getString(R.string.scan_back_button)).performClick()
     compose.waitForIdle()
 
     compose.onNodeWithTag(ScanTestTags.MESSAGE).assertTextContains("Scan a pass", substring = true)
@@ -466,7 +472,7 @@ class ScanScreenTest {
 
     compose.onNodeWithTag("scan_session_expired_dialog").assertIsDisplayed()
 
-    compose.onNodeWithText("OK").performClick()
+    compose.onNodeWithText(context.getString(R.string.scan_ok_button)).performClick()
     compose.waitForIdle()
 
     assert(backNavigated) { "OK button should navigate back" }
@@ -538,11 +544,9 @@ class ScanScreenTest {
     compose.setContent { PermissionDeniedScreen() }
 
     compose.onNodeWithTag(ScanTestTags.PERMISSION).assertIsDisplayed()
-    compose.onNodeWithText("Camera Access Required").assertIsDisplayed()
+    compose.onNodeWithText(context.getString(R.string.scan_permission_title)).assertIsDisplayed()
     compose
-        .onNodeWithText(
-            "To scan tickets, we need access to your camera. Please grant permission to continue.",
-            substring = true)
+        .onNodeWithText(context.getString(R.string.scan_permission_message), substring = true)
         .assertIsDisplayed()
   }
 
@@ -554,7 +558,7 @@ class ScanScreenTest {
 
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
     compose.onNodeWithText("42").assertIsDisplayed()
-    compose.onNodeWithText("Validated").assertIsDisplayed()
+    compose.onNodeWithText(context.getString(R.string.scan_validated_label)).assertIsDisplayed()
   }
 
   @Test
@@ -564,7 +568,7 @@ class ScanScreenTest {
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
     compose.onNodeWithText("Summer Festival").assertIsDisplayed()
     compose.onNodeWithText("15").assertIsDisplayed()
-    compose.onNodeWithText("Validated").assertIsDisplayed()
+    compose.onNodeWithText(context.getString(R.string.scan_validated_label)).assertIsDisplayed()
   }
 
   @Test
@@ -597,7 +601,7 @@ class ScanScreenTest {
 
     compose.onNodeWithTag(ScanTestTags.STATS_CARD).assertIsDisplayed()
     compose.onNodeWithText("0").assertIsDisplayed()
-    compose.onNodeWithText("Validated").assertIsDisplayed()
+    compose.onNodeWithText(context.getString(R.string.scan_validated_label)).assertIsDisplayed()
   }
 
   // ==================== BACK BUTTON ====================
@@ -815,7 +819,7 @@ class ScanScreenTest {
 
     repo.next = Result.success(ScanDecision.Accepted(ticketId = "T-RETRY"))
 
-    compose.onNodeWithText("Retry").performClick()
+    compose.onNodeWithText(context.getString(R.string.scan_retry_button)).performClick()
     compose.waitForIdle()
 
     compose.onNodeWithTag(ScanTestTags.NETWORK_ERROR_DIALOG).assertDoesNotExist()
@@ -1004,12 +1008,12 @@ class ScanScreenTest {
           .isSuccess
     }
 
-    compose.onNodeWithText("Position the QR code within the frame").assertDoesNotExist()
+    compose.onNodeWithText(context.getString(R.string.scan_instruction)).assertDoesNotExist()
 
     vm.resetToIdle()
     compose.waitForIdle()
 
-    compose.onNodeWithText("Position the QR code within the frame").assertIsDisplayed()
+    compose.onNodeWithText(context.getString(R.string.scan_instruction)).assertIsDisplayed()
   }
 
   // ==================== PROGRESS INDICATOR ====================

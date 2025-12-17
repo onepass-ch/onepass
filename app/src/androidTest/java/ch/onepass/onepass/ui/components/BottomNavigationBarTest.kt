@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.components
 
+import android.content.Context
 import androidx.compose.material3.Text
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -14,6 +15,8 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.navigation.BottomNavigationBar
 import ch.onepass.onepass.ui.navigation.NavigationDestinations
 import org.junit.Rule
@@ -37,6 +40,9 @@ class BottomNavigationBarTest {
 
   /** Compose test rule that drives the composition under test. */
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   /**
    * Test tag used to expose the current route as a plain [Text] node, allowing stable assertions on
@@ -69,17 +75,27 @@ class BottomNavigationBarTest {
   @Test
   fun allTabsAreVisible() {
     setBottomNavigation()
-    composeTestRule.onNodeWithText("Events").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Tickets").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Map").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Profile").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.bottom_nav_events_description))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.bottom_nav_tickets_description))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.bottom_nav_map_description))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.bottom_nav_profile_description))
+        .assertIsDisplayed()
   }
 
   /** Verifies that clicking the "Events" tab updates the current route accordingly. */
   @Test
   fun clickingEventsUpdatesRoute() {
     setBottomNavigation(initialRoute = NavigationDestinations.Screen.Tickets.route)
-    composeTestRule.onNodeWithText("Events").performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.bottom_nav_events_description))
+        .performClick()
     composeTestRule
         .onNodeWithTag(CURRENT_ROUTE_TAG)
         .assertTextContains(NavigationDestinations.Screen.Events.route)
@@ -89,7 +105,9 @@ class BottomNavigationBarTest {
   @Test
   fun clickingTicketsUpdatesRoute() {
     setBottomNavigation(initialRoute = NavigationDestinations.Screen.Events.route)
-    composeTestRule.onNodeWithText("Tickets").performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.bottom_nav_tickets_description))
+        .performClick()
     composeTestRule
         .onNodeWithTag(CURRENT_ROUTE_TAG)
         .assertTextContains(NavigationDestinations.Screen.Tickets.route)
@@ -99,7 +117,9 @@ class BottomNavigationBarTest {
   @Test
   fun clickingMapUpdatesRoute() {
     setBottomNavigation(initialRoute = NavigationDestinations.Screen.Events.route)
-    composeTestRule.onNodeWithText("Map").performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.bottom_nav_map_description))
+        .performClick()
     composeTestRule
         .onNodeWithTag(CURRENT_ROUTE_TAG)
         .assertTextContains(NavigationDestinations.Screen.Map.route)
@@ -109,7 +129,9 @@ class BottomNavigationBarTest {
   @Test
   fun clickingProfileUpdatesRoute() {
     setBottomNavigation(initialRoute = NavigationDestinations.Screen.Events.route)
-    composeTestRule.onNodeWithText("Profile").performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.bottom_nav_profile_description))
+        .performClick()
     composeTestRule
         .onNodeWithTag(CURRENT_ROUTE_TAG)
         .assertTextContains(NavigationDestinations.Screen.Profile.route)
@@ -120,22 +142,30 @@ class BottomNavigationBarTest {
   fun canNavigateBetweenAllTabs() {
     setBottomNavigation(initialRoute = NavigationDestinations.Screen.Events.route)
 
-    composeTestRule.onNodeWithText("Tickets").performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.bottom_nav_tickets_description))
+        .performClick()
     composeTestRule
         .onNodeWithTag(CURRENT_ROUTE_TAG)
         .assertTextContains(NavigationDestinations.Screen.Tickets.route)
 
-    composeTestRule.onNodeWithText("Map").performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.bottom_nav_map_description))
+        .performClick()
     composeTestRule
         .onNodeWithTag(CURRENT_ROUTE_TAG)
         .assertTextContains(NavigationDestinations.Screen.Map.route)
 
-    composeTestRule.onNodeWithText("Profile").performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.bottom_nav_profile_description))
+        .performClick()
     composeTestRule
         .onNodeWithTag(CURRENT_ROUTE_TAG)
         .assertTextContains(NavigationDestinations.Screen.Profile.route)
 
-    composeTestRule.onNodeWithText("Events").performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.bottom_nav_events_description))
+        .performClick()
     composeTestRule
         .onNodeWithTag(CURRENT_ROUTE_TAG)
         .assertTextContains(NavigationDestinations.Screen.Events.route)
@@ -148,7 +178,12 @@ class BottomNavigationBarTest {
   @Test
   fun tabsOrderMatchesNavigationDestinations() {
     setBottomNavigation()
-    val expected = listOf("Events", "Tickets", "Map", "Profile")
+    val expected =
+        listOf(
+            context.getString(R.string.bottom_nav_events_description),
+            context.getString(R.string.bottom_nav_tickets_description),
+            context.getString(R.string.bottom_nav_map_description),
+            context.getString(R.string.bottom_nav_profile_description))
 
     expected.forEachIndexed { idx, label ->
       // Ensure the label is present in the tree.
@@ -167,13 +202,17 @@ class BottomNavigationBarTest {
     setBottomNavigation(initialRoute = NavigationDestinations.Screen.Events.route)
 
     // First click: switch to Tickets.
-    composeTestRule.onNodeWithText("Tickets").performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.bottom_nav_tickets_description))
+        .performClick()
     composeTestRule
         .onNodeWithTag(CURRENT_ROUTE_TAG)
         .assertTextContains(NavigationDestinations.Screen.Tickets.route)
 
     // Second click on the same "Tickets" tab: route remains unchanged.
-    composeTestRule.onNodeWithText("Tickets").performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.bottom_nav_tickets_description))
+        .performClick()
     composeTestRule
         .onNodeWithTag(CURRENT_ROUTE_TAG)
         .assertTextContains(NavigationDestinations.Screen.Tickets.route)
@@ -186,7 +225,10 @@ class BottomNavigationBarTest {
   @Test
   fun unknownCurrentRouteKeepsBarUsable() {
     setBottomNavigation(initialRoute = "unknown_route")
-    composeTestRule.onNodeWithText("Events").assertIsDisplayed().performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.bottom_nav_events_description))
+        .assertIsDisplayed()
+        .performClick()
     composeTestRule
         .onNodeWithTag(CURRENT_ROUTE_TAG)
         .assertTextContains(NavigationDestinations.Screen.Events.route)

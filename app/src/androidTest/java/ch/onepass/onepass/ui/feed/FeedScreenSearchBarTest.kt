@@ -1,10 +1,13 @@
 package ch.onepass.onepass.ui.feed
 
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
@@ -29,6 +32,9 @@ import org.junit.Test
 class FeedScreenSearchBarTest {
 
   @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   private var lastClick: GlobalSearchItemClick? = null
   private var lastNavigatedEventId: String? = null
@@ -233,7 +239,9 @@ class FeedScreenSearchBarTest {
         .onNodeWithTag(FeedScreenTestTags.SEARCH_TEXT_FIELD, useUnmergedTree = true)
         .performClick()
         .performTextInput("error")
-    composeTestRule.onNode(hasText("Error:", substring = true)).assertIsDisplayed()
+    composeTestRule
+        .onNode(hasText(context.getString(R.string.feed_search_error, ""), substring = true))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -244,7 +252,9 @@ class FeedScreenSearchBarTest {
         .onNodeWithTag(FeedScreenTestTags.SEARCH_TEXT_FIELD, useUnmergedTree = true)
         .performClick()
         .performTextInput("nonexistent")
-    composeTestRule.onNode(hasText("No results found", substring = true)).assertIsDisplayed()
+    composeTestRule
+        .onNode(hasText(context.getString(R.string.feed_no_results), substring = true))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -494,7 +504,10 @@ class FeedScreenSearchBarTest {
     composeTestRule.waitForIdle()
 
     // Should show "No results found"
-    composeTestRule.onNode(hasText("No results found")).performScrollTo().assertIsDisplayed()
+    composeTestRule
+        .onNode(hasText(context.getString(R.string.feed_no_results)))
+        .performScrollTo()
+        .assertIsDisplayed()
   }
 
   @Test

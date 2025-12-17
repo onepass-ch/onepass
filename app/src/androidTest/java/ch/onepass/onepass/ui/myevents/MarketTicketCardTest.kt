@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.myevents
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -7,6 +8,8 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import org.junit.Rule
 import org.junit.Test
@@ -18,6 +21,9 @@ import org.junit.Test
 class MarketTicketCardTest {
 
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   private fun createTestMarketTicket(
       ticketId: String = "1",
@@ -114,7 +120,9 @@ class MarketTicketCardTest {
       }
     }
 
-    composeTestRule.onNodeWithText("Your listing").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.market_ticket_your_listing))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -128,7 +136,9 @@ class MarketTicketCardTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.MARKET_TICKET_BUY_BUTTON).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Buy").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.market_ticket_buy_button))
+        .assertIsDisplayed()
   }
 
   @Test

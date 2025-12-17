@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.notification
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -7,6 +8,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.navigation.NavController
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.notification.Notification
 import ch.onepass.onepass.model.notification.NotificationType
 import ch.onepass.onepass.ui.theme.OnePassTheme
@@ -21,6 +24,9 @@ import org.junit.Test
 class NotificationScreenTest {
 
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   private val mockViewModel = mockk<NotificationsViewModel>(relaxed = true)
   private val mockNavController = mockk<NavController>(relaxed = true)
@@ -50,7 +56,9 @@ class NotificationScreenTest {
     }
 
     composeTestRule.onNodeWithTag("notification_empty").assertIsDisplayed()
-    composeTestRule.onNodeWithText("No notifications yet").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.notifications_empty_title))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -78,7 +86,9 @@ class NotificationScreenTest {
       OnePassTheme { NotificationsScreen(mockNavController, mockViewModel) }
     }
 
-    composeTestRule.onNodeWithText("Mark all as read").performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.notifications_mark_all_read))
+        .performClick()
     verify { mockViewModel.markAllAsRead() }
   }
 
@@ -158,7 +168,9 @@ class NotificationScreenTest {
       OnePassTheme { NotificationsScreen(mockNavController, mockViewModel) }
     }
 
-    composeTestRule.onNodeWithContentDescription("Delete notification").performClick()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.notifications_delete_description))
+        .performClick()
     verify { mockViewModel.deleteNotification("del") }
   }
 

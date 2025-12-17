@@ -1,10 +1,13 @@
 package ch.onepass.onepass.ui.myevents
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.ui.theme.OnePassTheme
@@ -20,6 +23,9 @@ import org.junit.Test
 class HotEventsSectionTest {
 
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   private fun createTestEvent(
       id: String = "1",
@@ -42,7 +48,7 @@ class HotEventsSectionTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.HOT_EVENTS_TITLE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Hot Events").assertIsDisplayed()
+    composeTestRule.onNodeWithText(context.getString(R.string.hot_events_title)).assertIsDisplayed()
   }
 
   @Test
@@ -62,7 +68,7 @@ class HotEventsSectionTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.HOT_EVENTS_EMPTY).assertIsDisplayed()
-    composeTestRule.onNodeWithText("No hot events at the moment").assertIsDisplayed()
+    composeTestRule.onNodeWithText(context.getString(R.string.hot_events_empty)).assertIsDisplayed()
   }
 
   @Test

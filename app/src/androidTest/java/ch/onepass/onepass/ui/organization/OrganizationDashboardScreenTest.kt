@@ -1,7 +1,10 @@
 package ch.onepass.onepass.ui.organization
 
+import android.content.Context
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import java.util.*
@@ -12,6 +15,9 @@ import org.junit.Test
 
 class OrganizationDashboardScreenTest {
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   private val mockAuth = OrganizationDashboardTestData.createMockAuth().first
   private val mockUser = OrganizationDashboardTestData.createMockAuth().second
@@ -370,7 +376,9 @@ class OrganizationDashboardScreenTest {
     }
 
     composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.ERROR_MESSAGE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.error_state_title))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -424,7 +432,9 @@ class OrganizationDashboardScreenTest {
     composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.YOUR_EVENTS_DROPDOWN).performClick()
     composeTestRule.waitForIdle()
 
-    composeTestRule.onNodeWithText("No events created yet.").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.org_dashboard_no_events))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -442,7 +452,9 @@ class OrganizationDashboardScreenTest {
     composeTestRule.onNodeWithTag(OrganizationDashboardTestTags.STAFF_LIST_DROPDOWN).performClick()
     composeTestRule.waitForIdle()
 
-    composeTestRule.onNodeWithText("No staff members added yet.").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.org_dashboard_no_staff))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -470,7 +482,8 @@ class OrganizationDashboardScreenTest {
     composeTestRule.waitUntil(timeoutMillis = 20_000) {
       composeTestRule
           .onAllNodes(
-              hasContentDescription("Avatar") and
+              hasContentDescription(
+                  context.getString(R.string.org_dashboard_avatar_description)) and
                   hasAnyAncestor(
                       hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("avatar-user"))),
               useUnmergedTree = true)
@@ -478,10 +491,10 @@ class OrganizationDashboardScreenTest {
           .isNotEmpty()
     }
 
-    // Verify avatar image is displayed (content description "Avatar")
+    // Verify avatar image is displayed
     composeTestRule
         .onNode(
-            hasContentDescription("Avatar") and
+            hasContentDescription(context.getString(R.string.org_dashboard_avatar_description)) and
                 hasAnyAncestor(
                     hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("avatar-user"))),
             useUnmergedTree = true)
@@ -556,7 +569,7 @@ class OrganizationDashboardScreenTest {
     composeTestRule.waitUntil(timeoutMillis = 5000) {
       composeTestRule
           .onAllNodes(
-              hasText("Unknown User") and
+              hasText(context.getString(R.string.org_dashboard_unknown_user)) and
                   hasAnyAncestor(
                       hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("unknown-user"))),
               useUnmergedTree = true)
@@ -567,7 +580,7 @@ class OrganizationDashboardScreenTest {
     // Verify "Unknown User" is displayed
     composeTestRule
         .onNode(
-            hasText("Unknown User") and
+            hasText(context.getString(R.string.org_dashboard_unknown_user)) and
                 hasAnyAncestor(
                     hasTestTag(OrganizationDashboardTestTags.getStaffItemTag("unknown-user"))),
             useUnmergedTree = true)

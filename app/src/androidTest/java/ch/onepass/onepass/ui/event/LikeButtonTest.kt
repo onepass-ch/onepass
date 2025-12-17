@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.event
 
+import android.content.Context
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -7,7 +8,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.components.buttons.LikeButton
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -20,23 +23,33 @@ class LikeButtonTest {
 
   @get:Rule val composeTestRule = createComposeRule()
 
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
+
   @Test
   fun likeButton_initialStateAndAppearance_whenUnliked() {
     composeTestRule.setContent { MaterialTheme { LikeButton(isLiked = false, onLikeToggle = {}) } }
-    composeTestRule.onNodeWithContentDescription("Like").assertIsDisplayed().assertHasClickAction()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.button_like_description))
+        .assertIsDisplayed()
+        .assertHasClickAction()
 
-    composeTestRule.onNodeWithContentDescription("Unlike").assertDoesNotExist()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.button_unlike_description))
+        .assertDoesNotExist()
   }
 
   @Test
   fun likeButton_initialStateAndAppearance_whenLiked() {
     composeTestRule.setContent { MaterialTheme { LikeButton(isLiked = true, onLikeToggle = {}) } }
     composeTestRule
-        .onNodeWithContentDescription("Unlike")
+        .onNodeWithContentDescription(context.getString(R.string.button_unlike_description))
         .assertIsDisplayed()
         .assertHasClickAction()
 
-    composeTestRule.onNodeWithContentDescription("Like").assertDoesNotExist()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.button_like_description))
+        .assertDoesNotExist()
   }
 
   @Test
@@ -53,16 +66,19 @@ class LikeButtonTest {
             })
       }
     }
-    composeTestRule.onNodeWithContentDescription("Like").performClick()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.button_like_description))
+        .performClick()
     composeTestRule.waitForIdle()
 
-    composeTestRule.onNodeWithContentDescription("Unlike").assertExists()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.button_unlike_description))
+        .assertExists()
     assertEquals("Callback should be called with true", true, callbackValue)
   }
 
   @Test
   fun likeButton_togglesStateAndTriggersCallback_fromLikedToUnliked() {
-    // Given
     var callbackValue: Boolean? = null
     composeTestRule.setContent {
       MaterialTheme {
@@ -75,15 +91,18 @@ class LikeButtonTest {
             })
       }
     }
-    composeTestRule.onNodeWithContentDescription("Unlike").performClick()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.button_unlike_description))
+        .performClick()
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithContentDescription("Like").assertExists()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.button_like_description))
+        .assertExists()
     assertEquals("Callback should be called with false", false, callbackValue)
   }
 
   @Test
   fun likeButton_handlesMultipleRapidToggleCycles() {
-    // Given
     var clickCount = 0
     composeTestRule.setContent {
       MaterialTheme {
@@ -97,21 +116,24 @@ class LikeButtonTest {
       }
     }
 
+    val likeDesc = context.getString(R.string.button_like_description)
+    val unlikeDesc = context.getString(R.string.button_unlike_description)
+
     // When toggling multiple times
     // Like -> Unlike
-    composeTestRule.onNodeWithContentDescription("Like").performClick()
+    composeTestRule.onNodeWithContentDescription(likeDesc).performClick()
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithContentDescription("Unlike").assertExists()
+    composeTestRule.onNodeWithContentDescription(unlikeDesc).assertExists()
 
     // Unlike -> Like
-    composeTestRule.onNodeWithContentDescription("Unlike").performClick()
+    composeTestRule.onNodeWithContentDescription(unlikeDesc).performClick()
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithContentDescription("Like").assertExists()
+    composeTestRule.onNodeWithContentDescription(likeDesc).assertExists()
 
     // Like -> Unlike
-    composeTestRule.onNodeWithContentDescription("Like").performClick()
+    composeTestRule.onNodeWithContentDescription(likeDesc).performClick()
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithContentDescription("Unlike").assertExists()
+    composeTestRule.onNodeWithContentDescription(unlikeDesc).assertExists()
 
     // Then all clicks should be registered
     assertEquals("Callback should be triggered 3 times", 3, clickCount)

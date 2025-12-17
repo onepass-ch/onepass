@@ -1,8 +1,11 @@
 package ch.onepass.onepass.ui.feed
 
+import android.content.Context
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
@@ -28,6 +31,9 @@ import org.junit.Test
 
 class FeedScreenTest {
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   private val testEvent1 =
       Event(
@@ -163,7 +169,7 @@ class FeedScreenTest {
     composeTestRule.waitForIdle()
 
     composeTestRule.onNodeWithTag(FeedScreenTestTags.EMPTY_STATE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("No Events Found").assertIsDisplayed()
+    composeTestRule.onNodeWithText(context.getString(R.string.feed_empty_title)).assertIsDisplayed()
   }
 
   @Test
@@ -242,7 +248,9 @@ class FeedScreenTest {
     composeTestRule.waitForIdle()
 
     composeTestRule.onNodeWithTag(FeedScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.error_state_title))
+        .assertIsDisplayed()
     composeTestRule.onNodeWithText("Test error").assertIsDisplayed()
     composeTestRule
         .onNodeWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button")
@@ -297,9 +305,9 @@ class FeedScreenTest {
 
     // Verify all empty state components
     composeTestRule.onNodeWithTag(FeedScreenTestTags.EMPTY_STATE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("No Events Found").assertIsDisplayed()
+    composeTestRule.onNodeWithText(context.getString(R.string.feed_empty_title)).assertIsDisplayed()
     composeTestRule
-        .onNodeWithText("Check back later for new events in your area!")
+        .onNodeWithText(context.getString(R.string.feed_empty_message))
         .assertIsDisplayed()
   }
 
@@ -314,9 +322,13 @@ class FeedScreenTest {
 
     // Verify all error state components
     composeTestRule.onNodeWithTag(FeedScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.error_state_title))
+        .assertIsDisplayed()
     composeTestRule.onNodeWithText("Test error").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Try Again").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.error_state_retry_button))
+        .assertIsDisplayed()
     composeTestRule
         .onNodeWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button")
         .assertIsDisplayed()
@@ -354,7 +366,9 @@ class FeedScreenTest {
     composeTestRule
         .onNodeWithTag("${FeedScreenTestTags.ERROR_MESSAGE}_retry_button")
         .assertIsDisplayed()
-    composeTestRule.onNodeWithText("Try Again").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.error_state_retry_button))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -466,7 +480,7 @@ class FeedScreenTest {
     composeTestRule.waitForIdle()
     // Should show empty state when not loading and not refreshing with no events
     composeTestRule.onNodeWithTag(FeedScreenTestTags.EMPTY_STATE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("No Events Found").assertIsDisplayed()
+    composeTestRule.onNodeWithText(context.getString(R.string.feed_empty_title)).assertIsDisplayed()
   }
 
   @Test

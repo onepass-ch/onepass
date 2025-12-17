@@ -1,7 +1,10 @@
 package ch.onepass.onepass.ui.organization
 
+import android.content.Context
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationStatus
 import ch.onepass.onepass.ui.theme.OnePassTheme
@@ -11,6 +14,9 @@ import org.junit.Test
 
 class OrganizationCardTest {
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   @Test
   fun displaysOrganizationName_correctly() {
@@ -188,7 +194,11 @@ class OrganizationCardTest {
         .assertExists()
         .assertIsDisplayed()
 
-    composeTestRule.onNodeWithText("since", substring = true).assertExists()
+    // Use string resource for "since"
+    composeTestRule
+        .onNodeWithText(
+            context.getString(R.string.organization_card_since_label, ""), substring = true)
+        .assertExists()
   }
 
   @Test

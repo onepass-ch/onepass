@@ -1,10 +1,13 @@
 package ch.onepass.onepass.ui.myevents
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import org.junit.Rule
 import org.junit.Test
@@ -16,6 +19,9 @@ import org.junit.Test
 class MarketTicketListTest {
 
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   private fun createTestMarketTicket(
       ticketId: String = "1",
@@ -49,7 +55,9 @@ class MarketTicketListTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.MARKET_TICKETS_TITLE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Available Tickets").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.market_tickets_title))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -66,7 +74,9 @@ class MarketTicketListTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.SELL_TICKET_BUTTON).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Sell Ticket").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.market_tickets_sell_button))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -82,7 +92,9 @@ class MarketTicketListTest {
       }
     }
 
-    composeTestRule.onNodeWithText("Sell Ticket").assertDoesNotExist()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.market_tickets_sell_button))
+        .assertDoesNotExist()
   }
 
   @Test
@@ -134,7 +146,9 @@ class MarketTicketListTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.MARKET_EMPTY_STATE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("No Tickets Available").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.market_tickets_empty_title))
+        .assertIsDisplayed()
   }
 
   @Test
