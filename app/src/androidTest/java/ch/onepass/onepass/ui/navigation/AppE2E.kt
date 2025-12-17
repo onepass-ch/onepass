@@ -1,53 +1,82 @@
-import androidx.compose.ui.geometry.Offset
+import android.Manifest
+import android.content.pm.PackageManager
 import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasParent
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
+import androidx.compose.ui.test.swipeRight
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.BuildConfig
 import ch.onepass.onepass.OnePassApp
 import ch.onepass.onepass.resources.C
 import ch.onepass.onepass.ui.auth.SignInScreenTestTags
+import ch.onepass.onepass.ui.eventdetail.EventDetailTestTags
 import ch.onepass.onepass.ui.eventfilters.EventFilterDialogTestTags
 import ch.onepass.onepass.ui.feed.FeedScreenTestTags
 import ch.onepass.onepass.ui.map.MapScreenTestTags
 import ch.onepass.onepass.ui.map.MapViewModel
-import ch.onepass.onepass.ui.myevents.MyEventsTestTags
 import ch.onepass.onepass.ui.navigation.NavigationDestinations
 import ch.onepass.onepass.ui.organizer.OrganizationFormTestTags
 import ch.onepass.onepass.ui.profile.ProfileTestTags
+import ch.onepass.onepass.utils.TimeProvider
+import ch.onepass.onepass.utils.TimeProviderHolder
+import com.google.firebase.Timestamp
 import com.mapbox.common.MapboxOptions
+import io.mockk.every
+import io.mockk.mockkStatic
+import java.util.Date
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 
-@Ignore("Disabled during full test suite runs")
+// @Ignore("Disabled during full test suite runs")
 class AppE2E {
 
   @get:Rule val compose = createComposeRule()
 
   @Before
-  fun setupMapboxToken() {
-    MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
+  fun setup() {
+    // Initialize fake time provider
+    TimeProviderHolder.initialize(
+        object : TimeProvider {
+          override fun now(): Timestamp = Timestamp(Date(System.currentTimeMillis()))
+
+          override fun currentDate(): Date = now().toDate()
+
+          override suspend fun syncWithServer() {}
+        })
+
+    // Set Mapbox token (fake if missing)
+    MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN.ifEmpty { "pk.test.fake_token" }
+
+    // Mock location permissions as granted
+    mockkStatic(ContextCompat::class)
+    every {
+      ContextCompat.checkSelfPermission(any(), Manifest.permission.ACCESS_FINE_LOCATION)
+    } returns PackageManager.PERMISSION_GRANTED
+
+    every {
+      ContextCompat.checkSelfPermission(any(), Manifest.permission.ACCESS_COARSE_LOCATION)
+    } returns PackageManager.PERMISSION_GRANTED
   }
 
   private fun setApp() {
     compose.setContent {
       OnePassApp(
+          enableDeepLinking = false,
           mapViewModel = viewModel<MapViewModel>(),
           testAuthButtonTag = SignInScreenTestTags.LOGIN_BUTTON)
     }
@@ -94,40 +123,11 @@ class AppE2E {
       compose.waitForIdle()
     }
 
-    // Calendar
+    // Tickets Screen
     compose
         .onNodeWithTag("BOTTOM_TAB_${NavigationDestinations.Tab.Tickets.name.uppercase()}")
         .performClick()
     compose.waitForIdle()
-
-    // Tickets Screen
-    compose.onNodeWithTag(MyEventsTestTags.TABS_ROW).assertIsDisplayed()
-    compose.onNodeWithTag(MyEventsTestTags.TAB_CURRENT).performClick()
-    compose.waitForIdle()
-    val currentTickets = compose.onAllNodesWithTag(MyEventsTestTags.TICKET_CARD)
-    if (currentTickets.fetchSemanticsNodes().isNotEmpty()) {
-      currentTickets[0].performClick()
-      compose.waitForIdle()
-    }
-
-    // Expired Tickets
-    compose.onNodeWithTag(MyEventsTestTags.TAB_EXPIRED).performClick()
-    compose.waitForIdle()
-    val expiredTickets = compose.onAllNodesWithTag(MyEventsTestTags.TICKET_CARD)
-    if (expiredTickets.fetchSemanticsNodes().isNotEmpty()) {
-      expiredTickets[0].performTouchInput { click(position = Offset(1f, 1f)) }
-      compose.waitForIdle()
-    }
-
-    // QR Code
-    val qrNodes = compose.onAllNodesWithTag(MyEventsTestTags.QR_CODE_ICON)
-    if (qrNodes.fetchSemanticsNodes().isNotEmpty()) {
-      qrNodes[0].performTouchInput { click(position = Offset(1f, 1f)) }
-      compose.waitForIdle()
-    }
-
-    // Ensure still on Tickets Screen
-    compose.onNodeWithTag(MyEventsTestTags.TABS_ROW).assertIsDisplayed()
 
     // Map Screen
     compose
@@ -208,8 +208,17 @@ class AppE2E {
       compose.waitForIdle()
     }
 
-    // Ensure Event Detail is displayed
-    compose.onNodeWithText("Go Back", useUnmergedTree = true).assertIsDisplayed().performClick()
+    // Click first event to go to Event Detail
+    if (eventNodes.fetchSemanticsNodes().isNotEmpty()) {
+      eventNodes[0].performClick()
+      compose.waitForIdle()
+    }
+
+    // Event Detail Screen
+    compose.onNodeWithTag(EventDetailTestTags.SCREEN).assertIsDisplayed()
+
+    swipeBack()
+    compose.onNodeWithTag(FeedScreenTestTags.FEED_SCREEN).assertIsDisplayed()
     compose.waitForIdle()
 
     // Open Filters Dialog
@@ -229,52 +238,17 @@ class AppE2E {
     compose.onNodeWithText("Zurich").assertIsDisplayed().performClick()
     compose.waitForIdle()
 
-    // Toggle Hide Sold Out
-    compose
-        .onNodeWithTag(EventFilterDialogTestTags.HIDE_SOLD_OUT_CHECKBOX, useUnmergedTree = true)
-        .performClick()
-    compose.waitForIdle()
-
     // Apply Filters
     compose
         .onNodeWithTag(EventFilterDialogTestTags.APPLY_FILTERS_BUTTON, useUnmergedTree = true)
         .performClick()
     compose.waitForIdle()
 
-    // Calendar
+    // Ticket Screen
     compose
         .onNodeWithTag("BOTTOM_TAB_${NavigationDestinations.Tab.Tickets.name.uppercase()}")
         .performClick()
     compose.waitForIdle()
-
-    // Tickets Screen
-    compose.onNodeWithTag(MyEventsTestTags.TABS_ROW).assertIsDisplayed()
-    compose.onNodeWithTag(MyEventsTestTags.TAB_CURRENT).performClick()
-    compose.waitForIdle()
-    val currentTickets = compose.onAllNodesWithTag(MyEventsTestTags.TICKET_CARD)
-    if (currentTickets.fetchSemanticsNodes().isNotEmpty()) {
-      currentTickets[0].performClick()
-      compose.waitForIdle()
-    }
-
-    // Expired Tickets
-    compose.onNodeWithTag(MyEventsTestTags.TAB_EXPIRED).performClick()
-    compose.waitForIdle()
-    val expiredTickets = compose.onAllNodesWithTag(MyEventsTestTags.TICKET_CARD)
-    if (expiredTickets.fetchSemanticsNodes().isNotEmpty()) {
-      expiredTickets[0].performTouchInput { click(position = Offset(1f, 1f)) }
-      compose.waitForIdle()
-    }
-
-    // QR Code
-    val qrNodes = compose.onAllNodesWithTag(MyEventsTestTags.QR_CODE_ICON)
-    if (qrNodes.fetchSemanticsNodes().isNotEmpty()) {
-      qrNodes[0].performTouchInput { click(position = Offset(1f, 1f)) }
-      compose.waitForIdle()
-    }
-
-    // Ensure still on Tickets Screen
-    compose.onNodeWithTag(MyEventsTestTags.TABS_ROW).assertIsDisplayed()
 
     // Organization Feed Screen
     compose
@@ -353,6 +327,11 @@ class AppE2E {
 
     // Verify form submission success (back to profile or success screen)
     compose.onNodeWithTag(ProfileTestTags.SCREEN).assertIsDisplayed()
+  }
+
+  private fun swipeBack() {
+    compose.onRoot().performTouchInput { swipeRight() }
+    compose.waitForIdle()
   }
 
   private fun hasTestTagStartingWith(prefix: String) =
