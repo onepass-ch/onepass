@@ -95,33 +95,30 @@ open class ProfileViewModel(
 
   private fun observeRealTimeStats() {
     viewModelScope.launch {
-      val userId = userRepository.getCurrentUser()?.uid ?: return@launch
+      try {
+        val userId = userRepository.getCurrentUser()?.uid ?: return@launch
 
-      launch {
-        userRepository.getFavoriteEvents(userId).collect { favorites ->
-          _state.value = _state.value.copy(stats = _state.value.stats.copy(saved = favorites.size))
-        }
-      }
-
-      launch {
-        ticketRepository.getTicketsByUser(userId).collect { tickets ->
-          var upcomingCount = 0
-          var pastCount = 0
-
-          tickets.forEach { ticket ->
-            // Simple check based on ticket state/expiration
-            if (ticket.computeUiStatus() == TicketStatus.EXPIRED) {
-              pastCount++
-            } else {
-              upcomingCount++
+        launch {
+          try {
+            userRepository.getFavoriteEvents(userId).collect { favorites ->
+              _state.value =
+                  _state.value.copy(stats = _state.value.stats.copy(saved = favorites.size))
             }
-          }
-
-          _state.value =
-              _state.value.copy(
-                  stats = _state.value.stats.copy(upcoming = upcomingCount, events = pastCount))
+          } catch (_: Exception) {}
         }
-      }
+
+        launch {
+          try {
+            ticketRepository.getTicketsByUser(userId).collect { tickets ->
+              val (upcoming, past) =
+                  tickets.partition { it.computeUiStatus() != TicketStatus.EXPIRED }
+              _state.value =
+                  _state.value.copy(
+                      stats = _state.value.stats.copy(upcoming = upcoming.size, events = past.size))
+            }
+          } catch (_: Exception) {}
+        }
+      } catch (_: Exception) {}
     }
   }
 
