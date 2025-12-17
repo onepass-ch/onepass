@@ -85,7 +85,7 @@ class MapCameraTrackingIntegrationTest {
     mapViewModel.selectEvent(eventToSelect)
 
     assertTrue("Tracking should persist after event selection", mapViewModel.isCameraTracking())
-    assertNotNull("Event should be selected", mapViewModel.uiState.value.selectedEvent)
+    assertNotNull("Event should be selected", mapViewModel.uiState.value.currentSelectedEvent)
   }
 
   @Test
@@ -110,7 +110,7 @@ class MapCameraTrackingIntegrationTest {
 
     mapViewModel.disableCameraTracking()
     assertFalse("Tracking should be disabled", mapViewModel.isCameraTracking())
-    assertNotNull("Event selection should persist", mapViewModel.uiState.value.selectedEvent)
+    assertNotNull("Event selection should persist", mapViewModel.uiState.value.currentSelectedEvent)
   }
 
   @Test
@@ -135,7 +135,7 @@ class MapCameraTrackingIntegrationTest {
     mapViewModel.clearSelectedEvent()
 
     assertTrue("Tracking should persist after clearing event", mapViewModel.isCameraTracking())
-    assertNull("Event selection should be cleared", mapViewModel.uiState.value.selectedEvent)
+    assertNull("Event selection should be cleared", mapViewModel.uiState.value.currentSelectedEvent)
   }
 
   @Test
@@ -170,7 +170,7 @@ class MapCameraTrackingIntegrationTest {
     // Select first event
     mapViewModel.selectEvent(events[0])
     assertTrue(mapViewModel.isCameraTracking())
-    assertEquals("Event 1", mapViewModel.uiState.value.selectedEvent?.title)
+    assertEquals("Event 1", mapViewModel.uiState.value.currentSelectedEvent?.title)
 
     // Disable tracking
     mapViewModel.disableCameraTracking()
@@ -179,7 +179,7 @@ class MapCameraTrackingIntegrationTest {
     // Switch to second event
     mapViewModel.selectEvent(events[1])
     assertFalse("Tracking should remain disabled", mapViewModel.isCameraTracking())
-    assertEquals("Event 2", mapViewModel.uiState.value.selectedEvent?.title)
+    assertEquals("Event 2", mapViewModel.uiState.value.currentSelectedEvent?.title)
 
     // Re-enable tracking
     mapViewModel.enableCameraTracking()
@@ -188,7 +188,7 @@ class MapCameraTrackingIntegrationTest {
     // Clear selection
     mapViewModel.clearSelectedEvent()
     assertTrue("Tracking should persist", mapViewModel.isCameraTracking())
-    assertNull("Selection should be cleared", mapViewModel.uiState.value.selectedEvent)
+    assertNull("Selection should be cleared", mapViewModel.uiState.value.currentSelectedEvent)
   }
 
   @Test
@@ -225,7 +225,7 @@ class MapCameraTrackingIntegrationTest {
 
     // Verify final state consistency
     assertTrue("Tracking should be enabled in final state", mapViewModel.isCameraTracking())
-    assertNull("Event should be cleared", mapViewModel.uiState.value.selectedEvent)
+    assertNull("Event should be cleared", mapViewModel.uiState.value.currentSelectedEvent)
     assertEquals("Should have all events", 2, mapViewModel.uiState.value.events.size)
   }
 
@@ -256,7 +256,7 @@ class MapCameraTrackingIntegrationTest {
 
     assertTrue(
         "Tracking should remain enabled after multiple clears", mapViewModel.isCameraTracking())
-    assertNull("Event selection should be cleared", mapViewModel.uiState.value.selectedEvent)
+    assertNull("Event selection should be cleared", mapViewModel.uiState.value.currentSelectedEvent)
   }
 }
 
