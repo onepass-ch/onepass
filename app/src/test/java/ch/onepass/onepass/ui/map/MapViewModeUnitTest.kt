@@ -5,6 +5,8 @@ import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.utils.MockTimeProvider
+import ch.onepass.onepass.utils.TimeProviderHolder
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
 import com.mapbox.common.Cancelable
@@ -24,6 +26,7 @@ import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin
 import com.mapbox.maps.plugin.locationcomponent.location
 import io.mockk.*
+import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -56,9 +59,14 @@ class MapViewModelUnitTest {
   private lateinit var validEvent1: Event
   private lateinit var validEvent2: Event
 
+  private val FIXED_TEST_TIME_MILLIS = 1704067200000L // Jan 1, 2024, 00:00:00 GMT
+  private val FIXED_TEST_TIMESTAMP = Timestamp(Date(FIXED_TEST_TIME_MILLIS))
+
   @Before
   fun setUp() {
     Dispatchers.setMain(testDispatcher)
+
+    TimeProviderHolder.initialize(MockTimeProvider(FIXED_TEST_TIMESTAMP))
 
     // Initialize test events
     validEvent1 =

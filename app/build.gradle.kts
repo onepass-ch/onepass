@@ -290,6 +290,15 @@ dependencies {
 }
 
 tasks.withType<Test> {
+    // Force test execution to use a Java 17 compatible JDK.
+    // This is necessary because the default JVM is too new for JaCoCo 0.8.11.
+    javaLauncher = javaToolchains.launcherFor {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+    // Add required JVM arguments for Robolectric/Jacoco to access internal reflection APIs on modern JDKs (>= 9).
+    jvmArgs("--add-opens=java.base/java.lang=ALL-UNNAMED")
+    jvmArgs("--add-opens=java.base/java.util=ALL-UNNAMED")
+
     if (name.contains("Release")) {
         exclude("**/*ComposeTest.class")
     }

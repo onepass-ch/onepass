@@ -4,8 +4,11 @@ import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.utils.MockTimeProvider
+import ch.onepass.onepass.utils.TimeProviderHolder
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
+import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -24,10 +27,14 @@ class MapCameraTrackingIntegrationTest {
   private lateinit var fakeRepo: TestEventRepository
   private lateinit var mapViewModel: MapViewModel
 
+  private val FIXED_TEST_TIME_MILLIS = 1704067200000L // Jan 1, 2024, 00:00:00 GMT
+  private val FIXED_TEST_TIMESTAMP = Timestamp(Date(FIXED_TEST_TIME_MILLIS))
+
   @OptIn(ExperimentalCoroutinesApi::class)
   @Before
   fun setUp() {
     Dispatchers.setMain(UnconfinedTestDispatcher())
+    TimeProviderHolder.initialize(MockTimeProvider(FIXED_TEST_TIMESTAMP))
 
     fakeRepo = TestEventRepository()
     mapViewModel = MapViewModel(eventRepository = fakeRepo)

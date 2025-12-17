@@ -16,10 +16,13 @@ import ch.onepass.onepass.resources.C
 import ch.onepass.onepass.ui.eventfilters.EventFilterDialogTestTags
 import ch.onepass.onepass.ui.eventfilters.EventFilterViewModel
 import ch.onepass.onepass.ui.eventfilters.FilterUIState
+import ch.onepass.onepass.utils.MockTimeProvider
+import ch.onepass.onepass.utils.TimeProviderHolder
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
 import com.mapbox.common.MapboxOptions
 import io.mockk.*
+import java.util.Date
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Before
 import org.junit.Rule
@@ -41,12 +44,16 @@ class MapScreenTest {
           startTime = Timestamp.now(),
           ticketsRemaining = 50)
 
+  private val FIXED_TEST_TIME_MILLIS = 1704067200000L // Jan 1, 2024, 00:00:00 GMT
+  private val FIXED_TEST_TIMESTAMP = Timestamp(Date(FIXED_TEST_TIME_MILLIS))
+
   @Before
   fun setUp() {
     MapboxOptions.accessToken = BuildConfig.MAPBOX_ACCESS_TOKEN
 
     mockMapViewModel = mockk(relaxed = true)
     mockFilterViewModel = mockk(relaxed = true)
+    TimeProviderHolder.initialize(MockTimeProvider(FIXED_TEST_TIMESTAMP))
 
     // Mock ContextCompat for permission checks
     mockkStatic(ContextCompat::class)

@@ -10,6 +10,8 @@ import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.ui.theme.OnePassTheme
+import ch.onepass.onepass.utils.MockTimeProvider
+import ch.onepass.onepass.utils.TimeProviderHolder
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
@@ -57,6 +59,9 @@ class FeedScreenTest {
           ticketsIssued = 100,
           pricingTiers = emptyList())
 
+  private val FIXED_TEST_TIME_MILLIS = 1704067200000L // Jan 1, 2024, 00:00:00 GMT
+  private val FIXED_TEST_TIMESTAMP = Timestamp(Date(FIXED_TEST_TIME_MILLIS))
+
   private lateinit var mockUserRepository: UserRepository
   private lateinit var mockAuth: FirebaseAuth
   private lateinit var mockUser: FirebaseUser
@@ -66,6 +71,7 @@ class FeedScreenTest {
     mockUserRepository = mockk(relaxed = true)
     mockAuth = mockk(relaxed = true)
     mockUser = mockk(relaxed = true)
+    TimeProviderHolder.initialize(MockTimeProvider(FIXED_TEST_TIMESTAMP))
 
     every { mockAuth.currentUser } returns mockUser
     every { mockUser.uid } returns "test-user-id"
