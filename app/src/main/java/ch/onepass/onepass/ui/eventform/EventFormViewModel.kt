@@ -296,6 +296,16 @@ abstract class EventFormViewModel(
     return errors
   }
 
+  private fun validateTime(state: EventFormState): Map<String, String> {
+    if (state.startTime.isBlank() || state.endTime.isBlank()) return emptyMap()
+
+    return if (!state.allowExactTime && state.endTime <= state.startTime) {
+      mapOf(ValidationError.TIME.toError())
+    } else {
+      emptyMap()
+    }
+  }
+
   private fun validateRequiredTextFields(state: EventFormState): Map<String, String> {
     val errors = mutableMapOf<String, String>()
 
@@ -305,19 +315,8 @@ abstract class EventFormViewModel(
     if (state.startTime.isBlank()) errors += ValidationError.START_TIME.toError()
     if (state.endTime.isBlank()) errors += ValidationError.END_TIME.toError()
 
-
-      return errors
+    return errors
   }
-
-    private fun validateTime(state: EventFormState): Map<String, String> {
-        if (state.startTime.isBlank() || state.endTime.isBlank()) return emptyMap()
-
-        return if (!state.allowExactTime && state.endTime <= state.startTime) {
-            mapOf(ValidationError.TIME.toError())
-        } else {
-            emptyMap()
-        }
-    }
 
   private fun validateDateNotInPast(state: EventFormState): Map<String, String> {
     if (state.date.isBlank() || state.startTime.isBlank()) return emptyMap()
