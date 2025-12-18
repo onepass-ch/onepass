@@ -24,10 +24,8 @@ import kotlinx.coroutines.tasks.await
  * SECURITY NOTE: lastScannedAt is updated server-side by the Cloud Function "validateEntry" after
  * ticket verification, not by the client (prevents fraud).
  */
-class PassRepositoryFirebase(
-    db: FirebaseFirestore,
-    private val functions: FirebaseFunctions
-) : PassRepository {
+class PassRepositoryFirebase(db: FirebaseFirestore, private val functions: FirebaseFunctions) :
+    PassRepository {
 
   private companion object {
     const val UID_REQUIRED = "uid required"
