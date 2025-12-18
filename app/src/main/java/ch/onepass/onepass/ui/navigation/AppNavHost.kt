@@ -68,10 +68,10 @@ import ch.onepass.onepass.ui.organizer.OrganizationFormViewModel
 import ch.onepass.onepass.ui.profile.ProfileEffect
 import ch.onepass.onepass.ui.profile.ProfileScreen
 import ch.onepass.onepass.ui.profile.ProfileViewModel
-import ch.onepass.onepass.ui.profile.editprofile.EditProfileScreen
-import ch.onepass.onepass.ui.profile.editprofile.EditProfileViewModel
 import ch.onepass.onepass.ui.profile.accountsettings.AccountSettingsScreen
 import ch.onepass.onepass.ui.profile.accountsettings.AccountSettingsViewModel
+import ch.onepass.onepass.ui.profile.editprofile.EditProfileScreen
+import ch.onepass.onepass.ui.profile.editprofile.EditProfileViewModel
 import ch.onepass.onepass.ui.scan.ScanScreen
 import ch.onepass.onepass.ui.scan.ScannerViewModel
 import ch.onepass.onepass.ui.staff.StaffInvitationScreen

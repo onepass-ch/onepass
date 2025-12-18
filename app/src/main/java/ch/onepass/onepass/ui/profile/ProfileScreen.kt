@@ -146,7 +146,6 @@ private fun ProfileContent(
               email = state.email,
               avatarUrl = state.avatarUrl,
               isEmailPublic = state.isEmailPublic,
-              avatarUrl = state.avatarUrl,
               country = state.country,
               onEditProfile = onEditProfile)
 
@@ -308,20 +307,20 @@ private fun HeaderBlock(
             }
           }
 
-            if (!country.isNullOrBlank()) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.padding(top = 2.dp)) {
-                    Text(
-                        text = getFlagFromCountryName(country),
-                        style = MaterialTheme.typography.bodyMedium)
-                    Spacer(Modifier.width(4.dp))
-                    Text(
-                        text = country,
-                        color = colorScheme.onSurface.copy(alpha = 0.7f),
-                        style = MaterialTheme.typography.bodySmall)
+          if (!country.isNullOrBlank()) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.padding(top = 2.dp)) {
+                  Text(
+                      text = getFlagFromCountryName(country),
+                      style = MaterialTheme.typography.bodyMedium)
+                  Spacer(Modifier.width(4.dp))
+                  Text(
+                      text = country,
+                      color = colorScheme.onSurface.copy(alpha = 0.7f),
+                      style = MaterialTheme.typography.bodySmall)
                 }
-            }
+          }
         }
 
         IconButton(
