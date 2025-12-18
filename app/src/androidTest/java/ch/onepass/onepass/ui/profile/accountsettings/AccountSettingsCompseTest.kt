@@ -120,8 +120,11 @@ class AccountSettingsScreenComposeTest {
       AccountSettingsScreen(viewModel = viewModel, onNavigateBack = {}, onAccountDeleted = {})
     }
 
-    // Scroll to the danger zone section first
-    composeTestRule.onNodeWithText("DANGER ZONE").performScrollTo().assertIsDisplayed()
+    // Scroll to the danger zone section and wait for it to settle
+    composeTestRule.onNodeWithText("DANGER ZONE").performScrollTo()
+    composeTestRule.waitForIdle()
+    composeTestRule.onNodeWithText("DANGER ZONE").assertIsDisplayed()
+
     composeTestRule.onNodeWithText("DELETE ACCOUNT").assertIsDisplayed()
     composeTestRule
         .onNodeWithText(
