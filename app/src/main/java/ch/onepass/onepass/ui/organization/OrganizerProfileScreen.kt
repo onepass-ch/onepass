@@ -4,6 +4,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -19,7 +21,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.colorScheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +39,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -40,6 +47,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
+import ch.onepass.onepass.model.organization.Post
 import ch.onepass.onepass.ui.myevents.TicketComponent
 import ch.onepass.onepass.ui.myevents.TicketStatus
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
@@ -409,6 +417,8 @@ fun OrganizerProfileScreen(
         selectedTab = state.selectedTab,
         upcomingEvents = state.upcomingEvents,
         pastEvents = state.pastEvents,
+        posts = state.posts,
+        postsLoading = state.postsLoading,
         onFollowClick = { viewModel.onFollowClicked() },
         onWebsiteClick = { viewModel.onWebsiteClicked() },
         onInstagramClick = { viewModel.onSocialMediaClicked("instagram") },
@@ -416,7 +426,29 @@ fun OrganizerProfileScreen(
         onFacebookClick = { viewModel.onSocialMediaClicked("facebook") },
         onEditOrganizationClick = { viewModel.onEditOrganizationClicked() },
         onTabSelected = { viewModel.onTabSelected(it) },
-        onEventClick = { viewModel.onEventClicked(it) })
+        onEventClick = { viewModel.onEventClicked(it) },
+        onCreatePostClick = { viewModel.openCreatePostDialog() },
+        onDeletePostClick = { viewModel.openDeleteConfirmation(it) },
+        onLikePostClick = { postId -> viewModel.toggleLike(postId) },
+        currentUserId = viewModel.getCurrentUserId())
+  }
+
+  // Create Post Dialog
+  if (state.showCreatePostDialog) {
+    CreatePostComposer(
+        organizationName = state.name,
+        organizationImageUrl = state.profileImageUrl,
+        isSubmitting = state.isSubmittingPost,
+        onSubmit = { content -> viewModel.createPost(content) },
+        onDismiss = { viewModel.closeCreatePostDialog() })
+  }
+
+  // Delete Post Confirmation Dialog
+  if (state.showDeleteConfirmation && state.postToDelete != null) {
+    DeletePostConfirmationDialog(
+        isDeleting = state.isDeletingPost,
+        onConfirm = { viewModel.confirmDeletePost() },
+        onDismiss = { viewModel.closeDeleteConfirmation() })
   }
 }
 
@@ -442,6 +474,8 @@ fun OrganizerProfileContent(
     selectedTab: OrganizerProfileTab = OrganizerProfileTab.UPCOMING,
     upcomingEvents: List<Event> = emptyList(),
     pastEvents: List<Event> = emptyList(),
+    posts: List<Post> = emptyList(),
+    postsLoading: Boolean = false,
     onFollowClick: () -> Unit = {},
     onWebsiteClick: () -> Unit = {},
     onInstagramClick: () -> Unit = {},
@@ -449,7 +483,11 @@ fun OrganizerProfileContent(
     onFacebookClick: () -> Unit = {},
     onEditOrganizationClick: () -> Unit = {},
     onTabSelected: (OrganizerProfileTab) -> Unit = {},
-    onEventClick: (String) -> Unit = {}
+    onEventClick: (String) -> Unit = {},
+    onCreatePostClick: () -> Unit = {},
+    onDeletePostClick: (Post) -> Unit = {},
+    onLikePostClick: (String) -> Unit = {},
+    currentUserId: String? = null
 ) {
   Column(
       verticalArrangement = Arrangement.spacedBy(10.dp, Alignment.Top),
@@ -493,7 +531,17 @@ fun OrganizerProfileContent(
 
         // Tab content based on selection
         when (selectedTab) {
-          OrganizerProfileTab.POSTS -> PostsTabContent()
+          OrganizerProfileTab.POSTS ->
+              PostsTabContent(
+                  posts = posts,
+                  organizationName = name,
+                  organizationImageUrl = profileImageUrl,
+                  isOwner = isOwner,
+                  isLoading = postsLoading,
+                  onCreatePostClick = onCreatePostClick,
+                  onDeletePostClick = onDeletePostClick,
+                  onLikePostClick = onLikePostClick,
+                  currentUserId = currentUserId)
           OrganizerProfileTab.UPCOMING ->
               UpcomingTabContent(events = upcomingEvents, onEventClick = onEventClick)
           OrganizerProfileTab.PAST ->
@@ -502,20 +550,212 @@ fun OrganizerProfileContent(
       }
 }
 
-/** Content for the Posts tab. Currently empty, to be implemented in the future. */
+/**
+ * Test tags for the Posts tab content.
+ */
+object PostsTabTestTags {
+  const val POSTS_TAB_CONTENT = "posts_tab_content"
+  const val CREATE_POST_BUTTON = "posts_create_button"
+  const val POSTS_LIST = "posts_list"
+  const val POSTS_LOADING = "posts_loading"
+  const val POSTS_EMPTY = "posts_empty"
+}
+
+/**
+ * Content for the Posts tab.
+ *
+ * Displays a modern feed with:
+ * - Create post button at the top (for owners only)
+ * - List of post cards with proper spacing
+ * - Empty state when no posts exist
+ *
+ * @param posts List of posts to display.
+ * @param organizationName Name of the organization.
+ * @param organizationImageUrl Optional profile image URL.
+ * @param isOwner Whether the current user is the owner.
+ * @param isLoading Whether posts are currently loading.
+ * @param onCreatePostClick Callback when create post is clicked.
+ * @param onDeletePostClick Callback when delete is clicked on a post.
+ * @param onLikePostClick Callback when like is clicked on a post (takes postId).
+ * @param currentUserId Current user's ID for determining liked state.
+ * @param modifier Optional modifier.
+ */
 @Composable
-fun PostsTabContent(modifier: Modifier = Modifier) {
-  // TODO: Implement posts content
+fun PostsTabContent(
+    posts: List<Post>,
+    organizationName: String,
+    organizationImageUrl: String?,
+    isOwner: Boolean,
+    isLoading: Boolean,
+    onCreatePostClick: () -> Unit,
+    onDeletePostClick: (Post) -> Unit,
+    onLikePostClick: (String) -> Unit,
+    currentUserId: String? = null,
+    modifier: Modifier = Modifier
+) {
   Column(
-      modifier =
-          modifier.fillMaxWidth().padding(top = 8.dp).testTag(OrganizerProfileTestTags.EVENT_LIST),
-      verticalArrangement = Arrangement.Center,
-      horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = stringResource(R.string.organizer_posts_empty),
-            style = Typography.bodyMedium.copy(color = colorScheme.outline),
-            modifier = Modifier.padding(32.dp))
+      modifier = modifier
+          .fillMaxWidth()
+          .padding(top = 16.dp)
+          .testTag(PostsTabTestTags.POSTS_TAB_CONTENT),
+      horizontalAlignment = Alignment.CenterHorizontally,
+      verticalArrangement = Arrangement.spacedBy(16.dp)
+  ) {
+    // Create Post Section (only for owners)
+    if (isOwner) {
+      CreatePostPrompt(
+          organizationName = organizationName,
+          organizationImageUrl = organizationImageUrl,
+          onClick = onCreatePostClick
+      )
+    }
+
+    // Posts List
+    when {
+      isLoading -> {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(48.dp)
+                .testTag(PostsTabTestTags.POSTS_LOADING),
+            contentAlignment = Alignment.Center
+        ) {
+          CircularProgressIndicator(
+              modifier = Modifier.size(40.dp),
+              color = colorScheme.primary,
+              strokeWidth = 3.dp
+          )
+        }
       }
+      posts.isEmpty() -> {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 32.dp, vertical = 48.dp)
+                .testTag(PostsTabTestTags.POSTS_EMPTY),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+          Text(
+              text = stringResource(R.string.organizer_posts_empty),
+              style = MaterialTheme.typography.titleMedium.copy(
+                  color = colorScheme.onSurface
+              )
+          )
+          Spacer(modifier = Modifier.height(8.dp))
+          if (isOwner) {
+            Text(
+                text = stringResource(R.string.org_post_empty_owner_hint),
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = colorScheme.outline,
+                    textAlign = TextAlign.Center
+                )
+            )
+          } else {
+            Text(
+                text = "Check back later for updates from this organization.",
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = colorScheme.outline,
+                    textAlign = TextAlign.Center
+                )
+            )
+          }
+        }
+      }
+      else -> {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp)
+                .testTag(PostsTabTestTags.POSTS_LIST),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+          posts.forEach { post ->
+            val isLiked = currentUserId?.let { post.isLikedBy(it) } ?: false
+            PostCard(
+                post = post,
+                organizationName = organizationName,
+                organizationImageUrl = organizationImageUrl,
+                isLiked = isLiked,
+                canDelete = isOwner,
+                onLikeClick = { onLikePostClick(post.id) },
+                onDeleteClick = { onDeletePostClick(post) }
+            )
+          }
+          // Bottom spacing
+          Spacer(modifier = Modifier.height(16.dp))
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Modern styled prompt for creating a new post.
+ *
+ * Shows a card with avatar, placeholder text, and post button
+ * that opens the post composer when clicked.
+ *
+ * @param organizationName Name of the organization.
+ * @param organizationImageUrl Optional profile image URL.
+ * @param onClick Callback when the prompt is clicked.
+ */
+@Composable
+private fun CreatePostPrompt(
+    organizationName: String,
+    organizationImageUrl: String?,
+    onClick: () -> Unit
+) {
+  Card(
+      modifier = Modifier
+          .fillMaxWidth()
+          .padding(horizontal = 12.dp)
+          .clickable { onClick() }
+          .testTag(PostsTabTestTags.CREATE_POST_BUTTON),
+      shape = RoundedCornerShape(16.dp),
+      colors = CardDefaults.cardColors(
+          containerColor = colorScheme.surfaceVariant.copy(alpha = 0.5f)
+      )
+  ) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+      // Organization Avatar
+      OrganizationAvatar(
+          organizationName = organizationName,
+          imageUrl = organizationImageUrl,
+          size = 44
+      )
+
+      Spacer(modifier = Modifier.width(14.dp))
+
+      // Placeholder Text
+      Text(
+          text = stringResource(R.string.org_post_create_prompt),
+          style = MaterialTheme.typography.bodyLarge,
+          color = colorScheme.outline,
+          modifier = Modifier.weight(1f)
+      )
+
+      Spacer(modifier = Modifier.width(14.dp))
+
+      // Post Button
+      Button(
+          onClick = onClick,
+          colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary),
+          shape = RoundedCornerShape(24.dp),
+          modifier = Modifier.height(40.dp)
+      ) {
+        Text(
+            text = stringResource(R.string.org_post_submit_button),
+            style = MaterialTheme.typography.labelLarge,
+            fontWeight = FontWeight.Bold
+        )
+      }
+    }
+  }
 }
 
 /**

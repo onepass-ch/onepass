@@ -5,13 +5,16 @@ import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.map.Location
+import ch.onepass.onepass.model.organization.FakePostRepository
 import ch.onepass.onepass.model.organization.InvitationStatus
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationInvitation
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.model.organization.OrganizationStatus
+import ch.onepass.onepass.model.organization.Post
 import ch.onepass.onepass.utils.EventTestData
 import ch.onepass.onepass.utils.OrganizationTestData
+import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.FirebaseUser
 import io.mockk.every
@@ -149,6 +152,7 @@ class OrganizerProfileViewModelTest {
   private fun createViewModel(
       organizations: Map<String, Organization> = emptyMap(),
       eventsByOrg: Map<String, List<Event>> = emptyMap(),
+      postRepository: FakePostRepository = FakePostRepository(),
       orgShouldThrow: Boolean = false,
       eventShouldThrow: Boolean = false
   ): OrganizerProfileViewModel {
@@ -157,9 +161,26 @@ class OrganizerProfileViewModelTest {
     return OrganizerProfileViewModel(
         organizationRepository = orgRepository,
         eventRepository = eventRepository,
+        postRepository = postRepository,
         auth = mockAuth // Inject the mock auth
         )
   }
+
+  // Helper to create test posts
+  private fun createTestPost(
+      id: String,
+      organizationId: String,
+      content: String = "Test content",
+      likedBy: List<String> = emptyList()
+  ): Post = Post(
+      id = id,
+      organizationId = organizationId,
+      authorId = "author1",
+      authorName = "Test Author",
+      content = content,
+      likedBy = likedBy,
+      createdAt = Timestamp.now()
+  )
 
   @Before
   fun setUp() {
@@ -1085,5 +1106,412 @@ class OrganizerProfileViewModelTest {
     Assert.assertFalse(
         "Should not emit effect when organizationId is empty",
         effects.any { it is OrganizerProfileEffect.NavigateToEditOrganization })
+  }
+
+  // ========================================
+  // Tests for Post Management
+  // ========================================
+
+  @Test
+  fun initialState_hasEmptyPosts() = runTest {
+    val viewModel = createViewModel()
+
+    val state = viewModel.state.value
+
+    Assert.assertTrue(state.posts.isEmpty())
+    Assert.assertFalse(state.postsLoading)
+    Assert.assertFalse(state.showCreatePostDialog)
+    Assert.assertFalse(state.isSubmittingPost)
+    Assert.assertFalse(state.showDeleteConfirmation)
+    Assert.assertNull(state.postToDelete)
+    Assert.assertFalse(state.isDeletingPost)
+  }
+
+  @Test
+  fun loadOrganizationProfile_loadsPostsForOrganization() = runTest {
+    val postRepository = FakePostRepository()
+    postRepository.addPosts(listOf(
+        createTestPost("post1", "org-with-posts"),
+        createTestPost("post2", "org-with-posts"),
+        createTestPost("post3", "other-org")
+    ))
+
+    val testOrg = OrganizationTestData.createTestOrganization(
+        id = "org-with-posts",
+        name = "Posts Test Org",
+        ownerId = "owner-1"
+    )
+
+    val viewModel = createViewModel(
+        organizations = mapOf("org-with-posts" to testOrg),
+        postRepository = postRepository
+    )
+
+    viewModel.loadOrganizationProfile("org-with-posts")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val state = viewModel.state.value
+
+    Assert.assertEquals(2, state.posts.size)
+    Assert.assertTrue(state.posts.all { it.organizationId == "org-with-posts" })
+    Assert.assertFalse(state.postsLoading)
+  }
+
+  @Test
+  fun openCreatePostDialog_setsShowCreatePostDialogTrue() = runTest {
+    val viewModel = createViewModel()
+
+    Assert.assertFalse(viewModel.state.value.showCreatePostDialog)
+
+    viewModel.openCreatePostDialog()
+
+    Assert.assertTrue(viewModel.state.value.showCreatePostDialog)
+  }
+
+  @Test
+  fun closeCreatePostDialog_setsShowCreatePostDialogFalse() = runTest {
+    val viewModel = createViewModel()
+
+    viewModel.openCreatePostDialog()
+    Assert.assertTrue(viewModel.state.value.showCreatePostDialog)
+
+    viewModel.closeCreatePostDialog()
+
+    Assert.assertFalse(viewModel.state.value.showCreatePostDialog)
+    Assert.assertFalse(viewModel.state.value.isSubmittingPost)
+  }
+
+  @Test
+  fun createPost_createsPostSuccessfully() = runTest {
+    val postRepository = FakePostRepository()
+    val testOrg = OrganizationTestData.createTestOrganization(
+        id = "org-create-post",
+        name = "Create Post Org",
+        ownerId = "owner-1"
+    )
+    every { mockUser.uid } returns "user-123"
+    every { mockUser.displayName } returns "Test User"
+
+    val viewModel = createViewModel(
+        organizations = mapOf("org-create-post" to testOrg),
+        postRepository = postRepository
+    )
+
+    viewModel.loadOrganizationProfile("org-create-post")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.openCreatePostDialog()
+    viewModel.createPost("This is my test post!")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    Assert.assertEquals(1, postRepository.createPostCallCount)
+    Assert.assertFalse(viewModel.state.value.showCreatePostDialog)
+    Assert.assertFalse(viewModel.state.value.isSubmittingPost)
+  }
+
+  @Test
+  fun createPost_setsSubmittingState() = runTest {
+    val postRepository = FakePostRepository()
+    val testOrg = OrganizationTestData.createTestOrganization(
+        id = "org-submitting",
+        name = "Submitting Test",
+        ownerId = "owner-1"
+    )
+    every { mockUser.uid } returns "user-123"
+
+    val viewModel = createViewModel(
+        organizations = mapOf("org-submitting" to testOrg),
+        postRepository = postRepository
+    )
+
+    viewModel.loadOrganizationProfile("org-submitting")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.createPost("Test content")
+
+    // Check that isSubmittingPost is true immediately
+    Assert.assertTrue(viewModel.state.value.isSubmittingPost)
+
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    // Should be false after completion
+    Assert.assertFalse(viewModel.state.value.isSubmittingPost)
+  }
+
+  @Test
+  fun createPost_doesNothing_whenUserNotLoggedIn() = runTest {
+    val postRepository = FakePostRepository()
+    every { mockAuth.currentUser } returns null
+
+    val viewModel = createViewModel(postRepository = postRepository)
+
+    viewModel.createPost("Test content")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    Assert.assertEquals(0, postRepository.createPostCallCount)
+  }
+
+  @Test
+  fun createPost_emitsError_onFailure() = runTest {
+    val postRepository = FakePostRepository(shouldFail = true, failureMessage = "Creation failed")
+    val testOrg = OrganizationTestData.createTestOrganization(
+        id = "org-fail",
+        name = "Fail Test",
+        ownerId = "owner-1"
+    )
+    every { mockUser.uid } returns "user-123"
+    every { mockUser.displayName } returns "Test User"
+
+    val viewModel = createViewModel(
+        organizations = mapOf("org-fail" to testOrg),
+        postRepository = postRepository
+    )
+
+    viewModel.loadOrganizationProfile("org-fail")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    val effects = mutableListOf<OrganizerProfileEffect>()
+    val collectJob = launch { viewModel.effects.collect { effects.add(it) } }
+
+    viewModel.createPost("Test content")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    collectJob.cancel()
+
+    Assert.assertTrue(effects.any { it is OrganizerProfileEffect.ShowError })
+    Assert.assertFalse(viewModel.state.value.isSubmittingPost)
+  }
+
+  @Test
+  fun openDeleteConfirmation_setsStateCorrectly() = runTest {
+    val post = createTestPost("post1", "org1")
+    val viewModel = createViewModel()
+
+    viewModel.openDeleteConfirmation(post)
+
+    Assert.assertTrue(viewModel.state.value.showDeleteConfirmation)
+    Assert.assertEquals(post, viewModel.state.value.postToDelete)
+  }
+
+  @Test
+  fun closeDeleteConfirmation_clearsState() = runTest {
+    val post = createTestPost("post1", "org1")
+    val viewModel = createViewModel()
+
+    viewModel.openDeleteConfirmation(post)
+    Assert.assertTrue(viewModel.state.value.showDeleteConfirmation)
+
+    viewModel.closeDeleteConfirmation()
+
+    Assert.assertFalse(viewModel.state.value.showDeleteConfirmation)
+    Assert.assertNull(viewModel.state.value.postToDelete)
+    Assert.assertFalse(viewModel.state.value.isDeletingPost)
+  }
+
+  @Test
+  fun confirmDeletePost_deletesPostSuccessfully() = runTest {
+    val postRepository = FakePostRepository()
+    val post = createTestPost("post-to-delete", "org-delete")
+    postRepository.addPost(post)
+
+    val testOrg = OrganizationTestData.createTestOrganization(
+        id = "org-delete",
+        name = "Delete Test Org",
+        ownerId = "owner-1"
+    )
+
+    val viewModel = createViewModel(
+        organizations = mapOf("org-delete" to testOrg),
+        postRepository = postRepository
+    )
+
+    viewModel.loadOrganizationProfile("org-delete")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.openDeleteConfirmation(post)
+    viewModel.confirmDeletePost()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    Assert.assertEquals(1, postRepository.deletePostCallCount)
+    Assert.assertEquals("post-to-delete", postRepository.lastDeletedPostId)
+    Assert.assertFalse(viewModel.state.value.showDeleteConfirmation)
+    Assert.assertNull(viewModel.state.value.postToDelete)
+  }
+
+  @Test
+  fun confirmDeletePost_doesNothing_whenNoPostSelected() = runTest {
+    val postRepository = FakePostRepository()
+    val viewModel = createViewModel(postRepository = postRepository)
+
+    viewModel.confirmDeletePost()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    Assert.assertEquals(0, postRepository.deletePostCallCount)
+  }
+
+  @Test
+  fun confirmDeletePost_emitsError_onFailure() = runTest {
+    val postRepository = FakePostRepository(shouldFail = true, failureMessage = "Delete failed")
+    val post = createTestPost("post1", "org1")
+    postRepository.addPost(post)
+
+    val viewModel = createViewModel(postRepository = postRepository)
+
+    val effects = mutableListOf<OrganizerProfileEffect>()
+    val collectJob = launch { viewModel.effects.collect { effects.add(it) } }
+
+    viewModel.openDeleteConfirmation(post)
+    viewModel.confirmDeletePost()
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    collectJob.cancel()
+
+    Assert.assertTrue(effects.any { it is OrganizerProfileEffect.ShowError })
+    Assert.assertFalse(viewModel.state.value.isDeletingPost)
+  }
+
+  @Test
+  fun toggleLike_likesPost_whenNotLiked() = runTest {
+    val postRepository = FakePostRepository()
+    val post = createTestPost("post-to-like", "org-like", likedBy = emptyList())
+    postRepository.addPost(post)
+
+    val testOrg = OrganizationTestData.createTestOrganization(
+        id = "org-like",
+        name = "Like Test Org",
+        ownerId = "owner-1"
+    )
+    every { mockUser.uid } returns "user-liker"
+
+    val viewModel = createViewModel(
+        organizations = mapOf("org-like" to testOrg),
+        postRepository = postRepository
+    )
+
+    viewModel.loadOrganizationProfile("org-like")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.toggleLike("post-to-like")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    Assert.assertEquals(1, postRepository.likePostCallCount)
+    Assert.assertEquals("post-to-like", postRepository.lastLikedPostId)
+    Assert.assertEquals("user-liker", postRepository.lastLikedByUserId)
+  }
+
+  @Test
+  fun toggleLike_unlikesPost_whenAlreadyLiked() = runTest {
+    val postRepository = FakePostRepository()
+    val post = createTestPost("post-to-unlike", "org-unlike", likedBy = listOf("user-unliker"))
+    postRepository.addPost(post)
+
+    val testOrg = OrganizationTestData.createTestOrganization(
+        id = "org-unlike",
+        name = "Unlike Test Org",
+        ownerId = "owner-1"
+    )
+    every { mockUser.uid } returns "user-unliker"
+
+    val viewModel = createViewModel(
+        organizations = mapOf("org-unlike" to testOrg),
+        postRepository = postRepository
+    )
+
+    viewModel.loadOrganizationProfile("org-unlike")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.toggleLike("post-to-unlike")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    Assert.assertEquals(1, postRepository.unlikePostCallCount)
+    Assert.assertEquals("post-to-unlike", postRepository.lastUnlikedPostId)
+    Assert.assertEquals("user-unliker", postRepository.lastUnlikedByUserId)
+  }
+
+  @Test
+  fun toggleLike_doesNothing_whenUserNotLoggedIn() = runTest {
+    val postRepository = FakePostRepository()
+    postRepository.addPost(createTestPost("post1", "org1"))
+    every { mockAuth.currentUser } returns null
+
+    val viewModel = createViewModel(postRepository = postRepository)
+
+    viewModel.toggleLike("post1")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    Assert.assertEquals(0, postRepository.likePostCallCount)
+    Assert.assertEquals(0, postRepository.unlikePostCallCount)
+  }
+
+  @Test
+  fun toggleLike_doesNothing_whenPostNotFound() = runTest {
+    val postRepository = FakePostRepository()
+    val testOrg = OrganizationTestData.createTestOrganization(
+        id = "org-no-post",
+        name = "No Post Org",
+        ownerId = "owner-1"
+    )
+    every { mockUser.uid } returns "user-123"
+
+    val viewModel = createViewModel(
+        organizations = mapOf("org-no-post" to testOrg),
+        postRepository = postRepository
+    )
+
+    viewModel.loadOrganizationProfile("org-no-post")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    viewModel.toggleLike("nonexistent-post")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    Assert.assertEquals(0, postRepository.likePostCallCount)
+    Assert.assertEquals(0, postRepository.unlikePostCallCount)
+  }
+
+  @Test
+  fun getCurrentUserId_returnsUserId_whenLoggedIn() = runTest {
+    every { mockUser.uid } returns "user-123"
+
+    val viewModel = createViewModel()
+
+    Assert.assertEquals("user-123", viewModel.getCurrentUserId())
+  }
+
+  @Test
+  fun getCurrentUserId_returnsNull_whenNotLoggedIn() = runTest {
+    every { mockAuth.currentUser } returns null
+
+    val viewModel = createViewModel()
+
+    Assert.assertNull(viewModel.getCurrentUserId())
+  }
+
+  @Test
+  fun loadOrganizationProfile_preservesPosts_onReload() = runTest {
+    val postRepository = FakePostRepository()
+    postRepository.addPost(createTestPost("post1", "org-preserve"))
+
+    val testOrg = OrganizationTestData.createTestOrganization(
+        id = "org-preserve",
+        name = "Preserve Posts Org",
+        ownerId = "owner-1"
+    )
+
+    val viewModel = createViewModel(
+        organizations = mapOf("org-preserve" to testOrg),
+        postRepository = postRepository
+    )
+
+    // Load organization first time
+    viewModel.loadOrganizationProfile("org-preserve")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    Assert.assertEquals(1, viewModel.state.value.posts.size)
+
+    // Try to reload same organization - posts should be preserved
+    viewModel.loadOrganizationProfile("org-preserve")
+    testDispatcher.scheduler.advanceUntilIdle()
+
+    Assert.assertEquals(1, viewModel.state.value.posts.size)
   }
 }
