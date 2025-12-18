@@ -319,22 +319,6 @@
     <string name="org_feed_empty_message">You haven\'t joined any organizations yet.</string>
     <string name="org_feed_create_description">Create a new organization</string>
 
-    <!-- Organization Posts -->
-    <string name="org_post_content_placeholder">What\'s happening?</string>
-    <string name="org_post_submit_button">Post</string>
-    <string name="org_post_cancel_button">Cancel</string>
-    <string name="org_post_delete_title">Delete Post?</string>
-    <string name="org_post_delete_message">This can\'t be undone and it will be removed from your profile.</string>
-    <string name="org_post_delete_confirm">Delete</string>
-    <string name="org_post_delete_cancel">Cancel</string>
-    <string name="org_post_like">Like</string>
-    <string name="org_post_unlike">Unlike</string>
-    <string name="org_post_delete">Delete</string>
-    <string name="org_post_more_options">More options</string>
-    <string name="org_post_avatar_description">Organization avatar</string>
-    <string name="org_post_create_prompt">Share an update…</string>
-    <string name="org_post_empty_owner_hint">Share updates with your community by creating your first post!</string>
-
     <!-- Organizer Profile Screen -->
     <string name="organizer_profile_title">Organizer Profile</string>
     <string name="organizer_banner_description">Organizer Banner</string>
