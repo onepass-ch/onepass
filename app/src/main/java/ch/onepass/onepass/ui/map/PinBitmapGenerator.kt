@@ -1,6 +1,9 @@
 package ch.onepass.onepass.ui.map
 
 import android.graphics.*
+import androidx.compose.ui.graphics.toArgb
+import ch.onepass.onepass.ui.theme.OnBackground
+import ch.onepass.onepass.ui.theme.Primary
 
 /**
  * Utility object for generating Bitmaps used as annotations on the Mapbox map, specifically for
@@ -26,19 +29,19 @@ object PinBitmapGenerator {
     val radius = size / 2.5f
 
     // Draw Circle Background (OnePass Purple)
-    paint.color = Color.parseColor("#6200EE") // Replace with your theme color
+    paint.color = Primary.toArgb()
     paint.style = Paint.Style.FILL
     canvas.drawCircle(cx, cy, radius, paint)
 
     // Draw Border
-    paint.color = Color.WHITE
+    paint.color = OnBackground.toArgb()
     paint.style = Paint.Style.STROKE
     paint.strokeWidth = 4f * scale
     canvas.drawCircle(cx, cy, radius, paint)
 
     // Draw Text
     paint.style = Paint.Style.FILL
-    paint.color = Color.WHITE
+    paint.color = OnBackground.toArgb()
     paint.textAlign = Paint.Align.CENTER
     paint.textSize = 24f * scale
     paint.typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
