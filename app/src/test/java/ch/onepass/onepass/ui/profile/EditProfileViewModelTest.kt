@@ -11,7 +11,6 @@ import io.mockk.coEvery
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
@@ -63,8 +62,7 @@ class EditProfileViewModelTest {
 
   @Test
   fun initialization_setsDefaultCountryCode() = runTest {
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     val countryCode = viewModel.selectedCountryCode.value
     assertEquals("+41", countryCode)
@@ -72,8 +70,7 @@ class EditProfileViewModelTest {
 
   @Test
   fun initialization_loadsCountryList() = runTest {
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     val countries = viewModel.countryList.value
     assertTrue(countries.isNotEmpty())
@@ -82,8 +79,7 @@ class EditProfileViewModelTest {
 
   @Test
   fun initialization_hasCorrectDefaultFormState() = runTest {
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     val formState = viewModel.formState.value
     assertEquals("", formState.displayName)
@@ -96,8 +92,7 @@ class EditProfileViewModelTest {
 
   @Test
   fun initialization_hasCorrectDefaultUiState() = runTest {
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     val uiState = viewModel.uiState.value
     assertFalse(uiState.isLoading)
@@ -112,8 +107,7 @@ class EditProfileViewModelTest {
   @Test
   fun loadProfile_success_updatesFormState() = runTest {
     coEvery { mockUserRepository.getCurrentUser() } returns testUser
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     viewModel.loadProfile()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -129,8 +123,7 @@ class EditProfileViewModelTest {
   @Test
   fun loadProfile_clearsLoadingStateAfterSuccess() = runTest {
     coEvery { mockUserRepository.getCurrentUser() } returns testUser
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     viewModel.loadProfile()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -142,8 +135,7 @@ class EditProfileViewModelTest {
   @Test
   fun loadProfile_repositoryThrowsException_setsErrorMessage() = runTest {
     coEvery { mockUserRepository.getCurrentUser() } throws RuntimeException("Network error")
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     viewModel.loadProfile()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -158,8 +150,7 @@ class EditProfileViewModelTest {
   fun loadProfile_extractsInitialsCorrectly_singleName() = runTest {
     val singleNameUser = testUser.copy(displayName = "John")
     coEvery { mockUserRepository.getCurrentUser() } returns singleNameUser
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     viewModel.loadProfile()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -172,8 +163,7 @@ class EditProfileViewModelTest {
   fun loadProfile_extractsInitialsCorrectly_threeNames() = runTest {
     val threeNameUser = testUser.copy(displayName = "John Michael Doe")
     coEvery { mockUserRepository.getCurrentUser() } returns threeNameUser
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     viewModel.loadProfile()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -186,8 +176,7 @@ class EditProfileViewModelTest {
   fun loadProfile_emptyDisplayName_setsQuestionMarkInitials() = runTest {
     val emptyNameUser = testUser.copy(displayName = "")
     coEvery { mockUserRepository.getCurrentUser() } returns emptyNameUser
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     viewModel.loadProfile()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -199,8 +188,7 @@ class EditProfileViewModelTest {
   @Test
   fun loadProfile_extractsPhoneWithoutPrefix() = runTest {
     coEvery { mockUserRepository.getCurrentUser() } returns testUser
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     viewModel.loadProfile()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -214,8 +202,7 @@ class EditProfileViewModelTest {
   fun loadProfile_nullPhone_setsEmptyPhoneString() = runTest {
     val noPhoneUser = testUser.copy(phoneE164 = null)
     coEvery { mockUserRepository.getCurrentUser() } returns noPhoneUser
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     viewModel.loadProfile()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -228,8 +215,7 @@ class EditProfileViewModelTest {
   fun loadProfile_nullCountry_setsEmptyCountryString() = runTest {
     val noCountryUser = testUser.copy(country = null)
     coEvery { mockUserRepository.getCurrentUser() } returns noCountryUser
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     viewModel.loadProfile()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -244,8 +230,7 @@ class EditProfileViewModelTest {
 
   @Test
   fun updateDisplayName_updatesFormState() = runTest {
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     viewModel.updateDisplayName("Jane Smith")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -256,8 +241,7 @@ class EditProfileViewModelTest {
 
   @Test
   fun updatePhone_updatesFormState() = runTest {
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     viewModel.updatePhone("791234567")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -268,8 +252,7 @@ class EditProfileViewModelTest {
 
   @Test
   fun updateCountry_updatesFormState() = runTest {
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     viewModel.updateCountry("France")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -280,8 +263,7 @@ class EditProfileViewModelTest {
 
   @Test
   fun updateCountry_emptyString_acceptsEmpty() = runTest {
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     viewModel.updateCountry("")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -292,8 +274,7 @@ class EditProfileViewModelTest {
 
   @Test
   fun updateCountryIndex_updatesSelectedCountryCode() = runTest {
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     val countries = viewModel.countryList.value
     val franceIndex = countries.indexOfFirst { it.first == "France" }
@@ -308,8 +289,7 @@ class EditProfileViewModelTest {
 
   @Test
   fun updateCountryIndex_invalidIndex_usesDefaultCode() = runTest {
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     viewModel.updateCountryIndex(99999)
     testDispatcher.scheduler.advanceUntilIdle()
@@ -324,8 +304,7 @@ class EditProfileViewModelTest {
 
   @Test
   fun selectAvatarImage_updatesFormState() = runTest {
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
     val testUri = mockk<Uri>()
 
     viewModel.selectAvatarImage(testUri)
@@ -337,8 +316,7 @@ class EditProfileViewModelTest {
 
   @Test
   fun removeAvatar_clearsAvatarData() = runTest {
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
     val testUri = mockk<Uri>()
     viewModel.selectAvatarImage(testUri)
 
@@ -350,23 +328,13 @@ class EditProfileViewModelTest {
     assertNull(formState.avatarUri)
   }
 
-  @Test
-  fun createCameraUri_withoutContext_returnsNull() = runTest {
-    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, null)
-
-    val result = viewModel.createCameraUri()
-
-    assertNull(result)
-  }
-
   // ========================================
   // Tests for Saving Profile
   // ========================================
 
   @Test
   fun saveProfile_blankDisplayName_setsErrorMessage() = runTest {
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
     viewModel.updateDisplayName("")
 
     viewModel.saveProfile()
@@ -379,8 +347,7 @@ class EditProfileViewModelTest {
 
   @Test
   fun clearError_clearsErrorMessage() = runTest {
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
     viewModel.updateDisplayName("")
     viewModel.saveProfile()
     testDispatcher.scheduler.advanceUntilIdle()
@@ -394,8 +361,7 @@ class EditProfileViewModelTest {
 
   @Test
   fun updatePhone_emptyString_acceptsEmpty() = runTest {
-    viewModel =
-        EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore, mockContext)
+    viewModel = EditProfileViewModel(mockUserRepository, mockStorageRepository, mockFirestore)
 
     viewModel.updatePhone("")
     testDispatcher.scheduler.advanceUntilIdle()

@@ -1,8 +1,6 @@
 package ch.onepass.onepass.ui.profile.editprofile
 
-import android.content.Context
 import android.net.Uri
-import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import ch.onepass.onepass.model.storage.StorageRepository
@@ -11,7 +9,6 @@ import ch.onepass.onepass.model.user.UserRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.i18n.phonenumbers.PhoneNumberUtil
-import java.io.File
 import java.util.Locale
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -37,8 +34,7 @@ data class EditProfileUiState(
 class EditProfileViewModel(
     private val userRepository: UserRepository = UserRepositoryFirebase(),
     private val storageRepository: StorageRepository = StorageRepositoryFirebase(),
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
-    private val context: Context? = null
+    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance()
 ) : ViewModel() {
 
   private val _formState = MutableStateFlow(EditProfileFormState())
@@ -57,9 +53,6 @@ class EditProfileViewModel(
   private val _selectedCountryIndex = MutableStateFlow<Int?>(null)
 
   private val INITIAL_REGION_CODE = "41"
-
-  var avatarCameraUri: Uri? = null
-    private set
 
   init {
     // Initialize country list
@@ -172,14 +165,6 @@ class EditProfileViewModel(
 
   fun removeAvatar() {
     _formState.value = _formState.value.copy(avatarUrl = null, avatarUri = null)
-  }
-
-  fun createCameraUri(): Uri? {
-    context ?: return null
-    val file = File(context.cacheDir, "avatar_${System.currentTimeMillis()}.jpg")
-    return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file).also {
-      avatarCameraUri = it
-    }
   }
 
   fun updateCountryIndex(index: Int) {

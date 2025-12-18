@@ -139,12 +139,6 @@ fun EditProfileScreen(
         uri?.let { onImageSelected(it) }
       }
 
-  val cameraLauncher =
-      rememberLauncherForActivityResult(contract = ActivityResultContracts.TakePicture()) { success
-        ->
-        if (success) viewModel.avatarCameraUri?.let { onImageSelected(it) }
-      }
-
   // Blur Animation
   val blurRadius by
       animateDpAsState(
@@ -203,7 +197,6 @@ fun EditProfileScreen(
           initials = formState.initials,
           onDismiss = { showAvatarOverlay = false },
           onChooseGallery = { galleryLauncher.launch("image/*") },
-          onTakePhoto = { viewModel.createCameraUri()?.let { cameraLauncher.launch(it) } },
           onRemove = {
             showAvatarOverlay = false
             viewModel.removeAvatar()
@@ -558,7 +551,6 @@ private fun AvatarZoomOverlay(
     initials: String,
     onDismiss: () -> Unit,
     onChooseGallery: () -> Unit,
-    onTakePhoto: () -> Unit,
     onRemove: () -> Unit
 ) {
   val animatable = remember { Animatable(0f) }
@@ -616,7 +608,6 @@ private fun AvatarZoomOverlay(
               showOptions = showOptions,
               onToggleOptions = { showOptions = !showOptions },
               onChooseGallery = onChooseGallery,
-              onTakePhoto = onTakePhoto,
               onRemove = onRemove,
               onCancel = { startDismissSequence() },
               hasAvatar = currentAvatarUrl != null || currentAvatarUri != null)
@@ -671,7 +662,6 @@ private fun BoxScope.AvatarEditControls(
     showOptions: Boolean,
     onToggleOptions: () -> Unit,
     onChooseGallery: () -> Unit,
-    onTakePhoto: () -> Unit,
     onRemove: () -> Unit,
     onCancel: () -> Unit,
     hasAvatar: Boolean
@@ -704,7 +694,6 @@ private fun BoxScope.AvatarEditControls(
       modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 48.dp)) {
         AvatarOptionsBottomSheet(
             onChooseGallery = onChooseGallery,
-            onTakePhoto = onTakePhoto,
             onRemove = onRemove,
             onCancel = onCancel,
             hasAvatar = hasAvatar)
@@ -714,7 +703,6 @@ private fun BoxScope.AvatarEditControls(
 @Composable
 private fun AvatarOptionsBottomSheet(
     onChooseGallery: () -> Unit,
-    onTakePhoto: () -> Unit,
     onRemove: () -> Unit,
     onCancel: () -> Unit,
     hasAvatar: Boolean
@@ -724,8 +712,6 @@ private fun AvatarOptionsBottomSheet(
         color = Surface, shape = MaterialTheme.shapes.large, modifier = Modifier.width(300.dp)) {
           Column {
             DialogOption("Choose from gallery", onChooseGallery)
-            HorizontalDivider(color = OnSurface.copy(alpha = 0.12f))
-            DialogOption("Take photo", onTakePhoto)
             if (hasAvatar) {
               HorizontalDivider(color = OnSurface.copy(alpha = 0.12f))
               DialogOption("Remove photo", onRemove, Error)

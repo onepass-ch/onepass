@@ -183,9 +183,6 @@ class EditProfileComposeTest {
     composeTestRule
         .onNodeWithText("Choose from gallery", substring = true, useUnmergedTree = true)
         .assertExists()
-    composeTestRule
-        .onNodeWithText("Take photo", substring = true, useUnmergedTree = true)
-        .assertExists()
   }
 
   @Test

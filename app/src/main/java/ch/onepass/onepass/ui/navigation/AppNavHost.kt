@@ -462,11 +462,7 @@ fun AppNavHost(
     composable(Screen.EditProfile.route) {
       val context = LocalContext.current
       val editVm: EditProfileViewModel =
-          viewModel(
-              factory =
-                  viewModelFactory {
-                    initializer { EditProfileViewModel(context = context.applicationContext) }
-                  })
+          viewModel(factory = viewModelFactory { initializer { EditProfileViewModel() } })
 
       EditProfileScreen(viewModel = editVm, onNavigateBack = { navController.popBackStack() })
     }
