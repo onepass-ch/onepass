@@ -101,7 +101,8 @@ fun AppNavHost(
     },
     profileViewModelFactory: ViewModelProvider.Factory? = viewModelFactory {
       initializer { ProfileViewModel() }
-    }
+    },
+    allowEventExactTime: Boolean = false
 ) {
   // Get context for DataStore
   val context = LocalContext.current
@@ -371,7 +372,8 @@ fun AppNavHost(
             organizationId = organizationId,
             viewModel = createEventVm,
             onNavigateBack = { navController.popBackStack() },
-            onEventCreated = { navController.popBackStack() })
+            onEventCreated = { navController.popBackStack() },
+            allowExactTime = allowEventExactTime)
       }
     }
 

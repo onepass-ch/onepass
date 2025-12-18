@@ -112,10 +112,13 @@ fun CreateEventForm(
     viewModel: CreateEventFormViewModel = viewModel(),
     onNavigateBack: () -> Unit = {},
     onEventCreated: () -> Unit = {},
+    allowExactTime: Boolean = false
 ) {
   val uiState by viewModel.uiState.collectAsState()
   val scrollState = rememberScrollState()
   val snackbarHostState = remember { SnackbarHostState() }
+
+  viewModel.updateAllowExactTime(allowExactTime)
 
   LaunchedEffect(Unit) { viewModel.setOrganizationId(organizationId) }
 
