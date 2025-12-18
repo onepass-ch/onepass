@@ -120,7 +120,8 @@ class AccountSettingsScreenComposeTest {
       AccountSettingsScreen(viewModel = viewModel, onNavigateBack = {}, onAccountDeleted = {})
     }
 
-    composeTestRule.onNodeWithText("DANGER ZONE").assertIsDisplayed()
+    // Scroll to the danger zone section first
+    composeTestRule.onNodeWithText("DANGER ZONE").performScrollTo().assertIsDisplayed()
     composeTestRule.onNodeWithText("DELETE ACCOUNT").assertIsDisplayed()
     composeTestRule
         .onNodeWithText(
@@ -138,7 +139,12 @@ class AccountSettingsScreenComposeTest {
       AccountSettingsScreen(viewModel = viewModel, onNavigateBack = {}, onAccountDeleted = {})
     }
 
-    composeTestRule.onNodeWithText("Delete Account").performClick()
+    composeTestRule.onNodeWithText("Delete Account").performScrollTo().performClick()
+
+    // Wait for dialog to appear
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule.onAllNodesWithText("Are you sure?").fetchSemanticsNodes().isNotEmpty()
+    }
 
     composeTestRule.onNodeWithText("Are you sure?").assertIsDisplayed()
     composeTestRule
@@ -158,7 +164,13 @@ class AccountSettingsScreenComposeTest {
       AccountSettingsScreen(viewModel = viewModel, onNavigateBack = {}, onAccountDeleted = {})
     }
 
-    composeTestRule.onNodeWithText("Delete Account").performClick()
+    composeTestRule.onNodeWithText("Delete Account").performScrollTo().performClick()
+
+    // Wait for dialog to appear
+    composeTestRule.waitUntil(timeoutMillis = 5000) {
+      composeTestRule.onAllNodesWithText("Cancel").fetchSemanticsNodes().isNotEmpty()
+    }
+
     composeTestRule.onNodeWithText("Cancel").performClick()
 
     composeTestRule.onNodeWithText("Are you sure?").assertDoesNotExist()
