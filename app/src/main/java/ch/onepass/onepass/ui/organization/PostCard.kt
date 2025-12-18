@@ -51,27 +51,24 @@ import ch.onepass.onepass.model.organization.Post
 import coil.compose.SubcomposeAsyncImage
 import coil.request.ImageRequest
 
-/**
- * Test tags for PostCard composables.
- */
+/** Test tags for PostCard composables. */
 object PostCardTestTags {
-    const val POST_CARD = "post_card"
-    const val POST_CONTENT = "post_content"
-    const val POST_AUTHOR = "post_author"
-    const val POST_TIMESTAMP = "post_timestamp"
-    const val POST_LIKE_BUTTON = "post_like_button"
-    const val POST_LIKES_COUNT = "post_likes_count"
-    const val POST_DELETE_BUTTON = "post_delete_button"
-    const val POST_MORE_BUTTON = "post_more_button"
+  const val POST_CARD = "post_card"
+  const val POST_CONTENT = "post_content"
+  const val POST_AUTHOR = "post_author"
+  const val POST_TIMESTAMP = "post_timestamp"
+  const val POST_LIKE_BUTTON = "post_like_button"
+  const val POST_LIKES_COUNT = "post_likes_count"
+  const val POST_DELETE_BUTTON = "post_delete_button"
+  const val POST_MORE_BUTTON = "post_more_button"
 
-    fun getPostCardTag(postId: String) = "post_card_$postId"
+  fun getPostCardTag(postId: String) = "post_card_$postId"
 }
 
 /**
  * Modern, Twitter-inspired post card with larger design.
  *
- * Features a clean layout with organization avatar, content,
- * and engagement actions at the bottom.
+ * Features a clean layout with organization avatar, content, and engagement actions at the bottom.
  *
  * @param post The [Post] to display.
  * @param organizationName Name of the organization for display.
@@ -93,172 +90,132 @@ fun PostCard(
     onDeleteClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    var showMenu by remember { mutableStateOf(false) }
+  var showMenu by remember { mutableStateOf(false) }
 
-    Card(
-        modifier = modifier
-            .fillMaxWidth()
-            .testTag(PostCardTestTags.getPostCardTag(post.id)),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = colorScheme.surface
-        ),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            // Header: Avatar + Name/Time + More button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top
-            ) {
-                Row(
-                    modifier = Modifier.weight(1f),
-                    verticalAlignment = Alignment.Top
-                ) {
-                    // Large Avatar
-                    OrganizationAvatar(
-                        organizationName = organizationName,
-                        imageUrl = organizationImageUrl,
-                        size = 52
-                    )
+  Card(
+      modifier = modifier.fillMaxWidth().testTag(PostCardTestTags.getPostCardTag(post.id)),
+      shape = RoundedCornerShape(16.dp),
+      colors = CardDefaults.cardColors(containerColor = colorScheme.surface),
+      elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
+          // Header: Avatar + Name/Time + More button
+          Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.SpaceBetween,
+              verticalAlignment = Alignment.Top) {
+                Row(modifier = Modifier.weight(1f), verticalAlignment = Alignment.Top) {
+                  // Large Avatar
+                  OrganizationAvatar(
+                      organizationName = organizationName,
+                      imageUrl = organizationImageUrl,
+                      size = 52)
 
-                    Spacer(modifier = Modifier.width(14.dp))
+                  Spacer(modifier = Modifier.width(14.dp))
 
-                    Column {
-                        // Organization name with verified badge style
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(
-                                text = organizationName,
-                                style = MaterialTheme.typography.titleMedium.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 16.sp
-                                ),
-                                color = colorScheme.onSurface,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.testTag(PostCardTestTags.POST_AUTHOR)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Icon(
-                                imageVector = Icons.Filled.Verified,
-                                contentDescription = null,
-                                tint = colorScheme.primary,
-                                modifier = Modifier.size(18.dp)
-                            )
-                        }
-
-                        // Timestamp
-                        Text(
-                            text = post.displayTimestamp,
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                fontSize = 13.sp
-                            ),
-                            color = colorScheme.outline,
-                            modifier = Modifier.testTag(PostCardTestTags.POST_TIMESTAMP)
-                        )
+                  Column {
+                    // Organization name with verified badge style
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                      Text(
+                          text = organizationName,
+                          style =
+                              MaterialTheme.typography.titleMedium.copy(
+                                  fontWeight = FontWeight.Bold, fontSize = 16.sp),
+                          color = colorScheme.onSurface,
+                          maxLines = 1,
+                          overflow = TextOverflow.Ellipsis,
+                          modifier = Modifier.testTag(PostCardTestTags.POST_AUTHOR))
+                      Spacer(modifier = Modifier.width(4.dp))
+                      Icon(
+                          imageVector = Icons.Filled.Verified,
+                          contentDescription = null,
+                          tint = colorScheme.primary,
+                          modifier = Modifier.size(18.dp))
                     }
+
+                    // Timestamp
+                    Text(
+                        text = post.displayTimestamp,
+                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 13.sp),
+                        color = colorScheme.outline,
+                        modifier = Modifier.testTag(PostCardTestTags.POST_TIMESTAMP))
+                  }
                 }
 
                 // More Options button
                 if (canDelete) {
-                    Box {
-                        IconButton(
-                            onClick = { showMenu = true },
-                            modifier = Modifier
-                                .size(36.dp)
-                                .testTag(PostCardTestTags.POST_MORE_BUTTON)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.MoreHoriz,
-                                contentDescription = stringResource(R.string.org_post_more_options),
-                                tint = colorScheme.outline,
-                                modifier = Modifier.size(22.dp)
-                            )
+                  Box {
+                    IconButton(
+                        onClick = { showMenu = true },
+                        modifier =
+                            Modifier.size(36.dp).testTag(PostCardTestTags.POST_MORE_BUTTON)) {
+                          Icon(
+                              imageVector = Icons.Filled.MoreHoriz,
+                              contentDescription = stringResource(R.string.org_post_more_options),
+                              tint = colorScheme.outline,
+                              modifier = Modifier.size(22.dp))
                         }
 
-                        DropdownMenu(
-                            expanded = showMenu,
-                            onDismissRequest = { showMenu = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Icon(
-                                            imageVector = Icons.Filled.Delete,
-                                            contentDescription = null,
-                                            tint = colorScheme.error,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                        Spacer(modifier = Modifier.width(12.dp))
-                                        Text(
-                                            text = stringResource(R.string.org_post_delete),
-                                            color = colorScheme.error,
-                                            style = MaterialTheme.typography.bodyMedium.copy(
-                                                fontWeight = FontWeight.Medium
-                                            )
-                                        )
-                                    }
-                                },
-                                onClick = {
-                                    showMenu = false
-                                    onDeleteClick()
-                                },
-                                modifier = Modifier.testTag(PostCardTestTags.POST_DELETE_BUTTON)
-                            )
-                        }
+                    DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                      DropdownMenuItem(
+                          text = {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                              Icon(
+                                  imageVector = Icons.Filled.Delete,
+                                  contentDescription = null,
+                                  tint = colorScheme.error,
+                                  modifier = Modifier.size(20.dp))
+                              Spacer(modifier = Modifier.width(12.dp))
+                              Text(
+                                  text = stringResource(R.string.org_post_delete),
+                                  color = colorScheme.error,
+                                  style =
+                                      MaterialTheme.typography.bodyMedium.copy(
+                                          fontWeight = FontWeight.Medium))
+                            }
+                          },
+                          onClick = {
+                            showMenu = false
+                            onDeleteClick()
+                          },
+                          modifier = Modifier.testTag(PostCardTestTags.POST_DELETE_BUTTON))
                     }
+                  }
                 }
-            }
+              }
 
-            Spacer(modifier = Modifier.height(14.dp))
+          Spacer(modifier = Modifier.height(14.dp))
 
-            // Post Content - Larger text
-            Text(
-                text = post.content,
-                style = MaterialTheme.typography.bodyLarge.copy(
-                    fontSize = 17.sp,
-                    lineHeight = 24.sp
-                ),
-                color = colorScheme.onSurface,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .testTag(PostCardTestTags.POST_CONTENT)
-            )
+          // Post Content - Larger text
+          Text(
+              text = post.content,
+              style = MaterialTheme.typography.bodyLarge.copy(fontSize = 17.sp, lineHeight = 24.sp),
+              color = colorScheme.onSurface,
+              modifier = Modifier.fillMaxWidth().testTag(PostCardTestTags.POST_CONTENT))
 
-            Spacer(modifier = Modifier.height(16.dp))
+          Spacer(modifier = Modifier.height(16.dp))
 
-            // Divider
-            HorizontalDivider(
-                color = colorScheme.outlineVariant.copy(alpha = 0.3f),
-                thickness = 1.dp
-            )
+          // Divider
+          HorizontalDivider(color = colorScheme.outlineVariant.copy(alpha = 0.3f), thickness = 1.dp)
 
-            Spacer(modifier = Modifier.height(12.dp))
+          Spacer(modifier = Modifier.height(12.dp))
 
-            // Action Row - Like button
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+          // Action Row - Like button
+          Row(
+              modifier = Modifier.fillMaxWidth(),
+              horizontalArrangement = Arrangement.Start,
+              verticalAlignment = Alignment.CenterVertically) {
                 // Like action
                 LikeButton(
                     isLiked = isLiked,
                     likesCount = post.likesCount,
                     onClick = onLikeClick,
-                    modifier = Modifier.testTag(PostCardTestTags.POST_LIKE_BUTTON)
-                )
-            }
+                    modifier = Modifier.testTag(PostCardTestTags.POST_LIKE_BUTTON))
+              }
         }
-    }
+      }
 }
 
-/**
- * Like button with count display.
- */
+/** Like button with count display. */
 @Composable
 private fun LikeButton(
     isLiked: Boolean,
@@ -266,50 +223,46 @@ private fun LikeButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val tint = if (isLiked) colorScheme.error else colorScheme.outline
-    
-    Row(
-        modifier = modifier
-            .clip(RoundedCornerShape(20.dp))
-            .clickable { onClick() }
-            .padding(horizontal = 12.dp, vertical = 8.dp),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
+  val tint = if (isLiked) colorScheme.error else colorScheme.outline
+
+  Row(
+      modifier =
+          modifier
+              .clip(RoundedCornerShape(20.dp))
+              .clickable { onClick() }
+              .padding(horizontal = 12.dp, vertical = 8.dp),
+      verticalAlignment = Alignment.CenterVertically,
+      horizontalArrangement = Arrangement.Center) {
         Icon(
             imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-            contentDescription = if (isLiked) {
-                stringResource(R.string.org_post_unlike)
-            } else {
-                stringResource(R.string.org_post_like)
-            },
+            contentDescription =
+                if (isLiked) {
+                  stringResource(R.string.org_post_unlike)
+                } else {
+                  stringResource(R.string.org_post_like)
+                },
             tint = tint,
-            modifier = Modifier.size(24.dp)
-        )
+            modifier = Modifier.size(24.dp))
         if (likesCount > 0) {
-            Spacer(modifier = Modifier.width(8.dp))
-            Text(
-                text = formatCount(likesCount),
-                style = MaterialTheme.typography.labelLarge.copy(
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.Medium
-                ),
-                color = tint,
-                modifier = Modifier.testTag(PostCardTestTags.POST_LIKES_COUNT)
-            )
+          Spacer(modifier = Modifier.width(8.dp))
+          Text(
+              text = formatCount(likesCount),
+              style =
+                  MaterialTheme.typography.labelLarge.copy(
+                      fontSize = 14.sp, fontWeight = FontWeight.Medium),
+              color = tint,
+              modifier = Modifier.testTag(PostCardTestTags.POST_LIKES_COUNT))
         }
-    }
+      }
 }
 
-/**
- * Formats a count for display (e.g., 1000 -> "1K")
- */
+/** Formats a count for display (e.g., 1000 -> "1K") */
 private fun formatCount(count: Int): String {
-    return when {
-        count >= 1_000_000 -> String.format("%.1fM", count / 1_000_000.0)
-        count >= 1_000 -> String.format("%.1fK", count / 1_000.0)
-        else -> count.toString()
-    }
+  return when {
+    count >= 1_000_000 -> String.format("%.1fM", count / 1_000_000.0)
+    count >= 1_000 -> String.format("%.1fK", count / 1_000.0)
+    else -> count.toString()
+  }
 }
 
 /**
@@ -320,48 +273,31 @@ private fun formatCount(count: Int): String {
  * @param size Size of the avatar in dp.
  */
 @Composable
-fun OrganizationAvatar(
-    organizationName: String,
-    imageUrl: String?,
-    size: Int = 52
-) {
-    val initials = organizationName.take(1).uppercase()
+fun OrganizationAvatar(organizationName: String, imageUrl: String?, size: Int = 52) {
+  val initials = organizationName.take(1).uppercase()
 
-    Box(
-        modifier = Modifier
-            .size(size.dp)
-            .clip(CircleShape)
-            .background(colorScheme.primary),
-        contentAlignment = Alignment.Center
-    ) {
+  Box(
+      modifier = Modifier.size(size.dp).clip(CircleShape).background(colorScheme.primary),
+      contentAlignment = Alignment.Center) {
         if (imageUrl.isNullOrBlank()) {
-            Text(
-                text = initials,
-                style = MaterialTheme.typography.titleLarge.copy(
-                    fontWeight = FontWeight.Bold,
-                    fontSize = (size / 2.5).sp
-                ),
-                color = colorScheme.onPrimary
-            )
+          Text(
+              text = initials,
+              style =
+                  MaterialTheme.typography.titleLarge.copy(
+                      fontWeight = FontWeight.Bold, fontSize = (size / 2.5).sp),
+              color = colorScheme.onPrimary)
         } else {
-            SubcomposeAsyncImage(
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(imageUrl)
-                    .crossfade(true)
-                    .build(),
-                contentDescription = stringResource(R.string.org_post_avatar_description),
-                contentScale = ContentScale.Crop,
-                modifier = Modifier
-                    .size(size.dp)
-                    .clip(CircleShape),
-                loading = {
-                    Box(
-                        modifier = Modifier
-                            .size(size.dp)
-                            .background(colorScheme.surfaceVariant, CircleShape)
-                    )
-                }
-            )
+          SubcomposeAsyncImage(
+              model =
+                  ImageRequest.Builder(LocalContext.current).data(imageUrl).crossfade(true).build(),
+              contentDescription = stringResource(R.string.org_post_avatar_description),
+              contentScale = ContentScale.Crop,
+              modifier = Modifier.size(size.dp).clip(CircleShape),
+              loading = {
+                Box(
+                    modifier =
+                        Modifier.size(size.dp).background(colorScheme.surfaceVariant, CircleShape))
+              })
         }
-    }
+      }
 }

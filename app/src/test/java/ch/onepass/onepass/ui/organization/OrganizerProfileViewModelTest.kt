@@ -172,15 +172,15 @@ class OrganizerProfileViewModelTest {
       organizationId: String,
       content: String = "Test content",
       likedBy: List<String> = emptyList()
-  ): Post = Post(
-      id = id,
-      organizationId = organizationId,
-      authorId = "author1",
-      authorName = "Test Author",
-      content = content,
-      likedBy = likedBy,
-      createdAt = Timestamp.now()
-  )
+  ): Post =
+      Post(
+          id = id,
+          organizationId = organizationId,
+          authorId = "author1",
+          authorName = "Test Author",
+          content = content,
+          likedBy = likedBy,
+          createdAt = Timestamp.now())
 
   @Before
   fun setUp() {
@@ -1130,22 +1130,19 @@ class OrganizerProfileViewModelTest {
   @Test
   fun loadOrganizationProfile_loadsPostsForOrganization() = runTest {
     val postRepository = FakePostRepository()
-    postRepository.addPosts(listOf(
-        createTestPost("post1", "org-with-posts"),
-        createTestPost("post2", "org-with-posts"),
-        createTestPost("post3", "other-org")
-    ))
+    postRepository.addPosts(
+        listOf(
+            createTestPost("post1", "org-with-posts"),
+            createTestPost("post2", "org-with-posts"),
+            createTestPost("post3", "other-org")))
 
-    val testOrg = OrganizationTestData.createTestOrganization(
-        id = "org-with-posts",
-        name = "Posts Test Org",
-        ownerId = "owner-1"
-    )
+    val testOrg =
+        OrganizationTestData.createTestOrganization(
+            id = "org-with-posts", name = "Posts Test Org", ownerId = "owner-1")
 
-    val viewModel = createViewModel(
-        organizations = mapOf("org-with-posts" to testOrg),
-        postRepository = postRepository
-    )
+    val viewModel =
+        createViewModel(
+            organizations = mapOf("org-with-posts" to testOrg), postRepository = postRepository)
 
     viewModel.loadOrganizationProfile("org-with-posts")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -1184,18 +1181,15 @@ class OrganizerProfileViewModelTest {
   @Test
   fun createPost_createsPostSuccessfully() = runTest {
     val postRepository = FakePostRepository()
-    val testOrg = OrganizationTestData.createTestOrganization(
-        id = "org-create-post",
-        name = "Create Post Org",
-        ownerId = "owner-1"
-    )
+    val testOrg =
+        OrganizationTestData.createTestOrganization(
+            id = "org-create-post", name = "Create Post Org", ownerId = "owner-1")
     every { mockUser.uid } returns "user-123"
     every { mockUser.displayName } returns "Test User"
 
-    val viewModel = createViewModel(
-        organizations = mapOf("org-create-post" to testOrg),
-        postRepository = postRepository
-    )
+    val viewModel =
+        createViewModel(
+            organizations = mapOf("org-create-post" to testOrg), postRepository = postRepository)
 
     viewModel.loadOrganizationProfile("org-create-post")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -1212,17 +1206,14 @@ class OrganizerProfileViewModelTest {
   @Test
   fun createPost_setsSubmittingState() = runTest {
     val postRepository = FakePostRepository()
-    val testOrg = OrganizationTestData.createTestOrganization(
-        id = "org-submitting",
-        name = "Submitting Test",
-        ownerId = "owner-1"
-    )
+    val testOrg =
+        OrganizationTestData.createTestOrganization(
+            id = "org-submitting", name = "Submitting Test", ownerId = "owner-1")
     every { mockUser.uid } returns "user-123"
 
-    val viewModel = createViewModel(
-        organizations = mapOf("org-submitting" to testOrg),
-        postRepository = postRepository
-    )
+    val viewModel =
+        createViewModel(
+            organizations = mapOf("org-submitting" to testOrg), postRepository = postRepository)
 
     viewModel.loadOrganizationProfile("org-submitting")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -1254,18 +1245,15 @@ class OrganizerProfileViewModelTest {
   @Test
   fun createPost_emitsError_onFailure() = runTest {
     val postRepository = FakePostRepository(shouldFail = true, failureMessage = "Creation failed")
-    val testOrg = OrganizationTestData.createTestOrganization(
-        id = "org-fail",
-        name = "Fail Test",
-        ownerId = "owner-1"
-    )
+    val testOrg =
+        OrganizationTestData.createTestOrganization(
+            id = "org-fail", name = "Fail Test", ownerId = "owner-1")
     every { mockUser.uid } returns "user-123"
     every { mockUser.displayName } returns "Test User"
 
-    val viewModel = createViewModel(
-        organizations = mapOf("org-fail" to testOrg),
-        postRepository = postRepository
-    )
+    val viewModel =
+        createViewModel(
+            organizations = mapOf("org-fail" to testOrg), postRepository = postRepository)
 
     viewModel.loadOrganizationProfile("org-fail")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -1314,16 +1302,13 @@ class OrganizerProfileViewModelTest {
     val post = createTestPost("post-to-delete", "org-delete")
     postRepository.addPost(post)
 
-    val testOrg = OrganizationTestData.createTestOrganization(
-        id = "org-delete",
-        name = "Delete Test Org",
-        ownerId = "owner-1"
-    )
+    val testOrg =
+        OrganizationTestData.createTestOrganization(
+            id = "org-delete", name = "Delete Test Org", ownerId = "owner-1")
 
-    val viewModel = createViewModel(
-        organizations = mapOf("org-delete" to testOrg),
-        postRepository = postRepository
-    )
+    val viewModel =
+        createViewModel(
+            organizations = mapOf("org-delete" to testOrg), postRepository = postRepository)
 
     viewModel.loadOrganizationProfile("org-delete")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -1376,17 +1361,14 @@ class OrganizerProfileViewModelTest {
     val post = createTestPost("post-to-like", "org-like", likedBy = emptyList())
     postRepository.addPost(post)
 
-    val testOrg = OrganizationTestData.createTestOrganization(
-        id = "org-like",
-        name = "Like Test Org",
-        ownerId = "owner-1"
-    )
+    val testOrg =
+        OrganizationTestData.createTestOrganization(
+            id = "org-like", name = "Like Test Org", ownerId = "owner-1")
     every { mockUser.uid } returns "user-liker"
 
-    val viewModel = createViewModel(
-        organizations = mapOf("org-like" to testOrg),
-        postRepository = postRepository
-    )
+    val viewModel =
+        createViewModel(
+            organizations = mapOf("org-like" to testOrg), postRepository = postRepository)
 
     viewModel.loadOrganizationProfile("org-like")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -1405,17 +1387,14 @@ class OrganizerProfileViewModelTest {
     val post = createTestPost("post-to-unlike", "org-unlike", likedBy = listOf("user-unliker"))
     postRepository.addPost(post)
 
-    val testOrg = OrganizationTestData.createTestOrganization(
-        id = "org-unlike",
-        name = "Unlike Test Org",
-        ownerId = "owner-1"
-    )
+    val testOrg =
+        OrganizationTestData.createTestOrganization(
+            id = "org-unlike", name = "Unlike Test Org", ownerId = "owner-1")
     every { mockUser.uid } returns "user-unliker"
 
-    val viewModel = createViewModel(
-        organizations = mapOf("org-unlike" to testOrg),
-        postRepository = postRepository
-    )
+    val viewModel =
+        createViewModel(
+            organizations = mapOf("org-unlike" to testOrg), postRepository = postRepository)
 
     viewModel.loadOrganizationProfile("org-unlike")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -1446,17 +1425,14 @@ class OrganizerProfileViewModelTest {
   @Test
   fun toggleLike_doesNothing_whenPostNotFound() = runTest {
     val postRepository = FakePostRepository()
-    val testOrg = OrganizationTestData.createTestOrganization(
-        id = "org-no-post",
-        name = "No Post Org",
-        ownerId = "owner-1"
-    )
+    val testOrg =
+        OrganizationTestData.createTestOrganization(
+            id = "org-no-post", name = "No Post Org", ownerId = "owner-1")
     every { mockUser.uid } returns "user-123"
 
-    val viewModel = createViewModel(
-        organizations = mapOf("org-no-post" to testOrg),
-        postRepository = postRepository
-    )
+    val viewModel =
+        createViewModel(
+            organizations = mapOf("org-no-post" to testOrg), postRepository = postRepository)
 
     viewModel.loadOrganizationProfile("org-no-post")
     testDispatcher.scheduler.advanceUntilIdle()
@@ -1491,16 +1467,13 @@ class OrganizerProfileViewModelTest {
     val postRepository = FakePostRepository()
     postRepository.addPost(createTestPost("post1", "org-preserve"))
 
-    val testOrg = OrganizationTestData.createTestOrganization(
-        id = "org-preserve",
-        name = "Preserve Posts Org",
-        ownerId = "owner-1"
-    )
+    val testOrg =
+        OrganizationTestData.createTestOrganization(
+            id = "org-preserve", name = "Preserve Posts Org", ownerId = "owner-1")
 
-    val viewModel = createViewModel(
-        organizations = mapOf("org-preserve" to testOrg),
-        postRepository = postRepository
-    )
+    val viewModel =
+        createViewModel(
+            organizations = mapOf("org-preserve" to testOrg), postRepository = postRepository)
 
     // Load organization first time
     viewModel.loadOrganizationProfile("org-preserve")

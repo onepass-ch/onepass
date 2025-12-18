@@ -508,8 +508,7 @@ class OrganizerProfileScreenComposeTest {
             isLoading = false,
             onCreatePostClick = {},
             onDeletePostClick = {},
-            onLikePostClick = {}
-        )
+            onLikePostClick = {})
       }
     }
 

@@ -550,9 +550,7 @@ fun OrganizerProfileContent(
       }
 }
 
-/**
- * Test tags for the Posts tab content.
- */
+/** Test tags for the Posts tab content. */
 object PostsTabTestTags {
   const val POSTS_TAB_CONTENT = "posts_tab_content"
   const val CREATE_POST_BUTTON = "posts_create_button"
@@ -594,106 +592,89 @@ fun PostsTabContent(
     modifier: Modifier = Modifier
 ) {
   Column(
-      modifier = modifier
-          .fillMaxWidth()
-          .padding(top = 16.dp)
-          .testTag(PostsTabTestTags.POSTS_TAB_CONTENT),
+      modifier =
+          modifier.fillMaxWidth().padding(top = 16.dp).testTag(PostsTabTestTags.POSTS_TAB_CONTENT),
       horizontalAlignment = Alignment.CenterHorizontally,
-      verticalArrangement = Arrangement.spacedBy(16.dp)
-  ) {
-    // Create Post Section (only for owners)
-    if (isOwner) {
-      CreatePostPrompt(
-          organizationName = organizationName,
-          organizationImageUrl = organizationImageUrl,
-          onClick = onCreatePostClick
-      )
-    }
+      verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        // Create Post Section (only for owners)
+        if (isOwner) {
+          CreatePostPrompt(
+              organizationName = organizationName,
+              organizationImageUrl = organizationImageUrl,
+              onClick = onCreatePostClick)
+        }
 
-    // Posts List
-    when {
-      isLoading -> {
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(48.dp)
-                .testTag(PostsTabTestTags.POSTS_LOADING),
-            contentAlignment = Alignment.Center
-        ) {
-          CircularProgressIndicator(
-              modifier = Modifier.size(40.dp),
-              color = colorScheme.primary,
-              strokeWidth = 3.dp
-          )
-        }
-      }
-      posts.isEmpty() -> {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp, vertical = 48.dp)
-                .testTag(PostsTabTestTags.POSTS_EMPTY),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-          Text(
-              text = stringResource(R.string.organizer_posts_empty),
-              style = MaterialTheme.typography.titleMedium.copy(
-                  color = colorScheme.onSurface
-              )
-          )
-          Spacer(modifier = Modifier.height(8.dp))
-          if (isOwner) {
-            Text(
-                text = stringResource(R.string.org_post_empty_owner_hint),
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = colorScheme.outline,
-                    textAlign = TextAlign.Center
-                )
-            )
-          } else {
-            Text(
-                text = "Check back later for updates from this organization.",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = colorScheme.outline,
-                    textAlign = TextAlign.Center
-                )
-            )
+        // Posts List
+        when {
+          isLoading -> {
+            Box(
+                modifier =
+                    Modifier.fillMaxWidth().padding(48.dp).testTag(PostsTabTestTags.POSTS_LOADING),
+                contentAlignment = Alignment.Center) {
+                  CircularProgressIndicator(
+                      modifier = Modifier.size(40.dp),
+                      color = colorScheme.primary,
+                      strokeWidth = 3.dp)
+                }
+          }
+          posts.isEmpty() -> {
+            Column(
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .padding(horizontal = 32.dp, vertical = 48.dp)
+                        .testTag(PostsTabTestTags.POSTS_EMPTY),
+                horizontalAlignment = Alignment.CenterHorizontally) {
+                  Text(
+                      text = stringResource(R.string.organizer_posts_empty),
+                      style =
+                          MaterialTheme.typography.titleMedium.copy(color = colorScheme.onSurface))
+                  Spacer(modifier = Modifier.height(8.dp))
+                  if (isOwner) {
+                    Text(
+                        text = stringResource(R.string.org_post_empty_owner_hint),
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                color = colorScheme.outline, textAlign = TextAlign.Center))
+                  } else {
+                    Text(
+                        text = "Check back later for updates from this organization.",
+                        style =
+                            MaterialTheme.typography.bodyMedium.copy(
+                                color = colorScheme.outline, textAlign = TextAlign.Center))
+                  }
+                }
+          }
+          else -> {
+            Column(
+                modifier =
+                    Modifier.fillMaxWidth()
+                        .padding(horizontal = 12.dp)
+                        .testTag(PostsTabTestTags.POSTS_LIST),
+                verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                  posts.forEach { post ->
+                    val isLiked = currentUserId?.let { post.isLikedBy(it) } ?: false
+                    PostCard(
+                        post = post,
+                        organizationName = organizationName,
+                        organizationImageUrl = organizationImageUrl,
+                        isLiked = isLiked,
+                        canDelete = isOwner,
+                        onLikeClick = { onLikePostClick(post.id) },
+                        onDeleteClick = { onDeletePostClick(post) })
+                  }
+                  // Bottom spacing
+                  Spacer(modifier = Modifier.height(16.dp))
+                }
           }
         }
       }
-      else -> {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 12.dp)
-                .testTag(PostsTabTestTags.POSTS_LIST),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-          posts.forEach { post ->
-            val isLiked = currentUserId?.let { post.isLikedBy(it) } ?: false
-            PostCard(
-                post = post,
-                organizationName = organizationName,
-                organizationImageUrl = organizationImageUrl,
-                isLiked = isLiked,
-                canDelete = isOwner,
-                onLikeClick = { onLikePostClick(post.id) },
-                onDeleteClick = { onDeletePostClick(post) }
-            )
-          }
-          // Bottom spacing
-          Spacer(modifier = Modifier.height(16.dp))
-        }
-      }
-    }
-  }
 }
 
 /**
  * Modern styled prompt for creating a new post.
  *
- * Shows a card with avatar, placeholder text, and post button
- * that opens the post composer when clicked.
+ * Shows a card with avatar, placeholder text, and post button that opens the post composer when
+ * clicked.
  *
  * @param organizationName Name of the organization.
  * @param organizationImageUrl Optional profile image URL.
@@ -706,56 +687,45 @@ private fun CreatePostPrompt(
     onClick: () -> Unit
 ) {
   Card(
-      modifier = Modifier
-          .fillMaxWidth()
-          .padding(horizontal = 12.dp)
-          .clickable { onClick() }
-          .testTag(PostsTabTestTags.CREATE_POST_BUTTON),
+      modifier =
+          Modifier.fillMaxWidth()
+              .padding(horizontal = 12.dp)
+              .clickable { onClick() }
+              .testTag(PostsTabTestTags.CREATE_POST_BUTTON),
       shape = RoundedCornerShape(16.dp),
-      colors = CardDefaults.cardColors(
-          containerColor = colorScheme.surfaceVariant.copy(alpha = 0.5f)
-      )
-  ) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-      // Organization Avatar
-      OrganizationAvatar(
-          organizationName = organizationName,
-          imageUrl = organizationImageUrl,
-          size = 44
-      )
+      colors =
+          CardDefaults.cardColors(containerColor = colorScheme.surfaceVariant.copy(alpha = 0.5f))) {
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically) {
+              // Organization Avatar
+              OrganizationAvatar(
+                  organizationName = organizationName, imageUrl = organizationImageUrl, size = 44)
 
-      Spacer(modifier = Modifier.width(14.dp))
+              Spacer(modifier = Modifier.width(14.dp))
 
-      // Placeholder Text
-      Text(
-          text = stringResource(R.string.org_post_create_prompt),
-          style = MaterialTheme.typography.bodyLarge,
-          color = colorScheme.outline,
-          modifier = Modifier.weight(1f)
-      )
+              // Placeholder Text
+              Text(
+                  text = stringResource(R.string.org_post_create_prompt),
+                  style = MaterialTheme.typography.bodyLarge,
+                  color = colorScheme.outline,
+                  modifier = Modifier.weight(1f))
 
-      Spacer(modifier = Modifier.width(14.dp))
+              Spacer(modifier = Modifier.width(14.dp))
 
-      // Post Button
-      Button(
-          onClick = onClick,
-          colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary),
-          shape = RoundedCornerShape(24.dp),
-          modifier = Modifier.height(40.dp)
-      ) {
-        Text(
-            text = stringResource(R.string.org_post_submit_button),
-            style = MaterialTheme.typography.labelLarge,
-            fontWeight = FontWeight.Bold
-        )
+              // Post Button
+              Button(
+                  onClick = onClick,
+                  colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary),
+                  shape = RoundedCornerShape(24.dp),
+                  modifier = Modifier.height(40.dp)) {
+                    Text(
+                        text = stringResource(R.string.org_post_submit_button),
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Bold)
+                  }
+            }
       }
-    }
-  }
 }
 
 /**

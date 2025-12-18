@@ -119,11 +119,11 @@ open class OrganizerProfileViewModel(
             // Preserve existing posts when updating organization info
             val currentPosts = _state.value.posts
             val currentPostsLoading = _state.value.postsLoading
-            _state.value = organization.toUiState(isOwner = isOwner).copy(
-                posts = currentPosts,
-                postsLoading = currentPostsLoading
-            )
-            
+            _state.value =
+                organization
+                    .toUiState(isOwner = isOwner)
+                    .copy(posts = currentPosts, postsLoading = currentPostsLoading)
+
             // Load events and posts only on first load
             if (currentPosts.isEmpty() && !currentPostsLoading) {
               loadOrganizationEvents(organizationId)
@@ -178,7 +178,8 @@ open class OrganizerProfileViewModel(
       try {
         _state.value = _state.value.copy(postsLoading = true)
         postRepository.getPostsByOrganization(organizationId).collect { posts ->
-          android.util.Log.d("OrganizerProfileVM", "Loaded ${posts.size} posts for org: $organizationId")
+          android.util.Log.d(
+              "OrganizerProfileVM", "Loaded ${posts.size} posts for org: $organizationId")
           _state.value = _state.value.copy(posts = posts, postsLoading = false)
         }
       } catch (e: Exception) {
@@ -214,19 +215,17 @@ open class OrganizerProfileViewModel(
     _state.value = _state.value.copy(isSubmittingPost = true)
 
     viewModelScope.launch {
-      val post = Post(
-          organizationId = organizationId,
-          authorId = userId,
-          authorName = userName,
-          content = content
-      )
+      val post =
+          Post(
+              organizationId = organizationId,
+              authorId = userId,
+              authorName = userName,
+              content = content)
 
-      postRepository.createPost(post)
+      postRepository
+          .createPost(post)
           .onSuccess {
-            _state.value = _state.value.copy(
-                showCreatePostDialog = false,
-                isSubmittingPost = false
-            )
+            _state.value = _state.value.copy(showCreatePostDialog = false, isSubmittingPost = false)
           }
           .onFailure { error ->
             _state.value = _state.value.copy(isSubmittingPost = false)
@@ -242,19 +241,14 @@ open class OrganizerProfileViewModel(
    * @param post The post to delete.
    */
   fun openDeleteConfirmation(post: Post) {
-    _state.value = _state.value.copy(
-        showDeleteConfirmation = true,
-        postToDelete = post
-    )
+    _state.value = _state.value.copy(showDeleteConfirmation = true, postToDelete = post)
   }
 
   /** Closes the delete confirmation dialog. */
   fun closeDeleteConfirmation() {
-    _state.value = _state.value.copy(
-        showDeleteConfirmation = false,
-        postToDelete = null,
-        isDeletingPost = false
-    )
+    _state.value =
+        _state.value.copy(
+            showDeleteConfirmation = false, postToDelete = null, isDeletingPost = false)
   }
 
   /** Confirms and executes the deletion of the selected post. */
@@ -264,14 +258,15 @@ open class OrganizerProfileViewModel(
     _state.value = _state.value.copy(isDeletingPost = true)
 
     viewModelScope.launch {
-      postRepository.deletePost(post.id)
+      postRepository
+          .deletePost(post.id)
           .onSuccess {
-            _state.value = _state.value.copy(
-                showDeleteConfirmation = false,
-                postToDelete = null,
-                isDeletingPost = false,
-                posts = _state.value.posts.filter { it.id != post.id }
-            )
+            _state.value =
+                _state.value.copy(
+                    showDeleteConfirmation = false,
+                    postToDelete = null,
+                    isDeletingPost = false,
+                    posts = _state.value.posts.filter { it.id != post.id })
           }
           .onFailure { error ->
             _state.value = _state.value.copy(isDeletingPost = false)
@@ -300,9 +295,7 @@ open class OrganizerProfileViewModel(
     }
   }
 
-  /**
-   * Returns the current user's ID, if logged in.
-   */
+  /** Returns the current user's ID, if logged in. */
   fun getCurrentUserId(): String? = auth.currentUser?.uid
 
   /** Handles the follow/unfollow action */
