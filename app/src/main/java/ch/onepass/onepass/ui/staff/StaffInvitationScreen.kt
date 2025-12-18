@@ -107,7 +107,6 @@ fun StaffInvitationScreen(
       viewModel.clearSnackbarMessage()
     }
   }
-  val selectedTabIndex = if (uiState.selectedTab == UserSearchType.DISPLAY_NAME) 0 else 1
 
   BackNavigationScaffold(
       TopBarConfig(
@@ -119,121 +118,162 @@ fun StaffInvitationScreen(
       modifier = modifier.testTag(StaffInvitationTestTags.SCREEN)) { paddingValues ->
         Column(
             modifier = Modifier.fillMaxSize().padding(paddingValues).padding(horizontal = 16.dp)) {
-              // Tab Row
-              TabRow(
-                  modifier = Modifier.fillMaxWidth().testTag(StaffInvitationTestTags.TAB_ROW),
-                  selectedTabIndex = selectedTabIndex,
-                  containerColor = colorScheme.surface,
-                  contentColor = colorScheme.onSurface,
-                  indicator = { tabPositions ->
-                    TabRowDefaults.Indicator(
-                        modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
-                        height = 4.dp,
-                        color = colorScheme.primary)
-                  }) {
-                    Tab(
-                        text = {
-                          Text(
-                              text = stringResource(R.string.staff_invitation_tab_username),
-                              style = MaterialTheme.typography.titleMedium,
-                              color =
-                                  if (uiState.selectedTab == UserSearchType.DISPLAY_NAME)
-                                      colorScheme.primary
-                                  else colorScheme.outline)
-                        },
-                        selected = uiState.selectedTab == UserSearchType.DISPLAY_NAME,
-                        onClick = { viewModel.selectTab(UserSearchType.DISPLAY_NAME) },
-                        modifier = Modifier.testTag(StaffInvitationTestTags.TAB_DISPLAY_NAME))
-                    Tab(
-                        text = {
-                          Text(
-                              text = stringResource(R.string.staff_invitation_tab_email),
-                              style = MaterialTheme.typography.titleMedium,
-                              color =
-                                  if (uiState.selectedTab == UserSearchType.EMAIL)
-                                      colorScheme.primary
-                                  else colorScheme.outline)
-                        },
-                        selected = uiState.selectedTab == UserSearchType.EMAIL,
-                        onClick = { viewModel.selectTab(UserSearchType.EMAIL) },
-                        modifier = Modifier.testTag(StaffInvitationTestTags.TAB_EMAIL))
-                  }
+              StaffInvitationTabRow(
+                  selectedTab = uiState.selectedTab, onTabSelected = viewModel::selectTab)
 
-              // Search Input Field
-              SearchInputField(
-                  value = uiState.searchQuery,
-                  onValueChange = viewModel::updateSearchQuery,
-                  placeholder =
-                      if (uiState.selectedTab == UserSearchType.DISPLAY_NAME)
-                          stringResource(R.string.staff_invitation_search_by_name)
-                      else stringResource(R.string.staff_invitation_search_by_email),
-                  modifier = Modifier.fillMaxWidth().padding(top = 16.dp))
-
-              // Error Message
-              uiState.errorMessage?.let { error ->
-                Text(
-                    text = error,
-                    color = colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    modifier =
-                        Modifier.fillMaxWidth()
-                            .padding(top = 8.dp)
-                            .testTag(StaffInvitationTestTags.ERROR_MESSAGE))
-              }
-
-              // Results List or Empty State
-              Box(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) {
-                when {
-                  uiState.isLoading -> {
-                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                      LoadingState(testTag = StaffInvitationTestTags.LOADING_INDICATOR)
-                    }
-                  }
-                  uiState.searchQuery.isBlank() -> {
-                    EmptyState(
-                        title = stringResource(R.string.staff_invitation_search_users),
-                        message = stringResource(R.string.staff_invitation_enter_query),
-                        modifier = Modifier.fillMaxSize(),
-                        testTag = StaffInvitationTestTags.EMPTY_STATE)
-                  }
-                  uiState.searchResults.isEmpty() -> {
-                    EmptyState(
-                        title = stringResource(R.string.staff_invitation_no_users),
-                        message = stringResource(R.string.staff_invitation_try_different),
-                        modifier = Modifier.fillMaxSize(),
-                        testTag = StaffInvitationTestTags.EMPTY_STATE)
-                  }
-                  else -> {
-                    LazyColumn(
-                        modifier =
-                            Modifier.fillMaxSize().testTag(StaffInvitationTestTags.RESULTS_LIST),
-                        contentPadding = PaddingValues(vertical = 8.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                          items(items = uiState.searchResults, key = { it.id }) { user ->
-                            val isInvited = user.id in uiState.invitedUserIds
-                            val isAlreadyInvited = user.id in uiState.alreadyInvitedUserIds
-
-                            StaffListItem(
-                                user = user,
-                                onClick =
-                                    if (isInvited || isAlreadyInvited) null
-                                    else {
-                                      { viewModel.onUserSelected(user) }
-                                    },
-                                enabled = !(isInvited || isAlreadyInvited),
-                                modifier = Modifier.fillMaxWidth())
-                          }
-                        }
-                  }
-                }
-              }
+              StaffInvitationContent(
+                  uiState = uiState,
+                  onQueryChange = viewModel::updateSearchQuery,
+                  onUserSelected = viewModel::onUserSelected)
             }
       }
 
+  StaffInvitationDialogs(uiState = uiState, viewModel = viewModel)
+
+  // Snackbar Host
+  Box(modifier = Modifier.fillMaxSize()) {
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)) { data ->
+          androidx.compose.material3.Snackbar(
+              snackbarData = data,
+              containerColor = colorScheme.surface,
+              contentColor = colorScheme.onSurface,
+              actionColor = colorScheme.primary,
+              dismissActionContentColor = colorScheme.onSurface)
+        }
+  }
+}
+
+@Composable
+private fun StaffInvitationTabRow(
+    selectedTab: UserSearchType,
+    onTabSelected: (UserSearchType) -> Unit
+) {
+  val selectedTabIndex = if (selectedTab == UserSearchType.DISPLAY_NAME) 0 else 1
+
+  TabRow(
+      modifier = Modifier.fillMaxWidth().testTag(StaffInvitationTestTags.TAB_ROW),
+      selectedTabIndex = selectedTabIndex,
+      containerColor = colorScheme.surface,
+      contentColor = colorScheme.onSurface,
+      indicator = { tabPositions ->
+        TabRowDefaults.SecondaryIndicator(
+            modifier = Modifier.tabIndicatorOffset(tabPositions[selectedTabIndex]),
+            height = 4.dp,
+            color = colorScheme.primary)
+      }) {
+        Tab(
+            text = {
+              Text(
+                  text = stringResource(R.string.staff_invitation_tab_username),
+                  style = MaterialTheme.typography.titleMedium,
+                  color =
+                      if (selectedTab == UserSearchType.DISPLAY_NAME) colorScheme.primary
+                      else colorScheme.outline)
+            },
+            selected = selectedTab == UserSearchType.DISPLAY_NAME,
+            onClick = { onTabSelected(UserSearchType.DISPLAY_NAME) },
+            modifier = Modifier.testTag(StaffInvitationTestTags.TAB_DISPLAY_NAME))
+        Tab(
+            text = {
+              Text(
+                  text = stringResource(R.string.staff_invitation_tab_email),
+                  style = MaterialTheme.typography.titleMedium,
+                  color =
+                      if (selectedTab == UserSearchType.EMAIL) colorScheme.primary
+                      else colorScheme.outline)
+            },
+            selected = selectedTab == UserSearchType.EMAIL,
+            onClick = { onTabSelected(UserSearchType.EMAIL) },
+            modifier = Modifier.testTag(StaffInvitationTestTags.TAB_EMAIL))
+      }
+}
+
+@Composable
+private fun StaffInvitationContent(
+    uiState: StaffInvitationUiState,
+    onQueryChange: (String) -> Unit,
+    onUserSelected: (StaffSearchResult) -> Unit
+) {
+  // Search Input Field
+  SearchInputField(
+      value = uiState.searchQuery,
+      onValueChange = onQueryChange,
+      placeholder =
+          if (uiState.selectedTab == UserSearchType.DISPLAY_NAME)
+              stringResource(R.string.staff_invitation_search_by_name)
+          else stringResource(R.string.staff_invitation_search_by_email),
+      modifier = Modifier.fillMaxWidth().padding(top = 16.dp))
+
+  // Error Message
+  uiState.errorMessage?.let { error ->
+    Text(
+        text = error,
+        color = colorScheme.error,
+        style = MaterialTheme.typography.bodySmall,
+        modifier =
+            Modifier.fillMaxWidth()
+                .padding(top = 8.dp)
+                .testTag(StaffInvitationTestTags.ERROR_MESSAGE))
+  }
+
+  // Results List or Empty State
+  Box(modifier = Modifier.fillMaxSize().padding(top = 16.dp)) {
+    when {
+      uiState.isLoading -> {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+          LoadingState(testTag = StaffInvitationTestTags.LOADING_INDICATOR)
+        }
+      }
+      uiState.searchQuery.isBlank() -> {
+        EmptyState(
+            title = stringResource(R.string.staff_invitation_search_users),
+            message = stringResource(R.string.staff_invitation_enter_query),
+            modifier = Modifier.fillMaxSize(),
+            testTag = StaffInvitationTestTags.EMPTY_STATE)
+      }
+      uiState.searchResults.isEmpty() -> {
+        EmptyState(
+            title = stringResource(R.string.staff_invitation_no_users),
+            message = stringResource(R.string.staff_invitation_try_different),
+            modifier = Modifier.fillMaxSize(),
+            testTag = StaffInvitationTestTags.EMPTY_STATE)
+      }
+      else -> {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize().testTag(StaffInvitationTestTags.RESULTS_LIST),
+            contentPadding = PaddingValues(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)) {
+              items(items = uiState.searchResults, key = { it.id }) { user ->
+                val isInvited = user.id in uiState.invitedUserIds
+                val isAlreadyInvited = user.id in uiState.alreadyInvitedUserIds
+
+                StaffListItem(
+                    user = user,
+                    onClick =
+                        if (isInvited || isAlreadyInvited) null
+                        else {
+                          { onUserSelected(user) }
+                        },
+                    enabled = !(isInvited || isAlreadyInvited),
+                    modifier = Modifier.fillMaxWidth())
+              }
+            }
+      }
+    }
+  }
+}
+
+@Composable
+private fun StaffInvitationDialogs(
+    uiState: StaffInvitationUiState,
+    viewModel: StaffInvitationViewModel
+) {
   // Confirmation Dialog
   if (uiState.selectedUserForInvite != null) {
     StaffInvitationDialog(
-        user = uiState.selectedUserForInvite!!,
+        user = uiState.selectedUserForInvite,
         selectedRole = uiState.selectedRole,
         isInviting = uiState.isInviting,
         availableRoles = viewModel.getAvailableRoles(),
@@ -250,23 +290,9 @@ fun StaffInvitationScreen(
   // Invitation Result Dialog
   if (uiState.invitationResultMessage != null && uiState.invitationResultType != null) {
     InvitationResultDialog(
-        userName = uiState.invitationResultMessage!!,
-        resultType = uiState.invitationResultType!!,
+        userName = uiState.invitationResultMessage,
+        resultType = uiState.invitationResultType,
         onDismiss = viewModel::dismissInvitationResultDialog)
-  }
-
-  // Snackbar Host
-  Box(modifier = Modifier.fillMaxSize()) {
-    SnackbarHost(
-        hostState = snackbarHostState,
-        modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 16.dp)) { data ->
-          androidx.compose.material3.Snackbar(
-              snackbarData = data,
-              containerColor = colorScheme.surface,
-              contentColor = colorScheme.onSurface,
-              actionColor = colorScheme.primary,
-              dismissActionContentColor = colorScheme.onSurface)
-        }
   }
 }
 
@@ -309,7 +335,8 @@ fun StaffInvitationDialog(
                       ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                     },
                     modifier =
-                        Modifier.menuAnchor()
+                        Modifier.menuAnchor(
+                                androidx.compose.material3.MenuAnchorType.PrimaryNotEditable, true)
                             .fillMaxWidth()
                             .testTag(StaffInvitationTestTags.ROLE_DROPDOWN),
                     colors =
