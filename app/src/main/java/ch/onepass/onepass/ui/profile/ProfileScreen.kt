@@ -26,6 +26,8 @@ import androidx.compose.material.icons.outlined.Diversity3
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -143,6 +145,7 @@ private fun ProfileContent(
               name = state.displayName,
               email = state.email,
               avatarUrl = state.avatarUrl,
+              isEmailPublic = state.isEmailPublic,
               country = state.country,
               onEditProfile = onEditProfile)
 
@@ -234,7 +237,8 @@ private fun HeaderBlock(
     email: String,
     avatarUrl: String?,
     country: String?,
-    onEditProfile: () -> Unit
+    onEditProfile: () -> Unit,
+    isEmailPublic: Boolean
 ) {
   Row(
       verticalAlignment = Alignment.CenterVertically,
@@ -278,11 +282,31 @@ private fun HeaderBlock(
               maxLines = 1,
               overflow = TextOverflow.Ellipsis,
               modifier = Modifier.testTag(ProfileTestTags.HEADER_NAME))
-          Text(
-              text = email,
-              color = colorScheme.onSurface,
-              style = MaterialTheme.typography.bodyMedium,
-              modifier = Modifier.testTag(ProfileTestTags.HEADER_EMAIL))
+
+          Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = email,
+                color = colorScheme.onBackground.copy(alpha = 0.7f),
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.testTag(ProfileTestTags.HEADER_EMAIL))
+
+            Spacer(Modifier.width(6.dp))
+
+            if (isEmailPublic) {
+              Icon(
+                  imageVector = Icons.Outlined.Visibility,
+                  contentDescription = "Public Email",
+                  tint = colorScheme.onBackground.copy(alpha = 0.5f),
+                  modifier = Modifier.size(14.dp))
+            } else {
+              Icon(
+                  imageVector = Icons.Outlined.VisibilityOff,
+                  contentDescription = "Hidden Email",
+                  tint = colorScheme.onBackground.copy(alpha = 0.3f),
+                  modifier = Modifier.size(14.dp))
+            }
+          }
+
           if (!country.isNullOrBlank()) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,

@@ -88,4 +88,6 @@ interface UserRepository {
    * @return A [Result] of [Unit] on success, or an error if the operation fails.
    */
   suspend fun removeFavoriteEvent(uid: String, eventId: String): Result<Unit>
+
+  suspend fun updateUserField(uid: String, field: String, value: Any): Result<Unit>
 }

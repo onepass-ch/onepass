@@ -68,6 +68,8 @@ import ch.onepass.onepass.ui.organizer.OrganizationFormViewModel
 import ch.onepass.onepass.ui.profile.ProfileEffect
 import ch.onepass.onepass.ui.profile.ProfileScreen
 import ch.onepass.onepass.ui.profile.ProfileViewModel
+import ch.onepass.onepass.ui.profile.accountsettings.AccountSettingsScreen
+import ch.onepass.onepass.ui.profile.accountsettings.AccountSettingsViewModel
 import ch.onepass.onepass.ui.profile.editprofile.EditProfileScreen
 import ch.onepass.onepass.ui.profile.editprofile.EditProfileViewModel
 import ch.onepass.onepass.ui.scan.ScanScreen
@@ -269,7 +271,7 @@ fun AppNavHost(
                     ProfileEffect.NavigateToMyOrganizations ->
                         navController.navigate(Screen.OrganizationFeed.route)
                     ProfileEffect.NavigateToAccountSettings ->
-                        navController.navigate(Screen.ComingSoon.route)
+                        navController.navigate(Screen.AccountSettings.route)
                     ProfileEffect.NavigateToPaymentMethods ->
                         navController.navigate(Screen.ComingSoon.route)
                     ProfileEffect.NavigateToEditProfile ->
@@ -458,6 +460,22 @@ fun AppNavHost(
             viewModel = editVm,
             onOrganizationUpdated = { navController.popBackStack() },
             onNavigateBack = { navController.popBackStack() })
+      }
+    }
+    composable(Screen.AccountSettings.route) {
+      val accountSettingsVm: AccountSettingsViewModel = viewModel()
+      SwipeBackWrapper(onSwipeBack = { navController.popBackStack() }) {
+        AccountSettingsScreen(
+            viewModel = accountSettingsVm,
+            onNavigateBack = { navController.popBackStack() },
+            onAccountDeleted = {
+              // Sign out and go back to auth
+              authViewModel.signOut()
+              navController.navigate(Screen.Auth.route) {
+                popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                launchSingleTop = true
+              }
+            })
       }
     }
 

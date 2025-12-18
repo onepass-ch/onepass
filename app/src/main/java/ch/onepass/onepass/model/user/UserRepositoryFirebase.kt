@@ -133,6 +133,11 @@ class UserRepositoryFirebase(
             .await()
       }
 
+  override suspend fun updateUserField(uid: String, field: String, value: Any): Result<Unit> =
+      runCatching {
+        userCollection.document(uid).update(field, value).await()
+      }
+
   private companion object {
     const val FN_SEARCH_USERS = "searchUsers"
 

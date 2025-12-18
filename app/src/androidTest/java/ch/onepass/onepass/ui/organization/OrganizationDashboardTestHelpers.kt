@@ -208,6 +208,11 @@ open class MockMembershipRepository(
 /** Mock User Repository with configurable behavior. */
 class MockUserRepository(private val users: Map<String, StaffSearchResult> = emptyMap()) :
     UserRepository {
+  private val updatedFields = mutableMapOf<String, MutableMap<String, Any>>()
+  private var updateUserFieldFunction: (String, String, Any) -> Result<Unit> = { _, _, _ ->
+    Result.success(Unit)
+  }
+
   override suspend fun getCurrentUser(): User? = null
 
   override suspend fun getOrCreateUser(): User? = null
@@ -231,6 +236,14 @@ class MockUserRepository(private val users: Map<String, StaffSearchResult> = emp
 
   override suspend fun removeFavoriteEvent(uid: String, eventId: String): Result<Unit> =
       Result.success(Unit)
+
+  override suspend fun updateUserField(uid: String, field: String, value: Any): Result<Unit> {
+    val result = updateUserFieldFunction(uid, field, value)
+    if (result.isSuccess) {
+      updatedFields.getOrPut(uid) { mutableMapOf() }[field] = value
+    }
+    return result
+  }
 }
 
 /** Mock Event Repository with configurable behavior. */
