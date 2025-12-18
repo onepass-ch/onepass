@@ -1,9 +1,12 @@
 package ch.onepass.onepass.ui.eventform.editform
 
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
@@ -38,6 +41,9 @@ class EditEventFormComposeTest {
   private lateinit var mockRepository: EventRepository
   private lateinit var viewModel: EditEventFormViewModel
   private lateinit var testEvent: Event
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   @Before
   fun setUp() {
@@ -76,7 +82,7 @@ class EditEventFormComposeTest {
     composeTestRule.setContent { EditEventForm(eventId = "test-event-id", viewModel = viewModel) }
     composeTestRule.waitForIdle()
 
-    composeTestRule.onNodeWithText("Edit Event").assertIsDisplayed()
+    composeTestRule.onNodeWithText(context.getString(R.string.edit_event_title)).assertIsDisplayed()
     composeTestRule.onNodeWithTag(EditEventFormTestTags.FORM_COLUMN).assertIsDisplayed()
     composeTestRule.onNodeWithText("Test Event").assertIsDisplayed()
     composeTestRule.onNodeWithText("Test Description").assertIsDisplayed()
@@ -95,7 +101,9 @@ class EditEventFormComposeTest {
         .assertIsDisplayed()
         .assertHasClickAction()
 
-    composeTestRule.onNodeWithText("Update event").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.edit_event_button))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -185,7 +193,9 @@ class EditEventFormComposeTest {
     composeTestRule.waitForIdle()
 
     composeTestRule.onNodeWithTag(EditEventFormTestTags.ERROR_DIALOG).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Update Failed").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.edit_event_error_dialog_title))
+        .assertIsDisplayed()
 
     composeTestRule.onNodeWithTag(EditEventFormTestTags.ERROR_DIALOG_OK_BUTTON).performClick()
     composeTestRule.waitForIdle()
@@ -272,7 +282,9 @@ class EditEventFormComposeTest {
 
     composeTestRule.waitForIdle()
 
-    composeTestRule.onNodeWithText("Title*").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.event_form_title_label))
+        .assertIsDisplayed()
     composeTestRule
         .onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON)
         .performScrollTo()
@@ -283,7 +295,9 @@ class EditEventFormComposeTest {
 
     // Force recomposition
     composeTestRule.onNodeWithTag(EditEventFormTestTags.UPDATE_BUTTON).performScrollTo()
-    composeTestRule.onNodeWithText("Title*").performScrollTo()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.event_form_title_label))
+        .performScrollTo()
 
     composeTestRule.waitForIdle()
 
@@ -297,7 +311,10 @@ class EditEventFormComposeTest {
 
     composeTestRule.waitForIdle()
 
-    composeTestRule.onNodeWithText("Tags").performScrollTo().assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.event_form_tags_label))
+        .performScrollTo()
+        .assertIsDisplayed()
     composeTestRule.onNodeWithText("Technology").performScrollTo().assertIsDisplayed()
   }
 

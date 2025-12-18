@@ -1,17 +1,23 @@
 package ch.onepass.onepass.ui.auth
 
+import android.content.Context
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.dp
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import org.junit.Rule
 import org.junit.Test
 
 class AuthComponentsTest {
 
   @get:Rule val composeRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   @Test
   fun blurCircle_withCustomProperties_rendersCorrectly() {
@@ -56,8 +62,8 @@ class AuthComponentsTest {
 
   @Test
   fun heroTitle_withCustomProperties_rendersCorrectly() {
-    val titleTop = "Welcome to"
-    val titleBottom = "OnePass"
+    val titleTop = context.getString(R.string.auth_hero_title_top)
+    val titleBottom = context.getString(R.string.auth_hero_title_bottom)
     val textColor = Color.Magenta
 
     composeRule.setContent {

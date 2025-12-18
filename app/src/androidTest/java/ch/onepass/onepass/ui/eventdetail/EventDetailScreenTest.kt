@@ -2,6 +2,8 @@ package ch.onepass.onepass.ui.eventdetail
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.platform.app.InstrumentationRegistry
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.event.PricingTier
@@ -19,6 +21,13 @@ import org.junit.Test
 class EventDetailScreenTest {
 
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val context = InstrumentationRegistry.getInstrumentation().targetContext
+
+  private fun getString(resId: Int): String = context.getString(resId)
+
+  private fun getString(resId: Int, vararg formatArgs: Any): String =
+      context.getString(resId, *formatArgs)
 
   private val testEventId = "test-event-id"
   private val testOrganizerId = "test-organizer-id"
@@ -62,7 +71,9 @@ class EventDetailScreenTest {
     composeTestRule
         .onNodeWithText("Network error", substring = true, useUnmergedTree = true)
         .assertIsDisplayed()
-    composeTestRule.onNodeWithText("Go Back", useUnmergedTree = true).performClick()
+    composeTestRule
+        .onNodeWithText(getString(R.string.event_detail_go_back), useUnmergedTree = true)
+        .performClick()
     assertTrue(backClicked)
   }
 
@@ -149,7 +160,10 @@ class EventDetailScreenTest {
     }
 
     composeTestRule
-        .onNodeWithText("Buy ticket for 35chf", substring = true, useUnmergedTree = true)
+        .onNodeWithText(
+            getString(R.string.event_detail_price_buy, "35", "chf"),
+            substring = true,
+            useUnmergedTree = true)
         .assertIsDisplayed()
   }
 
@@ -168,7 +182,9 @@ class EventDetailScreenTest {
       }
     }
 
-    composeTestRule.onNodeWithText("FREE", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(getString(R.string.event_detail_price_free), useUnmergedTree = true)
+        .assertIsDisplayed()
   }
 
   @Test
@@ -191,7 +207,7 @@ class EventDetailScreenTest {
         .onNodeWithTag(EventDetailTestTags.ORGANIZER_RATING, useUnmergedTree = true)
         .assertDoesNotExist()
     composeTestRule
-        .onNodeWithText("No description available.", useUnmergedTree = true)
+        .onNodeWithText(getString(R.string.event_detail_no_description), useUnmergedTree = true)
         .assertExists()
   }
 
@@ -219,9 +235,12 @@ class EventDetailScreenTest {
         .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
         .assertIsDisplayed()
 
-    // Loading message should be displayed
+    // Loading message should be displayed (with ellipsis character '…')
     composeTestRule
-        .onNodeWithText("Preparing payment...", substring = true, useUnmergedTree = true)
+        .onNodeWithText(
+            getString(R.string.event_detail_preparing_payment),
+            substring = true,
+            useUnmergedTree = true)
         .assertIsDisplayed()
   }
 
@@ -247,9 +266,12 @@ class EventDetailScreenTest {
         .onNodeWithTag(EventDetailTestTags.PAYMENT_LOADING, useUnmergedTree = true)
         .assertIsDisplayed()
 
-    // Processing message should be displayed
+    // Processing message should be displayed (with ellipsis character '…')
     composeTestRule
-        .onNodeWithText("Processing payment...", substring = true, useUnmergedTree = true)
+        .onNodeWithText(
+            getString(R.string.event_detail_processing_payment),
+            substring = true,
+            useUnmergedTree = true)
         .assertIsDisplayed()
   }
 
@@ -843,7 +865,10 @@ class EventDetailScreenTest {
 
     // Button should show price text when not loading
     composeTestRule
-        .onNodeWithText("Buy ticket for 50chf", substring = true, useUnmergedTree = true)
+        .onNodeWithText(
+            getString(R.string.event_detail_price_buy, "50", "chf"),
+            substring = true,
+            useUnmergedTree = true)
         .assertIsDisplayed()
   }
 
@@ -863,7 +888,9 @@ class EventDetailScreenTest {
     }
 
     // Free event should show "FREE" text
-    composeTestRule.onNodeWithText("FREE", useUnmergedTree = true).assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(getString(R.string.event_detail_price_free), useUnmergedTree = true)
+        .assertIsDisplayed()
   }
 
   @Test

@@ -46,6 +46,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -139,7 +140,7 @@ fun OrganizationDashboardScreen(
 
   BackNavigationScaffold(
       TopBarConfig(
-          title = "DASHBOARD",
+          title = stringResource(R.string.org_dashboard_title),
           titleTestTag = OrganizationDashboardTestTags.TITLE,
           backButtonTestTag = OrganizationDashboardTestTags.BACK_BUTTON),
       onBack = onNavigateBack,
@@ -249,7 +250,7 @@ private fun ManageEventsSection(
       modifier =
           Modifier.fillMaxWidth().testTag(OrganizationDashboardTestTags.MANAGE_EVENTS_SECTION)) {
         Text(
-            text = "MANAGE EVENTS",
+            text = stringResource(R.string.org_dashboard_manage_events_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = colorScheme.onSurface)
@@ -265,12 +266,13 @@ private fun ManageEventsSection(
             shape = RoundedCornerShape(6.dp)) {
               Icon(
                   imageVector = Icons.Default.Add,
-                  contentDescription = "Create",
+                  contentDescription =
+                      stringResource(R.string.org_dashboard_create_icon_description),
                   modifier = Modifier.size(20.dp),
                   tint = colorScheme.onBackground)
               Spacer(modifier = Modifier.width(8.dp))
               Text(
-                  text = "Create new event",
+                  text = stringResource(R.string.org_dashboard_create_event_button),
                   style = MaterialTheme.typography.bodyLarge,
                   color = colorScheme.onBackground)
             }
@@ -292,14 +294,17 @@ private fun ManageEventsSection(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically) {
                       Text(
-                          text = "Your events",
+                          text = stringResource(R.string.org_dashboard_your_events_title),
                           style = MaterialTheme.typography.bodyLarge,
                           color = colorScheme.onBackground)
                       Icon(
                           imageVector =
                               if (eventsExpanded) Icons.Default.KeyboardArrowUp
                               else Icons.Default.KeyboardArrowDown,
-                          contentDescription = if (eventsExpanded) "Collapse" else "Expand",
+                          contentDescription =
+                              if (eventsExpanded)
+                                  stringResource(R.string.org_dashboard_collapse_description)
+                              else stringResource(R.string.org_dashboard_expand_description),
                           tint = colorScheme.onBackground)
                     }
 
@@ -308,7 +313,7 @@ private fun ManageEventsSection(
 
                   if (events.isEmpty()) {
                     Text(
-                        text = "No events created yet.",
+                        text = stringResource(R.string.org_dashboard_no_events),
                         style = MaterialTheme.typography.bodyMedium,
                         color = colorScheme.onBackground,
                         modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally))
@@ -414,7 +419,8 @@ private fun EventCard(
                     shape = RoundedCornerShape(4.dp)) {
                       Icon(
                           painter = painterResource(id = R.drawable.qr_code_icon),
-                          contentDescription = "Scan",
+                          contentDescription =
+                              stringResource(R.string.org_dashboard_scan_icon_description),
                           modifier = Modifier.size(20.dp))
                     }
               }
@@ -428,7 +434,7 @@ private fun EventCard(
                                 OrganizationDashboardTestTags.getEventEditButtonTag(event.eventId)),
                     colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary),
                     shape = RoundedCornerShape(4.dp)) {
-                      Text("Edit event")
+                      Text(stringResource(R.string.org_dashboard_edit_event_button))
                     }
               }
             }
@@ -460,7 +466,7 @@ private fun ManageStaffSection(
       modifier =
           Modifier.fillMaxWidth().testTag(OrganizationDashboardTestTags.MANAGE_STAFF_SECTION)) {
         Text(
-            text = "MANAGE STAFF",
+            text = stringResource(R.string.org_dashboard_manage_staff_title),
             style = MaterialTheme.typography.titleMedium,
             fontWeight = FontWeight.Bold,
             color = colorScheme.onSurface)
@@ -476,12 +482,12 @@ private fun ManageStaffSection(
             shape = RoundedCornerShape(6.dp)) {
               Icon(
                   painter = painterResource(id = android.R.drawable.ic_input_add),
-                  contentDescription = "Add",
+                  contentDescription = stringResource(R.string.org_dashboard_add_icon_description),
                   modifier = Modifier.size(20.dp),
                   tint = colorScheme.onBackground)
               Spacer(modifier = Modifier.width(8.dp))
               Text(
-                  text = "Add new staff",
+                  text = stringResource(R.string.org_dashboard_add_staff_button),
                   style = MaterialTheme.typography.bodyLarge,
                   color = colorScheme.onBackground)
             }
@@ -503,14 +509,17 @@ private fun ManageStaffSection(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically) {
                       Text(
-                          text = "Staff list",
+                          text = stringResource(R.string.org_dashboard_staff_list_title),
                           style = MaterialTheme.typography.bodyLarge,
                           color = colorScheme.onBackground)
                       Icon(
                           imageVector =
                               if (staffExpanded) Icons.Default.KeyboardArrowUp
                               else Icons.Default.KeyboardArrowDown,
-                          contentDescription = if (staffExpanded) "Collapse" else "Expand",
+                          contentDescription =
+                              if (staffExpanded)
+                                  stringResource(R.string.org_dashboard_collapse_description)
+                              else stringResource(R.string.org_dashboard_expand_description),
                           tint = colorScheme.onBackground)
                     }
 
@@ -519,7 +528,7 @@ private fun ManageStaffSection(
 
                   if (staffMembers.isEmpty()) {
                     Text(
-                        text = "No staff members added yet.",
+                        text = stringResource(R.string.org_dashboard_no_staff),
                         style = MaterialTheme.typography.bodyMedium,
                         color = colorScheme.onBackground,
                         modifier = Modifier.padding(16.dp).align(Alignment.CenterHorizontally))
@@ -585,7 +594,8 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
                               .data(user.avatarUrl)
                               .crossfade(true)
                               .build(),
-                      contentDescription = "Avatar",
+                      contentDescription =
+                          stringResource(R.string.org_dashboard_avatar_description),
                       contentScale = ContentScale.Crop,
                       modifier = Modifier.fillMaxSize().clip(CircleShape),
                       loading = {
@@ -598,7 +608,10 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
 
           Column {
             Text(
-                text = user.displayName.ifBlank { "Unknown User" },
+                text =
+                    user.displayName.ifBlank {
+                      stringResource(R.string.org_dashboard_unknown_user)
+                    },
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
                 color = colorScheme.onSurface)
@@ -638,7 +651,8 @@ private fun StaffItem(memberState: StaffMemberUiState, canRemove: Boolean, onRem
                               memberState.userId))) {
                 Icon(
                     painter = painterResource(id = android.R.drawable.ic_menu_close_clear_cancel),
-                    contentDescription = "Remove",
+                    contentDescription =
+                        stringResource(R.string.org_dashboard_remove_icon_description),
                     tint = colorScheme.primary,
                     modifier = Modifier.size(20.dp))
               }

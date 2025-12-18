@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.myevents
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -7,6 +8,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.model.organization.Organization
@@ -23,6 +26,9 @@ import org.junit.Test
 class MarketSearchBarTest {
 
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   private fun createTestEvent(title: String = "Test Event"): Event {
     return Event(
@@ -52,7 +58,9 @@ class MarketSearchBarTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.MARKET_SEARCH_BAR).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Search events or organizers...").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.market_search_placeholder))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -69,7 +77,9 @@ class MarketSearchBarTest {
       }
     }
 
-    composeTestRule.onNodeWithContentDescription("Search").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.market_search_icon_description))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -103,7 +113,9 @@ class MarketSearchBarTest {
       }
     }
 
-    composeTestRule.onNodeWithContentDescription("Clear search").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.market_search_clear_description))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -140,7 +152,9 @@ class MarketSearchBarTest {
       }
     }
 
-    composeTestRule.onNodeWithContentDescription("Clear search").performClick()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.market_search_clear_description))
+        .performClick()
     assert(clearCalled)
   }
 
@@ -217,7 +231,9 @@ class MarketSearchBarTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.MARKET_SEARCH_BAR).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Search events or organizers...").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.market_search_placeholder))
+        .assertIsDisplayed()
   }
 
   @Test

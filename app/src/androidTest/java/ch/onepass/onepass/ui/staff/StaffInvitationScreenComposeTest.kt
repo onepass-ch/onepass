@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.staff
 
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertHasClickAction
 import androidx.compose.ui.test.assertHasNoClickAction
@@ -11,6 +12,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.OrganizationRole
 import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.model.user.UserSearchType
@@ -21,6 +24,9 @@ import org.junit.Test
 class StaffInvitationScreenComposeTest {
 
   @get:Rule val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   private fun setContent(viewModel: StaffInvitationViewModel) {
     composeRule.setContent {
@@ -201,7 +207,9 @@ class StaffInvitationScreenComposeTest {
             searchQuery = "alice", searchResults = listOf(user), selectedUserForInvite = user))
 
     composeRule.onNodeWithTag(StaffInvitationTestTags.CONFIRMATION_DIALOG).assertIsDisplayed()
-    composeRule.onNodeWithText("Invite Alice Keller to your organization?").assertIsDisplayed()
+    composeRule
+        .onNodeWithText(context.getString(R.string.staff_invitation_dialog_message, "Alice Keller"))
+        .assertIsDisplayed()
     composeRule.onNodeWithTag(StaffInvitationTestTags.ROLE_DROPDOWN).assertIsDisplayed()
     composeRule.onNodeWithTag(StaffInvitationTestTags.CONFIRM_BUTTON).assertIsDisplayed()
     composeRule.onNodeWithTag(StaffInvitationTestTags.CANCEL_BUTTON).assertIsDisplayed()
@@ -215,7 +223,9 @@ class StaffInvitationScreenComposeTest {
     setUiState(vm, StaffInvitationUiState(showPermissionDeniedDialog = true))
 
     composeRule.onNodeWithTag(StaffInvitationTestTags.PERMISSION_DENIED_DIALOG).assertIsDisplayed()
-    composeRule.onNodeWithText("Permission Denied").assertIsDisplayed()
+    composeRule
+        .onNodeWithText(context.getString(R.string.staff_invitation_permission_denied_title))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -228,8 +238,12 @@ class StaffInvitationScreenComposeTest {
         StaffInvitationUiState(
             invitationResultMessage = "Alice", invitationResultType = InvitationResultType.SUCCESS))
 
-    composeRule.onNodeWithText("Invitation Sent").assertExists()
-    composeRule.onNodeWithText("Successfully invited Alice to the organization.").assertExists()
+    composeRule
+        .onNodeWithText(context.getString(R.string.staff_invitation_success_title))
+        .assertExists()
+    composeRule
+        .onNodeWithText(context.getString(R.string.staff_invitation_success_message, "Alice"))
+        .assertExists()
   }
 
   @Test
@@ -242,8 +256,12 @@ class StaffInvitationScreenComposeTest {
         StaffInvitationUiState(
             invitationResultMessage = "Bob", invitationResultType = InvitationResultType.ERROR))
 
-    composeRule.onNodeWithText("Invitation Failed").assertExists()
-    composeRule.onNodeWithText("Failed to send invitation: Bob").assertExists()
+    composeRule
+        .onNodeWithText(context.getString(R.string.staff_invitation_error_title))
+        .assertExists()
+    composeRule
+        .onNodeWithText(context.getString(R.string.staff_invitation_error_message, "Bob"))
+        .assertExists()
   }
 
   @Test

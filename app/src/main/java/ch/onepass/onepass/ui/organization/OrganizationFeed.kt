@@ -21,8 +21,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.components.common.ErrorState
@@ -96,7 +98,7 @@ fun OrganizationFeedScaffold(
 ) {
   BackNavigationScaffold(
       TopBarConfig(
-          title = "MY ORGANIZATIONS",
+          title = stringResource(R.string.org_feed_title),
           topBarTestTag = OrganizationFeedTestTags.ORGANIZATION_FEED_TOP_BAR,
           backButtonTestTag = OrganizationFeedTestTags.BACK_BUTTON,
           titleTestTag = OrganizationFeedTestTags.ORGANIZATION_FEED_TITLE),
@@ -120,8 +122,8 @@ fun OrganizationFeedScaffold(
             }
             !isLoading && organizations.isEmpty() -> {
               EmptyState(
-                  title = "No Organizations",
-                  message = "You haven't joined any organizations yet.",
+                  title = stringResource(R.string.org_feed_empty_title),
+                  message = stringResource(R.string.org_feed_empty_message),
                   testTag = OrganizationFeedTestTags.EMPTY_STATE)
             }
             else -> {
@@ -173,7 +175,7 @@ private fun AddOrganizationButton(modifier: Modifier = Modifier, onClick: () -> 
       contentColor = colorScheme.onBackground) {
         Icon(
             imageVector = Icons.AutoMirrored.Filled.PlaylistAdd,
-            contentDescription = "Create a new organization",
+            contentDescription = stringResource(R.string.org_feed_create_description),
         )
       }
 }

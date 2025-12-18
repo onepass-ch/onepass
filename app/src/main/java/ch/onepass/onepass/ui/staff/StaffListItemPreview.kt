@@ -11,8 +11,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.staff.StaffSearchResult
 import ch.onepass.onepass.ui.staff.StaffListItem
 import ch.onepass.onepass.ui.theme.OnePassTheme
@@ -25,18 +27,21 @@ private fun StaffListItemPreview() {
 
     val user1 =
         StaffSearchResult(
-            id = "1", email = "alice@onepass.ch", displayName = "Alice Keller", avatarUrl = null)
+            id = "1",
+            email = stringResource(R.string.preview_staff_email_alice),
+            displayName = stringResource(R.string.preview_staff_name_alice),
+            avatarUrl = null)
     val user2 =
         StaffSearchResult(
             id = "2",
-            email = "unknown@email.address",
-            displayName = "Unknown user",
+            email = stringResource(R.string.preview_staff_email_unknown),
+            displayName = stringResource(R.string.preview_staff_name_unknown),
             avatarUrl = "https://www.gravatar.com/avatar/?d=mp")
     val user3 =
         StaffSearchResult(
             id = "3",
-            email = "bruce@onepass.ch",
-            displayName = "Bruce Dai",
+            email = stringResource(R.string.preview_staff_email_bruce),
+            displayName = stringResource(R.string.preview_staff_name_bruce),
             avatarUrl = "https://picsum.photos/200")
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
@@ -49,7 +54,9 @@ private fun StaffListItemPreview() {
 
       Text(
           text =
-              lastClick?.let { "Last click: ${it.displayName} <${it.email}>" } ?: "Last click: —",
+              lastClick?.let {
+                stringResource(R.string.preview_staff_last_click, it.displayName, it.email)
+              } ?: stringResource(R.string.preview_staff_last_click_none),
           style = MaterialTheme.typography.bodyMedium)
     }
   }

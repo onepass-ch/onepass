@@ -33,9 +33,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationInvitation
 import ch.onepass.onepass.model.organization.OrganizationRepository
@@ -162,7 +164,7 @@ internal fun MyInvitationsContent(
   }
 
   BackNavigationScaffold(
-      TopBarConfig(title = "My Invitations"),
+      TopBarConfig(title = stringResource(R.string.invitations_screen_title)),
       onBack = onNavigateBack,
       modifier = modifier.testTag(MyInvitationsScreenTestTags.SCREEN),
       containerColor = colorScheme.background,
@@ -182,8 +184,8 @@ internal fun MyInvitationsContent(
                 }
                 state.invitations.isEmpty() -> {
                   EmptyState(
-                      title = "No Invitations",
-                      message = "You don't have any pending invitations at the moment.",
+                      title = stringResource(R.string.invitations_empty_title),
+                      message = stringResource(R.string.invitations_empty_message),
                       testTag = MyInvitationsScreenTestTags.EMPTY_STATE)
                 }
                 else -> {
@@ -281,7 +283,7 @@ private fun InvitationCard(
 
           // Role information
           Text(
-              text = "Role: ${invitation.role.name}",
+              text = stringResource(R.string.invitations_role_label, invitation.role.name),
               style = MaterialTheme.typography.bodyMedium,
               color = colorScheme.onSurface,
               modifier = Modifier.testTag(MyInvitationsScreenTestTags.INVITATION_ROLE))
@@ -302,7 +304,9 @@ private fun InvitationCard(
                         ButtonDefaults.buttonColors(
                             containerColor = colorScheme.surface, contentColor = colorScheme.error),
                     shape = RoundedCornerShape(10.dp)) {
-                      Text(text = "Reject", fontWeight = FontWeight.Medium)
+                      Text(
+                          text = stringResource(R.string.invitations_reject_button),
+                          fontWeight = FontWeight.Medium)
                     }
 
                 // Accept button
@@ -316,7 +320,9 @@ private fun InvitationCard(
                             containerColor = colorScheme.primary,
                             contentColor = colorScheme.onBackground),
                     shape = RoundedCornerShape(10.dp)) {
-                      Text(text = "Accept", fontWeight = FontWeight.Medium)
+                      Text(
+                          text = stringResource(R.string.invitations_accept_button),
+                          fontWeight = FontWeight.Medium)
                     }
               }
         }

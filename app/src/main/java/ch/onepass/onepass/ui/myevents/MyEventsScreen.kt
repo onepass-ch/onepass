@@ -59,9 +59,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.payment.StripePaymentHelper
 import ch.onepass.onepass.ui.components.common.EmptyState
 import ch.onepass.onepass.ui.payment.LocalPaymentSheet
@@ -287,12 +289,12 @@ private fun ModernSegmentedControl(
       listOf(
           TabItem(
               tab = MyEventsMainTab.YOUR_TICKETS,
-              title = "My Tickets",
+              title = stringResource(R.string.myevents_tab_my_tickets),
               icon = Icons.Rounded.ConfirmationNumber,
               testTag = MyEventsTestTags.MAIN_TAB_YOUR_TICKETS),
           TabItem(
               tab = MyEventsMainTab.MARKET,
-              title = "Market",
+              title = stringResource(R.string.myevents_tab_market),
               icon = Icons.Rounded.Storefront,
               testTag = MyEventsTestTags.MAIN_TAB_MARKET))
 
@@ -421,8 +423,8 @@ private fun YourTicketsSectionModern(
       TicketTab.CURRENT -> {
         if (currentTickets.isEmpty()) {
           EmptyState(
-              title = "No Current Tickets",
-              message = "You don't have any active tickets. Browse events to get started!",
+              title = stringResource(R.string.myevents_empty_current_title),
+              message = stringResource(R.string.myevents_empty_current_message),
               modifier = Modifier.padding(top = 32.dp),
               testTag = MyEventsTestTags.EMPTY_STATE)
         } else {
@@ -432,8 +434,8 @@ private fun YourTicketsSectionModern(
       TicketTab.EXPIRED -> {
         if (expiredTickets.isEmpty()) {
           EmptyState(
-              title = "No Expired Tickets",
-              message = "You don't have any expired tickets yet.",
+              title = stringResource(R.string.myevents_empty_expired_title),
+              message = stringResource(R.string.myevents_empty_expired_message),
               modifier = Modifier.padding(top = 32.dp),
               testTag = MyEventsTestTags.EMPTY_STATE)
         } else {
@@ -443,9 +445,8 @@ private fun YourTicketsSectionModern(
       TicketTab.LISTED -> {
         if (listedTickets.isEmpty()) {
           EmptyState(
-              title = "No Listed Tickets",
-              message =
-                  "You haven't listed any tickets for sale. Go to the Market tab to sell your tickets!",
+              title = stringResource(R.string.myevents_empty_listed_title),
+              message = stringResource(R.string.myevents_empty_listed_message),
               modifier = Modifier.padding(top = 32.dp),
               testTag = MyEventsTestTags.EMPTY_STATE)
         } else {
@@ -549,7 +550,7 @@ private fun ListedTicketCard(
                             .background(colorScheme.primary.copy(alpha = 0.15f))
                             .padding(horizontal = 10.dp, vertical = 4.dp)) {
                       Text(
-                          text = "On Sale",
+                          text = stringResource(R.string.myevents_listed_badge),
                           style =
                               MaterialTheme.typography.labelSmall.copy(
                                   fontWeight = FontWeight.SemiBold),
@@ -566,7 +567,7 @@ private fun ListedTicketCard(
               verticalAlignment = Alignment.CenterVertically) {
                 Column {
                   Text(
-                      text = "Asking Price",
+                      text = stringResource(R.string.myevents_listed_asking_price),
                       style = MaterialTheme.typography.labelSmall,
                       color = colorScheme.onSurface)
                   Text(
@@ -578,7 +579,7 @@ private fun ListedTicketCard(
 
                 Column(horizontalAlignment = Alignment.End) {
                   Text(
-                      text = "Original Price",
+                      text = stringResource(R.string.myevents_listed_original_price),
                       style = MaterialTheme.typography.labelSmall,
                       color = colorScheme.onSurface)
                   Text(
@@ -591,7 +592,7 @@ private fun ListedTicketCard(
           Spacer(modifier = Modifier.height(4.dp))
 
           Text(
-              text = "Listed on ${ticket.listedAt}",
+              text = stringResource(R.string.myevents_listed_at_label, ticket.listedAt),
               style = MaterialTheme.typography.labelSmall,
               color = colorScheme.onSurface)
 
@@ -607,7 +608,7 @@ private fun ListedTicketCard(
                       contentColor = colorScheme.error),
               shape = RoundedCornerShape(12.dp)) {
                 Text(
-                    text = "Cancel Listing",
+                    text = stringResource(R.string.myevents_cancel_listing_button),
                     style =
                         MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold))
               }
@@ -620,13 +621,12 @@ private fun ListedTicketCard(
         onDismissRequest = { showCancelDialog = false },
         title = {
           Text(
-              text = "Cancel Listing?",
+              text = stringResource(R.string.myevents_cancel_dialog_title),
               style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold))
         },
         text = {
           Text(
-              text =
-                  "Are you sure you want to remove this ticket from the marketplace? You can list it again later.",
+              text = stringResource(R.string.myevents_cancel_dialog_message),
               style = MaterialTheme.typography.bodyMedium)
         },
         confirmButton = {
@@ -635,11 +635,15 @@ private fun ListedTicketCard(
                 showCancelDialog = false
                 onCancelListing()
               }) {
-                Text(text = "Cancel Listing", color = colorScheme.error)
+                Text(
+                    text = stringResource(R.string.myevents_cancel_dialog_confirm),
+                    color = colorScheme.error)
               }
         },
         dismissButton = {
-          TextButton(onClick = { showCancelDialog = false }) { Text(text = "Keep Listed") }
+          TextButton(onClick = { showCancelDialog = false }) {
+            Text(text = stringResource(R.string.myevents_cancel_dialog_dismiss))
+          }
         },
         containerColor = colorScheme.surface)
   }
@@ -655,9 +659,12 @@ private fun ModernSubTabs(
 ) {
   val tabs =
       listOf(
-          TicketTab.CURRENT to "Current",
-          TicketTab.EXPIRED to "Expired",
-          TicketTab.LISTED to if (listedCount > 0) "Listed ($listedCount)" else "Listed")
+          TicketTab.CURRENT to stringResource(R.string.myevents_subtab_current),
+          TicketTab.EXPIRED to stringResource(R.string.myevents_subtab_expired),
+          TicketTab.LISTED to
+              if (listedCount > 0)
+                  stringResource(R.string.myevents_subtab_listed_with_count, listedCount)
+              else stringResource(R.string.myevents_subtab_listed))
 
   Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
     tabs.forEach { (tab, title) ->
@@ -779,7 +786,7 @@ private fun MarketTicketListInline(
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically) {
           Text(
-              text = "Available Tickets",
+              text = stringResource(R.string.market_tickets_title),
               style =
                   MaterialTheme.typography.titleMedium.copy(
                       fontFamily = MarcFontFamily, fontWeight = FontWeight.Bold),
@@ -798,11 +805,12 @@ private fun MarketTicketListInline(
                 modifier = Modifier.testTag(MyEventsTestTags.SELL_TICKET_BUTTON)) {
                   Icon(
                       imageVector = Icons.Default.Add,
-                      contentDescription = "Sell",
+                      contentDescription =
+                          stringResource(R.string.market_tickets_sell_icon_description),
                       modifier = Modifier.size(18.dp))
                   Spacer(modifier = Modifier.size(4.dp))
                   Text(
-                      text = "Sell Ticket",
+                      text = stringResource(R.string.market_tickets_sell_button),
                       style =
                           MaterialTheme.typography.bodySmall.copy(fontWeight = FontWeight.SemiBold))
                 }
@@ -821,8 +829,8 @@ private fun MarketTicketListInline(
       }
       marketTickets.isEmpty() -> {
         EmptyState(
-            title = "No Tickets Available",
-            message = "There are no tickets listed for sale at the moment.",
+            title = stringResource(R.string.myevents_market_no_tickets_title),
+            message = stringResource(R.string.myevents_market_no_tickets_message),
             modifier = Modifier.padding(top = 32.dp, bottom = 32.dp),
             testTag = MyEventsTestTags.MARKET_EMPTY_STATE)
       }

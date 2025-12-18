@@ -28,6 +28,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -54,7 +55,7 @@ fun HotEventsSection(
   Column(modifier = modifier.fillMaxWidth()) {
     // Section title
     Text(
-        text = "Hot Events",
+        text = stringResource(R.string.hot_events_title),
         modifier =
             Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 .testTag(MyEventsTestTags.HOT_EVENTS_TITLE),
@@ -83,7 +84,7 @@ fun HotEventsSection(
                     .testTag(MyEventsTestTags.HOT_EVENTS_EMPTY),
             contentAlignment = Alignment.Center) {
               Text(
-                  text = "No hot events at the moment",
+                  text = stringResource(R.string.hot_events_empty),
                   style = MaterialTheme.typography.bodyMedium,
                   color = colorScheme.onSurface)
             }
@@ -131,7 +132,8 @@ private fun HotEventCard(event: Event, onClick: () -> Unit, modifier: Modifier =
               if (event.imageUrl.isNotEmpty()) {
                 AsyncImage(
                     model = event.imageUrl,
-                    contentDescription = "Event image for ${event.title}",
+                    contentDescription =
+                        stringResource(R.string.hot_events_image_description, event.title),
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop,
                     placeholder = painterResource(id = R.drawable.image_fallback),
@@ -139,7 +141,8 @@ private fun HotEventCard(event: Event, onClick: () -> Unit, modifier: Modifier =
               } else {
                 Image(
                     painter = painterResource(id = R.drawable.image_fallback),
-                    contentDescription = "Default event image",
+                    contentDescription =
+                        stringResource(R.string.hot_events_default_image_description),
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop)
               }

@@ -1,10 +1,13 @@
 package ch.onepass.onepass.ui.myevents
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import org.junit.Rule
 import org.junit.Test
@@ -16,6 +19,9 @@ import org.junit.Test
 class YourTicketsSectionTest {
 
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   private fun createTestTicket(
       ticketId: String = "1",
@@ -86,7 +92,9 @@ class YourTicketsSectionTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_EXPIRED).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Expired").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.your_tickets_tab_expired))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -105,7 +113,9 @@ class YourTicketsSectionTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_LISTED).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Listed").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.your_tickets_tab_listed))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -181,7 +191,9 @@ class YourTicketsSectionTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.EMPTY_STATE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("No Current Tickets").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.your_tickets_empty_current_title))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -200,7 +212,9 @@ class YourTicketsSectionTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.EMPTY_STATE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("No Expired Tickets").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.your_tickets_empty_expired_title))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -219,7 +233,9 @@ class YourTicketsSectionTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.EMPTY_STATE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("No Listed Tickets").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.your_tickets_empty_listed_title))
+        .assertIsDisplayed()
   }
 
   @Test

@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -325,7 +326,7 @@ private fun LazyListScope.SearchContent(
     searchState?.error != null -> {
       item {
         Text(
-            text = "Error: ${searchState.error}",
+            text = stringResource(R.string.feed_search_error, searchState.error),
             color = colorScheme.error,
             modifier = Modifier.padding(16.dp).testTag(FeedScreenTestTags.ERROR_MESSAGE))
       }
@@ -394,7 +395,7 @@ private fun LazyListScope.SearchResultsContent(
   if (searchState?.users.isNullOrEmpty() &&
       searchState?.events.isNullOrEmpty() &&
       searchState?.organizations.isNullOrEmpty()) {
-    item { Text("No results found", modifier = Modifier.padding(16.dp)) }
+    item { Text(stringResource(R.string.feed_no_results), modifier = Modifier.padding(16.dp)) }
   }
 }
 
@@ -422,10 +423,14 @@ private fun LazyListScope.FeedContent(
     !uiState.isLoading && !uiState.isRefreshing && uiState.events.isEmpty() -> {
       item {
         EmptyState(
-            title = if (uiState.isShowingFavorites) "No Favorites" else "No Events Found",
+            title =
+                stringResource(
+                    if (uiState.isShowingFavorites) R.string.feed_empty_favorites_title
+                    else R.string.feed_empty_title),
             message =
-                if (uiState.isShowingFavorites) "You haven't liked any events yet."
-                else "Check back later for new events in your area!",
+                stringResource(
+                    if (uiState.isShowingFavorites) R.string.feed_empty_favorites_message
+                    else R.string.feed_empty_message),
             testTag = FeedScreenTestTags.EMPTY_STATE)
       }
     }
@@ -551,7 +556,7 @@ private fun FeedTopBar(
           OutlinedTextField(
               value = searchQuery,
               onValueChange = onSearchChanged,
-              placeholder = { Text("Search...") },
+              placeholder = { Text(stringResource(R.string.feed_search_placeholder)) },
               singleLine = true,
               modifier = Modifier.weight(1f).testTag(FeedScreenTestTags.SEARCH_TEXT_FIELD),
               shape = RoundedCornerShape(10.dp),
@@ -574,7 +579,7 @@ private fun FeedTopBar(
                           imageVector =
                               if (isShowingFavorites) Icons.Filled.Favorite
                               else Icons.Outlined.FavoriteBorder,
-                          contentDescription = "Favorites",
+                          contentDescription = stringResource(R.string.feed_favorites_description),
                           tint = colorScheme.onBackground,
                           modifier = Modifier.size(24.dp))
                     }
@@ -585,7 +590,8 @@ private fun FeedTopBar(
                         Modifier.size(48.dp).testTag(FeedScreenTestTags.NOTIFICATION_BUTTON)) {
                       Icon(
                           imageVector = Icons.Default.Notifications,
-                          contentDescription = "Notifications",
+                          contentDescription =
+                              stringResource(R.string.feed_notifications_description),
                           tint = colorScheme.onBackground,
                           modifier = Modifier.size(24.dp))
                     }
@@ -595,7 +601,7 @@ private fun FeedTopBar(
                     modifier = Modifier.size(48.dp).testTag(FeedScreenTestTags.FILTER_BUTTON)) {
                       Icon(
                           painter = painterResource(id = R.drawable.filter_icon),
-                          contentDescription = "Filter events",
+                          contentDescription = stringResource(R.string.feed_filter_description),
                           tint = colorScheme.onBackground,
                           modifier = Modifier.size(24.dp))
                     }

@@ -40,6 +40,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
@@ -99,7 +100,7 @@ fun TimePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
                     modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally) {
                       Text(
-                          text = "Select Time",
+                          text = stringResource(R.string.time_picker_title),
                           style =
                               MaterialTheme.typography.titleLarge.copy(
                                   color = colorScheme.onBackground),
@@ -130,7 +131,7 @@ fun TimePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
                           verticalAlignment = Alignment.CenterVertically) {
                             TextButton(onClick = { showDialog = false }) {
                               Text(
-                                  "Cancel",
+                                  stringResource(R.string.dialog_cancel),
                                   style =
                                       MaterialTheme.typography.labelLarge.copy(
                                           color = colorScheme.onBackground))
@@ -150,7 +151,9 @@ fun TimePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
                                 colors =
                                     ButtonDefaults.buttonColors(
                                         containerColor = colorScheme.primary)) {
-                                  Text("OK", style = MaterialTheme.typography.labelLarge)
+                                  Text(
+                                      stringResource(R.string.dialog_ok),
+                                      style = MaterialTheme.typography.labelLarge)
                                 }
                           }
                     }
@@ -192,11 +195,11 @@ fun DatePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically) {
               Text(
-                  text = value.ifEmpty { "Select date" },
+                  text = value.ifEmpty { stringResource(R.string.date_picker_placeholder) },
                   style = MaterialTheme.typography.bodyMedium.copy(color = colorScheme.onSurface))
               Icon(
                   imageVector = ImageVector.vectorResource(R.drawable.choosedateicon),
-                  contentDescription = "Select date",
+                  contentDescription = stringResource(R.string.date_picker_icon_description),
                   tint = colorScheme.onSurface,
                   modifier = Modifier.size(20.dp))
             }
@@ -251,13 +254,14 @@ fun DatePickerField(value: String, onValueChange: (String) -> Unit, modifier: Mo
                 showDialog = false
               },
               colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary)) {
-                Text("OK", style = MaterialTheme.typography.labelLarge)
+                Text(
+                    stringResource(R.string.dialog_ok), style = MaterialTheme.typography.labelLarge)
               }
         },
         dismissButton = {
           TextButton(onClick = { showDialog = false }) {
             Text(
-                "Cancel",
+                stringResource(R.string.dialog_cancel),
                 style = MaterialTheme.typography.labelLarge.copy(color = colorScheme.onBackground))
           }
         },

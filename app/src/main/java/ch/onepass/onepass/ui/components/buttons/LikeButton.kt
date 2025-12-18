@@ -21,7 +21,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.theme.HeartLiked
 
 /**
@@ -53,7 +55,9 @@ fun LikeButton(isLiked: Boolean, onLikeToggle: (Boolean) -> Unit, modifier: Modi
       contentAlignment = Alignment.Center) {
         Icon(
             imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-            contentDescription = if (isLiked) "Unlike" else "Like",
+            contentDescription =
+                if (isLiked) stringResource(R.string.button_unlike_description)
+                else stringResource(R.string.button_like_description),
             tint = if (isLiked) HeartLiked else colorScheme.onBackground,
             modifier = Modifier.size(24.dp).scale(scale))
       }

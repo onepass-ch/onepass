@@ -19,7 +19,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
 import kotlinx.coroutines.launch
@@ -90,7 +92,7 @@ fun EditOrganizationScreen(
 
   BackNavigationScaffold(
       TopBarConfig(
-          title = "Edit Organization",
+          title = stringResource(R.string.edit_org_screen_title),
       ),
       onBack = onNavigateBack,
       containerColor = colorScheme.background,
@@ -118,7 +120,7 @@ fun EditOrganizationScreen(
               val data = OrganizationEditorData.fromForm(organizationId, formState)
               viewModel.updateOrganization(data, formViewModel)
             },
-            submitText = "Update",
+            submitText = stringResource(R.string.edit_org_submit_button),
             viewModel = formViewModel,
             modifier = Modifier.fillMaxSize())
       }

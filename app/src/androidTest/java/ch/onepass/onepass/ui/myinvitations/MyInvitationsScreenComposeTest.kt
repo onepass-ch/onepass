@@ -1,9 +1,12 @@
 package ch.onepass.onepass.ui.myinvitations
 
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.organization.Organization
 import ch.onepass.onepass.model.organization.OrganizationRepository
 import ch.onepass.onepass.ui.organization.MockOrganizationRepository
@@ -30,6 +33,9 @@ import org.junit.runner.RunWith
 class MyInvitationsScreenComposeTest {
 
   @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   /**
    * Extended MockOrganizationRepository that supports multiple organizations via a Map.
@@ -128,7 +134,9 @@ class MyInvitationsScreenComposeTest {
         organizationRepository = TestOrganizationRepository())
 
     composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.ERROR_MESSAGE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Oops!").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.error_state_title))
+        .assertIsDisplayed()
     composeTestRule.onNodeWithText("Failed to load invitations").assertIsDisplayed()
     composeTestRule
         .onNodeWithTag("${MyInvitationsScreenTestTags.ERROR_MESSAGE}_retry_button")
@@ -167,9 +175,11 @@ class MyInvitationsScreenComposeTest {
     setContent(state = state)
 
     composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.EMPTY_STATE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("No Invitations").assertIsDisplayed()
     composeTestRule
-        .onNodeWithText("You don't have any pending invitations at the moment.")
+        .onNodeWithText(context.getString(R.string.invitations_empty_title))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.invitations_empty_message))
         .assertIsDisplayed()
   }
 
@@ -236,7 +246,9 @@ class MyInvitationsScreenComposeTest {
     composeTestRule.waitForIdle()
 
     composeTestRule.onNodeWithTag(MyInvitationsScreenTestTags.INVITATION_ROLE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Role: STAFF").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.invitations_role_label, "STAFF"))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -257,8 +269,12 @@ class MyInvitationsScreenComposeTest {
     composeTestRule
         .onNodeWithTag(MyInvitationsScreenTestTags.getRejectButtonTag("invite-1"))
         .assertIsDisplayed()
-    composeTestRule.onNodeWithText("Accept").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Reject").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.invitations_accept_button))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.invitations_reject_button))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -378,7 +394,9 @@ class MyInvitationsScreenComposeTest {
 
     setContent(state = state)
 
-    composeTestRule.onNodeWithText("My Invitations").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.invitations_screen_title))
+        .assertIsDisplayed()
   }
 
   // ========================================
@@ -393,7 +411,9 @@ class MyInvitationsScreenComposeTest {
     var navigateBackCalled = false
     setContent(state = state, onNavigateBack = { navigateBackCalled = true })
 
-    composeTestRule.onNodeWithContentDescription("Back").performClick()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.navigation_back_description))
+        .performClick()
     composeTestRule.waitForIdle()
 
     assert(navigateBackCalled) { "Navigate back callback should be called" }
@@ -586,9 +606,15 @@ class MyInvitationsScreenComposeTest {
     composeTestRule.waitForIdle()
 
     // Verify all roles are displayed
-    composeTestRule.onNodeWithText("Role: OWNER").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Role: STAFF").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Role: MEMBER").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.invitations_role_label, "OWNER"))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.invitations_role_label, "STAFF"))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.invitations_role_label, "MEMBER"))
+        .assertIsDisplayed()
   }
 
   // ========================================
@@ -670,9 +696,15 @@ class MyInvitationsScreenComposeTest {
     composeTestRule.onNodeWithText("Member Organization").assertIsDisplayed()
 
     // Verify all roles are displayed
-    composeTestRule.onNodeWithText("Role: OWNER").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Role: STAFF").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Role: MEMBER").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.invitations_role_label, "OWNER"))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.invitations_role_label, "STAFF"))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.invitations_role_label, "MEMBER"))
+        .assertIsDisplayed()
 
     // Accept first invitation
     composeTestRule

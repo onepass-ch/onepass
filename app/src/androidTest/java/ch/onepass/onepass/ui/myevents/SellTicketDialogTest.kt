@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.myevents
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsEnabled
 import androidx.compose.ui.test.assertIsNotEnabled
@@ -9,6 +10,8 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performTextInput
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.ticket.Ticket
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import org.junit.Rule
@@ -21,6 +24,9 @@ import org.junit.Test
 class SellTicketDialogTest {
 
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   private fun createTestSellableTicket(
       ticketId: String = "1",
@@ -94,7 +100,9 @@ class SellTicketDialogTest {
     }
 
     composeTestRule.onNodeWithTag(MyEventsTestTags.SELL_DIALOG_TITLE).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Sell Your Ticket").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.sell_dialog_title))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -155,7 +163,9 @@ class SellTicketDialogTest {
       }
     }
 
-    composeTestRule.onNodeWithText("No tickets available to sell").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.sell_dialog_no_tickets))
+        .assertIsDisplayed()
   }
 
   @Test

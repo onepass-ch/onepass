@@ -1,10 +1,13 @@
 package ch.onepass.onepass.ui.profile
 
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import org.junit.Rule
@@ -17,6 +20,9 @@ import org.junit.Test
 class ProfileScreenComposeTest {
 
   @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   /** Simple fake ViewModel that overrides only the state. */
   private class FakeProfileViewModel(state: ProfileUiState) : ProfileViewModel() {
@@ -76,7 +82,9 @@ class ProfileScreenComposeTest {
 
     // Sanity check for text content
     compose.onNodeWithText("WILL SMITH").assertExists()
-    compose.onNodeWithText("ORGANIZER SETTINGS").assertExists()
+    compose
+        .onNodeWithText(context.getString(R.string.profile_organizer_section_title))
+        .assertExists()
   }
 
   @Test

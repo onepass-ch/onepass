@@ -17,7 +17,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.lifecycle.viewmodel.compose.viewModel
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.navigation.BackNavigationScaffold
 import ch.onepass.onepass.ui.navigation.TopBarConfig
 
@@ -65,7 +67,7 @@ fun CreateOrganizationScreen(
 
   BackNavigationScaffold(
       TopBarConfig(
-          title = "Create Organization",
+          title = stringResource(R.string.create_org_screen_title),
       ),
       onBack = onNavigateBack,
       containerColor = colorScheme.background,
@@ -92,7 +94,7 @@ fun CreateOrganizationScreen(
                     onPrefixClick = { prefixDropdownExpanded = true },
                     onDropdownDismiss = { prefixDropdownExpanded = false },
                     onSubmit = { viewModel.createOrganization(ownerId) },
-                    submitText = "Submit",
+                    submitText = stringResource(R.string.create_org_submit_button),
                     viewModel = viewModel,
                     modifier = Modifier.fillMaxSize())
               }

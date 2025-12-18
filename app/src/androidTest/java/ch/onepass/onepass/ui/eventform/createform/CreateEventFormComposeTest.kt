@@ -1,9 +1,12 @@
 package ch.onepass.onepass.ui.eventform.createform
 
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.ui.eventform.EventFormViewModel
 import ch.onepass.onepass.ui.eventform.EventFormViewModel.ValidationError
@@ -24,6 +27,9 @@ class CreateEventFormComposeTest {
   private lateinit var mockRepository: EventRepository
   private lateinit var viewModel: CreateEventFormViewModel
 
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
+
   @Before
   fun setUp() {
     mockRepository = mockk(relaxed = true)
@@ -35,11 +41,24 @@ class CreateEventFormComposeTest {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Check labels
-    composeTestRule.onNodeWithText("Title*").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Description*").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Date & time*").performScrollTo().assertIsDisplayed()
-    composeTestRule.onNodeWithText("Location*").performScrollTo().assertIsDisplayed()
-    composeTestRule.onNodeWithText("Tickets*").performScrollTo().assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.event_form_title_label))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.event_form_description_label))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.event_form_date_time_label))
+        .performScrollTo()
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.form_location_label))
+        .performScrollTo()
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.event_form_tickets_label))
+        .performScrollTo()
+        .assertIsDisplayed()
 
     // Use stable test tags for inputs (less brittle than placeholder text)
     composeTestRule.onNodeWithTag("title_input_field").assertExists()
@@ -50,7 +69,7 @@ class CreateEventFormComposeTest {
 
     // Create button visible and clickable
     composeTestRule
-        .onNodeWithText("Create event")
+        .onNodeWithText(context.getString(R.string.create_event_button))
         .performScrollTo()
         .assertIsDisplayed()
         .assertHasClickAction()
@@ -121,16 +140,18 @@ class CreateEventFormComposeTest {
     assert(formState.capacity == "50")
   }
 
-  // Dialog, validation and other tests unchanged but use tags where possible.
   @Test
   fun datePickerDialog_canBeCancelled() {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
-    composeTestRule.onNodeWithText("Select date").performScrollTo().performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.date_picker_placeholder))
+        .performScrollTo()
+        .performClick()
 
     composeTestRule.waitForIdle()
 
-    composeTestRule.onNodeWithText("Cancel").performClick()
+    composeTestRule.onNodeWithText(context.getString(R.string.dialog_cancel)).performClick()
 
     composeTestRule.waitForIdle()
     assert(viewModel.formState.value.date.isEmpty())
@@ -141,12 +162,17 @@ class CreateEventFormComposeTest {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Click create button without filling fields
-    composeTestRule.onNodeWithText("Create event").performScrollTo().performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.create_event_button))
+        .performScrollTo()
+        .performClick()
 
     composeTestRule.waitForIdle()
 
     // Scroll to top to see error messages
-    composeTestRule.onNodeWithText("Title*").performScrollTo()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.event_form_title_label))
+        .performScrollTo()
 
     composeTestRule.onNodeWithText(ValidationError.TITLE.message).assertIsDisplayed()
   }
@@ -157,7 +183,7 @@ class CreateEventFormComposeTest {
 
     // Upload image button should be visible
     composeTestRule
-        .onNodeWithText("Event Image*", substring = true)
+        .onNodeWithText(context.getString(R.string.event_form_image_label), substring = true)
         .performScrollTo()
         .assertIsDisplayed()
   }
@@ -167,7 +193,7 @@ class CreateEventFormComposeTest {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Image selection indicator should not be shown initially
-    composeTestRule.onNodeWithText("image(s) selected", substring = true).assertDoesNotExist()
+    composeTestRule.onNodeWithText("image selected", substring = true).assertDoesNotExist()
   }
 
   @Test
@@ -180,8 +206,10 @@ class CreateEventFormComposeTest {
 
     composeTestRule.waitForIdle()
 
-    // Image selection indicator should now be shown
-    composeTestRule.onNodeWithText("1 image(s) selected").performScrollTo().assertIsDisplayed()
+    // Image selection indicator should now be shown (singular form)
+    val expectedText =
+        context.resources.getQuantityString(R.plurals.event_form_images_selected, 1, 1)
+    composeTestRule.onNodeWithText(expectedText).performScrollTo().assertIsDisplayed()
   }
 
   @Test
@@ -198,8 +226,10 @@ class CreateEventFormComposeTest {
 
     composeTestRule.waitForIdle()
 
-    // Image selection indicator should show correct count
-    composeTestRule.onNodeWithText("3 image(s) selected").performScrollTo().assertIsDisplayed()
+    // Image selection indicator should show correct count (plural form)
+    val expectedText =
+        context.resources.getQuantityString(R.plurals.event_form_images_selected, 3, 3)
+    composeTestRule.onNodeWithText(expectedText).performScrollTo().assertIsDisplayed()
   }
 
   @Test
@@ -211,15 +241,17 @@ class CreateEventFormComposeTest {
     viewModel.selectImage(testUri)
     composeTestRule.waitForIdle()
 
-    // Image indicator should be visible
-    composeTestRule.onNodeWithText("1 image(s) selected").performScrollTo().assertIsDisplayed()
+    // Image indicator should be visible (singular form)
+    val expectedText =
+        context.resources.getQuantityString(R.plurals.event_form_images_selected, 1, 1)
+    composeTestRule.onNodeWithText(expectedText).performScrollTo().assertIsDisplayed()
 
     // Remove the image
     viewModel.removeImage(testUri)
     composeTestRule.waitForIdle()
 
     // Image indicator should no longer be visible
-    composeTestRule.onNodeWithText("image(s) selected", substring = true).assertDoesNotExist()
+    composeTestRule.onNodeWithText("image selected", substring = true).assertDoesNotExist()
   }
 
   @Test
@@ -227,12 +259,15 @@ class CreateEventFormComposeTest {
     composeTestRule.setContent { CreateEventForm(viewModel = viewModel) }
 
     // Scroll to bottom where tags are
-    composeTestRule.onNodeWithText("Tags").performScrollTo().assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.event_form_tags_label))
+        .performScrollTo()
+        .assertIsDisplayed()
 
-    // Check for a specific category header
+    // Check for a specific category header (hardcoded - not in strings.xml)
     composeTestRule.onNodeWithText("Theme").performScrollTo().assertIsDisplayed()
 
-    // Check for a specific tag chip
+    // Check for a specific tag chip (hardcoded - not in strings.xml)
     composeTestRule.onNodeWithText("Technology").performScrollTo().assertIsDisplayed()
 
     // Perform a click
@@ -255,11 +290,17 @@ class CreateEventFormComposeTest {
     composeTestRule.setContent { CreateEventForm(viewModel = mockVm) }
 
     // Check button is disabled
-    composeTestRule.onNodeWithText("Create event").performScrollTo().assertIsNotEnabled()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.create_event_button))
+        .performScrollTo()
+        .assertIsNotEnabled()
 
     // Switch to Success
     mockStateFlow.value = CreateEventUiState.Success("id")
     composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("Create event").performScrollTo().assertIsNotEnabled()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.create_event_button))
+        .performScrollTo()
+        .assertIsNotEnabled()
   }
 }

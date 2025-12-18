@@ -1,10 +1,13 @@
 package ch.onepass.onepass.ui.notification
 
+import android.content.Context
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.notification.Notification
 import ch.onepass.onepass.ui.theme.OnePassTheme
 import com.google.firebase.Timestamp
@@ -15,6 +18,9 @@ import org.junit.Test
 class NotificationItemTest {
 
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   @Test
   fun notificationItem_displaysCorrectContent() {
@@ -63,7 +69,9 @@ class NotificationItemTest {
     assert(clicked)
 
     // Click delete button
-    composeTestRule.onNodeWithContentDescription("Delete notification").performClick()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.notifications_delete_description))
+        .performClick()
     assert(deleted)
   }
 }

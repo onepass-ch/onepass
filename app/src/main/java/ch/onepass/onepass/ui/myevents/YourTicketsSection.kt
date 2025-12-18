@@ -22,8 +22,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import ch.onepass.onepass.R
 import ch.onepass.onepass.ui.components.common.EmptyState
 
 /**
@@ -79,10 +81,14 @@ fun YourTicketsSection(
       val (title, message) =
           when (selectedTab) {
             TicketTab.CURRENT ->
-                "No Current Tickets" to
-                    "You don't have any active tickets. Browse events to get started!"
-            TicketTab.EXPIRED -> "No Expired Tickets" to "You don't have any expired tickets yet."
-            TicketTab.LISTED -> "No Listed Tickets" to "You haven't listed any tickets for sale."
+                stringResource(R.string.your_tickets_empty_current_title) to
+                    stringResource(R.string.your_tickets_empty_current_message)
+            TicketTab.EXPIRED ->
+                stringResource(R.string.your_tickets_empty_expired_title) to
+                    stringResource(R.string.your_tickets_empty_expired_message)
+            TicketTab.LISTED ->
+                stringResource(R.string.your_tickets_empty_listed_title) to
+                    stringResource(R.string.your_tickets_empty_listed_message)
           }
       EmptyState(
           title = title,
@@ -122,9 +128,9 @@ private fun ModernPillTabs(
 ) {
   val tabs =
       listOf(
-          TicketTab.CURRENT to "Current",
-          TicketTab.EXPIRED to "Expired",
-          TicketTab.LISTED to "Listed")
+          TicketTab.CURRENT to stringResource(R.string.your_tickets_tab_current),
+          TicketTab.EXPIRED to stringResource(R.string.your_tickets_tab_expired),
+          TicketTab.LISTED to stringResource(R.string.your_tickets_tab_listed))
 
   Row(modifier = modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
     tabs.forEach { (tab, title) ->

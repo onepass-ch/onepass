@@ -1,5 +1,6 @@
 package ch.onepass.onepass.ui.event
 
+import android.content.Context
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.MutableState
@@ -11,7 +12,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.Event
 import ch.onepass.onepass.model.event.PricingTier
 import ch.onepass.onepass.model.map.Location
@@ -26,6 +29,9 @@ import org.junit.runner.RunWith
 class EventCardTest {
 
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   private fun createEvent(
       price: UInt,
@@ -55,7 +61,9 @@ class EventCardTest {
     composeTestRule.onNodeWithText("Test Location").assertExists()
     composeTestRule.onNodeWithText("CHF 25").assertExists()
     composeTestRule.onNodeWithTag("event_card_image", useUnmergedTree = true).assertExists()
-    composeTestRule.onNodeWithContentDescription("Like").assertExists()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.button_like_description))
+        .assertExists()
   }
 
   @Test
@@ -71,11 +79,21 @@ class EventCardTest {
       }
     }
 
-    composeTestRule.onNodeWithContentDescription("Like").assertIsDisplayed()
-    composeTestRule.onNodeWithContentDescription("Like").performClick()
-    composeTestRule.onNodeWithContentDescription("Unlike").assertIsDisplayed()
-    composeTestRule.onNodeWithContentDescription("Unlike").performClick()
-    composeTestRule.onNodeWithContentDescription("Like").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.button_like_description))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.button_like_description))
+        .performClick()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.button_unlike_description))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.button_unlike_description))
+        .performClick()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.button_like_description))
+        .assertIsDisplayed()
   }
 
   data class TextTestCase(val title: String, val location: String, val organizer: String)
@@ -131,14 +149,23 @@ class EventCardTest {
   @Test
   fun eventCard_handlesAllEmpty() {
     composeTestRule.setContent { MaterialTheme { EventCard(event = createEvent(0u, "", "", "")) } }
-    composeTestRule.onNodeWithText("FREE").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.event_detail_price_free))
+        .assertIsDisplayed()
     composeTestRule.onNodeWithTag("event_card_image", useUnmergedTree = true).assertExists()
-    composeTestRule.onNodeWithContentDescription("Like").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithContentDescription(context.getString(R.string.button_like_description))
+        .assertIsDisplayed()
   }
 
   @Test
   fun eventCard_handlesVariousPriceFormats() {
-    val prices = mapOf(0u to "FREE", 1u to "CHF 1", 100u to "CHF 100", 9999u to "CHF 10.00K")
+    val prices =
+        mapOf(
+            0u to context.getString(R.string.event_detail_price_free),
+            1u to "CHF 1",
+            100u to "CHF 100",
+            9999u to "CHF 10.00K")
     lateinit var currentEvent: MutableState<Event>
 
     composeTestRule.setContent {
@@ -185,35 +212,38 @@ class EventCardTest {
       }
     }
 
+    val likeDesc = context.getString(R.string.button_like_description)
+    val unlikeDesc = context.getString(R.string.button_unlike_description)
+
     // Assert both cards are displayed with "Like"
     composeTestRule
         .onNodeWithTag("card1")
         .onChildren()
-        .filterToOne(hasContentDescription("Like"))
+        .filterToOne(hasContentDescription(likeDesc))
         .assertIsDisplayed()
     composeTestRule
         .onNodeWithTag("card2")
         .onChildren()
-        .filterToOne(hasContentDescription("Like"))
+        .filterToOne(hasContentDescription(likeDesc))
         .assertIsDisplayed()
 
     // Click like on the first card
     composeTestRule
         .onNodeWithTag("card1")
         .onChildren()
-        .filterToOne(hasContentDescription("Like"))
+        .filterToOne(hasContentDescription(likeDesc))
         .performClick()
 
     // Assert first card's icon changes to "Unlike", and second remains "Like"
     composeTestRule
         .onNodeWithTag("card1")
         .onChildren()
-        .filterToOne(hasContentDescription("Unlike"))
+        .filterToOne(hasContentDescription(unlikeDesc))
         .assertIsDisplayed()
     composeTestRule
         .onNodeWithTag("card2")
         .onChildren()
-        .filterToOne(hasContentDescription("Like"))
+        .filterToOne(hasContentDescription(likeDesc))
         .assertIsDisplayed()
   }
 
@@ -249,8 +279,9 @@ class EventCardTest {
     composeTestRule.setContent { MaterialTheme { EventCard(event = eventWithImage) } }
 
     // AsyncImage should have content description mentioning the event title
+    val expectedDesc = context.getString(R.string.event_card_image_description, "Test Event")
     composeTestRule
-        .onNodeWithContentDescription("Event image for Test Event", useUnmergedTree = true)
+        .onNodeWithContentDescription(expectedDesc, useUnmergedTree = true)
         .assertExists()
   }
 

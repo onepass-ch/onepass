@@ -24,6 +24,7 @@ class OrganizationFeedTest {
   private lateinit var mockMembershipRepository: MembershipRepository
   private lateinit var viewModel: OrganizationFeedViewModel
   private val testUserId = "testUser123"
+
   private val testOrganizations =
       listOf(
           Organization(

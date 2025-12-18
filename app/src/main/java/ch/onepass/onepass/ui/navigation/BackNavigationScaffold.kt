@@ -19,6 +19,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
+import ch.onepass.onepass.R
 
 /** Configuration data class for BackNavigationScaffold */
 data class TopBarConfig(
@@ -97,7 +99,7 @@ fun BackNavigationScaffold(
                         topBarConfig.backButtonTestTag?.let { Modifier.testTag(it) } ?: Modifier) {
                       Icon(
                           imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                          contentDescription = "Back",
+                          contentDescription = stringResource(R.string.navigation_back_description),
                           tint = colorScheme.onBackground)
                     }
               },

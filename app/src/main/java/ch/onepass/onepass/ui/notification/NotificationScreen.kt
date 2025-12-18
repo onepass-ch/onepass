@@ -21,10 +21,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.notification.Notification
 import ch.onepass.onepass.model.notification.NotificationType
 import ch.onepass.onepass.ui.components.common.EmptyState
@@ -49,19 +51,22 @@ fun NotificationsScreen(
   Scaffold(
       topBar = {
         TopAppBar(
-            title = { Text("Notifications") },
+            title = { Text(stringResource(R.string.notifications_screen_title)) },
             navigationIcon = {
               IconButton(
                   onClick = onNavigateBack,
                   modifier = Modifier.testTag("notification_back_button")) {
                     Icon(
                         imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back")
+                        contentDescription =
+                            stringResource(R.string.notifications_back_description))
                   }
             },
             actions = {
               if (uiState.unreadCount > 0) {
-                TextButton(onClick = { viewModel.markAllAsRead() }) { Text("Mark all as read") }
+                TextButton(onClick = { viewModel.markAllAsRead() }) {
+                  Text(stringResource(R.string.notifications_mark_all_read))
+                }
               }
             })
       }) { paddingValues ->
@@ -74,8 +79,8 @@ fun NotificationsScreen(
             }
             uiState.notifications.isEmpty() -> {
               EmptyState(
-                  title = "No notifications yet",
-                  message = "We'll let you know when something updates!",
+                  title = stringResource(R.string.notifications_empty_title),
+                  message = stringResource(R.string.notifications_empty_message),
                   modifier = Modifier.align(androidx.compose.ui.Alignment.Center),
                   testTag = "notification_empty")
             }

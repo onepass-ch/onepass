@@ -29,6 +29,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -148,7 +149,9 @@ fun MapScreen(
     ) {
       Box(contentAlignment = Alignment.Center) {
         // The main Icon
-        Icon(imageVector = Icons.Filled.LocationOn, contentDescription = "Recenter")
+        Icon(
+            imageVector = Icons.Filled.LocationOn,
+            contentDescription = stringResource(R.string.map_recenter_description))
 
         // The Tracking Indicator
         if (uiState.isCameraTracking) {
@@ -183,7 +186,7 @@ fun MapScreen(
     ) {
       Icon(
           painter = painterResource(id = R.drawable.filter_icon),
-          contentDescription = "Filter events",
+          contentDescription = stringResource(R.string.map_filter_description),
           modifier = Modifier.size(24.dp).align(Alignment.Center))
     }
 

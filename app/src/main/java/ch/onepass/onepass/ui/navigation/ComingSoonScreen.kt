@@ -51,7 +51,7 @@ fun ComingSoonScreen(onBack: () -> Unit) {
                   modifier = Modifier.size(240.dp).padding(bottom = 32.dp))
               // Title text
               Text(
-                  text = "Coming Soon",
+                  text = stringResource(R.string.coming_soon_title),
                   style =
                       MaterialTheme.typography.headlineMedium.copy(
                           fontSize = 28.sp, fontWeight = FontWeight.Bold),
@@ -61,7 +61,7 @@ fun ComingSoonScreen(onBack: () -> Unit) {
 
               // Subtitle text
               Text(
-                  text = "This feature isn’t ready yet.\nStay tuned for updates!",
+                  text = stringResource(R.string.coming_soon_message),
                   style = MaterialTheme.typography.bodyLarge,
                   color = colorScheme.onBackground.copy(alpha = 0.75f),
                   lineHeight = 22.sp,
@@ -78,7 +78,9 @@ fun ComingSoonScreen(onBack: () -> Unit) {
                           containerColor = colorScheme.primary,
                           contentColor = colorScheme.onBackground),
                   modifier = Modifier.fillMaxWidth(0.6f).height(50.dp)) {
-                    Text("Go Back", style = MaterialTheme.typography.bodyLarge)
+                    Text(
+                        stringResource(R.string.coming_soon_button),
+                        style = MaterialTheme.typography.bodyLarge)
                   }
             }
       }

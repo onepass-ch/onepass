@@ -31,6 +31,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -76,7 +77,8 @@ fun MarketTicketCard(
                     if (marketTicket.eventImageUrl.isNotEmpty()) {
                       AsyncImage(
                           model = marketTicket.eventImageUrl,
-                          contentDescription = "Event image",
+                          contentDescription =
+                              stringResource(R.string.market_ticket_event_image_description),
                           modifier = Modifier.fillMaxSize(),
                           contentScale = ContentScale.Crop,
                           placeholder = painterResource(id = R.drawable.image_fallback),
@@ -84,7 +86,8 @@ fun MarketTicketCard(
                     } else {
                       Image(
                           painter = painterResource(id = R.drawable.image_fallback),
-                          contentDescription = "Default event image",
+                          contentDescription =
+                              stringResource(R.string.market_ticket_default_image_description),
                           modifier = Modifier.fillMaxSize(),
                           contentScale = ContentScale.Crop)
                     }
@@ -118,7 +121,8 @@ fun MarketTicketCard(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                       Icon(
                           imageVector = Icons.Default.LocationOn,
-                          contentDescription = "Location",
+                          contentDescription =
+                              stringResource(R.string.market_ticket_location_icon_description),
                           tint = colorScheme.onSurface,
                           modifier = Modifier.size(14.dp))
                       Spacer(modifier = Modifier.width(4.dp))
@@ -155,7 +159,10 @@ fun MarketTicketCard(
                             if (marketTicket.originalPrice != marketTicket.sellerPrice) {
                               Text(
                                   text =
-                                      "Original: ${marketTicket.currency} ${formatPriceCompact(marketTicket.originalPrice)}",
+                                      stringResource(
+                                          R.string.market_ticket_original_price_label,
+                                          marketTicket.currency,
+                                          formatPriceCompact(marketTicket.originalPrice)),
                                   style =
                                       MaterialTheme.typography.bodySmall.copy(
                                           textDecoration = TextDecoration.LineThrough),
@@ -180,7 +187,10 @@ fun MarketTicketCard(
                                     Modifier.height(36.dp)
                                         .testTag(MyEventsTestTags.MARKET_TICKET_BUY_BUTTON)) {
                                   Text(
-                                      text = if (isLoading) "..." else "Buy",
+                                      text =
+                                          if (isLoading)
+                                              stringResource(R.string.market_ticket_loading)
+                                          else stringResource(R.string.market_ticket_buy_button),
                                       style =
                                           MaterialTheme.typography.bodyMedium.copy(
                                               fontWeight = FontWeight.SemiBold))
@@ -194,7 +204,7 @@ fun MarketTicketCard(
                                             RoundedCornerShape(8.dp))
                                         .padding(horizontal = 12.dp, vertical = 8.dp)) {
                                   Text(
-                                      text = "Your listing",
+                                      text = stringResource(R.string.market_ticket_your_listing),
                                       style = MaterialTheme.typography.bodySmall,
                                       color = colorScheme.primary)
                                 }

@@ -1,9 +1,12 @@
 package ch.onepass.onepass.ui.eventsfilters
 
+import android.content.Context
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.EventTag
 import ch.onepass.onepass.model.eventfilters.DateRangePresets
 import ch.onepass.onepass.model.eventfilters.EventFilters
@@ -22,6 +25,9 @@ class ActiveFiltersBarTest {
 
   @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
 
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
+
   @Test
   fun activeFiltersBar_displaysRegionFilter() {
     val filters = EventFilters(region = "Zurich")
@@ -29,7 +35,9 @@ class ActiveFiltersBarTest {
       OnePassTheme { ActiveFiltersBar(filters = filters, onClearFilters = {}) }
     }
     composeTestRule.onNodeWithText("Zurich").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Clear All").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_clear_all))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -38,7 +46,9 @@ class ActiveFiltersBarTest {
     composeTestRule.setContent {
       OnePassTheme { ActiveFiltersBar(filters = todayFilters, onClearFilters = {}) }
     }
-    composeTestRule.onNodeWithText("Today").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_date_today))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -47,7 +57,9 @@ class ActiveFiltersBarTest {
     composeTestRule.setContent {
       OnePassTheme { ActiveFiltersBar(filters = next7DaysFilters, onClearFilters = {}) }
     }
-    composeTestRule.onNodeWithText("Next 7 Days").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_date_next_7_days))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -56,7 +68,9 @@ class ActiveFiltersBarTest {
     composeTestRule.setContent {
       OnePassTheme { ActiveFiltersBar(filters = weekendFilters, onClearFilters = {}) }
     }
-    composeTestRule.onNodeWithText("Next Weekend").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_date_next_weekend))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -65,8 +79,12 @@ class ActiveFiltersBarTest {
     composeTestRule.setContent {
       OnePassTheme { ActiveFiltersBar(filters = filters, onClearFilters = {}) }
     }
-    composeTestRule.onNodeWithText("Available Only").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Clear All").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_available_only))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_clear_all))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -83,9 +101,13 @@ class ActiveFiltersBarTest {
       OnePassTheme { ActiveFiltersBar(filters = filters, onClearFilters = {}) }
     }
     composeTestRule.onNodeWithText("Bern").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Next 7 Days").assertIsDisplayed() // Updated from "Date Range"
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_date_next_7_days))
+        .assertIsDisplayed()
     tags.forEach { tag -> composeTestRule.onNodeWithText(tag).assertIsDisplayed() }
-    composeTestRule.onNodeWithText("Available Only").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_available_only))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -104,7 +126,10 @@ class ActiveFiltersBarTest {
 
     // Should show count chip for remaining tags
     val remainingCount = selectedTags.size - 3
-    composeTestRule.onNodeWithText("+$remainingCount more").assertIsDisplayed()
+    val expectedText =
+        context.resources.getQuantityString(
+            R.plurals.filters_more_tags, remainingCount, remainingCount)
+    composeTestRule.onNodeWithText(expectedText).assertIsDisplayed()
 
     // Should NOT show tags beyond the first 3 as individual chips
     selectedTags.drop(3).forEach { tag -> composeTestRule.onNodeWithText(tag).assertDoesNotExist() }
@@ -145,12 +170,18 @@ class ActiveFiltersBarTest {
 
     // Verify all filter types appear together
     composeTestRule.onNodeWithText("Zurich").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Today").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_date_today))
+        .assertIsDisplayed()
     tags.forEach { tag -> composeTestRule.onNodeWithText(tag).assertIsDisplayed() }
-    composeTestRule.onNodeWithText("Clear All").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_clear_all))
+        .assertIsDisplayed()
 
     // Verify hideSoldOut doesn't appear when false
-    composeTestRule.onNodeWithText("Available Only").assertDoesNotExist()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_available_only))
+        .assertDoesNotExist()
   }
 
   @Test
@@ -162,7 +193,9 @@ class ActiveFiltersBarTest {
     }
 
     // Should show Clear All button but no filter chips
-    composeTestRule.onNodeWithText("Clear All").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_clear_all))
+        .assertIsDisplayed()
 
     // Should NOT show any tags (using actual EventTag values)
     EventTag.entries.forEach { tag ->
@@ -177,11 +210,21 @@ class ActiveFiltersBarTest {
       OnePassTheme { ActiveFiltersBar(filters = filters, onClearFilters = {}) }
     }
     composeTestRule.onNodeWithText("Zurich").assertDoesNotExist()
-    composeTestRule.onNodeWithText("Today").assertDoesNotExist()
-    composeTestRule.onNodeWithText("Next 7 Days").assertDoesNotExist()
-    composeTestRule.onNodeWithText("This Weekend").assertDoesNotExist()
-    composeTestRule.onNodeWithText("Available Only").assertDoesNotExist()
-    composeTestRule.onNodeWithText("Clear All").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_date_today))
+        .assertDoesNotExist()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_date_next_7_days))
+        .assertDoesNotExist()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_date_next_weekend))
+        .assertDoesNotExist()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_available_only))
+        .assertDoesNotExist()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filters_clear_all))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -192,7 +235,7 @@ class ActiveFiltersBarTest {
       OnePassTheme { ActiveFiltersBar(filters = filters, onClearFilters = { callbackCount++ }) }
     }
 
-    val clearNode = composeTestRule.onNodeWithText("Clear All")
+    val clearNode = composeTestRule.onNodeWithText(context.getString(R.string.filters_clear_all))
     clearNode.assertIsDisplayed().assertHasClickAction()
 
     clearNode.performClick()

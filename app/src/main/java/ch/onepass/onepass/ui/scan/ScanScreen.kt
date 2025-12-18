@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -404,12 +405,12 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
         },
         title = {
           Text(
-              text = "Session Expired",
+              text = stringResource(R.string.scan_session_expired_title),
               style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
         },
         text = {
           Text(
-              text = "Your session has expired. Please login again to continue scanning tickets.",
+              text = stringResource(R.string.scan_session_expired_message),
               style = MaterialTheme.typography.bodyMedium,
               color = colorScheme.onBackground)
         },
@@ -421,7 +422,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
               },
               colors =
                   ButtonDefaults.buttonColors(containerColor = ch.onepass.onepass.ui.theme.Error)) {
-                Text("OK")
+                Text(stringResource(R.string.scan_ok_button))
               }
         },
         containerColor = colorScheme.secondaryContainer,
@@ -442,13 +443,12 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
         },
         title = {
           Text(
-              text = "No Internet Connection",
+              text = stringResource(R.string.scan_network_error_title),
               style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold))
         },
         text = {
           Text(
-              text =
-                  "Please check your internet connection and try again. The scanner requires an active internet connection to validate tickets.",
+              text = stringResource(R.string.scan_network_error_message),
               style = MaterialTheme.typography.bodyMedium,
               color = colorScheme.onBackground)
         },
@@ -460,7 +460,9 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                 lastScannedQr?.let { qr -> viewModel.onQrScanned(qr) }
               },
               colors = ButtonDefaults.buttonColors(containerColor = colorScheme.primary)) {
-                Text(text = "Retry", color = colorScheme.onBackground)
+                Text(
+                    text = stringResource(R.string.scan_retry_button),
+                    color = colorScheme.onBackground)
               }
         },
         dismissButton = {
@@ -470,7 +472,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                 viewModel.resetToIdle()
                 onNavigateBack()
               }) {
-                Text("Back")
+                Text(stringResource(R.string.scan_back_button))
               }
         },
         containerColor = colorScheme.secondaryContainer,
@@ -602,7 +604,7 @@ fun ScanContent(viewModel: ScannerViewModel, onNavigateBack: () -> Unit = {}) {
                   .testTag(ScanTestTags.BACK_BUTTON)) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                contentDescription = "Back",
+                contentDescription = stringResource(R.string.scan_back_desc),
                 tint = colorScheme.onBackground,
                 modifier = Modifier.size(24.dp))
           }
@@ -694,6 +696,8 @@ private fun BoxScope.ScanningFrame(uiState: ScannerUiState) {
                   dampingRatio = Spring.DampingRatioMediumBouncy, stiffness = Spring.StiffnessLow),
           label = "frame_scale")
 
+  val context = LocalContext.current
+
   Box(
       modifier =
           Modifier.align(Alignment.Center)
@@ -724,10 +728,13 @@ private fun BoxScope.ScanningFrame(uiState: ScannerUiState) {
                             },
                         contentDescription =
                             when (uiState.status) {
-                              ScannerUiState.Status.ACCEPTED -> "Access granted"
-                              ScannerUiState.Status.REJECTED -> "Access denied"
-                              ScannerUiState.Status.ERROR -> "Validation error"
-                              else -> "Waiting for scan"
+                              ScannerUiState.Status.ACCEPTED ->
+                                  context.getString(R.string.scan_status_granted)
+                              ScannerUiState.Status.REJECTED ->
+                                  context.getString(R.string.scan_status_denied)
+                              ScannerUiState.Status.ERROR ->
+                                  context.getString(R.string.scan_status_error)
+                              else -> context.getString(R.string.scan_status_waiting)
                             },
                         tint = frameColor,
                         modifier = Modifier.size(48.dp).testTag(ScanTestTags.STATUS_ICON))
@@ -827,7 +834,7 @@ internal fun TopStatsCard(validated: Int, eventTitle: String?) {
                   style =
                       MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold))
               Text(
-                  text = "Validated",
+                  text = stringResource(R.string.scan_validated_label),
                   color = colorScheme.onBackground,
                   style = MaterialTheme.typography.bodySmall)
             }
@@ -888,7 +895,7 @@ private fun BoxScope.ScanHud(uiState: ScannerUiState) {
                         if (uiState.status == ScannerUiState.Status.IDLE) {
                           Spacer(Modifier.height(6.dp))
                           Text(
-                              text = "Position the QR code within the frame",
+                              text = stringResource(R.string.scan_instruction),
                               color = colorScheme.onBackground,
                               style = MaterialTheme.typography.bodySmall)
                         }
@@ -928,19 +935,18 @@ internal fun PermissionDeniedScreen() {
             modifier = Modifier.padding(32.dp)) {
               Icon(
                   imageVector = Icons.Filled.QrCodeScanner,
-                  contentDescription = "QR code scanner required",
+                  contentDescription = stringResource(R.string.scan_permission_icon_desc),
                   tint = colorScheme.onBackground,
                   modifier = Modifier.size(80.dp))
               Spacer(Modifier.height(24.dp))
               Text(
-                  text = "Camera Access Required",
+                  text = stringResource(R.string.scan_permission_title),
                   color = colorScheme.onBackground,
                   style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
                   textAlign = TextAlign.Center)
               Spacer(Modifier.height(12.dp))
               Text(
-                  text =
-                      "To scan tickets, we need access to your camera. Please grant permission to continue.",
+                  text = stringResource(R.string.scan_permission_message),
                   color = colorScheme.onBackground,
                   style = MaterialTheme.typography.bodyMedium,
                   textAlign = TextAlign.Center)
@@ -1024,7 +1030,7 @@ internal fun PreviewHudContainer(state: ScannerUiState) {
                     Brush.verticalGradient(colors = listOf(Color(0xFF0F0F10), Color(0xFF171718)))),
         contentAlignment = Alignment.Center) {
           Text(
-              text = "Camera Preview",
+              text = stringResource(R.string.scan_preview_camera),
               color = colorScheme.onBackground,
               modifier = Modifier.alpha(ScanAlpha.PREVIEW))
         }

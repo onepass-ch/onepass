@@ -1,9 +1,12 @@
 package ch.onepass.onepass.ui.myevents
 
+import android.content.Context
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.map.Location
 import ch.onepass.onepass.model.pass.Pass
@@ -22,6 +25,9 @@ import org.junit.Test
 
 class MyEventsScreenTest {
   @get:Rule val composeTestRule = createComposeRule()
+
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
 
   private fun setContent() {
     val fakeVm = createFakeMyEventsViewModel()
@@ -136,16 +142,26 @@ class MyEventsScreenTest {
     composeTestRule.onNodeWithTag(MyEventsTestTags.TAB_LISTED).assertIsDisplayed()
 
     composeTestRule.waitUntil(timeoutMillis = 5_000) {
-      composeTestRule.onAllNodesWithText("Cancel Listing").fetchSemanticsNodes().isNotEmpty()
+      composeTestRule
+          .onAllNodesWithText(context.getString(R.string.myevents_cancel_listing_button))
+          .fetchSemanticsNodes()
+          .isNotEmpty()
     }
 
     composeTestRule.onNodeWithText("Lausanne Party").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Cancel Listing").performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.myevents_cancel_listing_button))
+        .performClick()
 
     composeTestRule.waitUntil(timeoutMillis = 5_000) {
-      composeTestRule.onAllNodesWithText("Cancel Listing").fetchSemanticsNodes().size > 1
+      composeTestRule
+          .onAllNodesWithText(context.getString(R.string.myevents_cancel_listing_button))
+          .fetchSemanticsNodes()
+          .size > 1
     }
-    composeTestRule.onAllNodesWithText("Cancel Listing")[1].performClick()
+    composeTestRule
+        .onAllNodesWithText(context.getString(R.string.myevents_cancel_listing_button))[1]
+        .performClick()
 
     composeTestRule.waitUntil(timeoutMillis = 5_000) {
       ticketRepository.cancelledTicketIds.contains("listed-ticket")

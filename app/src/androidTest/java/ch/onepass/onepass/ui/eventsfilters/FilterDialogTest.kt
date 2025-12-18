@@ -1,7 +1,10 @@
 package ch.onepass.onepass.ui.eventsfilters
 
+import android.content.Context
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.test.core.app.ApplicationProvider
+import ch.onepass.onepass.R
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.ui.eventfilters.DateRangePickerDialog
 import ch.onepass.onepass.ui.eventfilters.END_OF_DAY_HOUR
@@ -21,12 +24,17 @@ class FilterDialogTest {
 
   @get:Rule val composeTestRule = createComposeRule()
 
+  private val context: Context
+    get() = ApplicationProvider.getApplicationContext()
+
   @Test
   fun filterDialog_displays_all_components_and_presets() {
     composeTestRule.setContent { OnePassTheme { FilterDialog() } }
 
     composeTestRule.onNodeWithTag(EventFilterDialogTestTags.FILTER_DIALOG).assertIsDisplayed()
-    composeTestRule.onNodeWithText("Filter Events").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filter_dialog_title))
+        .assertIsDisplayed()
 
     composeTestRule.onNodeWithTag(EventFilterDialogTestTags.REGION_DROPDOWN).assertIsDisplayed()
     composeTestRule.onNodeWithTag(EventFilterDialogTestTags.DATE_RANGE_PRESETS).assertIsDisplayed()
@@ -38,11 +46,21 @@ class FilterDialogTest {
         .onNodeWithTag(EventFilterDialogTestTags.APPLY_FILTERS_BUTTON)
         .assertIsDisplayed()
 
-    composeTestRule.onNodeWithText("Today").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Next Weekend").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Next 7 Days").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Custom range").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Pick dates").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filter_dialog_date_today))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filter_dialog_date_next_weekend))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filter_dialog_date_next_7_days))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filter_dialog_custom_range_label))
+        .assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filter_dialog_pick_dates))
+        .assertIsDisplayed()
 
     composeTestRule
         .onNode(hasScrollAction())
@@ -77,9 +95,13 @@ class FilterDialogTest {
         .assertIsNotEnabled()
 
     // selecting a preset enables Apply, deselect disables
-    composeTestRule.onNodeWithText("Today").performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filter_dialog_date_today))
+        .performClick()
     composeTestRule.onNodeWithTag(EventFilterDialogTestTags.APPLY_FILTERS_BUTTON).assertIsEnabled()
-    composeTestRule.onNodeWithText("Today").performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filter_dialog_date_today))
+        .performClick()
     composeTestRule
         .onNodeWithTag(EventFilterDialogTestTags.APPLY_FILTERS_BUTTON)
         .assertIsNotEnabled()
@@ -101,10 +123,16 @@ class FilterDialogTest {
   fun filterDialog_datePickerDialog_showsAndDismisses() {
     composeTestRule.setContent { OnePassTheme { FilterDialog() } }
 
-    composeTestRule.onNodeWithText("Pick dates").performClick()
-    composeTestRule.onNodeWithText("When ?").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Cancel").performClick()
-    composeTestRule.onNodeWithText("Filter Events").assertIsDisplayed()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filter_dialog_pick_dates))
+        .performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filter_dialog_date_picker_title))
+        .assertIsDisplayed()
+    composeTestRule.onNodeWithText(context.getString(R.string.filter_dialog_cancel)).performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filter_dialog_title))
+        .assertIsDisplayed()
   }
 
   @Test
@@ -120,8 +148,10 @@ class FilterDialogTest {
     composeTestRule.setContent { OnePassTheme { FilterDialog() } }
 
     composeTestRule.onNodeWithTag(EventFilterDialogTestTags.PICK_DATES_BUTTON).performClick()
-    composeTestRule.onNodeWithText("When ?").assertIsDisplayed()
-    composeTestRule.onNodeWithText("Cancel").performClick()
+    composeTestRule
+        .onNodeWithText(context.getString(R.string.filter_dialog_date_picker_title))
+        .assertIsDisplayed()
+    composeTestRule.onNodeWithText(context.getString(R.string.filter_dialog_cancel)).performClick()
     composeTestRule.onNodeWithTag(EventFilterDialogTestTags.FILTER_DIALOG).assertIsDisplayed()
   }
 

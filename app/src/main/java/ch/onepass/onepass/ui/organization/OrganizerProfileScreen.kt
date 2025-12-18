@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -90,7 +91,7 @@ fun OrganizerHeaderSection(
         // Banner - Load from URL if available, otherwise use fallback
         AsyncImage(
             model = bannerImageUrl,
-            contentDescription = "Organizer Banner",
+            contentDescription = stringResource(R.string.organizer_banner_description),
             contentScale = ContentScale.FillBounds,
             error = painterResource(id = R.drawable.image_fallback),
             placeholder = painterResource(id = R.drawable.image_fallback),
@@ -102,7 +103,7 @@ fun OrganizerHeaderSection(
         // Profile Picture - Load from URL if available, otherwise use fallback
         AsyncImage(
             model = profileImageUrl,
-            contentDescription = "Profile Picture",
+            contentDescription = stringResource(R.string.organizer_profile_picture_description),
             contentScale = ContentScale.Crop,
             error = painterResource(id = R.drawable.ic_launcher_foreground),
             placeholder = painterResource(id = R.drawable.ic_launcher_foreground),
@@ -182,16 +183,18 @@ fun SocialMediaSection(
                   }) {
                 Image(
                     painter = painterResource(id = R.drawable.internet_logo),
-                    contentDescription = "Website icon",
+                    contentDescription =
+                        stringResource(R.string.organizer_website_icon_description),
                     contentScale = ContentScale.None,
                     modifier = Modifier.width(20.dp).height(20.dp))
                 Text(
-                    text = "Website",
+                    text = stringResource(R.string.organizer_website_text),
                     style = Typography.bodyMedium.copy(fontSize = 15.sp, lineHeight = 20.sp),
                     modifier = Modifier.testTag(OrganizerProfileTestTags.WEBSITE_TEXT))
                 Image(
                     painter = painterResource(id = R.drawable.link_icon),
-                    contentDescription = "External link",
+                    contentDescription =
+                        stringResource(R.string.organizer_external_link_description),
                     contentScale = ContentScale.None)
               }
         }
@@ -203,21 +206,21 @@ fun SocialMediaSection(
               if (instagramUrl != null) {
                 SocialMediaIcon(
                     iconRes = R.drawable.instagram_logo,
-                    contentDescription = "Instagram",
+                    contentDescription = stringResource(R.string.organizer_instagram_description),
                     onClick = onInstagramClick,
                     modifier = Modifier.testTag(OrganizerProfileTestTags.INSTAGRAM_ICON))
               }
               if (tiktokUrl != null) {
                 SocialMediaIcon(
                     iconRes = R.drawable.tiktok_logo,
-                    contentDescription = "TikTok",
+                    contentDescription = stringResource(R.string.organizer_tiktok_description),
                     onClick = onTiktokClick,
                     modifier = Modifier.testTag(OrganizerProfileTestTags.TIKTOK_ICON))
               }
               if (facebookUrl != null) {
                 SocialMediaIcon(
                     iconRes = R.drawable.facebook_logo,
-                    contentDescription = "Facebook",
+                    contentDescription = stringResource(R.string.organizer_facebook_description),
                     onClick = onFacebookClick,
                     modifier = Modifier.testTag(OrganizerProfileTestTags.FACEBOOK_ICON))
               }
@@ -263,14 +266,16 @@ fun FollowSection(
                           .clickable { onFollowClick() }
                           .testTag(OrganizerProfileTestTags.FOLLOW_BUTTON)) {
                     Text(
-                        text = if (isFollowing) "FOLLOWING" else "FOLLOW",
+                        text =
+                            if (isFollowing) stringResource(R.string.organizer_following_button)
+                            else stringResource(R.string.organizer_follow_button),
                         style = Typography.titleMedium,
                         modifier = Modifier.testTag(OrganizerProfileTestTags.FOLLOW_BUTTON_TEXT),
                         color = colorScheme.onBackground)
                   }
               // Community Count
               Text(
-                  text = "join $followersCount community",
+                  text = stringResource(R.string.organizer_join_community, followersCount),
                   style = Typography.titleMedium.copy(fontSize = 12.sp, lineHeight = 20.sp),
                   modifier =
                       Modifier.fillMaxWidth()
@@ -291,7 +296,9 @@ fun FollowSection(
                       containerColor = colorScheme.background,
                       contentColor = colorScheme.onBackground),
               shape = RoundedCornerShape(5.dp)) {
-                Text(text = "EDIT ORGANIZATION", style = Typography.titleMedium)
+                Text(
+                    text = stringResource(R.string.organizer_edit_button),
+                    style = Typography.titleMedium)
               }
         }
       }
@@ -342,21 +349,21 @@ fun TabSection(
               .padding(horizontal = 20.dp)
               .testTag(OrganizerProfileTestTags.TAB_SECTION)) {
         Tab(
-            text = "Posts",
+            text = stringResource(R.string.organizer_tab_posts),
             tab = OrganizerProfileTab.POSTS,
             selectedTab = selectedTab,
             indicatorWidth = 50,
             onTabSelected = onTabSelected,
             testTag = OrganizerProfileTestTags.TAB_POSTS)
         Tab(
-            text = "UPCOMING",
+            text = stringResource(R.string.organizer_tab_upcoming),
             tab = OrganizerProfileTab.UPCOMING,
             selectedTab = selectedTab,
             indicatorWidth = 80,
             onTabSelected = onTabSelected,
             testTag = OrganizerProfileTestTags.TAB_UPCOMING)
         Tab(
-            text = "PAST",
+            text = stringResource(R.string.organizer_tab_past),
             tab = OrganizerProfileTab.PAST,
             selectedTab = selectedTab,
             indicatorWidth = 40,
@@ -384,7 +391,7 @@ fun OrganizerProfileScreen(
   LaunchedEffect(viewModel) { viewModel.effects.collectLatest { effect -> onEffect(effect) } }
 
   BackNavigationScaffold(
-      TopBarConfig(title = "Organizer Profile"),
+      TopBarConfig(title = stringResource(R.string.organizer_profile_title)),
       onBack = onNavigateBack,
   ) {
     OrganizerProfileContent(
@@ -505,7 +512,7 @@ fun PostsTabContent(modifier: Modifier = Modifier) {
       verticalArrangement = Arrangement.Center,
       horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
-            text = "No posts yet",
+            text = stringResource(R.string.organizer_posts_empty),
             style = Typography.bodyMedium.copy(color = colorScheme.outline),
             modifier = Modifier.padding(32.dp))
       }
@@ -531,7 +538,7 @@ fun UpcomingTabContent(
       horizontalAlignment = Alignment.CenterHorizontally) {
         if (events.isEmpty()) {
           Text(
-              text = "No upcoming events",
+              text = stringResource(R.string.organizer_upcoming_empty),
               style = Typography.bodyMedium.copy(color = colorScheme.outline),
               modifier = Modifier.padding(32.dp))
         } else {
@@ -566,7 +573,7 @@ fun PastTabContent(
       horizontalAlignment = Alignment.CenterHorizontally) {
         if (events.isEmpty()) {
           Text(
-              text = "No past events",
+              text = stringResource(R.string.organizer_past_empty),
               style = Typography.bodyMedium.copy(color = colorScheme.outline),
               modifier = Modifier.padding(32.dp))
         } else {
