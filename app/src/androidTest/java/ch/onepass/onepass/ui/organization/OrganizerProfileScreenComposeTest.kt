@@ -498,13 +498,25 @@ class OrganizerProfileScreenComposeTest {
 
   @Test
   fun postsTabContent_displaysEmptyState() {
-    composeTestRule.setContent { OnePassTheme { PostsTabContent() } }
+    composeTestRule.setContent {
+      OnePassTheme {
+        PostsTabContent(
+            posts = emptyList(),
+            organizationName = "Test Org",
+            organizationImageUrl = null,
+            isOwner = false,
+            isLoading = false,
+            onCreatePostClick = {},
+            onDeletePostClick = {},
+            onLikePostClick = {})
+      }
+    }
 
-    // Verify event list is displayed
-    composeTestRule.onNodeWithTag(OrganizerProfileTestTags.EVENT_LIST).assertIsDisplayed()
+    // Verify posts tab content is displayed
+    composeTestRule.onNodeWithTag(PostsTabTestTags.POSTS_TAB_CONTENT).assertIsDisplayed()
 
     // Verify empty state message is displayed
-    composeTestRule.onNodeWithText("No posts yet").assertIsDisplayed()
+    composeTestRule.onNodeWithTag(PostsTabTestTags.POSTS_EMPTY).assertIsDisplayed()
   }
 
   @Test

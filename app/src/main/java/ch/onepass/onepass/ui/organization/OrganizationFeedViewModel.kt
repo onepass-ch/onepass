@@ -42,6 +42,7 @@ class OrganizationFeedViewModel(
   val uiState: StateFlow<OrganizationFeedUIState> = _uiState.asStateFlow()
 
   /** Loads user's organizations from the repository. */
+  @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
   fun loadUserOrganizations(userId: String) {
     _uiState.update { it.copy(isLoading = true, error = null) }
 
