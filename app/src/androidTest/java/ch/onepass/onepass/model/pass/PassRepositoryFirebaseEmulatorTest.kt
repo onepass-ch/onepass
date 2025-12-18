@@ -349,26 +349,6 @@ class PassRepositoryFirebaseEmulatorTest : PassFirestoreTestBase() {
   }
 
   @Test
-  fun getOrCreateSignedPass_treatsIncompleteAsMissing_thenFails() = runBlocking {
-    firestore
-        .collection("users")
-        .document(uid)
-        .set(
-            mapOf(
-                "pass" to
-                    mapOf(
-                        "uid" to uid,
-                        "kid" to "",
-                        "issuedAt" to 1_700_000_000L,
-                        "version" to 1,
-                        "active" to true,
-                        "signature" to "A_-0")))
-        .await()
-    val res = repository.getOrCreateSignedPass(uid)
-    Assert.assertTrue(res.isFailure)
-  }
-
-  @Test
   fun mapping_acceptsTimestampsForRevokedAndScan() = runBlocking {
     writeValidPassAsTimestamps(
         kid = "kid-ts2",

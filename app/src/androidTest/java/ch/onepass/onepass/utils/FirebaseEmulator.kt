@@ -59,6 +59,7 @@ object FirebaseEmulator {
       assert(Firebase.firestore.firestoreSettings.host.contains(HOST)) {
         "Failed to connect to Firebase Firestore Emulator."
       }
+      seedKeys()
     }
   }
 
@@ -76,5 +77,17 @@ object FirebaseEmulator {
 
   fun clearFirestoreEmulator() {
     clearEmulator(firestoreEndpoint)
+    seedKeys()
+  }
+
+  private fun seedKeys() {
+    val key =
+        hashMapOf(
+            "active" to true,
+            "createdAt" to com.google.firebase.firestore.FieldValue.serverTimestamp(),
+            "publicKey" to "Ky/V3H7A+wotPjByU2Bu/ulUgj3ibCXFVfApIJySAHI=",
+            "privateKey" to
+                "IjuOaVh9zytFtheCBJS31UlZWcno+M1snQxjrZ/xaEMrL9XcfsD7Ci0+MHJTYG7+6VSCPeJsJcVV8CkgnJIAcg==")
+    firestore.collection("keys").document("emulator-key").set(key)
   }
 }
