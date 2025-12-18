@@ -76,6 +76,7 @@ object OrganizationDashboardTestTags {
   const val ORG_FOLLOWERS = "org_dashboard_followers"
   const val ORG_RATING = "org_dashboard_rating"
   const val MANAGE_EVENTS_SECTION = "org_dashboard_manage_events"
+  const val ORG_LIST = "org_dashboard_scroll_list"
   const val CREATE_EVENT_BUTTON = "org_dashboard_create_event_button"
   const val YOUR_EVENTS_DROPDOWN = "org_dashboard_your_events_dropdown"
   const val EVENT_CARD = "org_dashboard_event_card"

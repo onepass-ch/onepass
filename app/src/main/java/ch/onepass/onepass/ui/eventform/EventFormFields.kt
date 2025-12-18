@@ -480,12 +480,15 @@ fun EventFormFields(
         Text(text = it, color = colorScheme.error, style = MaterialTheme.typography.bodyMedium)
       }
     }
-    fieldErrors[EventFormViewModel.ValidationError.TIME.key]?.let {
-      Text(
-          text = it,
-          color = colorScheme.error,
-          style = MaterialTheme.typography.bodyMedium,
-          modifier = Modifier.padding(start = 8.dp, top = 4.dp))
+    // Time validation messages
+    fieldErrors[EventFormViewModel.ValidationError.TIME.key]?.let { timeError ->
+      if (!formState.allowExactTime || formState.startTime != formState.endTime) {
+        Text(
+            text = timeError,
+            color = colorScheme.error,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(start = 8.dp, top = 4.dp))
+      }
     }
     Spacer(modifier = Modifier.height(16.dp))
 

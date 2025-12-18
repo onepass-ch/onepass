@@ -81,7 +81,8 @@ abstract class EventFormViewModel(
       val capacity: String = "",
       val selectedLocation: Location? = null,
       val selectedImageUris: List<Uri> = emptyList(),
-      val selectedTags: Set<EventTag> = emptySet()
+      val selectedTags: Set<EventTag> = emptySet(),
+      val allowExactTime: Boolean = false
   )
 
   data class ParsedFormData(
@@ -129,6 +130,11 @@ abstract class EventFormViewModel(
 
   private var locationSearchJob: Job? = null
   private val searchDebounceMs = 300L
+
+  /** Updates whether exact time is allowed for the event */
+  fun updateAllowExactTime(allow: Boolean) {
+    _formState.value = _formState.value.copy(allowExactTime = allow)
+  }
 
   /** Updates the event title with sanitization and length limit */
   fun updateTitle(title: String) {
@@ -288,7 +294,8 @@ abstract class EventFormViewModel(
     if (state.endTime.isBlank()) errors += ValidationError.END_TIME.toError()
 
     // Validate time order
-    if (state.startTime.isNotBlank() &&
+    if (!state.allowExactTime &&
+        state.startTime.isNotBlank() &&
         state.endTime.isNotBlank() &&
         state.endTime <= state.startTime) {
       errors += ValidationError.TIME.toError()

@@ -189,7 +189,8 @@ fun OnePassApp(
       initializer { ProfileViewModel() }
     },
     initialIntent: Intent? = null,
-    enableDeepLinking: Boolean = true
+    enableDeepLinking: Boolean = true,
+    allowEventExactTime: Boolean = false
 ) {
   // Which route are we on?
   val backstack by navController.currentBackStackEntryAsState()
@@ -223,6 +224,7 @@ fun OnePassApp(
             mapViewModel = mapViewModel,
             testAuthButtonTag = testAuthButtonTag,
             authViewModelFactory = authViewModelFactory,
-            profileViewModelFactory = profileViewModelFactory)
+            profileViewModelFactory = profileViewModelFactory,
+            allowEventExactTime = allowEventExactTime)
       }
 }
