@@ -17,12 +17,14 @@ import androidx.test.rule.GrantPermissionRule
 import ch.onepass.onepass.BuildConfig
 import ch.onepass.onepass.OnePassApp
 import ch.onepass.onepass.model.auth.AuthRepositoryFirebase
+import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.user.UserRepositoryFirebase
 import ch.onepass.onepass.ui.auth.AuthViewModel
 import ch.onepass.onepass.ui.feed.FeedScreenTestTags
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.myevents.MyEventsTestTags
 import ch.onepass.onepass.ui.profile.*
+import ch.onepass.onepass.utils.TimeProvider
 import com.mapbox.common.MapboxOptions
 import io.mockk.*
 import kotlinx.coroutines.Job
@@ -76,10 +78,13 @@ class FullNavigationTest {
           }
     }
 
+    val mockEventRepo = mockk<EventRepository>(relaxed = true)
+    val mockTimeProvider = mockk<TimeProvider>(relaxed = true)
+
     composeRule.setContent {
       OnePassApp(
           navController = navController,
-          mapViewModel = MapViewModel(),
+          mapViewModel = MapViewModel(mockEventRepo, mockTimeProvider),
           testAuthButtonTag = if (!signedIn) TEST_LOGIN_BUTTON else null,
           authViewModelFactory = authVmFactory,
           profileViewModelFactory = injectedProfileVMFactory,
