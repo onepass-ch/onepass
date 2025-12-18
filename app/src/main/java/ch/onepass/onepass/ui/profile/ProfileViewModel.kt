@@ -182,13 +182,13 @@ open class ProfileViewModel(
       }
 
   fun onAccountSettings() =
-      viewModelScope.launch { _effects.emit(ProfileEffect.NavigateToAccountSettings) }
+      viewModelScope.launch { _effects.tryEmit(ProfileEffect.NavigateToAccountSettings) }
 
   fun onInvitations() =
       viewModelScope.launch { _effects.tryEmit(ProfileEffect.NavigateToMyInvitations) }
 
   fun onPaymentMethods() =
-      viewModelScope.launch { _effects.emit(ProfileEffect.NavigateToPaymentMethods) }
+      viewModelScope.launch { _effects.tryEmit(ProfileEffect.NavigateToPaymentMethods) }
 
   fun onHelp() =
       viewModelScope.launch {
@@ -222,5 +222,5 @@ private fun User.toUiState(isOrganizer: Boolean): ProfileUiState {
       stats = ProfileStats(events = 0, upcoming = 0, saved = favoriteEventIds.size),
       isOrganizer = isOrganizer,
       loading = false,
-  )
+      isEmailPublic = this.showEmail)
 }

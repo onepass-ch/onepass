@@ -36,6 +36,8 @@ object NavigationDestinations {
 
     object Notification : Screen("notifications", "Notifications", false)
 
+    object AccountSettings : Screen("account_settings", "Account Settings", false)
+
     object EditProfile : Screen("edit_profile", "Edit Profile", false)
 
     // Parameterized routes

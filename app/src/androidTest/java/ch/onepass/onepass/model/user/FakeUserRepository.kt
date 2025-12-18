@@ -20,6 +20,10 @@ class FakeUserRepository(
     private var throwOnLoad: Boolean = false
 ) : UserRepository {
   private val _favoriteEventIds = MutableStateFlow<Set<String>>(emptySet())
+  private val updatedFields = mutableMapOf<String, MutableMap<String, Any>>()
+  private var updateUserFieldFunction: (String, String, Any) -> Result<Unit> = { _, _, _ ->
+    Result.success(Unit)
+  }
 
   override suspend fun getCurrentUser(): User? {
     if (throwOnLoad) throw RuntimeException("boom")
@@ -91,6 +95,14 @@ class FakeUserRepository(
   override suspend fun removeFavoriteEvent(uid: String, eventId: String): Result<Unit> {
     _favoriteEventIds.update { it - eventId }
     return Result.success(Unit)
+  }
+
+  override suspend fun updateUserField(uid: String, field: String, value: Any): Result<Unit> {
+    val result = updateUserFieldFunction(uid, field, value)
+    if (result.isSuccess) {
+      updatedFields.getOrPut(uid) { mutableMapOf() }[field] = value
+    }
+    return result
   }
 
   /** Override searchUsers to return specific results. */

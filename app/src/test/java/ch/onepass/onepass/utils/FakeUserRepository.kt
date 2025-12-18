@@ -96,6 +96,10 @@ class FakeUserRepository(
     return Result.success(Unit)
   }
 
+  override suspend fun updateUserField(uid: String, field: String, value: Any): Result<Unit> {
+    TODO("Not yet implemented")
+  }
+
   /** Override searchUsers to return specific results. */
   fun setSearchResults(results: List<StaffSearchResult>) {
     searchResultsFunction = { _, _, _ -> Result.success(results) }

@@ -75,7 +75,7 @@ android {
         }
     }
 
-    testCoverage { jacocoVersion = "0.8.11" }
+    testCoverage { jacocoVersion = "0.8.12" }
 
     buildFeatures {
         compose = true
@@ -292,6 +292,10 @@ dependencies {
 
     // --------- OneSignal -------
     implementation(libs.onesignal)
+
+    // --------- Analytics -------
+    implementation("com.google.firebase:firebase-analytics")
+
 }
 
 tasks.withType<Test> {
