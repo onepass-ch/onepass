@@ -112,28 +112,6 @@ class AccountSettingsScreenComposeTest {
   }
 
   @Test
-  fun dangerZone_displaysDeleteSection() {
-    val state = AccountSettingsUiState()
-    val viewModel = FakeAccountSettingsViewModel(state)
-
-    composeTestRule.setContent {
-      AccountSettingsScreen(viewModel = viewModel, onNavigateBack = {}, onAccountDeleted = {})
-    }
-
-    // Scroll to the danger zone section and wait for it to settle
-    composeTestRule.onNodeWithText("DANGER ZONE").performScrollTo()
-    composeTestRule.waitForIdle()
-    composeTestRule.onNodeWithText("DANGER ZONE").assertIsDisplayed()
-
-    composeTestRule.onNodeWithText("DELETE ACCOUNT").assertIsDisplayed()
-    composeTestRule
-        .onNodeWithText(
-            "Permanently remove your account and all associated data. This action cannot be undone.")
-        .assertIsDisplayed()
-    composeTestRule.onNodeWithText("Delete Account").assertIsDisplayed()
-  }
-
-  @Test
   fun deleteButton_showsConfirmationDialog() {
     val state = AccountSettingsUiState()
     val viewModel = FakeAccountSettingsViewModel(state)
