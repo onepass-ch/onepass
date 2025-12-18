@@ -73,6 +73,7 @@ object OrganizerProfileTestTags {
   const val TAB_UPCOMING = "organizer_tab_upcoming"
   const val TAB_PAST = "organizer_tab_past"
   const val EVENT_LIST = "organizer_event_list"
+  const val BACK_ARROW = "organizer_back_arrow"
 }
 
 // Extracted Components for better testability and modularity
@@ -391,7 +392,9 @@ fun OrganizerProfileScreen(
   LaunchedEffect(viewModel) { viewModel.effects.collectLatest { effect -> onEffect(effect) } }
 
   BackNavigationScaffold(
-      TopBarConfig(title = stringResource(R.string.organizer_profile_title)),
+      TopBarConfig(
+          title = stringResource(R.string.organizer_profile_title),
+          backButtonTestTag = OrganizerProfileTestTags.BACK_ARROW),
       onBack = onNavigateBack,
   ) {
     OrganizerProfileContent(

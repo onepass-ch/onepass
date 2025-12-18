@@ -22,6 +22,7 @@ import ch.onepass.onepass.ui.auth.AuthViewModel
 import ch.onepass.onepass.ui.feed.FeedScreenTestTags
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.ui.myevents.MyEventsTestTags
+import ch.onepass.onepass.ui.organization.OrganizerProfileTestTags
 import ch.onepass.onepass.ui.profile.*
 import com.mapbox.common.MapboxOptions
 import io.mockk.*
@@ -92,6 +93,39 @@ class FullNavigationTest {
   @Before
   fun beforeEach() {
     injectedProfileVMFactory = null
+  }
+
+  @Test
+  fun organizerProfile_back_navigation_works() {
+    setApp(signedIn = true)
+    composeRule.waitForIdle()
+
+    // Step 1: Navigate to Events first
+    composeRule.runOnUiThread { navController.navigate(NavigationDestinations.Screen.Events.route) }
+    composeRule.waitForIdle()
+    assertEquals(
+        NavigationDestinations.Screen.Events.route, navController.currentDestination?.route)
+
+    // Step 2: Navigate to OrganizationProfile
+    val orgId = "org_back_test"
+    composeRule.runOnUiThread {
+      navController.navigate(NavigationDestinations.Screen.OrganizationProfile.route(orgId))
+    }
+    composeRule.waitForIdle()
+    assertEquals(
+        NavigationDestinations.Screen.OrganizationProfile.route,
+        navController.currentDestination?.route)
+
+    // Step 3: Back arrow should now exist; perform click
+    composeRule
+        .onNodeWithTag(OrganizerProfileTestTags.BACK_ARROW)
+        .assertIsDisplayed()
+        .performClick()
+    composeRule.waitForIdle()
+
+    // Step 4: Verify we navigated back to Events
+    assertEquals(
+        NavigationDestinations.Screen.Events.route, navController.currentDestination?.route)
   }
 
   @Test
