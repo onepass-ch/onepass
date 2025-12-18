@@ -24,10 +24,12 @@ import kotlinx.coroutines.tasks.await
  * SECURITY NOTE: lastScannedAt is updated server-side by the Cloud Function "validateEntry" after
  * ticket verification, not by the client (prevents fraud).
  */
-class PassRepositoryFirebase(
-    private val db: FirebaseFirestore,
-    private val functions: FirebaseFunctions
-) : PassRepository {
+class PassRepositoryFirebase(db: FirebaseFirestore, private val functions: FirebaseFunctions) :
+    PassRepository {
+
+  private companion object {
+    const val UID_REQUIRED = "uid required"
+  }
 
   /** Centralized collection reference to avoid typos. */
   private val users = db.collection("users")
@@ -35,7 +37,7 @@ class PassRepositoryFirebase(
   // --------------------- READ (live) ---------------------
 
   override fun getUserPass(uid: String): Flow<Pass?> {
-    require(uid.isNotBlank()) { "uid required" }
+    require(uid.isNotBlank()) { UID_REQUIRED }
     return docSnapshotFlow(users.document(uid)) { snap -> snap.toPass() }
   }
 
@@ -46,7 +48,7 @@ class PassRepositoryFirebase(
    * writes to Firestore and RETURNS the pass directly; no polling needed.
    */
   override suspend fun getOrCreateSignedPass(uid: String): Result<Pass> = runCatching {
-    require(uid.isNotBlank()) { "uid required" }
+    require(uid.isNotBlank()) { UID_REQUIRED }
 
     // 1) Verify that the user is authenticated
     val currentUser =
@@ -80,7 +82,7 @@ class PassRepositoryFirebase(
 
   /** Marks pass as revoked (active=false, revokedAt=server time). */
   override suspend fun revokePass(uid: String): Result<Unit> = runCatching {
-    require(uid.isNotBlank()) { "uid required" }
+    require(uid.isNotBlank()) { UID_REQUIRED }
     users
         .document(uid)
         .set(
