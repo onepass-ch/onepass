@@ -1,14 +1,9 @@
-// kotlin
 package ch.onepass.onepass.model.map
 
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.event.FakeEventRepository
 import ch.onepass.onepass.ui.map.MapViewModel
 import ch.onepass.onepass.utils.EventTestData
-import ch.onepass.onepass.utils.MockTimeProvider
-import ch.onepass.onepass.utils.TimeProviderHolder
-import com.google.firebase.Timestamp
-import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -26,16 +21,10 @@ class MapPinInteractionTest {
   private lateinit var mapViewModel: MapViewModel
   private val userId: String = "test-user"
 
-  private val FIXED_TEST_TIME_MILLIS = 1704067200000L // Jan 1, 2024, 00:00:00 GMT
-  private val FIXED_TEST_TIMESTAMP = Timestamp(Date(FIXED_TEST_TIME_MILLIS))
-
   @OptIn(ExperimentalCoroutinesApi::class)
   @Before
   fun setUp() {
     Dispatchers.setMain(UnconfinedTestDispatcher())
-
-    TimeProviderHolder.initialize(MockTimeProvider(FIXED_TEST_TIMESTAMP))
-
     fakeRepo = FakeEventRepository()
     mapViewModel = MapViewModel(eventRepository = fakeRepo)
   }
@@ -58,7 +47,6 @@ class MapPinInteractionTest {
             location = EventTestData.createTestLocation(),
         )
 
-    // preserve eventId
     fakeRepo.addEvent(event)
     mapViewModel.refreshEvents()
 
@@ -68,9 +56,9 @@ class MapPinInteractionTest {
     mapViewModel.selectEvent(eventToSelect)
 
     val uiStateAfter = mapViewModel.uiState.value
-    assertNotNull("Selected event should not be null", uiStateAfter.selectedEvent)
+    assertNotNull("Selected event should not be null", uiStateAfter.currentSelectedEvent)
 
-    val selectedEvent = uiStateAfter.selectedEvent!!
+    val selectedEvent = uiStateAfter.currentSelectedEvent!!
     assertEquals("Tech Conference 2024", selectedEvent.title)
     assertEquals(event.organizerName, selectedEvent.organizerName)
     assertEquals(event.displayDateTime, selectedEvent.displayDateTime)
@@ -95,12 +83,12 @@ class MapPinInteractionTest {
     mapViewModel.selectEvent(eventToSelect)
 
     var uiState = mapViewModel.uiState.value
-    assertNotNull("Event should be selected initially", uiState.selectedEvent)
+    assertNotNull("Event should be selected initially", uiState.currentSelectedEvent)
 
     mapViewModel.clearSelectedEvent()
 
     uiState = mapViewModel.uiState.value
-    assertNull("Selected event should be null after clear", uiState.selectedEvent)
+    assertNull("Selected event should be null after clear", uiState.currentSelectedEvent)
   }
 
   @Test
@@ -136,14 +124,14 @@ class MapPinInteractionTest {
     assertEquals(
         "First event should be selected",
         "First Event - Music Festival",
-        uiState.selectedEvent?.title)
+        uiState.currentSelectedEvent?.title)
 
     mapViewModel.selectEvent(secondEvent)
     uiState = mapViewModel.uiState.value
     assertEquals(
         "Second event should be selected",
         "Second Event - Art Exhibition",
-        uiState.selectedEvent?.title)
+        uiState.currentSelectedEvent?.title)
   }
 
   @Test
@@ -166,7 +154,7 @@ class MapPinInteractionTest {
     val eventToSelect = mapViewModel.uiState.value.events.first()
     mapViewModel.selectEvent(eventToSelect)
 
-    val selectedEvent = mapViewModel.uiState.value.selectedEvent!!
+    val selectedEvent = mapViewModel.uiState.value.currentSelectedEvent!!
 
     assertEquals("Tech Conference 2024", selectedEvent.title)
     assertEquals("Tech Community Organization", selectedEvent.organizerName)
@@ -195,14 +183,14 @@ class MapPinInteractionTest {
     mapViewModel.selectEvent(eventToSelect)
 
     var uiState = mapViewModel.uiState.value
-    assertNotNull("Event should be selected", uiState.selectedEvent)
-    assertEquals("Persistent Event", uiState.selectedEvent?.title)
+    assertNotNull("Event should be selected", uiState.currentSelectedEvent)
+    assertEquals("Persistent Event", uiState.currentSelectedEvent?.title)
 
     mapViewModel.refreshEvents()
 
     uiState = mapViewModel.uiState.value
-    assertNotNull("Selected event should persist after refresh", uiState.selectedEvent)
-    assertEquals("Persistent Event", uiState.selectedEvent?.title)
+    assertNotNull("Selected event should persist after refresh", uiState.currentSelectedEvent)
+    assertEquals("Persistent Event", uiState.currentSelectedEvent?.title)
   }
 
   @Test
@@ -225,6 +213,6 @@ class MapPinInteractionTest {
     mapViewModel.selectEvent(eventToSelect) // close
 
     val uiState = mapViewModel.uiState.value
-    assertNull("Event should be deselected after second click", uiState.selectedEvent)
+    assertNull("Event should be deselected after second click", uiState.currentSelectedEvent)
   }
 }

@@ -5,8 +5,6 @@ import ch.onepass.onepass.model.event.EventRepository
 import ch.onepass.onepass.model.event.EventStatus
 import ch.onepass.onepass.model.eventfilters.EventFilters
 import ch.onepass.onepass.model.map.Location
-import ch.onepass.onepass.utils.MockTimeProvider
-import ch.onepass.onepass.utils.TimeProviderHolder
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.GeoPoint
 import com.mapbox.common.Cancelable
@@ -26,7 +24,6 @@ import com.mapbox.maps.plugin.gestures.gestures
 import com.mapbox.maps.plugin.locationcomponent.LocationComponentPlugin
 import com.mapbox.maps.plugin.locationcomponent.location
 import io.mockk.*
-import java.util.Date
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.cancel
@@ -59,16 +56,10 @@ class MapViewModelUnitTest {
   private lateinit var validEvent1: Event
   private lateinit var validEvent2: Event
 
-  private val FIXED_TEST_TIME_MILLIS = 1704067200000L // Jan 1, 2024, 00:00:00 GMT
-  private val FIXED_TEST_TIMESTAMP = Timestamp(Date(FIXED_TEST_TIME_MILLIS))
-
   @Before
   fun setUp() {
     Dispatchers.setMain(testDispatcher)
 
-    TimeProviderHolder.initialize(MockTimeProvider(FIXED_TEST_TIMESTAMP))
-
-    // Initialize test events
     validEvent1 =
         Event(
             eventId = "event1",
@@ -87,13 +78,11 @@ class MapViewModelUnitTest {
             startTime = Timestamp.now(),
             ticketsRemaining = 30)
 
-    // Create mock repository
     mockEventRepository = mockk(relaxed = true)
     val allValidEvents = listOf(validEvent1, validEvent2)
     coEvery { mockEventRepository.getEventsByStatus(EventStatus.PUBLISHED) } returns
         MutableStateFlow(allValidEvents)
 
-    // Create mock MapView and dependencies
     mockMapView = mockk(relaxed = true)
     mockAnnotationManager = mockk(relaxed = true)
     mockLocationComponent = mockk(relaxed = true)
@@ -101,7 +90,6 @@ class MapViewModelUnitTest {
     mockMapboxMap = mockk(relaxed = true)
     mockCameraAnimationsPlugin = mockk(relaxed = true)
 
-    // Setup mock behaviors
     every { mockMapView.annotations.createPointAnnotationManager() } returns mockAnnotationManager
     every { mockMapView.location } returns mockLocationComponent
     every { mockMapView.gestures } returns mockGesturesPlugin
@@ -123,7 +111,6 @@ class MapViewModelUnitTest {
     } returns mockCancelable
 
     every { mockGesturesPlugin.updateSettings(any()) } just Runs
-
     every { mockGesturesPlugin.removeOnMapClickListener(any()) } returns Unit
     every { mockGesturesPlugin.addOnMapClickListener(any()) } returns Unit
 
@@ -172,24 +159,31 @@ class MapViewModelUnitTest {
   }
 
   @Test
-  fun setupAnnotationsForEvents_createsAnnotations() = runTest {
-    val events = listOf(validEvent1, validEvent2)
-
-    viewModel.setupAnnotationsForEvents(events, mockMapView)
+  fun updateAnnotations_createsAnnotationsForEvents() = runTest {
+    viewModel.internalMapView = mockMapView
     advanceUntilIdle()
 
-    verify(atLeast = 2) { mockAnnotationManager.create(any<PointAnnotationOptions>()) }
-    verify { mockAnnotationManager.addClickListener(any()) }
-    verify { mockGesturesPlugin.addOnMapClickListener(any()) }
+    viewModel.updateAnnotations(mockMapView)
+    advanceUntilIdle()
+
+    verify(atLeast = 1) { mockAnnotationManager.create(any<PointAnnotationOptions>()) }
   }
 
   @Test
-  fun setupAnnotationsForEvents_handlesEmptyEventsList() = runTest {
-    viewModel.setupAnnotationsForEvents(emptyList(), mockMapView)
+  fun updateAnnotations_withEmptyEvents_clearsAnnotations() = runTest {
+    viewModel.internalMapView = mockMapView
+
+    viewModel.getOrCreatePointAnnotationManager(mockMapView)
+
+    coEvery { mockEventRepository.getEventsByStatus(EventStatus.PUBLISHED) } returns
+        MutableStateFlow(emptyList())
+    viewModel.refreshEvents()
     advanceUntilIdle()
 
-    verify(exactly = 0) { mockAnnotationManager.create(any<PointAnnotationOptions>()) }
-    verify { mockAnnotationManager.addClickListener(any()) }
+    viewModel.updateAnnotations(mockMapView)
+    advanceUntilIdle()
+
+    verify { mockAnnotationManager.deleteAll() }
   }
 
   @Test
@@ -208,7 +202,6 @@ class MapViewModelUnitTest {
 
     viewModel.enableLocationTracking()
 
-    // Should not throw any exceptions
     verify(exactly = 0) { mockLocationComponent.updateSettings(any()) }
   }
 
@@ -253,24 +246,89 @@ class MapViewModelUnitTest {
   }
 
   @Test
-  fun selectEvent_togglesSelection() {
+  fun selectEvent_selectsSingleEvent() {
     viewModel.selectEvent(validEvent1)
-    assertEquals(validEvent1, viewModel.uiState.value.selectedEvent)
-
-    viewModel.selectEvent(validEvent1)
-    assertNull(viewModel.uiState.value.selectedEvent)
-
-    viewModel.selectEvent(validEvent2)
-    assertEquals(validEvent2, viewModel.uiState.value.selectedEvent)
+    assertEquals(validEvent1, viewModel.uiState.value.currentSelectedEvent)
+    assertEquals(1, viewModel.uiState.value.selectedEventGroup.size)
   }
 
   @Test
-  fun clearSelectedEvent_clearsSelection() {
+  fun selectEvent_togglesSelectionWhenSameEvent() {
     viewModel.selectEvent(validEvent1)
-    assertNotNull(viewModel.uiState.value.selectedEvent)
+    assertNotNull(viewModel.uiState.value.currentSelectedEvent)
+
+    viewModel.selectEvent(validEvent1)
+    assertNull(viewModel.uiState.value.currentSelectedEvent)
+  }
+
+  @Test
+  fun selectEventGroup_selectsMultipleEvents() {
+    val events = listOf(validEvent1, validEvent2)
+    viewModel.selectEventGroup(events)
+
+    assertEquals(2, viewModel.uiState.value.selectedEventGroup.size)
+    assertEquals(validEvent1, viewModel.uiState.value.currentSelectedEvent)
+  }
+
+  @Test
+  fun selectEventGroup_withEmptyList_doesNothing() {
+    viewModel.selectEventGroup(emptyList())
+    assertTrue(viewModel.uiState.value.selectedEventGroup.isEmpty())
+  }
+
+  @Test
+  fun selectNextEvent_cyclesThroughGroup() {
+    val events = listOf(validEvent1, validEvent2)
+    viewModel.selectEventGroup(events)
+
+    assertEquals(0, viewModel.uiState.value.selectedEventIndex)
+    assertEquals(validEvent1, viewModel.uiState.value.currentSelectedEvent)
+
+    viewModel.selectNextEvent()
+    assertEquals(1, viewModel.uiState.value.selectedEventIndex)
+    assertEquals(validEvent2, viewModel.uiState.value.currentSelectedEvent)
+
+    viewModel.selectNextEvent()
+    assertEquals(0, viewModel.uiState.value.selectedEventIndex)
+    assertEquals(validEvent1, viewModel.uiState.value.currentSelectedEvent)
+  }
+
+  @Test
+  fun selectPreviousEvent_cyclesThroughGroupBackward() {
+    val events = listOf(validEvent1, validEvent2)
+    viewModel.selectEventGroup(events)
+
+    assertEquals(0, viewModel.uiState.value.selectedEventIndex)
+
+    viewModel.selectPreviousEvent()
+    assertEquals(1, viewModel.uiState.value.selectedEventIndex)
+    assertEquals(validEvent2, viewModel.uiState.value.currentSelectedEvent)
+
+    viewModel.selectPreviousEvent()
+    assertEquals(0, viewModel.uiState.value.selectedEventIndex)
+  }
+
+  @Test
+  fun selectNextEvent_withNoSelection_doesNothing() {
+    viewModel.selectNextEvent()
+    assertTrue(viewModel.uiState.value.selectedEventGroup.isEmpty())
+  }
+
+  @Test
+  fun selectPreviousEvent_withNoSelection_doesNothing() {
+    viewModel.selectPreviousEvent()
+    assertTrue(viewModel.uiState.value.selectedEventGroup.isEmpty())
+  }
+
+  @Test
+  fun clearSelectedEvent_clearsSelectionAndIndex() {
+    viewModel.selectEventGroup(listOf(validEvent1, validEvent2))
+    assertNotNull(viewModel.uiState.value.currentSelectedEvent)
 
     viewModel.clearSelectedEvent()
-    assertNull(viewModel.uiState.value.selectedEvent)
+    assertNull(viewModel.uiState.value.currentSelectedEvent)
+    assertTrue(viewModel.uiState.value.selectedEventGroup.isEmpty())
+    assertEquals(0, viewModel.uiState.value.selectedEventIndex)
   }
 
   @Test
@@ -328,7 +386,6 @@ class MapViewModelUnitTest {
     viewModel.refreshEvents()
     advanceUntilIdle()
 
-    // Should have been called once in init and once in refreshEvents
     verify(exactly = 2) { mockEventRepository.getEventsByStatus(EventStatus.PUBLISHED) }
   }
 
@@ -337,7 +394,6 @@ class MapViewModelUnitTest {
     viewModel.internalMapView = mockMapView
     viewModel.setLocationPermission(true)
 
-    // Now test disable (called internally when permission is denied)
     viewModel.setLocationPermission(false)
 
     verify { mockLocationComponent.updateSettings(any()) }
@@ -368,7 +424,6 @@ class MapViewModelUnitTest {
             startTime = Timestamp.now(),
             ticketsRemaining = 0)
 
-    // Add sold out event to the repository flow
     val allEvents = listOf(validEvent1, validEvent2, soldOutEvent)
     coEvery { mockEventRepository.getEventsByStatus(EventStatus.PUBLISHED) } returns
         MutableStateFlow(allEvents)
@@ -390,105 +445,10 @@ class MapViewModelUnitTest {
     val initialState = viewModel.uiState.value
 
     assertTrue(initialState.events.isEmpty())
-    assertNull(initialState.selectedEvent)
+    assertNull(initialState.currentSelectedEvent)
     assertFalse(initialState.showFilterDialog)
     assertFalse(initialState.hasLocationPermission)
     assertFalse(initialState.isCameraTracking)
-  }
-
-  @Test
-  fun setupAnnotationsForEvents_removesExistingClickListeners() = runTest {
-    val events = listOf(validEvent1, validEvent2)
-
-    viewModel.setupAnnotationsForEvents(events, mockMapView)
-    advanceUntilIdle()
-
-    verify { mockAnnotationManager.removeClickListener(any()) }
-    verify { mockGesturesPlugin.removeOnMapClickListener(any()) }
-  }
-
-  @Test
-  fun setupAnnotationsForEvents_annotationClick_selectsEvent() = runTest {
-    val events = listOf(validEvent1, validEvent2)
-
-    clearMocks(mockAnnotationManager)
-
-    val annotationClickListenerSlot =
-        slot<com.mapbox.maps.plugin.annotation.generated.OnPointAnnotationClickListener>()
-    every { mockAnnotationManager.addClickListener(capture(annotationClickListenerSlot)) } returns
-        true
-
-    viewModel.setupAnnotationsForEvents(events, mockMapView)
-    advanceUntilIdle()
-
-    val mockAnnotation = mockk<com.mapbox.maps.plugin.annotation.generated.PointAnnotation>()
-    every { mockAnnotation.getData() } returns com.google.gson.JsonPrimitive(validEvent1.eventId)
-
-    annotationClickListenerSlot.captured.onAnnotationClick(mockAnnotation)
-
-    assertEquals(validEvent1, viewModel.uiState.value.selectedEvent)
-  }
-
-  @Test
-  fun setupAnnotationsForEvents_mapClick_clearsSelectedEvent() = runTest {
-    val events = listOf(validEvent1, validEvent2)
-
-    viewModel.selectEvent(validEvent1)
-    assertEquals(validEvent1, viewModel.uiState.value.selectedEvent)
-
-    val mapClickListenerSlot = slot<com.mapbox.maps.plugin.gestures.OnMapClickListener>()
-    every { mockGesturesPlugin.addOnMapClickListener(capture(mapClickListenerSlot)) } returns Unit
-
-    viewModel.setupAnnotationsForEvents(events, mockMapView)
-    advanceUntilIdle()
-
-    mapClickListenerSlot.captured.onMapClick(com.mapbox.geojson.Point.fromLngLat(0.0, 0.0))
-
-    assertNull(viewModel.uiState.value.selectedEvent)
-  }
-
-  @Test
-  fun setupAnnotationsForEvents_annotationClickWithInvalidEventId_doesNothing() = runTest {
-    val events = listOf(validEvent1, validEvent2)
-
-    clearMocks(mockAnnotationManager)
-
-    val annotationClickListenerSlot =
-        slot<com.mapbox.maps.plugin.annotation.generated.OnPointAnnotationClickListener>()
-    every { mockAnnotationManager.addClickListener(capture(annotationClickListenerSlot)) } returns
-        true
-
-    viewModel.setupAnnotationsForEvents(events, mockMapView)
-    advanceUntilIdle()
-
-    val mockAnnotation = mockk<com.mapbox.maps.plugin.annotation.generated.PointAnnotation>()
-    every { mockAnnotation.getData() } returns com.google.gson.JsonPrimitive("invalid-event-id")
-
-    annotationClickListenerSlot.captured.onAnnotationClick(mockAnnotation)
-
-    assertNull(viewModel.uiState.value.selectedEvent)
-  }
-
-  @Test
-  fun setupAnnotationsForEvents_annotationClickWithNullData_doesNothing() = runTest {
-    val events = listOf(validEvent1, validEvent2)
-
-    clearMocks(mockAnnotationManager)
-
-    val annotationClickListenerSlot =
-        slot<com.mapbox.maps.plugin.annotation.generated.OnPointAnnotationClickListener>()
-    every { mockAnnotationManager.addClickListener(capture(annotationClickListenerSlot)) } returns
-        true
-
-    viewModel.setupAnnotationsForEvents(events, mockMapView)
-    advanceUntilIdle()
-
-    val mockAnnotation = mockk<com.mapbox.maps.plugin.annotation.generated.PointAnnotation>()
-    every { mockAnnotation.getData() } returns null
-
-    annotationClickListenerSlot.captured.onAnnotationClick(mockAnnotation)
-
-    assertNull(viewModel.uiState.value.selectedEvent)
   }
 
   @Test
@@ -617,8 +577,6 @@ class MapViewModelUnitTest {
 
     verify { mockLocationComponent.removeOnIndicatorPositionChangedListener(any()) }
 
-    // Note: Cleanup order (gesture vs location listener) doesn't matter
-    // as there are no dependencies between them
     assertNull(viewModel.internalMapView)
     assertNull(viewModel.pointAnnotationManager)
   }
@@ -636,5 +594,28 @@ class MapViewModelUnitTest {
     verify { mockGesturesPlugin.addOnMoveListener(any()) }
 
     assertTrue(viewModel.isCameraTracking())
+  }
+
+  @Test
+  fun onMapReady_subscribesToCameraChanges() {
+    viewModel.onMapReady(mockMapView, true)
+
+    verify { mockMapboxMap.subscribeCameraChanged(any()) }
+  }
+
+  @Test
+  fun currentSelectedEvent_returnsCorrectEvent() {
+    val events = listOf(validEvent1, validEvent2)
+    viewModel.selectEventGroup(events)
+
+    assertEquals(validEvent1, viewModel.uiState.value.currentSelectedEvent)
+
+    viewModel.selectNextEvent()
+    assertEquals(validEvent2, viewModel.uiState.value.currentSelectedEvent)
+  }
+
+  @Test
+  fun currentSelectedEvent_returnsNullWhenNoSelection() {
+    assertNull(viewModel.uiState.value.currentSelectedEvent)
   }
 }
