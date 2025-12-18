@@ -283,61 +283,91 @@ abstract class EventFormViewModel(
    * @return Map of validation errors, empty if valid
    */
   protected fun validateForm(): Map<String, String> {
-    val errors = mutableMapOf<String, String>()
     val state = _formState.value
+    val errors = mutableMapOf<String, String>()
 
-    // Validate required text fields
+    errors += validateRequiredTextFields(state)
+    errors += validateTime(state)
+    errors += validateDateNotInPast(state)
+    errors += validateLocation(state)
+    errors += validatePrice(state)
+    errors += validateCapacity(state)
+
+    return errors
+  }
+
+  private fun validateTime(state: EventFormState): Map<String, String> {
+    if (state.startTime.isBlank() || state.endTime.isBlank()) return emptyMap()
+
+    return if (!state.allowExactTime && state.endTime <= state.startTime) {
+      mapOf(ValidationError.TIME.toError())
+    } else {
+      emptyMap()
+    }
+  }
+
+  private fun validateRequiredTextFields(state: EventFormState): Map<String, String> {
+    val errors = mutableMapOf<String, String>()
+
     if (state.title.isBlank()) errors += ValidationError.TITLE.toError()
     if (state.description.isBlank()) errors += ValidationError.DESCRIPTION.toError()
     if (state.date.isBlank()) errors += ValidationError.DATE.toError()
     if (state.startTime.isBlank()) errors += ValidationError.START_TIME.toError()
     if (state.endTime.isBlank()) errors += ValidationError.END_TIME.toError()
 
-    // Validate time order
-    if (!state.allowExactTime &&
-        state.startTime.isNotBlank() &&
-        state.endTime.isNotBlank() &&
-        state.endTime <= state.startTime) {
-      errors += ValidationError.TIME.toError()
-    }
-
-    // Validate event is not in the past
-    if (state.date.isNotBlank() &&
-        state.startTime.isNotBlank() &&
-        isEventInPast(state.date, state.startTime)) {
-      errors += ValidationError.DATE_IN_PAST.toError()
-    }
-
-    // Validate location
-    if (state.location.isBlank()) {
-      errors += ValidationError.LOCATION.toError()
-    } else if (state.selectedLocation == null) {
-      errors += ValidationError.LOCATION_SELECT.toError()
-    }
-
-    // Validate price
-    if (state.price.isBlank()) {
-      errors += ValidationError.PRICE_EMPTY.toError()
-    } else {
-      if (!ValidationUtils.isPositiveNumber(state.price)) {
-        errors +=
-            if (state.price.toDoubleOrNull() == null) ValidationError.PRICE_INVALID.toError()
-            else ValidationError.PRICE_NEGATIVE.toError()
-      }
-    }
-
-    // Validate capacity
-    if (state.capacity.isBlank()) {
-      errors += ValidationError.CAPACITY_EMPTY.toError()
-    } else {
-      if (!ValidationUtils.isPositiveInteger(state.capacity)) {
-        errors +=
-            if (state.capacity.toIntOrNull() == null) ValidationError.CAPACITY_INVALID.toError()
-            else ValidationError.CAPACITY_NEGATIVE.toError()
-      }
-    }
-
     return errors
+  }
+
+  private fun validateDateNotInPast(state: EventFormState): Map<String, String> {
+    if (state.date.isBlank() || state.startTime.isBlank()) return emptyMap()
+
+    return if (isEventInPast(state.date, state.startTime)) {
+      mapOf(ValidationError.DATE_IN_PAST.toError())
+    } else {
+      emptyMap()
+    }
+  }
+
+  private fun validateLocation(state: EventFormState): Map<String, String> {
+    if (state.location.isBlank()) {
+      return mapOf(ValidationError.LOCATION.toError())
+    }
+
+    return if (state.selectedLocation == null) {
+      mapOf(ValidationError.LOCATION_SELECT.toError())
+    } else {
+      emptyMap()
+    }
+  }
+
+  private fun validatePrice(state: EventFormState): Map<String, String> {
+    val price = state.price
+    if (price.isBlank()) return mapOf(ValidationError.PRICE_EMPTY.toError())
+
+    if (!ValidationUtils.isPositiveNumber(price)) {
+      return if (price.toDoubleOrNull() == null) {
+        mapOf(ValidationError.PRICE_INVALID.toError())
+      } else {
+        mapOf(ValidationError.PRICE_NEGATIVE.toError())
+      }
+    }
+
+    return emptyMap()
+  }
+
+  private fun validateCapacity(state: EventFormState): Map<String, String> {
+    val capacity = state.capacity
+    if (capacity.isBlank()) return mapOf(ValidationError.CAPACITY_EMPTY.toError())
+
+    if (!ValidationUtils.isPositiveInteger(capacity)) {
+      return if (capacity.toIntOrNull() == null) {
+        mapOf(ValidationError.CAPACITY_INVALID.toError())
+      } else {
+        mapOf(ValidationError.CAPACITY_NEGATIVE.toError())
+      }
+    }
+
+    return emptyMap()
   }
 
   /**
