@@ -15,6 +15,5 @@ app/release
 
 *.log
 
-*.md
 
 app/google-services.json
